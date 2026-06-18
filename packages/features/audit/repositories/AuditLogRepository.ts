@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@ecom/prisma";
 
 export interface AuditLogFilters {
   /** Pre-built Prisma where clause from buildPrismaWhere */

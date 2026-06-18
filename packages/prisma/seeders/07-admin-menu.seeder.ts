@@ -9,7 +9,7 @@
  *    name is NOT overwritten (admins may have translated/renamed it)
  */
 
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../src/generated/prisma/client";
 import type { Seeder } from "./seeder.interface";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

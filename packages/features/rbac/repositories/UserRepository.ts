@@ -1,4 +1,4 @@
-import type { PrismaClient, UserStatus } from "@prisma/client";
+import type { PrismaClient, UserStatus } from "@ecom/prisma";
 
 export class UserRepository {
   private prisma: PrismaClient;

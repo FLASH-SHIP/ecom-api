@@ -20,7 +20,7 @@
     "@ecom/trpc": "workspace:*",
     "@ecom/types": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
-    "@prisma/client": "^6.8.0",
+    "@prisma/client": "^7.8.0",
     "@tanstack/react-query": "^5.75.0",
     "@tanstack/react-query-devtools": "^5.75.0",
     "@tanstack/react-table": "^8.21.3",

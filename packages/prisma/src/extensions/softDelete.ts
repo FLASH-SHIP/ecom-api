@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma/client";
 
 /**
  * Prisma extension for automatic soft-delete filtering.
@@ -13,19 +13,25 @@ import { Prisma } from "@prisma/client";
  * Usage:
  *   const prismaExtended = prisma.$extends(softDeleteExtension);
  */
+
+type UpdateFn = (args: {
+  where: { id: number };
+  data: { deletedAt: Date | null };
+}) => Promise<unknown>;
+
 export const softDeleteExtension = Prisma.defineExtension({
   name: "softDelete",
   model: {
     post: {
       async softDelete(id: number) {
-        const ctx = Prisma.getExtensionContext(this) as { update: Function };
+        const ctx = Prisma.getExtensionContext(this) as { update: UpdateFn };
         return ctx.update({
           where: { id },
           data: { deletedAt: new Date() },
         });
       },
       async restore(id: number) {
-        const ctx = Prisma.getExtensionContext(this) as { update: Function };
+        const ctx = Prisma.getExtensionContext(this) as { update: UpdateFn };
         return ctx.update({
           where: { id },
           data: { deletedAt: null },
@@ -34,14 +40,14 @@ export const softDeleteExtension = Prisma.defineExtension({
     },
     page: {
       async softDelete(id: number) {
-        const ctx = Prisma.getExtensionContext(this) as { update: Function };
+        const ctx = Prisma.getExtensionContext(this) as { update: UpdateFn };
         return ctx.update({
           where: { id },
           data: { deletedAt: new Date() },
         });
       },
       async restore(id: number) {
-        const ctx = Prisma.getExtensionContext(this) as { update: Function };
+        const ctx = Prisma.getExtensionContext(this) as { update: UpdateFn };
         return ctx.update({
           where: { id },
           data: { deletedAt: null },

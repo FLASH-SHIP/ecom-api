@@ -1,5 +1,5 @@
 import { createLogger } from "@ecom/lib/logger";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@ecom/prisma";
 
 const log = createLogger("ImportService");
 

@@ -15,14 +15,20 @@ const nextConfig: NextConfig = {
   },
 
   // Don't bundle optional server-only dependencies
-  serverExternalPackages: ["@aws-sdk/client-s3", "sharp"],
+  serverExternalPackages: [
+    "@aws-sdk/client-s3",
+    "sharp",
+    "@prisma/client",
+    "@prisma/adapter-pg",
+    "pg",
+    "@ecom/prisma",
+  ],
 
   // Transpile workspace packages
   transpilePackages: [
     "@ecom/lib",
     "@ecom/config",
     "@ecom/types",
-    "@ecom/prisma",
     "@ecom/trpc",
     "@ecom/features",
     "@ecom/i18n",

@@ -1,7 +1,7 @@
 import type { UserRepository } from "@ecom/features/rbac/repositories/UserRepository";
 import { hashPassword } from "@ecom/lib/crypto";
 import { ErrorWithCode } from "@ecom/lib/errors";
-import type { UserStatus } from "@prisma/client";
+import type { UserStatus } from "@ecom/prisma";
 
 export interface IUserManagementServiceDeps {
   userRepo: UserRepository;

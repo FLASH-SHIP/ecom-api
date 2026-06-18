@@ -10,7 +10,7 @@
  *  - Settings: `update: {}` so production values are not overwritten
  */
 
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../src/generated/prisma/client";
 
 export interface Seeder {
   /** Human-readable name shown in logs */

@@ -1,5 +1,5 @@
-import type { PrismaClient } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import type { PrismaClient } from "@ecom/prisma";
+import { Prisma } from "@ecom/prisma";
 
 export interface FindGroupsOpts {
   // ── Filter ────────────────────────────────────────────────────────────────

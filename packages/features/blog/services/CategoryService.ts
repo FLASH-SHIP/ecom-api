@@ -1,6 +1,6 @@
 import { categoryCache } from "@ecom/lib/cache";
 import { ErrorWithCode } from "@ecom/lib/errors";
-import type { ContentStatus } from "@prisma/client";
+import type { ContentStatus } from "@ecom/prisma";
 import type { CategoryRepository } from "../repositories/CategoryRepository";
 import type { SlugService } from "./SlugService";
 

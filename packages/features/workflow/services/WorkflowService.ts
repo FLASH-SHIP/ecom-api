@@ -1,5 +1,5 @@
 import { ErrorWithCode } from "@ecom/lib/errors";
-import type { ContentStatus } from "@prisma/client";
+import type { ContentStatus } from "@ecom/prisma";
 
 /**
  * Defines valid workflow transitions for content.

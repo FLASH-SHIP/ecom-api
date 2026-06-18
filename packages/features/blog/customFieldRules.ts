@@ -1,5 +1,5 @@
 import { CustomFieldRuleRegistry } from "@ecom/features/custom-field/CustomFieldRuleRegistry";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@ecom/prisma";
 
 /**
  * Register custom field display rules for Blog content (Posts + Categories).

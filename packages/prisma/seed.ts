@@ -10,10 +10,15 @@
  *   ALLOW_PROD_SEED=1 NODE_ENV=production yarn prisma:seed → explicit override
  */
 
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { SEEDERS } from "./seeders/index";
+import { PrismaClient } from "./src/generated/prisma/client";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+});
+const prisma = new PrismaClient({ adapter });
 
 // ── Production guard ──────────────────────────────────────────────────────────
 

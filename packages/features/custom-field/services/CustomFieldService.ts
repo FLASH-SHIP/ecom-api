@@ -7,8 +7,8 @@ import type {
 import type { FieldItemRepository } from "@ecom/features/custom-field/repositories/FieldItemRepository";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { createLogger } from "@ecom/lib/logger";
-import type { PrismaClient } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import type { PrismaClient } from "@ecom/prisma";
+import { Prisma } from "@ecom/prisma";
 
 const log = createLogger("CustomFieldService");
 

@@ -1,5 +1,5 @@
 import { ALL_PERMISSIONS } from "@ecom/lib/permissions";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../src/generated/prisma/client";
 import type { Seeder } from "./seeder.interface";
 
 export const PermissionsSeeder: Seeder = {

@@ -62,6 +62,7 @@
       "!**/coverage",
       "!**/*.generated.*",
       "!packages/prisma/migrations",
+      "!packages/prisma/src/generated",
       "!.yarn"
     ]
   }

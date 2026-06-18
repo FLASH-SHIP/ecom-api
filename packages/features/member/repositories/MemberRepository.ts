@@ -1,4 +1,4 @@
-import type { MemberStatus, PrismaClient } from "@prisma/client";
+import type { MemberStatus, PrismaClient } from "@ecom/prisma";
 
 export interface MemberFilters {
   status?: MemberStatus;

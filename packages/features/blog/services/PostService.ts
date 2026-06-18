@@ -1,7 +1,7 @@
 import type { RevisionService } from "@ecom/features/revision/services/RevisionService";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { createLogger } from "@ecom/lib/logger";
-import type { ContentStatus } from "@prisma/client";
+import type { ContentStatus } from "@ecom/prisma";
 import type { PostRepository } from "../repositories/PostRepository";
 import type { SlugService } from "./SlugService";
 

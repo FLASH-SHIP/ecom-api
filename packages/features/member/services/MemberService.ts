@@ -1,4 +1,4 @@
-import type { MemberStatus } from "@prisma/client";
+import type { MemberStatus } from "@ecom/prisma";
 import type { MemberRepository } from "../repositories/MemberRepository";
 
 export interface IMemberServiceDeps {

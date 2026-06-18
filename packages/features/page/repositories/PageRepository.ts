@@ -1,4 +1,4 @@
-import type { ContentStatus, PrismaClient } from "@prisma/client";
+import type { ContentStatus, PrismaClient } from "@ecom/prisma";
 
 export class PageRepository {
   private prisma: PrismaClient;

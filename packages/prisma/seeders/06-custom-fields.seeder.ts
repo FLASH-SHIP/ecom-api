@@ -11,7 +11,7 @@
  *    (title, order, instructions, options) — NEVER type or slug to avoid breaking saved values
  */
 
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "../src/generated/prisma/client";
 import type { Seeder } from "./seeder.interface";
 
 // ── Types ────────────────────────────────────────────────────────────────────

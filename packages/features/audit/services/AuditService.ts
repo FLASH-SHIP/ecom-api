@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import { promisify } from "node:util";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@ecom/prisma";
 import type { AuditLogFilters, AuditLogRepository } from "../repositories/AuditLogRepository";
 import type { RequestLogFilters, RequestLogRepository } from "../repositories/RequestLogRepository";
 

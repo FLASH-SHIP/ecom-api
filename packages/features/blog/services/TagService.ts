@@ -1,5 +1,5 @@
 import { ErrorWithCode } from "@ecom/lib/errors";
-import type { ContentStatus } from "@prisma/client";
+import type { ContentStatus } from "@ecom/prisma";
 import type { TagRepository } from "../repositories/TagRepository";
 import type { SlugService } from "./SlugService";
 

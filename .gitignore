@@ -29,7 +29,7 @@ test-results/
 Thumbs.db
 
 # Prisma
-packages/prisma/generated/
+packages/prisma/src/generated/
 
 # Misc
 *.tsbuildinfo
