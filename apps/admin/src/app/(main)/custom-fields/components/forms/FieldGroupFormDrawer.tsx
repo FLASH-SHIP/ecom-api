@@ -140,7 +140,7 @@ export function FieldGroupFormDrawer({
                 {/* Title field */}
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="field-group-title" className="font-medium">
-                    {t("fields.label")} *
+                    {t("fields.label")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="field-group-title"

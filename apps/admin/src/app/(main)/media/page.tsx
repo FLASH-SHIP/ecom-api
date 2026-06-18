@@ -225,7 +225,7 @@ export default function MediaPage() {
             <button
               type="button"
               className={cn(
-                "hover:underline",
+                "hover:text-primary",
                 index === folderPath.length - 1
                   ? "font-semibold text-foreground"
                   : "text-muted-foreground",

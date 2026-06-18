@@ -124,7 +124,7 @@ export default function CustomFieldsContent() {
         cell: ({ row }) => (
           <button
             type="button"
-            className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:underline"
+            className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary"
             onClick={() => openEdit(row.original.id)}
           >
             {row.original.title}

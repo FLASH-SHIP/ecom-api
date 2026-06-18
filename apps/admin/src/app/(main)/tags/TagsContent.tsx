@@ -118,7 +118,7 @@ export default function TagsContent() {
         cell: ({ row }) => (
           <button
             type="button"
-            className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:underline"
+            className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary"
             onClick={() => router.push(`/tags/${row.original.id}/edit`)}
           >
             {row.original.name}

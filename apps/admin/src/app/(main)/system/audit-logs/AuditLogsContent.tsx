@@ -195,7 +195,7 @@ export default function AuditLogsContent() {
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
-                    className="cursor-pointer border-0 bg-transparent p-0 text-left text-sm font-semibold hover:underline"
+                    className="cursor-pointer border-0 bg-transparent p-0 text-left text-sm font-semibold hover:text-primary"
                     onClick={() => setDetailLog(log)}
                   >
                     {userName}

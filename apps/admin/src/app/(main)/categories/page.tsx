@@ -152,7 +152,7 @@ export default function CategoriesPage() {
                           <div>
                             <NextLink
                               href={`/categories/${cat.id}/edit`}
-                              className="text-sm font-medium text-foreground hover:underline"
+                              className="text-sm font-medium text-foreground hover:text-primary"
                             >
                               {cat.name}
                             </NextLink>
@@ -251,7 +251,7 @@ function TreeNode({ category, depth }: { category: TreeCategory; depth: number }
         {category.icon && <span>{category.icon}</span>}
         <NextLink
           href={`/categories/${category.id}/edit`}
-          className="text-sm font-medium text-foreground hover:underline"
+          className="text-sm font-medium text-foreground hover:text-primary"
         >
           {category.name}
         </NextLink>

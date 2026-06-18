@@ -240,7 +240,7 @@ export default function PostsPage() {
                     <td className="px-4 py-3">
                       <NextLink
                         href={`/posts/${post.id}/edit`}
-                        className="font-medium text-foreground hover:underline"
+                        className="font-medium text-foreground hover:text-primary"
                       >
                         {post.title}
                       </NextLink>

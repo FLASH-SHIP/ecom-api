@@ -10,6 +10,7 @@ import { trpc } from "@admin/lib/trpc";
 import { formatDate } from "@admin/utils/dateFormat";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@ecom/ui/components/tooltip";
 import type { ColumnDef } from "@tanstack/react-table";
 import { AlertTriangle, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -115,7 +116,7 @@ export default function LanguagesContent() {
         cell: ({ row }) => (
           <button
             type="button"
-            className="flex cursor-pointer items-center gap-2 bg-transparent p-0 text-left text-sm font-medium text-foreground hover:underline"
+            className="flex cursor-pointer items-center gap-2 bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary"
             onClick={() => openEdit(row.original.id)}
           >
             {row.original.flag && (
@@ -151,22 +152,33 @@ export default function LanguagesContent() {
         meta: { align: "center" },
         cell: ({ row }) =>
           row.original.isDefault ? (
-            <Star className="mx-auto size-4 fill-amber-400 text-amber-400" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="mx-auto block w-fit">
+                  <Star className="size-4 fill-amber-400 text-amber-400" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{t("defaultLanguage")}</TooltipContent>
+            </Tooltip>
           ) : (
-            <button
-              type="button"
-              className="mx-auto block rounded-md p-1 text-muted-foreground hover:text-amber-500"
-              title={t("setDefault")}
-              onClick={() =>
-                askConfirm({
-                  message: t("setDefaultConfirm", { name: row.original.name }),
-                  onConfirm: () => setDefaultMut.mutate({ id: row.original.id }),
-                })
-              }
-              disabled={setDefaultMut.isPending}
-            >
-              <Star className="size-4" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="mx-auto block cursor-pointer rounded-md p-1 text-muted-foreground hover:text-amber-500"
+                  onClick={() =>
+                    askConfirm({
+                      message: t("setDefaultConfirm", { name: row.original.name }),
+                      onConfirm: () => setDefaultMut.mutate({ id: row.original.id }),
+                    })
+                  }
+                  disabled={setDefaultMut.isPending}
+                >
+                  <Star className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{t("setDefault")}</TooltipContent>
+            </Tooltip>
           ),
       },
       {

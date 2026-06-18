@@ -39,7 +39,7 @@ export function RowActionMenu<T>({
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 opacity-60 transition-opacity hover:opacity-100"
+          className="size-8 cursor-pointer opacity-60 transition-opacity hover:opacity-100"
         >
           <EllipsisVertical className="size-4" />
         </Button>

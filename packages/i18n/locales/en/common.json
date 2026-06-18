@@ -629,6 +629,7 @@
     "active": "Active",
     "createdAt": "Created At",
     "setDefault": "Set as Default",
+    "defaultLanguage": "Default Language",
     "setDefaultConfirm": "Set \"{name}\" as default language? This will affect how content is served when no language is specified.",
     "deleteConfirm": "Are you sure you want to delete \"{name}\"? This will also delete all items in this language and cannot be undone!",
     "defaultWarning": "You should set the default language only once during the initial setup and avoid changing it later.",

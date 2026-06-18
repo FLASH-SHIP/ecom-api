@@ -157,7 +157,7 @@ export default function PagesPage() {
           <form onSubmit={handleCreate}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="page-title">{t("fields.title")} *</Label>
+                <Label htmlFor="page-title">{t("fields.title")} <span className="text-destructive">*</span></Label>
                 <Input
                   id="page-title"
                   value={newTitle}
@@ -169,7 +169,7 @@ export default function PagesPage() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="page-slug">{t("fields.slug")} *</Label>
+                <Label htmlFor="page-slug">{t("fields.slug")} <span className="text-destructive">*</span></Label>
                 <Input
                   id="page-slug"
                   value={newSlug}

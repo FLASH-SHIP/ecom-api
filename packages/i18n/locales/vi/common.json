@@ -629,6 +629,7 @@
     "active": "Kích hoạt",
     "createdAt": "Ngày tạo",
     "setDefault": "Đặt làm mặc định",
+    "defaultLanguage": "Ngôn ngữ mặc định",
     "setDefaultConfirm": "Đặt \"{name}\" làm ngôn ngữ mặc định? Điều này sẽ ảnh hưởng đến cách nội dung hiển thị khi không chỉ định ngôn ngữ.",
     "deleteConfirm": "Bạn có thực sự muốn xóa ngôn ngữ \"{name}\"? Nó cũng xóa tất cả các mục trong ngôn ngữ này và không thể hoàn tác!",
     "defaultWarning": "Bạn chỉ nên đặt ngôn ngữ mặc định một lần trong quá trình thiết lập ban đầu và tránh thay đổi nó sau này.",
