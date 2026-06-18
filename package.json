@@ -1,0 +1,50 @@
+{
+  "name": "ecom",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "apps/api/*",
+    "packages/*"
+  ],
+  "packageManager": "yarn@4.15.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:admin": "turbo run dev --filter=@ecom/admin",
+    "dev:customer": "turbo run dev --filter=@ecom/customer",
+    "dev:api": "turbo run dev --filter=@ecom/api",
+    "build": "turbo run build",
+    "type-check": "turbo run type-check",
+    "type-check:ci": "turbo run type-check --force",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "turbo run test",
+    "test:ci": "turbo run test -- --reporter=junit --outputFile=test-results.xml",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "prisma:generate": "yarn workspace @ecom/prisma prisma generate",
+    "prisma:migrate": "yarn workspace @ecom/prisma prisma migrate dev",
+    "prisma:seed": "yarn workspace @ecom/prisma db:seed",
+    "prisma:studio": "yarn workspace @ecom/prisma prisma studio",
+    "prepare": "husky",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.1.0",
+    "@playwright/test": "^1.60.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "resolutions": {
+    "postcss": "8.5.15",
+    "zod": "4.4.3"
+  }
+}

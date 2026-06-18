@@ -1,0 +1,159 @@
+import type { ContentStatus, PrismaClient } from "@prisma/client";
+
+export class PageRepository {
+  private prisma: PrismaClient;
+  constructor(prisma: PrismaClient) {
+    this.prisma = prisma;
+  }
+
+  async findMany(params: {
+    search?: string;
+    status?: ContentStatus;
+    parentId?: number | null;
+    page?: number;
+    perPage?: number;
+  }) {
+    const { search, status, parentId, page = 1, perPage = 20 } = params;
+
+    const where: Record<string, unknown> = { deletedAt: null };
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { slug: { contains: search, mode: "insensitive" } },
+      ];
+    }
+    if (status) where.status = status;
+    if (parentId !== undefined) where.parentId = parentId;
+
+    const [data, total] = await Promise.all([
+      this.prisma.page.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          template: true,
+          order: true,
+          status: true,
+          parentId: true,
+          authorId: true,
+          author: { select: { id: true, name: true } },
+          publishedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: { select: { children: true } },
+        },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+        skip: (page - 1) * perPage,
+        take: perPage,
+      }),
+      this.prisma.page.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: { total, page, perPage, totalPages: Math.ceil(total / perPage) },
+    };
+  }
+
+  async findById(id: number) {
+    return this.prisma.page.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        content: true,
+        excerpt: true,
+        featuredImage: true,
+        template: true,
+        order: true,
+        parentId: true,
+        status: true,
+        authorId: true,
+        author: { select: { id: true, name: true, email: true } },
+        publishedAt: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async findBySlug(slug: string) {
+    return this.prisma.page.findFirst({
+      where: { slug, status: "PUBLISHED", deletedAt: null },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        content: true,
+        excerpt: true,
+        featuredImage: true,
+        template: true,
+        publishedAt: true,
+        seoMeta: {
+          select: {
+            seoTitle: true,
+            seoDescription: true,
+            seoImage: true,
+            indexMode: true,
+          },
+        },
+      },
+    });
+  }
+
+  async create(data: {
+    title: string;
+    slug: string;
+    content?: string;
+    excerpt?: string;
+    featuredImage?: string;
+    template?: string;
+    order?: number;
+    parentId?: number;
+    status?: ContentStatus;
+    authorId: number;
+  }) {
+    return this.prisma.page.create({
+      data,
+      select: { id: true, title: true, slug: true, status: true },
+    });
+  }
+
+  async update(
+    id: number,
+    data: {
+      title?: string;
+      slug?: string;
+      content?: string;
+      excerpt?: string;
+      featuredImage?: string;
+      template?: string;
+      order?: number;
+      parentId?: number | null;
+      status?: ContentStatus;
+    },
+  ) {
+    return this.prisma.page.update({
+      where: { id },
+      data,
+      select: { id: true, title: true, slug: true, status: true },
+    });
+  }
+
+  async softDelete(id: number) {
+    return this.prisma.page.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  async findBySlugExact(slug: string) {
+    return this.prisma.page.findFirst({
+      where: { slug },
+      select: { id: true },
+    });
+  }
+}

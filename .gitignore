@@ -1,0 +1,48 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# build outputs
+dist/
+.next/
+out/
+.turbo/
+
+# testing
+coverage/
+test-results/
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma
+packages/prisma/generated/
+
+# Misc
+*.tsbuildinfo
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# CodeGraph index
+.codegraph/
+
+# Playwright
+.auth/
+playwright-report/
+test-results/
+blob-report/

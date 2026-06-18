@@ -1,0 +1,38 @@
+import { router } from "@ecom/trpc/server/trpc";
+import {
+  clearCacheNamespace,
+  deleteRequestLog,
+  getAuthorStats,
+  getCacheStats,
+  getCategoryStats,
+  getDashboardStats,
+  getEngagementOverview,
+  getPopularContent,
+  getPublishingTrends,
+  getRequestStats,
+  getStatusBreakdown,
+  getSystemInfo,
+  getWorkflowDescription,
+  getWorkflowTransitions,
+  listRequestLogs,
+  purgeRequestLogs,
+} from "./procedures/system.handler";
+
+export const systemRouter = router({
+  requestLogs: listRequestLogs,
+  requestStats: getRequestStats,
+  purgeRequestLogs: purgeRequestLogs,
+  deleteRequestLog: deleteRequestLog,
+  systemInfo: getSystemInfo,
+  dashboardStats: getDashboardStats,
+  publishingTrends: getPublishingTrends,
+  popularContent: getPopularContent,
+  statusBreakdown: getStatusBreakdown,
+  authorStats: getAuthorStats,
+  categoryStats: getCategoryStats,
+  engagementOverview: getEngagementOverview,
+  workflowTransitions: getWorkflowTransitions,
+  workflowDescription: getWorkflowDescription,
+  cacheStats: getCacheStats,
+  clearCache: clearCacheNamespace,
+});

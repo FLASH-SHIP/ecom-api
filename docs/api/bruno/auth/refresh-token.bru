@@ -1,0 +1,51 @@
+meta {
+  name: Refresh Token
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/refresh
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "refreshToken": "{{refreshToken}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar("accessToken", res.body.accessToken);
+  }
+}
+
+docs {
+  # Refresh Token
+  
+  Gia hạn access token khi hết hạn.
+  
+  ## Request Body
+  | Field        | Type   | Required | Description |
+  |--------------|--------|----------|-------------|
+  | refreshToken | string | ✅       | Refresh token từ login |
+  
+  ## Response 200
+  ```json
+  {
+    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+    "expiresIn": 900
+  }
+  ```
+  
+  ## Errors
+  | Code | Message |
+  |------|---------|
+  | 401  | Invalid or expired refresh token |
+}

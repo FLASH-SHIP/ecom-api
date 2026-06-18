@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+  <!--
+    ==========================================================================
+    OWASP Dependency-Check Suppression Rules for ecom (Monorepo)
+    Stack: Next.js 16 + NestJS 11 + Prisma + tRPC + Turbo
+    ==========================================================================
+    
+    Why these suppressions exist:
+    
+    1. Next.js Bundled Libraries (node_modules/next/dist/compiled/)
+       - Next.js bundles ~80+ libraries internally during its own build
+       - Vercel cherry-picks security patches WITHOUT updating version strings
+       - OWASP scanner reads stale version strings → false positives
+       - These libraries are NOT independently upgradeable
+    
+    2. Dev-Only Dependencies
+       - Biome, TypeScript, Vitest, NestJS CLI/Schematics run only in dev/CI
+       - They are NOT included in production builds
+       - CVEs in these packages pose zero runtime risk
+    
+    3. Build-Time Only Dependencies
+       - Webpack (from NestJS CLI), fork-ts-checker, turbo, etc.
+       - Used during build only, not shipped to production
+    
+    Last reviewed: 2026-05-29
+    ==========================================================================
+  -->
+
+  <!-- =====================================================================
+       SECTION 1: Next.js Bundled/Compiled Dependencies
+       ===================================================================== -->
+  <suppress>
+    <notes><![CDATA[
+      Next.js bundles webpack, terser, postcss, http-proxy, tar, ws, cookie,
+      send, ua-parser-js, and many other libraries in dist/compiled/.
+      Vercel applies security patches without bumping version strings.
+      These are false positives — we cannot upgrade them independently.
+      Fix: upgrade to newer Next.js version when available.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/]next[\\/]dist[\\/]compiled[\\/].*</filePath>
+    <cpe regex="true">.*</cpe>
+  </suppress>
+
+  <!-- Next.js pinned postcss -->
+  <suppress>
+    <notes><![CDATA[
+      Next.js pins postcss@8.4.31 as a nested dependency.
+      Overridden by yarn resolutions in root package.json to 8.5.15.
+      If the resolution doesn't apply to this nested copy, suppress it.
+      CVE: PostCSS XSS via unescaped </style> in CSS stringify output.
+      Mitigated: We don't use PostCSS stringify with untrusted CSS input.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/]next[\\/]node_modules[\\/]postcss[\\/].*</filePath>
+    <cve>CVE-2025-27243</cve>
+  </suppress>
+
+  <!-- =====================================================================
+       SECTION 2: Dev-Only Dependencies (NOT in production)
+       ===================================================================== -->
+
+  <!-- Biome (linter/formatter - replaces ESLint + Prettier) -->
+  <suppress>
+    <notes><![CDATA[
+      Biome is a dev-only linter/formatter. Not included in production.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/]@biomejs[\\/].*</filePath>
+    <cpe regex="true">.*</cpe>
+  </suppress>
+
+  <!-- TypeScript compiler and type definitions -->
+  <suppress>
+    <notes><![CDATA[
+      TypeScript compiler and @types packages are dev-only.
+      Not shipped to production.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/](typescript|@types[\\/].*)[\\/].*</filePath>
+    <cpe regex="true">.*</cpe>
+  </suppress>
+
+  <!-- NestJS CLI and Schematics (dev tools) -->
+  <suppress>
+    <notes><![CDATA[
+      @nestjs/cli and @nestjs/schematics are dev tools for scaffolding.
+      They pull in webpack, fork-ts-checker-webpack-plugin, etc.
+      None of these are in the production bundle.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/](@nestjs[\\/]cli|@nestjs[\\/]schematics|fork-ts-checker-webpack-plugin)[\\/].*</filePath>
+    <cpe regex="true">.*</cpe>
+  </suppress>
+
+  <!-- Vitest (test framework) -->
+  <suppress>
+    <notes><![CDATA[
+      Vitest and its dependencies are test-only. Not in production.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/](vitest|@vitest[\\/].*)[\\/].*</filePath>
+    <cpe regex="true">.*</cpe>
+  </suppress>
+
+  <!-- Husky and lint-staged (git hooks) -->
+  <suppress>
+    <notes><![CDATA[
+      Git hooks tooling. Only runs during local development.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/](husky|lint-staged)[\\/].*</filePath>
+    <cpe regex="true">.*</cpe>
+  </suppress>
+
+  <!-- Turbo (build orchestrator) -->
+  <suppress>
+    <notes><![CDATA[
+      Turbo is a build orchestrator. Not shipped to production.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/]turbo[\\/].*</filePath>
+    <cpe regex="true">.*</cpe>
+  </suppress>
+
+  <!-- =====================================================================
+       SECTION 3: Build-Time Only Dependencies
+       ===================================================================== -->
+
+  <!-- Webpack (from NestJS CLI, not directly used in production) -->
+  <suppress>
+    <notes><![CDATA[
+      webpack@5.x is pulled in by @nestjs/cli for dev server compilation.
+      The production NestJS API runs plain compiled JS, not webpack bundles.
+      CVEs in webpack affect only the build process with trusted input.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/](webpack|webpack-.*|terser-webpack-plugin)[\\/].*</filePath>
+    <cpe regex="true">.*</cpe>
+  </suppress>
+
+  <!-- Prisma CLI (schema management tool) -->
+  <suppress>
+    <notes><![CDATA[
+      Prisma CLI is used for schema migrations and generation.
+      @prisma/client is the only runtime component.
+      CLI dependencies don't ship to production.
+    ]]></notes>
+    <filePath regex="true">.*node_modules[\\/]prisma[\\/].*</filePath>
+    <cpe regex="true">.*</cpe>
+  </suppress>
+
+  <!-- =====================================================================
+       SECTION 4: Specific CVE Suppressions with Justification
+       ===================================================================== -->
+
+  <!-- minimatch ReDoS - dev-only, no untrusted input -->
+  <suppress>
+    <notes><![CDATA[
+      minimatch@3.1.5 has CVE-2022-3517 (ReDoS).
+      Only used by fork-ts-checker-webpack-plugin (NestJS CLI dev tool).
+      No untrusted user input reaches this code path.
+    ]]></notes>
+    <packageUrl regex="true">^pkg:npm/minimatch@3\..*</packageUrl>
+    <cve>CVE-2022-3517</cve>
+  </suppress>
+
+</suppressions>

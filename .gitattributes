@@ -1,0 +1,25 @@
+# Ensure consistent line endings
+* text=auto eol=lf
+
+# Yarn Berry
+/.yarn/**            linguist-vendored
+/.yarn/releases/*    binary
+/.yarn/plugins/**/*  binary
+/.pnp.*              binary linguist-generated
+
+# Lock files
+yarn.lock            linguist-generated -diff
+
+# Binary files
+*.png                binary
+*.jpg                binary
+*.jpeg               binary
+*.gif                binary
+*.ico                binary
+*.woff               binary
+*.woff2              binary
+*.ttf                binary
+*.eot                binary
+
+# Prisma
+*.prisma             linguist-language=Prisma

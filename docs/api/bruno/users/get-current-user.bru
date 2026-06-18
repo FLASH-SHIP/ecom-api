@@ -1,0 +1,52 @@
+meta {
+  name: Get Current User
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/users/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  # Get Current User
+  
+  Lấy thông tin user hiện tại đang đăng nhập.
+  
+  **Authentication:** Bearer Token (JWT hoặc API Key)
+  
+  ## Headers
+  ```
+  Authorization: Bearer <accessToken>
+  ```
+  
+  Hoặc dùng API Key:
+  ```
+  Authorization: Bearer ecom_your_api_key_here
+  ```
+  
+  ## Response 200
+  ```json
+  {
+    "id": 1,
+    "email": "admin@ecom.com",
+    "name": "Admin",
+    "authMethod": "jwt"
+  }
+  ```
+  
+  > `authMethod` cho biết token được xác thực bằng phương thức nào: `"jwt"`, `"api_key"`, hoặc `"session"`
+  
+  ## Errors
+  | Code | Message |
+  |------|---------|
+  | 401  | Missing Bearer token |
+  | 401  | Invalid or expired token |
+  | 403  | User account is not active |
+}

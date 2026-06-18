@@ -1,0 +1,29 @@
+{
+  "name": "@ecom/features",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "exports": {
+    "./auth/services/*": "./auth/services/*.ts",
+    "./auth/repositories/*": "./auth/repositories/*.ts",
+    "./di/containers/*": "./di/containers/*.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ecom/config": "workspace:*",
+    "@ecom/lib": "workspace:*",
+    "@ecom/prisma": "workspace:*",
+    "@ecom/types": "workspace:*",
+    "bcryptjs": "^3.0.0"
+  },
+  "devDependencies": {
+    "@ecom/tsconfig": "workspace:*",
+    "@types/bcryptjs": "^2.4.6",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

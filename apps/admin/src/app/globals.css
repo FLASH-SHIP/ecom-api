@@ -1,0 +1,380 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss";
+
+/*
+ * Tailwind v4 + Monorepo: explicit @source paths
+ *
+ * turbopack.root = "../../" (monorepo root) can cause Tailwind v4 to miss
+ * workspace packages during class scanning. Explicit @source paths ensure
+ * fuse-shared hooks/providers and @ecom/ui components are scanned.
+ */
+@source "../../../../packages/fuse-shared/src";
+@source "../../../../packages/ui/components";
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Ecom — Design System Tokens
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+:root {
+  /* Brand */
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #3b82f6;
+  --brand-600: #2563eb;
+  --brand-700: #1d4ed8;
+
+  /* Neutral */
+  --neutral-25: #fcfcfd;
+  --neutral-50: #f8fafc;
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e2e8f0;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f172a;
+  --neutral-950: #020617;
+
+  /* Semantic */
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --error: #ef4444;
+  --error-light: #fee2e2;
+  --info: #3b82f6;
+  --info-light: #dbeafe;
+
+  /* Surfaces — Light mode */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #3b82f6;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --sidebar-item-active: #eff6ff;
+  --sidebar-item-active-text: #2563eb;
+  --sidebar-section-text: #94a3b8;
+
+  /* Header */
+  --header-height: 64px;
+
+  /* Radius — only --radius-full is unique; sm/md/lg/xl are in @theme inline */
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode */
+.dark {
+  --background: #0a0a0f;
+  --foreground: #f1f5f9;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --card: #0f172a;
+  --card-foreground: #f1f5f9;
+  --border: #334155;
+  --input: #1e293b;
+  --ring: #3b82f6;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b;
+  --secondary-foreground: #f1f5f9;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --accent: #1e293b;
+  --accent-foreground: #f1f5f9;
+  --popover: #0f172a;
+  --popover-foreground: #f1f5f9;
+
+  --sidebar-bg: #0a0a0f;
+  --sidebar-border: #1e293b;
+  --sidebar-item-active: rgba(59, 130, 246, 0.1);
+  --sidebar-item-active-text: #60a5fa;
+  --sidebar-section-text: #475569;
+}
+
+/* Tailwind v4 theme inline */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --font-sans: var(--font-inter);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Z-Index — generates z-sidebar, z-header, z-popover, etc. */
+  --z-index-sidebar: 40;
+  --z-index-header: 50;
+  --z-index-overlay: 55;
+  --z-index-fullscreen: 58;
+  --z-index-modal: 60;
+  --z-index-popover: 65;
+  --z-index-toast: 70;
+  --z-index-tooltip: 80;
+}
+
+/* Base styles */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter, "Inter", system-ui, -apple-system, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: var(--radius-full);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--neutral-700);
+}
+
+/*
+ * perfect-scrollbar overrides
+ * PerfectScroll component uses perfect-scrollbar (like Fuse React theme).
+ * Customize rail/thumb colors to match our design system.
+ */
+.ps > .ps__rail-x,
+.ps > .ps__rail-y {
+  z-index: 99;
+}
+
+/* ── Horizontal scrollbar ── */
+.ps__rail-x {
+  height: 8px !important;
+}
+.ps__rail-x:hover,
+.ps__rail-x:focus,
+.ps__rail-x.ps--clicking {
+  height: 8px !important;
+  background: transparent !important;
+}
+.ps__thumb-x {
+  height: 4px !important;
+  border-radius: var(--radius-full);
+  background: var(--neutral-300) !important;
+}
+.ps__thumb-x:hover,
+.ps__rail-x:hover > .ps__thumb-x,
+.ps__rail-x:focus > .ps__thumb-x,
+.ps__rail-x.ps--clicking > .ps__thumb-x {
+  height: 6px !important;
+  background: var(--neutral-400) !important;
+}
+
+/* ── Vertical scrollbar ── */
+.ps__rail-y {
+  width: 8px !important;
+}
+.ps__rail-y:hover,
+.ps__rail-y:focus,
+.ps__rail-y.ps--clicking {
+  width: 8px !important;
+  background: transparent !important;
+}
+.ps__thumb-y {
+  width: 4px !important;
+  border-radius: var(--radius-full);
+  background: var(--neutral-300) !important;
+}
+.ps__thumb-y:hover,
+.ps__rail-y:hover > .ps__thumb-y,
+.ps__rail-y:focus > .ps__thumb-y,
+.ps__rail-y.ps--clicking > .ps__thumb-y {
+  width: 6px !important;
+  background: var(--neutral-400) !important;
+}
+
+/* ── Dark mode ── */
+.dark .ps__thumb-x,
+.dark .ps__thumb-y {
+  background: var(--neutral-600) !important;
+}
+.dark .ps__thumb-x:hover,
+.dark .ps__rail-x:hover > .ps__thumb-x,
+.dark .ps__thumb-y:hover,
+.dark .ps__rail-y:hover > .ps__thumb-y {
+  background: var(--neutral-500) !important;
+}
+
+/*
+ * Focus ring — scoped to interactive elements that don't manage their own
+ * focus state. shadcn form controls (input, textarea, select) use
+ * focus-visible:ring-* internally, so they are excluded here to avoid
+ * a double-border effect.
+ */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:not([role="combobox"]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--brand-200);
+  color: var(--brand-900, #1e3a5f);
+}
+.dark ::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: var(--foreground);
+}
+
+/* Transitions on interactive elements */
+a, button, input, select, textarea {
+  transition: color var(--transition-fast),
+              background-color var(--transition-fast),
+              border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+/*
+ * touch-action: manipulation (Web Interface Guidelines)
+ * Eliminates the 300ms double-tap zoom delay on mobile for all
+ * interactive elements — improves perceived responsiveness on touch devices.
+ */
+button,
+a,
+[role="button"],
+label {
+  touch-action: manipulation;
+}
+
+/*
+ * tabular-nums utility (Web Interface Guidelines)
+ * Apply to number columns, IDs, timestamps, stats to prevent
+ * layout shift when digit widths vary (e.g. 1 vs 8).
+ */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * prefers-reduced-motion (Web Interface Guidelines)
+ * Respect OS-level "Reduce Motion" setting — remove non-essential
+ * transitions for users with vestibular disorders.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Radix UI Portal z-index fix for fullscreen mode.
+ *
+ * Radix wraps portal content in a [data-radix-popper-content-wrapper] div
+ * that may receive inline z-index styles, overriding our component-level
+ * z-index. This rule ensures all Radix popover/dropdown portals always
+ * float above the DataTable fullscreen overlay (--z-fullscreen: 58).
+ */
+[data-radix-popper-content-wrapper] {
+  z-index: var(--z-index-popover) !important;
+}
+
+/*
+ * Font Size Slider — custom styled range input for the toolbar popover.
+ * Uses the primary color for the filled track and thumb.
+ */
+.font-size-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--muted);
+  outline: none;
+  cursor: pointer;
+}
+.font-size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 150ms ease;
+}
+.font-size-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.font-size-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+.font-size-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--muted);
+}

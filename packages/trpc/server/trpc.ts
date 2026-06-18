@@ -1,0 +1,39 @@
+import { handleTRPCError } from "@ecom/trpc/server/middleware/errorHandler";
+import { requestLogger } from "@ecom/trpc/server/middleware/requestLogger";
+import { TRPCError } from "@trpc/server";
+import { createCallerFactory, middleware, publicProcedure, router } from "./init";
+
+export { createCallerFactory, middleware, publicProcedure, router };
+
+/**
+ * Error handler middleware — wraps handleTRPCError to map service errors to tRPC codes.
+ */
+const errorHandler = middleware(async ({ next }) => {
+  return handleTRPCError(() => next());
+});
+
+/**
+ * Middleware that enforces authentication.
+ * Throws UNAUTHORIZED if no user is in context.
+ */
+const enforceUserIsAuthed = middleware(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+    },
+  });
+});
+
+/**
+ * Protected procedure — requires authentication.
+ */
+export const authedProcedure = publicProcedure
+  .use(requestLogger)
+  .use(enforceUserIsAuthed)
+  .use(errorHandler);
+
+export { requirePermission } from "@ecom/trpc/server/middleware/requirePermission";

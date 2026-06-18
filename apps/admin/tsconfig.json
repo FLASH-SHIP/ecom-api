@@ -1,0 +1,43 @@
+{
+  "extends": "@ecom/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": false,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "paths": {
+      "@admin/*": ["./src/*"],
+      "@app/*": ["../../packages/shared/src/@app/*"],
+      "@i18n/*": ["../../packages/shared/src/@i18n/*"],
+      "@auth/*": ["../../packages/shared/src/@auth/*"],
+      "@configs/*": ["../../packages/shared/src/configs/*"],
+      "@/": ["../../packages/shared/src/"],
+      "src/*": ["../../packages/shared/src/*"],
+      "@ecom/shared/*": ["../../packages/shared/src/*"],
+      "@ecom/lib/*": ["../../packages/lib/src/*"],
+      "@ecom/config": ["../../packages/config/src/index.ts"],
+      "@ecom/types": ["../../packages/types/src/index.ts"],
+      "@ecom/trpc/*": ["../../packages/trpc/*"],
+      "@ecom/features/*": ["../../packages/features/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts",
+    "../../packages/shared/src/@auth/next-auth.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "../../packages/shared/src/@app",
+    "../../packages/shared/src/@i18n",
+    "../../packages/shared/src/components",
+    "../../packages/shared/src/contexts",
+    "../../packages/shared/src/configs"
+  ]
+}

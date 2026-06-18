@@ -1,0 +1,25 @@
+{
+  "extends": "@ecom/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@app/*": ["./@app/*"],
+      "@i18n/*": ["./@i18n/*"],
+      "@auth/*": ["./@auth/*"],
+      "@/*": ["./*"],
+      "@configs/*": ["./configs/*"],
+      "src/*": ["./*"]
+    },
+    "jsx": "react-jsx",
+    "outDir": "./dist",
+    "declaration": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "strict": false,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "*.d.ts"],
+  "exclude": ["node_modules", "dist"]
+}

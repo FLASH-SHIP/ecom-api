@@ -1,0 +1,19 @@
+{
+  "name": "@ecom/emails",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@ecom/tsconfig": "workspace:*",
+    "@types/nodemailer": "^8.0.0",
+    "typescript": "^5.8.0"
+  },
+  "dependencies": {
+    "nodemailer": "^8.0.10"
+  }
+}

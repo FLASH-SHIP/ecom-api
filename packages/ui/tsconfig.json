@@ -1,0 +1,12 @@
+{
+  "extends": "@ecom/tsconfig/library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": ".",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "include": ["components/**/*.tsx", "lib/**/*.ts", "hooks/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

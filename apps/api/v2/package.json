@@ -1,0 +1,44 @@
+{
+  "name": "@ecom/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc --noEmit",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main",
+    "start:prod": "node dist/main",
+    "type-check": "tsc --noEmit",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "test": "vitest run",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@ecom/config": "workspace:*",
+    "@ecom/features": "workspace:*",
+    "@ecom/lib": "workspace:*",
+    "@ecom/prisma": "workspace:*",
+    "@ecom/types": "workspace:*",
+    "@nestjs/common": "^11.1.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.1.0",
+    "@nestjs/platform-express": "^11.1.0",
+    "@nestjs/swagger": "^11.4.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@ecom/tsconfig": "workspace:*",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@swc/cli": "^0.8.1",
+    "@swc/core": "^1.15.41",
+    "@types/express": "^5.0.0",
+    "@types/node": "^20",
+    "tsx": "^4.22.4",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

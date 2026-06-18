@@ -1,0 +1,13 @@
+{
+  "extends": "@ecom/tsconfig/library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": ".",
+    "noEmit": true,
+    "paths": {
+      "@ecom/features/*": ["./*"]
+    }
+  },
+  "include": ["auth/**/*.ts", "di/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
