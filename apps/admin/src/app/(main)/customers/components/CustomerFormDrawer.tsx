@@ -70,6 +70,7 @@ export function CustomerFormDrawer({ open, onClose, onSaved }: CustomerFormDrawe
   const tCommon = useTranslations("common");
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // ── Schema built inside component to access t() ──────────────────────────
   const schema = z
@@ -105,6 +106,7 @@ export function CustomerFormDrawer({ open, onClose, onSaved }: CustomerFormDrawe
     if (open) {
       reset(defaultValues);
       setShowPassword(false);
+      setShowConfirmPassword(false);
     }
   }, [open, reset]);
 
@@ -113,7 +115,7 @@ export function CustomerFormDrawer({ open, onClose, onSaved }: CustomerFormDrawe
   const createMut = trpc.viewer.customers.create.useMutation({
     onSuccess: () => {
       utils.viewer.customers.list.invalidate();
-      toast(tCommon("success") ?? "Created successfully", "success");
+      toast(tCommon("successCreated"), "success");
       onSaved();
     },
     onError: (err) => {
@@ -343,7 +345,7 @@ export function CustomerFormDrawer({ open, onClose, onSaved }: CustomerFormDrawe
                     <Input
                       {...field}
                       id="customer-confirm-password"
-                      type={showPassword ? "text" : "password"}
+                      type={showConfirmPassword ? "text" : "password"}
                       placeholder={t("form.confirmPasswordLabel")}
                       className="pr-10"
                       aria-invalid={!!fieldState.error}
@@ -352,14 +354,18 @@ export function CustomerFormDrawer({ open, onClose, onSaved }: CustomerFormDrawe
                       type="button"
                       tabIndex={-1}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      onClick={() => setShowPassword((v) => !v)}
+                      onClick={() => setShowConfirmPassword((v) => !v)}
                       aria-label={
-                        showPassword
+                        showConfirmPassword
                           ? tUsers("profile.hidePassword")
                           : tUsers("profile.showPassword")
                       }
                     >
-                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      {showConfirmPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
                     </button>
                   </div>
                   {fieldState.error && (

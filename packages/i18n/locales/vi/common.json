@@ -535,7 +535,10 @@
       "customerSince": "Khách hàng từ",
       "lastLogin": "Đăng nhập lần cuối",
       "never": "Chưa bao giờ",
-      "deleteConfirm": "Bạn có chắc chắn muốn xóa khách hàng này?"
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa khách hàng này?",
+      "statusConfirm": "Chuyển trạng thái sang {status}?",
+      "statusConfirmTitle": "Xác nhận đổi trạng thái",
+      "statusConfirmButton": "Đổi trạng thái"
     }
   },
   "roles": {

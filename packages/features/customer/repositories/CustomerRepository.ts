@@ -44,8 +44,8 @@ export class CustomerRepository {
   }
 
   async findById(id: number) {
-    return this.prisma.customer.findUnique({
-      where: { id },
+    return this.prisma.customer.findFirst({
+      where: { id, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -77,8 +77,8 @@ export class CustomerRepository {
   }
 
   async findByEmail(email: string) {
-    return this.prisma.customer.findUnique({
-      where: { email },
+    return this.prisma.customer.findFirst({
+      where: { email, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -89,8 +89,8 @@ export class CustomerRepository {
   }
 
   async findByUsername(username: string) {
-    return this.prisma.customer.findUnique({
-      where: { username: username.toLowerCase() },
+    return this.prisma.customer.findFirst({
+      where: { username: username.toLowerCase(), deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -110,8 +110,8 @@ export class CustomerRepository {
 
   async isUsernameAvailable(username: string) {
     if (!USERNAME_REGEX.test(username)) return false;
-    const existing = await this.prisma.customer.findUnique({
-      where: { username: username.toLowerCase() },
+    const existing = await this.prisma.customer.findFirst({
+      where: { username: username.toLowerCase(), deletedAt: null },
       select: { id: true },
     });
     return !existing;
@@ -131,8 +131,8 @@ export class CustomerRepository {
     let candidate = prefix;
     let counter = 0;
     while (counter <= MAX_USERNAME_GENERATION_ATTEMPTS) {
-      const existing = await this.prisma.customer.findUnique({
-        where: { username: candidate },
+      const existing = await this.prisma.customer.findFirst({
+        where: { username: candidate, deletedAt: null },
         select: { id: true },
       });
       if (!existing) return candidate;
@@ -204,15 +204,31 @@ export class CustomerRepository {
   }
 
   async delete(id: number) {
+    return this.prisma.customer.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+      select: { id: true },
+    });
+  }
+
+  async restore(id: number) {
+    return this.prisma.customer.update({
+      where: { id },
+      data: { deletedAt: null },
+      select: { id: true },
+    });
+  }
+
+  async hardDelete(id: number) {
     return this.prisma.customer.delete({ where: { id } });
   }
 
   async getStats() {
     const [total, active, inactive, banned] = await Promise.all([
-      this.prisma.customer.count(),
-      this.prisma.customer.count({ where: { status: "ACTIVE" } }),
-      this.prisma.customer.count({ where: { status: "INACTIVE" } }),
-      this.prisma.customer.count({ where: { status: "BANNED" } }),
+      this.prisma.customer.count({ where: { deletedAt: null } }),
+      this.prisma.customer.count({ where: { status: "ACTIVE", deletedAt: null } }),
+      this.prisma.customer.count({ where: { status: "INACTIVE", deletedAt: null } }),
+      this.prisma.customer.count({ where: { status: "BANNED", deletedAt: null } }),
     ]);
     return { total, active, inactive, banned };
   }
@@ -220,8 +236,8 @@ export class CustomerRepository {
   // ─── Auth-related methods ──────────────────────────
 
   async findByEmailWithPassword(email: string) {
-    return this.prisma.customer.findUnique({
-      where: { email },
+    return this.prisma.customer.findFirst({
+      where: { email, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -235,8 +251,8 @@ export class CustomerRepository {
   }
 
   async findByUsernameWithPassword(username: string) {
-    return this.prisma.customer.findUnique({
-      where: { username },
+    return this.prisma.customer.findFirst({
+      where: { username, deletedAt: null },
       select: {
         id: true,
         email: true,
@@ -301,7 +317,7 @@ export class CustomerRepository {
   }
 
   private buildWhere(filters: CustomerFilters) {
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { deletedAt: null };
     if (filters.status) where.status = filters.status;
     if (filters.search) {
       where.OR = [

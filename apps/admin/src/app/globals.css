@@ -161,6 +161,15 @@
   --z-index-popover: 65;
   --z-index-toast: 70;
   --z-index-tooltip: 80;
+  /* Shorthand aliases → generates z-sidebar, z-header, z-modal, z-toast, etc. */
+  --z-sidebar: 40;
+  --z-header: 50;
+  --z-overlay: 55;
+  --z-fullscreen: 58;
+  --z-modal: 60;
+  --z-popover: 65;
+  --z-toast: 70;
+  --z-tooltip: 80;
 }
 
 /* Base styles */

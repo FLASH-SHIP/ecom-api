@@ -55,12 +55,13 @@ export const create = authedProcedure
     }),
   )
   .mutation(async ({ input }) => {
+    const { password, ...rest } = input;
     const service = getCustomerService();
     let hashedPwd: string | undefined;
-    if (input.password) {
-      hashedPwd = await hashPassword(input.password);
+    if (password) {
+      hashedPwd = await hashPassword(password);
     }
-    return service.createCustomer({ ...input, hashedPassword: hashedPwd });
+    return service.createCustomer({ ...rest, hashedPassword: hashedPwd });
   });
 
 export const update = authedProcedure

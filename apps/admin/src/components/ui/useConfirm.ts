@@ -5,6 +5,7 @@ interface ConfirmOptions {
   title?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  confirmColor?: "error" | "primary" | "warning";
   onConfirm: () => void;
 }
 
@@ -16,6 +17,7 @@ interface ConfirmState extends ConfirmOptions {
 const CLOSED: ConfirmState = {
   open: false,
   message: "",
+  confirmColor: "error",
   onConfirm: null,
 };
 
@@ -68,6 +70,7 @@ export function useConfirm() {
       title: state.title,
       confirmLabel: state.confirmLabel,
       cancelLabel: state.cancelLabel,
+      confirmColor: state.confirmColor,
       onConfirm: confirm,
       onCancel: cancel,
     },

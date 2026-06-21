@@ -48,7 +48,7 @@ export function CustomerDetailDrawer({
     onSuccess: () => {
       utils.viewer.customers.list.invalidate();
       utils.viewer.customers.get.invalidate({ id: customerId ?? 0 });
-      toast(tCommon("success") ?? "Updated", "success");
+      toast(tCommon("successUpdated"), "success");
     },
     onError: (err) => toast(err.message, "error"),
   });
@@ -56,7 +56,7 @@ export function CustomerDetailDrawer({
   const deleteMut = trpc.viewer.customers.remove.useMutation({
     onSuccess: () => {
       utils.viewer.customers.list.invalidate();
-      toast(tCommon("success") ?? "Deleted", "success");
+      toast(tCommon("successDeleted"), "success");
       onDeleted();
     },
     onError: (err) => toast(err.message, "error"),
@@ -128,7 +128,16 @@ export function CustomerDetailDrawer({
                             ? STATUS_BADGE[s]
                             : "border-border bg-background text-muted-foreground hover:bg-muted",
                         )}
-                        onClick={() => updateMut.mutate({ id: detail.id, status: s })}
+                        onClick={() => {
+                          if (detail.status === s) return;
+                          askConfirm({
+                            title: t("detail.statusConfirmTitle"),
+                            message: t("detail.statusConfirm", { status: t(`status.${s}`) }),
+                            confirmLabel: t("detail.statusConfirmButton"),
+                            confirmColor: "warning",
+                            onConfirm: () => updateMut.mutate({ id: detail.id, status: s }),
+                          });
+                        }}
                         disabled={updateMut.isPending}
                       >
                         {t(`status.${s}`)}

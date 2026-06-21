@@ -809,6 +809,7 @@ model Customer {
   gender              String?
   description         String?        @db.Text
   metadata            Json?
+  deletedAt           DateTime?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
@@ -819,6 +820,8 @@ model Customer {
   @@index([status])
   @@index([email])
   @@index([username])
+  @@index([deletedAt])
+  @@index([status, deletedAt, createdAt])
   @@map("customers")
 }
 

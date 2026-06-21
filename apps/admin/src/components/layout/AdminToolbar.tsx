@@ -19,8 +19,10 @@ function LanguageSwitcherInline() {
   const { language, languages, changeLanguage } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
@@ -30,14 +32,14 @@ function LanguageSwitcherInline() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!language) return null;
+  if (!mounted || !language) return null;
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         <Image
           className="h-4 w-5"
@@ -59,7 +61,7 @@ function LanguageSwitcherInline() {
                 setOpen(false);
               }}
               className={cn(
-                "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent",
+                "flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent",
                 lng.id === language.id && "bg-accent font-medium",
               )}
             >
@@ -126,7 +128,7 @@ function AdjustFontSizeButton() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className="flex cursor-pointer size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           title="Font Size"
         >
           <ALargeSmall className="h-5 w-5" strokeWidth={1.8} />
@@ -268,7 +270,7 @@ function FullScreenToggleButton() {
     <button
       type="button"
       onClick={toggleFullscreen}
-      className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+      className="flex cursor-pointer size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
       title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
     >
       {isFullscreen ? (
@@ -324,7 +326,7 @@ function ThemeToggleButton() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+      className="flex cursor-pointer size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
       title={isDark ? "Light mode" : "Dark mode"}
     >
       {isDark ? (
@@ -382,7 +384,7 @@ function SearchButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="flex cursor-pointer size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         title="Search (⌘K)"
       >
         <Search className="h-[18px] w-[18px]" strokeWidth={1.8} />
@@ -553,7 +555,7 @@ function ToolbarShortcuts() {
             key={item.id}
             href={item.url ?? "#"}
             title={item.title}
-            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="flex cursor-pointer size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             {Icon ? (
               <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} />
@@ -570,7 +572,7 @@ function ToolbarShortcuts() {
           <button
             type="button"
             title="Click to add/remove shortcut"
-            className="flex size-9 items-center justify-center rounded-lg transition-colors hover:bg-accent"
+            className="flex cursor-pointer size-9 items-center justify-center rounded-lg transition-colors hover:bg-accent"
           >
             <Star className="h-[18px] w-[18px] fill-amber-400 text-amber-400" strokeWidth={1.8} />
           </button>
@@ -619,7 +621,7 @@ function ToolbarShortcuts() {
                       e.stopPropagation();
                       togglePin(item.id);
                     }}
-                    className="flex size-6 shrink-0 items-center justify-center rounded transition-colors hover:bg-accent"
+                    className="flex cursor-pointer size-6 shrink-0 items-center justify-center rounded transition-colors hover:bg-accent"
                   >
                     <Star
                       className={cn(
@@ -656,7 +658,7 @@ function AdminToolbar() {
         <button
           type="button"
           onClick={toggle}
-          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className="flex cursor-pointer size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
           title="Toggle sidebar"
         >
           <PanelLeft className="h-[18px] w-[18px]" strokeWidth={1.8} />
