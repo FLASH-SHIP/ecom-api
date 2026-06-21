@@ -1,3 +1,4 @@
+import type { CustomerTokenPayload } from "@ecom/features/customer/services/CustomerTokenService";
 import {
   getCustomerAuthService,
   getCustomerService,
@@ -9,8 +10,12 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  Get,
+  NotFoundException,
   Post,
+  Req,
   UnauthorizedException,
+  UseGuards,
 } from "@nestjs/common";
 import {
   IsEmail,
@@ -21,6 +26,8 @@ import {
   MaxLength,
   MinLength,
 } from "class-validator";
+import type { Request } from "express";
+import { CustomerJwtGuard } from "./customer-jwt.guard";
 
 class RegisterDto {
   @IsEmail()
@@ -131,6 +138,23 @@ class ChangePasswordDto {
 
 @Controller("v2/customer/auth")
 export class CustomerAuthController {
+  // ─── Profile ──────────────────────────────────────────────────────────────
+
+  /**
+   * GET /v2/customer/auth/me
+   * Returns the authenticated customer's profile.
+   * Requires: Authorization: Bearer <accessToken>
+   */
+  @Get("me")
+  @UseGuards(CustomerJwtGuard)
+  async getMe(@Req() req: Request) {
+    const payload = req.customerPayload as CustomerTokenPayload;
+    const customer = await getCustomerService().getCustomer(payload.sub);
+    if (!customer) throw new NotFoundException("Customer not found");
+    return customer;
+  }
+
+  // ─── Auth ──────────────────────────────────────────────────────────────────
   @Post("register")
   async register(@Body() body: RegisterDto) {
     const authService = getCustomerAuthService();
