@@ -156,7 +156,7 @@ export class RedisRateLimiter {
     if (currentCount > 0) {
       const oldest = await redis.zrange(key, 0, 0, "WITHSCORES");
       if (oldest.length >= 2) {
-        const oldestTime = Number.parseInt(oldest[1]!, 10);
+        const oldestTime = Number.parseInt(oldest[1] ?? "0", 10);
         resetIn = Math.max(0, Math.ceil((oldestTime + this.windowSeconds * 1000 - now) / 1000));
       }
     }
@@ -165,7 +165,8 @@ export class RedisRateLimiter {
       // Remove the entry we just added since request is rejected
       const members = await redis.zrangebyscore(key, now, now);
       if (members.length > 0) {
-        await redis.zrem(key, members[members.length - 1]!);
+        const lastMember = members[members.length - 1];
+        if (lastMember) await redis.zrem(key, lastMember);
       }
     }
 

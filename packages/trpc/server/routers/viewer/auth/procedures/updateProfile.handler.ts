@@ -1,4 +1,5 @@
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
+import { getMediaFileService } from "@ecom/features/di/containers/MediaService";
 import { Permissions } from "@ecom/lib/permissions";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
 import { authedProcedure } from "@ecom/trpc/server/trpc";
@@ -53,5 +54,7 @@ export const updateProfile = authedProcedure
     }
 
     const authService = getAuthService();
-    return authService.updateProfile(effectiveUserId, data);
+    return authService.updateProfile(effectiveUserId, data, (oldUrl) =>
+      getMediaFileService().deleteByUrl(oldUrl),
+    );
   });

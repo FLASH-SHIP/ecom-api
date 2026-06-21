@@ -1,5 +1,5 @@
 import { router } from "@ecom/trpc/server/trpc";
-import { memberAuthRouter } from "./member/auth/_router";
+import { customerAuthRouter } from "./customer/auth/_router";
 import { blogRouter } from "./public/blog/_router";
 import { healthRouter } from "./public/health/_router";
 import { publicPagesRouter } from "./public/pages/_router";
@@ -11,9 +11,9 @@ import { commentsRouter } from "./viewer/comments/_router";
 import { contactsRouter } from "./viewer/contacts/_router";
 import { contentLocksRouter } from "./viewer/content-locks/_router";
 import { customFieldsRouter } from "./viewer/custom-fields/_router";
+import { customersRouter } from "./viewer/customers/_router";
 import { languagesRouter } from "./viewer/languages/_router";
 import { mediaRouter } from "./viewer/media/_router";
-import { membersRouter } from "./viewer/members/_router";
 import { notificationsRouter } from "./viewer/notifications/_router";
 import { pagesRouter } from "./viewer/pages/_router";
 import { postsRouter } from "./viewer/posts/_router";
@@ -36,7 +36,7 @@ import { webhooksRouter } from "./viewer/webhooks/_router";
  *
  * - `viewer`: Admin-only routes (requires User session via NextAuth)
  * - `public`: Public routes (no auth, customer-facing read-only)
- * - `member`: Member routes (requires Member session)
+ * - `customer`: Customer routes (requires Customer session)
  */
 export const appRouter = router({
   // Admin-only (authedProcedure — User model)
@@ -55,7 +55,7 @@ export const appRouter = router({
     languages: languagesRouter,
     auditLogs: auditLogsRouter,
     system: systemRouter,
-    members: membersRouter,
+    customers: customersRouter,
     tools: toolsRouter,
     seo: seoRouter,
     revisions: revisionsRouter,
@@ -82,9 +82,8 @@ export const appRouter = router({
     health: healthRouter,
   }),
 
-  // Member (publicProcedure for auth, memberProcedure for protected routes)
-  member: router({
-    auth: memberAuthRouter,
+  customer: router({
+    auth: customerAuthRouter,
   }),
 });
 

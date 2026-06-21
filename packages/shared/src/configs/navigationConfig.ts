@@ -89,12 +89,12 @@ const navigationConfig: NavItemType[] = [
     type: "group",
     children: [
       {
-        id: "members",
-        title: "Thành viên",
-        translate: "nav.members",
+        id: "customers",
+        title: "Khách hàng",
+        translate: "nav.customers",
         type: "item",
         icon: "lucide:user-check",
-        url: "/members",
+        url: "/customers",
       },
       {
         id: "comments",

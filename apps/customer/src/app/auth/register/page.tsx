@@ -10,6 +10,7 @@ import { trpc } from "../../../lib/trpc";
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,10 +18,10 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [validationError, setValidationError] = useState("");
 
-  const registerMutation = trpc.member.auth.register.useMutation({
+  const registerMutation = trpc.customer.auth.register.useMutation({
     onSuccess: (data) => {
       setTokens(data.accessToken, data.refreshToken);
-      router.push("/member/dashboard");
+      router.push("/customer/dashboard");
     },
   });
 
@@ -37,7 +38,17 @@ export default function RegisterPage() {
       return;
     }
 
-    registerMutation.mutate({ email, password, name: name || undefined });
+    if (username && !/^[a-z0-9_.]{3,30}$/.test(username)) {
+      setValidationError("Username chỉ gồm chữ thường, số, dấu chấm và gạch dưới (3-30 ký tự)");
+      return;
+    }
+
+    registerMutation.mutate({
+      email,
+      password,
+      username: username || undefined,
+      name: name || undefined,
+    });
   }
 
   const error = validationError || registerMutation.error?.message;
@@ -61,9 +72,10 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {/* Full Name */}
           <div>
             <label htmlFor="register-name" className="mb-1.5 block text-sm font-medium">
-              Họ tên (tùy chọn)
+              Họ và tên
             </label>
             <input
               id="register-name"
@@ -71,9 +83,27 @@ export default function RegisterPage() {
               autoComplete="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nguyễn Văn A"
+              placeholder="Nguyễn Văn An"
               className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
+          </div>
+
+          <div>
+            <label htmlFor="register-username" className="mb-1.5 block text-sm font-medium">
+              Username <span className="text-muted-foreground">(tùy chọn)</span>
+            </label>
+            <input
+              id="register-username"
+              type="text"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase())}
+              placeholder="Để trống sẽ tự tạo từ email"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Chữ thường, số, dấu chấm và gạch dưới (3-30 ký tự)
+            </p>
           </div>
 
           <div>

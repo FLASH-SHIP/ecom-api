@@ -21,7 +21,12 @@ export const WORLD_LANGUAGES = [
   { name: "Cymraeg", locale: "cy", code: "cy", flag: "gb" },
   { name: "Dansk", locale: "da_DK", code: "da_DK", flag: "dk" },
   { name: "Deutsch (Schweiz)", locale: "de_CH", code: "de_CH", flag: "ch" },
-  { name: "Deutsch (Schweiz, Informell)", locale: "de_CH_informal", code: "de_CH_informal", flag: "ch" },
+  {
+    name: "Deutsch (Schweiz, Informell)",
+    locale: "de_CH_informal",
+    code: "de_CH_informal",
+    flag: "ch",
+  },
   { name: "Deutsch", locale: "de_DE", code: "de_DE", flag: "de" },
   { name: "Deutsch (Formal)", locale: "de_DE_formal", code: "de_DE_formal", flag: "de" },
   { name: "Ελληνικά", locale: "el", code: "el", flag: "gr" },

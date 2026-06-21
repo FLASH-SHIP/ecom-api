@@ -69,11 +69,12 @@ export class ExportService {
     });
   }
 
-  async exportMembers() {
-    return this.prisma.member.findMany({
+  async exportCustomers() {
+    return this.prisma.customer.findMany({
       select: {
         id: true,
         email: true,
+        username: true,
         name: true,
         phone: true,
         status: true,
@@ -92,18 +93,18 @@ export class ExportService {
   }
 
   async exportAll() {
-    const [posts, categories, tags, pages, members, settings] = await Promise.all([
+    const [posts, categories, tags, pages, customers, settings] = await Promise.all([
       this.exportPosts(),
       this.exportCategories(),
       this.exportTags(),
       this.exportPages(),
-      this.exportMembers(),
+      this.exportCustomers(),
       this.exportSettings(),
     ]);
     return {
       exportedAt: new Date().toISOString(),
       version: "1.0",
-      data: { posts, categories, tags, pages, members, settings },
+      data: { posts, categories, tags, pages, customers, settings },
     };
   }
 }

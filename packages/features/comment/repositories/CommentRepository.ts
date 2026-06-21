@@ -29,7 +29,7 @@ export class CommentRepository {
           content: true,
           authorName: true,
           authorEmail: true,
-          memberId: true,
+          customerId: true,
           postId: true,
           pageId: true,
           parentId: true,
@@ -55,7 +55,7 @@ export class CommentRepository {
         content: true,
         authorName: true,
         authorEmail: true,
-        memberId: true,
+        customerId: true,
         postId: true,
         pageId: true,
         parentId: true,
@@ -113,7 +113,7 @@ export class CommentRepository {
     content: string;
     authorName?: string;
     authorEmail?: string;
-    memberId?: number;
+    customerId?: number;
     postId?: number;
     pageId?: number;
     parentId?: number;

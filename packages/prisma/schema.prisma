@@ -784,42 +784,49 @@ model RequestLog {
   @@map("request_logs")
 }
 
-// ─── Members (Customer-facing) ──────────────────────
+// ─── Customers (Customer-facing) ────────────────────
 
-enum MemberStatus {
+enum CustomerStatus {
   ACTIVE
   INACTIVE
   BANNED
 }
 
-model Member {
-  id             Int          @id @default(autoincrement())
-  email          String       @unique
-  name           String?
-  phone          String?
-  avatarUrl      String?
-  hashedPassword String?
-  status         MemberStatus @default(ACTIVE)
-  emailVerified  DateTime?
-  lastLoginAt    DateTime?
-  metadata       Json?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+model Customer {
+  id                  Int            @id @default(autoincrement())
+  email               String         @unique
+  username            String         @unique
+  usernameChangeCount Int            @default(0)
+  usernameChangedAt   DateTime?
+  name                String?
+  phone               String?
+  avatarUrl           String?
+  hashedPassword      String?
+  status              CustomerStatus @default(ACTIVE)
+  emailVerified       DateTime?
+  lastLoginAt         DateTime?
+  dob                 DateTime?      @db.Date
+  gender              String?
+  description         String?        @db.Text
+  metadata            Json?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
-  socialAccounts MemberSocialAccount[]
-  activityLogs   MemberActivityLog[]
+  socialAccounts CustomerSocialAccount[]
+  activityLogs   CustomerActivityLog[]
   comments       Comment[]
 
   @@index([status])
   @@index([email])
-  @@map("members")
+  @@index([username])
+  @@map("customers")
 }
 
-model MemberSocialAccount {
+model CustomerSocialAccount {
   id         Int      @id @default(autoincrement())
-  memberId   Int
-  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  provider   String   // google, facebook, github, etc.
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  provider   String
   providerId String
   email      String?
   name       String?
@@ -828,24 +835,24 @@ model MemberSocialAccount {
   createdAt  DateTime @default(now())
 
   @@unique([provider, providerId])
-  @@index([memberId])
-  @@map("member_social_accounts")
+  @@index([customerId])
+  @@map("customer_social_accounts")
 }
 
-model MemberActivityLog {
-  id        Int      @id @default(autoincrement())
-  memberId  Int
-  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  action    String   // LOGIN, REGISTER, UPDATE_PROFILE, etc.
-  ipAddress String?
-  userAgent String?  @db.Text
-  metadata  Json?
-  createdAt DateTime @default(now())
+model CustomerActivityLog {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  action     String
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  metadata   Json?
+  createdAt  DateTime @default(now())
 
-  @@index([memberId])
+  @@index([customerId])
   @@index([action])
   @@index([createdAt])
-  @@map("member_activity_logs")
+  @@map("customer_activity_logs")
 }
 
 // ─── Webhook System ────────────────────────────────
@@ -855,7 +862,7 @@ model Webhook {
   name      String
   url       String
   secret    String?
-  events    String[] // e.g. ["post.published", "member.registered"]
+  events    String[] // e.g. ["post.published", "customer.registered"]
   isActive  Boolean  @default(true)
   retries   Int      @default(3)
   timeout   Int      @default(30) // seconds
@@ -893,8 +900,8 @@ model Comment {
   content    String    @db.Text
   authorName String?
   authorEmail String?
-  memberId   Int?
-  member     Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  customerId Int?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   postId     Int?
   post       Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   pageId     Int?

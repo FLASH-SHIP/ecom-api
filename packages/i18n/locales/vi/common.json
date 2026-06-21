@@ -55,7 +55,10 @@
     "successSaved": "Lưu thành công",
     "errorOccurred": "Đã xảy ra lỗi. Vui lòng thử lại.",
     "unexpectedError": "Trang này gặp sự cố không mong muốn.",
-    "customFields": "Trường tùy chỉnh"
+    "customFields": "Trường tùy chỉnh",
+    "optional": "tùy chọn",
+    "socialAccounts": "Tài khoản mạng xã hội",
+    "recentActivity": "Hoạt động gần đây"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -86,7 +89,7 @@
     "tags": "Thẻ",
     "media": "Thư viện",
     "engagement": "Tương tác",
-    "members": "Thành viên",
+    "customers": "Khách hàng",
     "comments": "Bình luận",
     "contacts": "Liên hệ",
     "utilities": "Tiện ích",
@@ -114,12 +117,12 @@
     "title": "Bảng điều khiển",
     "subtitle": "Tổng quan hệ thống quản lý nội dung của bạn",
     "systemOverview": "Thông tin hệ thống",
-    "memberOverview": "Thống kê thành viên",
+    "customerOverview": "Thống kê khách hàng",
     "auditSummary": "Tổng kết hoạt động",
     "statCards": {
       "totalPosts": "Tổng bài viết",
       "categories": "Danh mục",
-      "members": "Thành viên",
+      "customers": "Khách hàng",
       "activityToday": "Hoạt động hôm nay",
       "pendingComments": "Bình luận chờ duyệt",
       "newContacts": "Liên hệ mới"
@@ -140,7 +143,7 @@
     "totalPages": "Tổng trang",
     "totalCategories": "Danh mục",
     "totalUsers": "Người dùng",
-    "totalMembers": "Thành viên",
+    "totalCustomers": "Khách hàng",
     "viewsToday": "Lượt xem hôm nay",
     "recentActivity": "Hoạt động gần đây",
     "noActivity": "Chưa có hoạt động nào. Bắt đầu bằng cách tạo bài viết đầu tiên.",
@@ -457,13 +460,15 @@
       "phone": "Điện thoại"
     }
   },
-  "members": {
-    "title": "Thành viên",
+  "customers": {
+    "title": "Khách hàng",
     "subtitle": "Quản lý khách hàng đã đăng ký",
-    "newMember": "Thành viên mới",
-    "addMember": "Thêm thành viên",
-    "editMember": "Sửa thành viên",
-    "noMembersTitle": "Không tìm thấy thành viên",
+    "newCustomer": "Khách hàng mới",
+    "addCustomer": "Thêm khách hàng",
+    "editCustomer": "Sửa khách hàng",
+    "noCustomersTitle": "Không tìm thấy khách hàng",
+    "noCustomersSubtitle": "Thêm khách hàng để bắt đầu",
+    "unauthorized": "Bạn cần đăng nhập để xem trang này.",
     "fields": {
       "name": "Tên",
       "email": "Email",
@@ -479,28 +484,58 @@
       "BANNED": "Đã chặn"
     },
     "stats": {
-      "total": "Tổng thành viên",
+      "total": "Tổng khách hàng",
       "active": "Hoạt động",
       "inactive": "Không hoạt động",
       "banned": "Đã chặn"
     },
     "form": {
-      "emailLabel": "Email *",
-      "nameLabel": "Tên",
+      "emailLabel": "Email",
+      "nameLabel": "Họ và tên",
+      "namePlaceholder": "Ví dụ: Nguyễn Văn An",
       "phoneLabel": "Số điện thoại",
+      "passwordLabel": "Mật khẩu",
+      "passwordPlaceholder": "Tối thiểu 8 ký tự",
+      "confirmPasswordLabel": "Xác nhận mật khẩu",
+      "passwordMismatch": "Mật khẩu xác nhận không khớp",
+      "dobLabel": "Ngày sinh",
+      "genderLabel": "Giới tính",
+      "genderPlaceholder": "Chọn giới tính",
+      "descriptionLabel": "Ghi chú",
+      "descriptionPlaceholder": "Ghi chú về khách hàng này...",
       "creating": "Đang tạo...",
-      "create": "Tạo thành viên",
+      "create": "Tạo khách hàng",
       "cancel": "Hủy"
     },
+    "gender": {
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác"
+    },
+    "drawer": {
+      "createTitle": "Thêm khách hàng mới",
+      "editTitle": "Sửa thông tin khách hàng",
+      "saving": "Đang lưu...",
+      "save": "Lưu",
+      "cancel": "Hủy"
+    },
+    "validation": {
+      "emailRequired": "Vui lòng nhập email",
+      "emailInvalid": "Email không hợp lệ",
+      "passwordRequired": "Vui lòng nhập mật khẩu",
+      "passwordMin": "Mật khẩu phải có ít nhất 8 ký tự",
+      "confirmPasswordRequired": "Vui lòng xác nhận mật khẩu",
+      "passwordMismatch": "Mật khẩu xác nhận không khớp"
+    },
     "detail": {
-      "title": "Chi tiết thành viên",
-      "noMemberSelected": "Chọn một thành viên để xem chi tiết",
+      "title": "Chi tiết khách hàng",
+      "noCustomerSelected": "Chọn một khách hàng để xem chi tiết",
       "status": "Trạng thái",
       "changeStatus": "Thay đổi trạng thái",
-      "memberSince": "Thành viên từ",
+      "customerSince": "Khách hàng từ",
       "lastLogin": "Đăng nhập lần cuối",
       "never": "Chưa bao giờ",
-      "deleteConfirm": "Bạn có chắc chắn muốn xóa thành viên này?"
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa khách hàng này?"
     }
   },
   "roles": {
@@ -1171,8 +1206,8 @@
       "tagsDesc": "Tất cả thẻ",
       "pages": "Trang",
       "pagesDesc": "Trang tĩnh",
-      "members": "Thành viên",
-      "membersDesc": "Danh sách thành viên",
+      "customers": "Khách hàng",
+      "customersDesc": "Tài khoản khách hàng",
       "settings": "Cài đặt",
       "settingsDesc": "Cặp key-value cài đặt hệ thống"
     }
@@ -1278,6 +1313,29 @@
         "empty": "Rỗng",
         "notEmpty": "Không rỗng"
       }
+    }
+  },
+  "errors": {
+    "401": {
+      "title": "Truy cập trái phép",
+      "subtitle": "Bạn không có quyền xem trang này.",
+      "backToDashboard": "Quay về trang chủ"
+    },
+    "403": {
+      "title": "Từ chối truy cập",
+      "subtitle": "Bạn không có quyền thực hiện thao tác này.",
+      "backToDashboard": "Quay về trang chủ"
+    },
+    "404": {
+      "title": "Ôi... 404!",
+      "subtitle": "Trang bạn yêu cầu không tồn tại.",
+      "backToDashboard": "Quay về trang chủ"
+    },
+    "500": {
+      "title": "Đã xảy ra lỗi!",
+      "subtitle": "Lỗi máy chủ 500. Đội ngũ kỹ thuật đã được thông báo, cảm ơn bạn đã thông cảm.",
+      "backToDashboard": "Quay về trang chủ",
+      "tryAgain": "Thử lại"
     }
   }
 }

@@ -9,20 +9,20 @@ import { trpc } from "../../../lib/trpc";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const loginMutation = trpc.member.auth.login.useMutation({
+  const loginMutation = trpc.customer.auth.login.useMutation({
     onSuccess: (data) => {
       setTokens(data.accessToken, data.refreshToken);
-      router.push("/member/dashboard");
+      router.push("/customer/dashboard");
     },
   });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    loginMutation.mutate({ email, password });
+    loginMutation.mutate({ identifier, password });
   }
 
   return (
@@ -47,17 +47,17 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
-            <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium">
-              Email
+            <label htmlFor="login-identifier" className="mb-1.5 block text-sm font-medium">
+              Email hoặc Username
             </label>
             <input
-              id="login-email"
-              type="email"
+              id="login-identifier"
+              type="text"
               required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              autoComplete="username"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="email@example.com hoặc username"
               className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
@@ -86,6 +86,12 @@ export default function LoginPage() {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <NextLink href="/auth/forgot-password" className="text-sm text-primary hover:underline">
+              Quên mật khẩu?
+            </NextLink>
           </div>
 
           <button

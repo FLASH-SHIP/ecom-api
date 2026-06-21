@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@ecom/ui/lib/utils";
 import { PerfectScroll } from "@ecom/ui/components/perfect-scroll";
+import { cn } from "@ecom/ui/lib/utils";
 import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import { forwardRef } from "react";
 
@@ -32,7 +32,10 @@ const TableFooter = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTable
   ({ className, ...props }, ref) => (
     <tfoot
       ref={ref}
-      className={cn("border-t border-border bg-muted/50 font-medium [&>tr]:last:border-b-0", className)}
+      className={cn(
+        "border-t border-border bg-muted/50 font-medium [&>tr]:last:border-b-0",
+        className,
+      )}
       {...props}
     />
   ),

@@ -26,6 +26,7 @@ export class TranslationCsvService {
    * Export all translations for a given entity type and language to CSV.
    * Each translatable field becomes a separate row.
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: switch over 4 entity types, each with field mapping — cannot be simplified without losing clarity
   async exportCsv(entityType: EntityType, langCode: string): Promise<string> {
     const rows: CsvRow[] = [];
 
@@ -44,7 +45,12 @@ export class TranslationCsvService {
 
         for (const post of posts) {
           const t = tMap.get(post.id);
-          rows.push({ id: post.id, field: "title", original: post.title, translated: t?.title ?? "" });
+          rows.push({
+            id: post.id,
+            field: "title",
+            original: post.title,
+            translated: t?.title ?? "",
+          });
           rows.push({
             id: post.id,
             field: "excerpt",
@@ -91,7 +97,12 @@ export class TranslationCsvService {
 
         for (const page of pages) {
           const t = tMap.get(page.id);
-          rows.push({ id: page.id, field: "title", original: page.title, translated: t?.title ?? "" });
+          rows.push({
+            id: page.id,
+            field: "title",
+            original: page.title,
+            translated: t?.title ?? "",
+          });
           rows.push({
             id: page.id,
             field: "excerpt",
@@ -206,11 +217,19 @@ export class TranslationCsvService {
         }
         updated++;
       } catch (err) {
-        errors.push(`Row id=${row.id} field=${row.field}: ${err instanceof Error ? err.message : String(err)}`);
+        errors.push(
+          `Row id=${row.id} field=${row.field}: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
 
-    log.info("CSV import completed", { entityType, langCode, updated, skipped, errorCount: errors.length });
+    log.info("CSV import completed", {
+      entityType,
+      langCode,
+      updated,
+      skipped,
+      errorCount: errors.length,
+    });
     return { updated, skipped, errors };
   }
 }
@@ -257,6 +276,7 @@ function parseCsv(content: string): CsvRow[] {
   return result;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: RFC 4180 CSV state machine — char-by-char parsing with quote/escape tracking cannot be split further without losing clarity
 function parseCsvLine(line: string): string[] {
   const fields: string[] = [];
   let current = "";

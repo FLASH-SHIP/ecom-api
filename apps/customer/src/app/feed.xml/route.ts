@@ -33,8 +33,13 @@ export async function GET(request: Request) {
 
     if (res.ok) {
       const data = await res.json();
-      const posts: { id: number; title: string; slug: string; excerpt?: string; createdAt: string }[] =
-        data?.result?.data?.json?.items ?? [];
+      const posts: {
+        id: number;
+        title: string;
+        slug: string;
+        excerpt?: string;
+        createdAt: string;
+      }[] = data?.result?.data?.json?.items ?? [];
 
       // Overlay translations when requesting non-default locale
       const overlaid =

@@ -34,15 +34,21 @@ function Pagination({ currentPage, totalPages, onPageChange, className }: Pagina
         <ChevronLeft className="h-4 w-4" />
       </button>
 
-      {pages.map((page, i) =>
-        page === "..." ? (
-          <span
-            key={`ellipsis-${i}`}
-            className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground"
-          >
-            …
-          </span>
-        ) : (
+      {pages.map((page, i) => {
+        if (page === "...") {
+          // Stable key: derived from the neighboring page number (not array index)
+          const neighbor = pages[i + 1] ?? pages[i - 1];
+          const ellipsisKey = `ellipsis-${String(neighbor)}`;
+          return (
+            <span
+              key={ellipsisKey}
+              className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground"
+            >
+              …
+            </span>
+          );
+        }
+        return (
           <button
             key={page}
             type="button"
@@ -57,8 +63,8 @@ function Pagination({ currentPage, totalPages, onPageChange, className }: Pagina
           >
             {page}
           </button>
-        ),
-      )}
+        );
+      })}
 
       <button
         type="button"

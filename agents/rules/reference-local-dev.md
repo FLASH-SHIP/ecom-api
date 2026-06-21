@@ -40,7 +40,7 @@ yarn dev
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| Admin Web | http://localhost:3000 | Next.js CMS |
+| Admin Web | http://localhost:4001 | Next.js Admin CMS |
 | API v2 | http://localhost:4000 | NestJS REST API |
 | API Docs | http://localhost:4000/api | Swagger UI |
 | PostgreSQL | localhost:5432 | Database |
@@ -50,8 +50,7 @@ yarn dev
 ### Default Dev Credentials
 
 After seeding (`yarn db:seed`):
-- `admin@ecom.com` / `admin123` (super-admin)
-- `editor@ecom.com` / `editor123` (editor)
+- `admin@ecom.com` / `password123` (Super Admin — role: `admin`, all 58 permissions)
 
 ### Common Issues
 

@@ -44,6 +44,8 @@ export async function getStorageAdapterAsync(): Promise<IStorageAdapter> {
     _instance = new LocalStorageAdapter();
   }
 
+  // _instance is always assigned above
+  if (!_instance) throw new Error("Storage adapter initialization failed");
   return _instance;
 }
 

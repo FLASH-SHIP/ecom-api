@@ -25,15 +25,8 @@ export function getApiKeyRepository(): ApiKeyRepository {
 
 export function getAuthService(): AuthService {
   if (!_authService) {
-    // Lazy-require MediaFileService to avoid pulling the full media module graph
-    // into API v2's tsconfig scope (which has pre-existing module-resolution limits).
-    // API v2 only calls getApiAuthService(), so this path is never reached there.
-    const { getMediaFileService } = require("@ecom/features/di/containers/MediaService") as {
-      getMediaFileService: () => { deleteByUrl: (url: string) => Promise<boolean> };
-    };
     _authService = new AuthService({
       userRepo: getUserRepository(),
-      mediaFileService: getMediaFileService(),
     });
   }
   return _authService;

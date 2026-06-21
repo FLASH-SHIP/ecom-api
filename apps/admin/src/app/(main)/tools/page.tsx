@@ -15,7 +15,7 @@ const MODULE_VALUES = [
   "categories",
   "tags",
   "pages",
-  "members",
+  "customers",
   "settings",
 ] as const;
 

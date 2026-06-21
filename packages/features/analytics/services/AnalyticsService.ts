@@ -130,14 +130,14 @@ export class AnalyticsService {
     const [comments, contacts, members] = await Promise.all([
       prisma.comment.count({ where: { createdAt: { gte: since } } }),
       prisma.contactSubmission.count({ where: { createdAt: { gte: since } } }),
-      prisma.member.count({ where: { createdAt: { gte: since } } }),
+      prisma.customer.count({ where: { createdAt: { gte: since } } }),
     ]);
 
     return {
       period: `${days} days`,
       newComments: comments,
       newContacts: contacts,
-      newMembers: members,
+      newCustomers: members,
     };
   }
 }

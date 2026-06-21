@@ -4,9 +4,7 @@
   "private": true,
   "sideEffects": false,
   "exports": {
-    "./auth/services/*": "./auth/services/*.ts",
-    "./auth/repositories/*": "./auth/repositories/*.ts",
-    "./di/containers/*": "./di/containers/*.ts"
+    "./*": "./*.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",

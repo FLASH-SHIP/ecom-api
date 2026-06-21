@@ -63,6 +63,7 @@
       "!**/*.generated.*",
       "!packages/prisma/migrations",
       "!packages/prisma/src/generated",
+      "!packages/shared",
       "!.yarn"
     ]
   }

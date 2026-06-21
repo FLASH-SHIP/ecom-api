@@ -88,7 +88,7 @@ export class CommentsController {
       authorName?: string;
       authorEmail?: string;
       parentId?: number;
-      memberId?: number;
+      customerId?: number;
     },
   ) {
     return prisma.comment.create({
@@ -99,7 +99,7 @@ export class CommentsController {
         authorName: body.authorName,
         authorEmail: body.authorEmail,
         parentId: body.parentId,
-        memberId: body.memberId,
+        customerId: body.customerId,
         status: "pending",
       },
       select: {

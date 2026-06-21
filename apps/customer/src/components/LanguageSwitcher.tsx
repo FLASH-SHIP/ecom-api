@@ -44,6 +44,7 @@ export function LanguageSwitcher() {
     }
 
     // Persist locale preference for returning visitors (read by middleware)
+    // biome-ignore lint/suspicious/noDocumentCookie: intentional — locale cookie must be set client-side; no httpOnly needed as it's not sensitive
     document.cookie = `NEXT_LOCALE=${targetLocale}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
 
     setOpen(false);

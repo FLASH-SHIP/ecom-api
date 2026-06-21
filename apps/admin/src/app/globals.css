@@ -378,3 +378,42 @@ label {
   border-radius: 9999px;
   background: var(--muted);
 }
+
+/*
+ * Error Page Animations
+ * CSS-only alternative to framer-motion for the Fuse-style error pages.
+ * Three staggered animations: SVG (scale+fade), title (slide+fade), subtitle (slide+fade delayed).
+ */
+@keyframes error-svg-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes error-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-error-svg {
+  animation: error-svg-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+}
+
+.animate-error-text {
+  animation: error-text-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+}
+
+.animate-error-text-delay {
+  animation: error-text-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.45s both;
+}

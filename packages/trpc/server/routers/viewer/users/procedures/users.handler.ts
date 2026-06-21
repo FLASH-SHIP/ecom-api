@@ -1,8 +1,8 @@
 import { getUserManagementService } from "@ecom/features/di/containers/RbacService";
 import { Permissions } from "@ecom/lib/permissions";
+import { UserStatus } from "@ecom/prisma";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
 import { authedProcedure, requirePermission } from "@ecom/trpc/server/trpc";
-import { UserStatus } from "@ecom/prisma";
 import { z } from "zod";
 
 const userStatusSchema = z.nativeEnum(UserStatus);

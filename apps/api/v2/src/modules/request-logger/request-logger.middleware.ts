@@ -46,7 +46,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
             duration,
             ipAddress: req.ip ?? req.socket.remoteAddress,
             userAgent: req.headers["user-agent"],
-            referer: req.headers["referer"],
+            referer: req.headers.referer,
             userId: typeof userId === "number" ? userId : undefined,
           },
           select: { id: true },
