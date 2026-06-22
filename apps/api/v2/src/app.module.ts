@@ -7,7 +7,7 @@ import { ContactsModule } from "./modules/contacts/contacts.module";
 import { CustomerAuthModule } from "./modules/customer-auth/customer-auth.module";
 import { HealthModule } from "./modules/health/health.module";
 import { MediaModule } from "./modules/media/media.module";
-import { MemberAuthModule } from "./modules/member-auth/member-auth.module";
+// import { MemberAuthModule } from "./modules/member-auth/member-auth.module";
 import { RequestLoggerMiddleware } from "./modules/request-logger/request-logger.middleware";
 import { UsersModule } from "./modules/users/users.module";
 
@@ -24,7 +24,7 @@ import { UsersModule } from "./modules/users/users.module";
     HealthModule,
     CustomerAuthModule,
     MediaModule,
-    MemberAuthModule,
+    // MemberAuthModule,
     UsersModule,
   ],
 })

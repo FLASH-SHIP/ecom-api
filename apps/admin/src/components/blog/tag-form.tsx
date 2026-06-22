@@ -7,6 +7,7 @@ import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ecom/ui/components/card";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
+import { Textarea } from "@ecom/ui/components/textarea";
 import {
   Select,
   SelectContent,
@@ -14,10 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, ImagePlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import type { Editor } from "@tiptap/react";
+import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
+import type { MediaItem } from "@admin/app/(main)/media/model/media.model";
+import { SearchEngineOptimize } from "@admin/components/blog/SearchEngineOptimize";
 
 type TagStatus = "DRAFT" | "PENDING" | "PUBLISHED";
 
@@ -26,6 +31,10 @@ interface TagFormData {
   slug?: string;
   description?: string;
   status: TagStatus;
+  seoTitle: string;
+  seoDescription: string;
+  seoImage: string;
+  indexMode: string;
 }
 
 interface TagFormProps {
@@ -55,41 +64,110 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
     slug: initialData?.slug ?? "",
     description: initialData?.description ?? "",
     status: initialData?.status ?? "PUBLISHED",
+    seoTitle: "",
+    seoDescription: "",
+    seoImage: "",
+    indexMode: "index",
   });
+
+  const [showEditor, setShowEditor] = useState(true);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const editorRef = useRef<Editor | null>(null);
+
+  // tRPC query to load SEO Meta
+  const { data: seoMeta } = trpc.viewer.seo.get.useQuery(
+    { entityType: "tag", entityId: tagId! },
+    { enabled: mode === "edit" && !!tagId },
+  );
+
+  // Sync SEO Meta to form state
+  useEffect(() => {
+    if (seoMeta) {
+      setFormData((prev) => ({
+        ...prev,
+        seoTitle: seoMeta.seoTitle ?? "",
+        seoDescription: seoMeta.seoDescription ?? "",
+        seoImage: seoMeta.seoImage ?? "",
+        indexMode: seoMeta.indexMode ?? "index",
+      }));
+    }
+  }, [seoMeta]);
+
+  const saveSeoMetaMutation = trpc.viewer.seo.save.useMutation();
+
+  const saveSeo = (targetTagId: number, callback: () => void) => {
+    if (translationMode) {
+      callback();
+      return;
+    }
+    saveSeoMetaMutation.mutate(
+      {
+        entityType: "tag",
+        entityId: targetTagId,
+        data: {
+          seoTitle: formData.seoTitle || undefined,
+          seoDescription: formData.seoDescription || undefined,
+          seoImage: formData.seoImage || undefined,
+          indexMode: (formData.indexMode as "index" | "noindex") || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          callback();
+        },
+        onError: (err) => {
+          toast(`Tag saved, but SEO failed: ${err.message}`, "error");
+          callback();
+        },
+      },
+    );
+  };
 
   const createMutation = trpc.viewer.tags.create.useMutation({
     onSuccess: (data) => {
-      toast(t("createSuccess"), "success");
-      utils.viewer.tags.list.invalidate();
-      router.push(`/tags/${data.id}/edit`);
+      saveSeo(data.id, () => {
+        toast(t("createSuccess"), "success");
+        utils.viewer.tags.list.invalidate();
+        router.push(`/tags/${data.id}/edit`);
+      });
     },
     onError: (err) => toast(err.message, "error"),
   });
 
   const createAndExitMutation = trpc.viewer.tags.create.useMutation({
-    onSuccess: () => {
-      toast(t("createSuccess"), "success");
-      utils.viewer.tags.list.invalidate();
-      router.push("/tags");
+    onSuccess: (data) => {
+      saveSeo(data.id, () => {
+        toast(t("createSuccess"), "success");
+        utils.viewer.tags.list.invalidate();
+        router.push("/tags");
+      });
     },
     onError: (err) => toast(err.message, "error"),
   });
 
   const updateMutation = trpc.viewer.tags.update.useMutation({
     onSuccess: () => {
-      toast(t("updateSuccess"), "success");
-      utils.viewer.tags.list.invalidate();
-      if (tagId) utils.viewer.tags.get.invalidate({ id: tagId });
+      if (tagId) {
+        saveSeo(tagId, () => {
+          toast(t("updateSuccess"), "success");
+          utils.viewer.tags.list.invalidate();
+          utils.viewer.tags.get.invalidate({ id: tagId });
+        });
+      }
     },
     onError: (err) => toast(err.message, "error"),
   });
 
   const updateAndExitMutation = trpc.viewer.tags.update.useMutation({
     onSuccess: () => {
-      toast(t("updateSuccess"), "success");
-      utils.viewer.tags.list.invalidate();
-      if (tagId) utils.viewer.tags.get.invalidate({ id: tagId });
-      router.push("/tags");
+      if (tagId) {
+        saveSeo(tagId, () => {
+          toast(t("updateSuccess"), "success");
+          utils.viewer.tags.list.invalidate();
+          utils.viewer.tags.get.invalidate({ id: tagId });
+          router.push("/tags");
+        });
+      }
     },
     onError: (err) => toast(err.message, "error"),
   });
@@ -134,6 +212,27 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
     }
   }
 
+  const handleMediaInsert = useCallback((items: MediaItem[]) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    for (const item of items) {
+      const isImage = item.mime_type?.startsWith("image/");
+      const url = item.full_url || item.preview_url || "";
+      if (!url) continue;
+
+      if (isImage) {
+        editor.chain().focus().setImage({ src: url, alt: item.name }).run();
+      } else {
+        editor
+          .chain()
+          .focus()
+          .insertContent(`<a href="${url}" target="_blank" rel="noopener noreferrer">${item.name || url}</a> `)
+          .run();
+      }
+    }
+  }, []);
+
   const slugPreview =
     formData.slug?.trim() ||
     formData.name
@@ -160,63 +259,116 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
         className={`grid items-start gap-5 ${!translationMode ? "lg:grid-cols-[1fr_280px]" : ""}`}
       >
         {/* ── Left: Main Content ── */}
-        <Card>
-          <CardContent className="flex flex-col gap-5 p-5">
-            {translationMode && (
-              <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
-                🌐 You are editing the <strong>{translationMode}</strong> translation.
-              </div>
-            )}
-            {/* Name */}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tag-name" className="text-sm font-medium">
-                {t("fields.name")} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="tag-name"
-                value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder={t("form.namePlaceholder")}
-                required
-                maxLength={120}
-              />
-            </div>
-
-            {/* Permalink */}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tag-slug" className="text-sm font-medium">
-                {t("fields.slug")} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="tag-slug"
-                value={formData.slug}
-                onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
-                placeholder={t("form.slugPlaceholder")}
-              />
-              {slugPreview && (
-                <p className="text-xs text-muted-foreground">
-                  {t("form.permalinkPreview")}{" "}
-                  <span className="text-primary">
-                    {PERMALINK_PREFIX}
-                    {slugPreview}
-                  </span>
-                </p>
+        <div className="flex flex-col gap-5">
+          <Card>
+            <CardContent className="flex flex-col gap-5 p-5">
+              {translationMode && (
+                <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                  🌐 You are editing the <strong>{translationMode}</strong> translation.
+                </div>
               )}
-            </div>
+              {/* Name */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="tag-name" className="text-sm font-medium">
+                  {t("fields.name")} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="tag-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder={t("form.namePlaceholder")}
+                  required
+                  maxLength={120}
+                />
+              </div>
 
-            {/* Content */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-medium">{t("fields.content")}</Label>
-              <RichTextEditor
-                id="tag-content"
-                value={formData.description ?? ""}
-                onChange={(val) => setFormData((prev) => ({ ...prev, description: val }))}
-                placeholder={t("form.contentPlaceholder")}
-                minHeight={250}
-              />
-            </div>
-          </CardContent>
-        </Card>
+              {/* Permalink */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="tag-slug" className="text-sm font-medium">
+                  {t("fields.slug")} <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="tag-slug"
+                  value={formData.slug}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
+                  placeholder={t("form.slugPlaceholder")}
+                />
+                {slugPreview && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("form.permalinkPreview")}{" "}
+                    <span className="text-primary">
+                      {PERMALINK_PREFIX}
+                      {slugPreview}
+                    </span>
+                  </p>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">{t("fields.content")}</Label>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowEditor((prev) => !prev)}
+                      className="h-8 px-3 text-xs"
+                    >
+                      {showEditor ? t("hideEditor") : t("showEditor")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setMediaPickerOpen(true)}
+                      className="h-8 px-3 text-xs flex items-center gap-1"
+                    >
+                      <ImagePlus className="size-3.5" />
+                      {t("addMedia")}
+                    </Button>
+                  </div>
+                </div>
+
+                {showEditor ? (
+                  <RichTextEditor
+                    id="tag-content"
+                    ref={editorRef}
+                    value={formData.description ?? ""}
+                    onChange={(val) => setFormData((prev) => ({ ...prev, description: val }))}
+                    placeholder={t("form.contentPlaceholder")}
+                    minHeight={250}
+                  />
+                ) : (
+                  <Textarea
+                    id="tag-content-text"
+                    value={formData.description ?? ""}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                    placeholder={t("form.contentPlaceholder")}
+                    rows={12}
+                    className="min-h-[250px]"
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {!translationMode && (
+            <SearchEngineOptimize
+              seoTitle={formData.seoTitle}
+              onChangeSeoTitle={(val) => setFormData((prev) => ({ ...prev, seoTitle: val }))}
+              seoDescription={formData.seoDescription}
+              onChangeSeoDescription={(val) => setFormData((prev) => ({ ...prev, seoDescription: val }))}
+              seoImage={formData.seoImage}
+              onChangeSeoImage={(val) => setFormData((prev) => ({ ...prev, seoImage: val }))}
+              indexMode={formData.indexMode}
+              onChangeIndexMode={(val) => setFormData((prev) => ({ ...prev, indexMode: val }))}
+              defaultTitle={formData.name}
+              defaultUrl={`${PERMALINK_PREFIX}${slugPreview}`}
+            />
+          )}
+        </div>
 
         {/* ── Right: Sidebar — hidden in translation mode ── */}
         {!translationMode ? (
@@ -298,6 +450,12 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
           </Card>
         )}
       </div>
+
+      <MediaPickerDialog
+        open={mediaPickerOpen}
+        onOpenChange={setMediaPickerOpen}
+        onInsert={handleMediaInsert}
+      />
     </form>
   );
 }

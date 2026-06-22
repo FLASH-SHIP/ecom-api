@@ -326,6 +326,7 @@ model Tag {
   authorType   String           @default("User")
   posts        PostTag[]
   translations TagTranslation[]
+  seoMeta      SeoMeta?         @relation("TagSeo")
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
@@ -538,6 +539,9 @@ model SeoMeta {
 
   pageId        Int?     @unique
   page          Page?    @relation("PageSeo", fields: [pageId], references: [id], onDelete: Cascade)
+
+  tagId         Int?     @unique
+  tag           Tag?     @relation("TagSeo", fields: [tagId], references: [id], onDelete: Cascade)
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

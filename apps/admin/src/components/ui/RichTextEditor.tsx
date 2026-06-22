@@ -44,7 +44,8 @@ import {
   Underline as UnderlineIcon,
   Undo,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, forwardRef, useImperativeHandle } from "react";
+import type { Editor } from "@tiptap/react";
 import { createPortal } from "react-dom";
 
 interface RichTextEditorProps {
@@ -111,37 +112,33 @@ const HEADING_OPTIONS = [
 
 const iconSize = "h-[18px] w-[18px]";
 
-export function RichTextEditor({
-  id,
-  value,
-  onChange,
-  placeholder,
-  helperText,
-  minHeight = 200,
-}: RichTextEditorProps) {
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3, 4, 5, 6] },
-      }),
-      Underline,
-      Link.configure({ openOnClick: false, HTMLAttributes: { rel: "noopener noreferrer" } }),
-      Placeholder.configure({ placeholder: placeholder ?? "" }),
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Highlight.configure({ multicolor: false }),
-      Superscript,
-      Subscript,
-      Image.configure({ inline: false, allowBase64: true }),
-      TextStyle,
-      Color,
-    ],
-    content: value,
-    onUpdate: ({ editor: e }) => {
-      const html = e.getHTML();
-      onChange(html === "<p></p>" ? "" : html);
-    },
-    immediatelyRender: false,
-  });
+export const RichTextEditor = forwardRef<Editor | null, RichTextEditorProps>(
+  ({ id, value, onChange, placeholder, helperText, minHeight = 200 }, ref) => {
+    const editor = useEditor({
+      extensions: [
+        StarterKit.configure({
+          heading: { levels: [1, 2, 3, 4, 5, 6] },
+        }),
+        Underline,
+        Link.configure({ openOnClick: false, HTMLAttributes: { rel: "noopener noreferrer" } }),
+        Placeholder.configure({ placeholder: placeholder ?? "" }),
+        TextAlign.configure({ types: ["heading", "paragraph"] }),
+        Highlight.configure({ multicolor: false }),
+        Superscript,
+        Subscript,
+        Image.configure({ inline: false, allowBase64: true }),
+        TextStyle,
+        Color,
+      ],
+      content: value,
+      onUpdate: ({ editor: e }) => {
+        const html = e.getHTML();
+        onChange(html === "<p></p>" ? "" : html);
+      },
+      immediatelyRender: false,
+    });
+
+    useImperativeHandle(ref, () => editor, [editor]);
 
   useEffect(() => {
     if (
@@ -467,3 +464,6 @@ export function RichTextEditor({
     </div>
   );
 }
+);
+
+RichTextEditor.displayName = "RichTextEditor";

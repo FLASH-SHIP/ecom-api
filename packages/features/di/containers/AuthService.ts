@@ -42,7 +42,6 @@ export function getAuthService(): AuthService {
     }
     _authService = new AuthService({
       userRepo: getUserRepository(),
-      mediaFileService,
     });
   }
   return _authService;
