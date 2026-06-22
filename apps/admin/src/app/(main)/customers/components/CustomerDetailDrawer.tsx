@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@ecom/ui/component
 import { cn } from "@ecom/ui/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 const STATUS_BADGE: Record<string, string> = {
   ACTIVE: "border-emerald-200 bg-emerald-100 text-emerald-800",
@@ -24,6 +25,7 @@ interface CustomerDetailDrawerProps {
   onDeleted: () => void;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex drawer UI rendering with tabs and lists
 export function CustomerDetailDrawer({
   customerId,
   onClose,
@@ -37,10 +39,18 @@ export function CustomerDetailDrawer({
 
   const open = customerId !== null;
 
+  const [activeTab, setActiveTab] = useState<"activity" | "history">("activity");
+
   const { data: detail, isLoading } = trpc.viewer.customers.get.useQuery(
     { id: customerId ?? 0 },
     { enabled: open },
   );
+
+  const { data: auditLogs, isLoading: isAuditLoading } =
+    trpc.viewer.customers.auditHistory.useQuery(
+      { id: customerId ?? 0 },
+      { enabled: open && activeTab === "history" },
+    );
 
   const utils = trpc.useUtils();
 
@@ -95,6 +105,16 @@ export function CustomerDetailDrawer({
                   { label: tUsers("fields.username"), value: `@${detail.username}` },
                   { label: t("fields.phone"), value: detail.phone ?? "—" },
                   {
+                    label: t("form.genderLabel"),
+                    value: detail.gender
+                      ? t(`gender.${detail.gender as "male" | "female" | "other"}`)
+                      : "—",
+                  },
+                  {
+                    label: t("form.dobLabel"),
+                    value: detail.dob ? formatDate(detail.dob) : "—",
+                  },
+                  {
                     label: t("fields.verified"),
                     value: detail.emailVerified ? formatDate(detail.emailVerified) : tCommon("no"),
                   },
@@ -104,7 +124,8 @@ export function CustomerDetailDrawer({
                       ? formatDateTime(detail.lastLoginAt)
                       : t("detail.never"),
                   },
-                  { label: t("detail.customerSince"), value: formatDate(detail.createdAt) },
+                  { label: tCommon("createdAt"), value: formatDate(detail.createdAt) },
+                  { label: t("form.descriptionLabel"), value: detail.description ?? "—" },
                 ].map(({ label, value }) => (
                   <div key={label}>
                     <p className="text-xs text-muted-foreground">{label}</p>
@@ -165,30 +186,184 @@ export function CustomerDetailDrawer({
                   </>
                 )}
 
-                {/* Activity logs */}
-                {detail.activityLogs.length > 0 && (
-                  <>
-                    <Separator />
+                <Separator />
+
+                {/* Tabs for Activity / History */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex border-b border-border">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("activity")}
+                      className={cn(
+                        "flex-1 pb-2 text-center text-xs font-semibold border-b-2 transition-colors cursor-pointer",
+                        activeTab === "activity"
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {t("detail.tabs.activity")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("history")}
+                      className={cn(
+                        "flex-1 pb-2 text-center text-xs font-semibold border-b-2 transition-colors cursor-pointer",
+                        activeTab === "history"
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {t("detail.tabs.history")}
+                    </button>
+                  </div>
+
+                  {activeTab === "activity" && (
                     <div>
-                      <p className="mb-2 text-xs text-muted-foreground">
-                        {tCommon("recentActivity")}
-                      </p>
-                      <div className="flex max-h-[180px] flex-col gap-1 overflow-y-auto">
-                        {detail.activityLogs.map((al) => (
-                          <div
-                            key={al.id}
-                            className="flex items-center justify-between rounded-md bg-muted/50 px-2.5 py-1.5"
-                          >
-                            <span className="text-xs font-medium">{al.action}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDate(al.createdAt)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      {detail.activityLogs.length === 0 ? (
+                        <p className="text-center text-xs text-muted-foreground py-4">
+                          {tCommon("noResults")}
+                        </p>
+                      ) : (
+                        <div className="flex max-h-[220px] flex-col gap-1 overflow-y-auto pr-1">
+                          {detail.activityLogs.map((al) => (
+                            <div
+                              key={al.id}
+                              className="flex items-center justify-between rounded-md bg-muted/50 px-2.5 py-1.5"
+                            >
+                              <span className="text-xs font-medium">{al.action}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDateTime(al.createdAt)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </>
-                )}
+                  )}
+
+                  {activeTab === "history" && (
+                    <div className="flex flex-col gap-2">
+                      {isAuditLoading ? (
+                        <div className="flex justify-center py-4">
+                          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : !auditLogs || auditLogs.items.length === 0 ? (
+                        <p className="text-center text-xs text-muted-foreground py-4">
+                          {t("detail.history.noHistory")}
+                        </p>
+                      ) : (
+                        <div className="flex max-h-[260px] flex-col gap-2 overflow-y-auto pr-1">
+                          {auditLogs.items.map((log) => (
+                            <div
+                              key={log.id}
+                              className="flex flex-col gap-1.5 rounded-md border border-border bg-muted/20 p-2.5 text-xs"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-primary">{log.action}</span>
+                                <span className="text-muted-foreground text-[10px]">
+                                  {formatDateTime(log.createdAt)}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-1 text-[11px] text-muted-foreground border-t border-border/50 pt-1.5">
+                                <div>
+                                  <span className="font-medium text-foreground">
+                                    {t("detail.history.actor")}:
+                                  </span>{" "}
+                                  {log.user?.name ?? "System"}
+                                </div>
+                                {log.ipAddress && (
+                                  <div className="text-right">
+                                    <span>IP:</span> {log.ipAddress}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Render Changed Values/Diffs */}
+                              {log.action === "UPDATE" && log.oldValues && log.newValues && (
+                                <div className="mt-1 flex flex-col gap-1 rounded bg-muted/60 p-1.5 text-[10px]">
+                                  {Object.keys(log.newValues as Record<string, unknown>).map(
+                                    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: detailed key-value diff comparison and normalized date checking
+                                    (key) => {
+                                      const newVal = (log.newValues as Record<string, unknown>)[
+                                        key
+                                      ];
+                                      const oldVal = (log.oldValues as Record<string, unknown>)[
+                                        key
+                                      ];
+
+                                      // Handle dates
+                                      const normNew =
+                                        newVal instanceof Date ? newVal.toISOString() : newVal;
+                                      const normOld =
+                                        oldVal instanceof Date ? oldVal.toISOString() : oldVal;
+
+                                      if (
+                                        JSON.stringify(normNew) === JSON.stringify(normOld) ||
+                                        key === "id"
+                                      )
+                                        return null;
+
+                                      return (
+                                        <div
+                                          key={key}
+                                          className="flex flex-col border-b border-border/30 pb-1 last:border-0 last:pb-0"
+                                        >
+                                          <span className="font-semibold text-foreground">
+                                            {key}
+                                          </span>
+                                          <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                            <span className="line-through text-red-500 bg-red-50 px-1 rounded-sm border border-red-100">
+                                              {oldVal === null || oldVal === undefined
+                                                ? "null"
+                                                : String(oldVal)}
+                                            </span>
+                                            <span className="text-muted-foreground">→</span>
+                                            <span className="text-emerald-700 bg-emerald-50 px-1 rounded-sm border border-emerald-100 font-medium">
+                                              {newVal === null || newVal === undefined
+                                                ? "null"
+                                                : String(newVal)}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      );
+                                    },
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Render New Entity (CREATE) */}
+                              {log.action === "CREATE" && log.newValues && (
+                                <div className="mt-1 flex flex-col gap-1 rounded bg-muted/60 p-1.5 text-[10px]">
+                                  {Object.keys(log.newValues as Record<string, unknown>).map(
+                                    (key) => {
+                                      const val = (log.newValues as Record<string, unknown>)[key];
+                                      if (val === null || val === undefined || key === "id")
+                                        return null;
+                                      return (
+                                        <div
+                                          key={key}
+                                          className="flex items-center justify-between"
+                                        >
+                                          <span className="font-semibold text-foreground">
+                                            {key}:
+                                          </span>
+                                          <span className="text-emerald-700 font-medium">
+                                            {String(val)}
+                                          </span>
+                                        </div>
+                                      );
+                                    },
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

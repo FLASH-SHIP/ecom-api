@@ -1,6 +1,5 @@
-"use client";
-
 import { DataTableSkeleton } from "@admin/components/data-table";
+import ModuleI18nProvider from "@admin/components/i18n/ModuleI18nProvider";
 import dynamic from "next/dynamic";
 
 const CustomersContent = dynamic(() => import("./CustomersContent"), {
@@ -9,5 +8,9 @@ const CustomersContent = dynamic(() => import("./CustomersContent"), {
 });
 
 export default function CustomersPage() {
-  return <CustomersContent />;
+  return (
+    <ModuleI18nProvider namespaces={["customers", "users"]}>
+      <CustomersContent />
+    </ModuleI18nProvider>
+  );
 }

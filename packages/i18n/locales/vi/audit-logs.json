@@ -1,0 +1,60 @@
+{
+  "title": "Nhật ký hoạt động",
+  "subtitle": "Theo dõi thay đổi hệ thống và hành động của người dùng",
+  "noLogsTitle": "Không có nhật ký hoạt động",
+  "noLogsSubtitle": "Các hoạt động của quản trị viên sẽ được ghi lại ở đây",
+  "purge": "Xóa nhật ký",
+  "purgeConfirm": "Bạn có chắc chắn muốn xóa nhật ký cũ hơn {days} ngày?",
+  "purgeAll": "Xóa tất cả bản ghi",
+  "purgeAllTitle": "Xóa tất cả bản ghi",
+  "purgeAllMessage": "Toàn bộ nhật ký hoạt động sẽ bị xóa vĩnh viễn. Bạn chắc chắn muốn tiếp tục?",
+  "purgeAllConfirm": "Xóa tất cả",
+  "reload": "Tải lại",
+  "deleteSuccess": "Đã xóa bản ghi nhật ký",
+  "deleteError": "Xóa bản ghi thất bại",
+  "purgeAllSuccess": "Đã xóa toàn bộ nhật ký hoạt động",
+  "purgeAllError": "Xóa nhật ký thất bại",
+  "bulkDeleteSuccess": "Đã xóa {count} bản ghi nhật ký",
+  "bulkDeleteError": "Xóa hàng loạt thất bại",
+  "bulkDeleteConfirm": "Xóa {count} bản ghi nhật ký đã chọn?",
+  "deleteRowConfirm": "Xóa bản ghi nhật ký #{id}?",
+  "systemUser": "Hệ thống",
+  "fields": {
+    "action": "Hành động",
+    "module": "Module",
+    "user": "Người dùng",
+    "entityType": "Loại đối tượng",
+    "entityId": "ID đối tượng",
+    "ipAddress": "Địa chỉ IP",
+    "timestamp": "Thời gian"
+  },
+  "tableColAction": "Hoạt động",
+  "tableColActionType": "Loại hành động",
+  "tableColModule": "Module",
+  "actions": {
+    "delete": "Xóa",
+    "bulkDelete": "Xóa"
+  },
+  "detail": {
+    "title": "Chi tiết nhật ký #{id}",
+    "close": "Đóng",
+    "time": "Thời gian",
+    "user": "Người dùng",
+    "actionModule": "Hành động / Module",
+    "entity": "Đối tượng",
+    "ip": "IP",
+    "oldValues": "Giá trị cũ",
+    "newValues": "Giá trị mới"
+  },
+  "actionDesc": {
+    "LOGIN": "đã đăng nhập vào hệ thống",
+    "LOGOUT": "đã đăng xuất khỏi hệ thống",
+    "CREATE": "đã tạo {module}",
+    "UPDATE": "đã cập nhật {module}",
+    "DELETE": "đã xóa {module}",
+    "PURGE": "đã dọn dẹp nhật ký {module}",
+    "CLEAR_CACHE": "đã xóa bộ nhớ đệm hệ thống",
+    "VIEW": "đã xem {module}",
+    "default": "thực hiện {action} trên {module}"
+  }
+}

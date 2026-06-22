@@ -9,7 +9,7 @@ interface PaginationProps {
 }
 
 function Pagination({ currentPage, totalPages, onPageChange, className }: PaginationProps) {
-  if (totalPages <= 1) return null;
+  if (totalPages <= 0) return null;
 
   const pages = generatePages(currentPage, totalPages);
 
@@ -19,7 +19,7 @@ function Pagination({ currentPage, totalPages, onPageChange, className }: Pagina
         type="button"
         onClick={() => onPageChange(1)}
         disabled={currentPage <= 1}
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-sm transition-colors enabled:cursor-pointer enabled:hover:bg-accent disabled:pointer-events-none disabled:opacity-30 disabled:border-border/40"
         aria-label="First page"
       >
         <ChevronsLeft className="h-4 w-4" />
@@ -28,7 +28,7 @@ function Pagination({ currentPage, totalPages, onPageChange, className }: Pagina
         type="button"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-sm transition-colors enabled:cursor-pointer enabled:hover:bg-accent disabled:pointer-events-none disabled:opacity-30 disabled:border-border/40"
         aria-label="Previous page"
       >
         <ChevronLeft className="h-4 w-4" />
@@ -54,10 +54,10 @@ function Pagination({ currentPage, totalPages, onPageChange, className }: Pagina
             type="button"
             onClick={() => onPageChange(page as number)}
             className={cn(
-              "inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-sm font-medium transition-colors",
+              "inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors enabled:cursor-pointer",
               currentPage === page
                 ? "bg-primary text-primary-foreground shadow-sm"
-                : "border border-border hover:bg-accent",
+                : "border border-border enabled:hover:bg-accent",
             )}
             aria-current={currentPage === page ? "page" : undefined}
           >
@@ -70,7 +70,7 @@ function Pagination({ currentPage, totalPages, onPageChange, className }: Pagina
         type="button"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-sm transition-colors enabled:cursor-pointer enabled:hover:bg-accent disabled:pointer-events-none disabled:opacity-30 disabled:border-border/40"
         aria-label="Next page"
       >
         <ChevronRight className="h-4 w-4" />
@@ -79,7 +79,7 @@ function Pagination({ currentPage, totalPages, onPageChange, className }: Pagina
         type="button"
         onClick={() => onPageChange(totalPages)}
         disabled={currentPage >= totalPages}
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-sm transition-colors enabled:cursor-pointer enabled:hover:bg-accent disabled:pointer-events-none disabled:opacity-30 disabled:border-border/40"
         aria-label="Last page"
       >
         <ChevronsRight className="h-4 w-4" />

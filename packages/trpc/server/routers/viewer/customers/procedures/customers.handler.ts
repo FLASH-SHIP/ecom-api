@@ -1,4 +1,5 @@
 import { USERNAME_REGEX, USERNAME_VALIDATION_MESSAGE } from "@ecom/features/customer/constants";
+import { getAuditService } from "@ecom/features/di/containers/AuditService";
 import { getCustomerService } from "@ecom/features/di/containers/CustomerService";
 import { hashPassword } from "@ecom/lib/crypto";
 import { Permissions } from "@ecom/lib/permissions";
@@ -130,4 +131,17 @@ export const setPassword = authedProcedure
   .mutation(async ({ input }) => {
     const service = getCustomerService();
     return service.setCustomerPassword(input.id, input.password);
+  });
+
+export const auditHistory = authedProcedure
+  .use(requirePermission(Permissions.CUSTOMERS_READ))
+  .input(z.object({ id: z.number() }))
+  .query(async ({ input }) => {
+    const service = getAuditService();
+    return service.getAuditLogs({
+      where: {
+        entityType: "Customer",
+        entityId: String(input.id),
+      },
+    });
   });

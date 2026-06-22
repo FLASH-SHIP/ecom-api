@@ -1,0 +1,53 @@
+{
+  "title": "Request Logs",
+  "subtitle": "Monitor incoming HTTP requests and API calls",
+  "noLogsTitle": "No request logs",
+  "noLogsSubtitle": "Error requests (4xx/5xx) from the API will be recorded here",
+  "purge": "Purge Logs",
+  "purgeConfirm": "Are you sure you want to purge request logs older than {days} days?",
+  "purge30Days": "Purge > 30 days",
+  "purging": "Purging...",
+  "purge30Title": "Purge logs older than 30 days?",
+  "purge30Message": "All request logs older than 30 days will be permanently deleted.",
+  "purgeSuccess": "Request logs older than 30 days deleted",
+  "purgeError": "Failed to purge logs",
+  "reload": "Reload",
+  "openUrl": "Open URL",
+  "deleteSuccess": "Request log deleted",
+  "deleteError": "Failed to delete record",
+  "bulkDeleteSuccess": "Deleted {count} request log records",
+  "bulkDeleteSelected": "Delete selected",
+  "bulkDeleteTitle": "Delete {count} request logs?",
+  "bulkDeleteMessage": "Selected records will be permanently deleted.",
+  "bulkDeleteConfirm": "Delete all",
+  "deleteRowTitle": "Delete request log?",
+  "deleteRowMessage": "Record #{id} ({method} {url}) will be permanently deleted.",
+  "fields": {
+    "method": "Method",
+    "url": "URL",
+    "statusCode": "Status",
+    "duration": "Duration",
+    "ipAddress": "IP Address",
+    "user": "User",
+    "timestamp": "Timestamp",
+    "statusRange": "Status Range"
+  },
+  "status": {
+    "all": "All",
+    "2xx": "2xx Success",
+    "3xx": "3xx Redirect",
+    "4xx": "4xx Client Error",
+    "5xx": "5xx Server Error"
+  },
+  "actions": {
+    "delete": "Delete record",
+    "deleteConfirm": "Delete"
+  },
+  "tableColMethod": "Method",
+  "tableColUrl": "URL",
+  "tableColStatus": "Status",
+  "tableColDuration": "Duration",
+  "tableColIp": "IP Address",
+  "tableColTime": "Time",
+  "tableColUser": "User"
+}

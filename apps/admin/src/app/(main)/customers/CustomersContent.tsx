@@ -2,6 +2,7 @@
 
 import type { BulkActionConfig, RowAction } from "@admin/components/data-table";
 import { DataTable, toFilterInput } from "@admin/components/data-table";
+import { CopyCell } from "@admin/components/data-table/CopyCell";
 import { useServerTable } from "@admin/components/data-table/hooks/useServerTable";
 import type { DataTableServerParams, FilterFieldDef } from "@admin/components/data-table/types";
 import Error403Page from "@admin/components/errors/Error403Page";
@@ -14,7 +15,7 @@ import { Button } from "@ecom/ui/components/button";
 import { cn } from "@ecom/ui/lib/utils";
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertCircle, AtSign, Eye, Plus, Trash2, Users } from "lucide-react";
+import { AlertCircle, Eye, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { CustomerDetailDrawer } from "./components/CustomerDetailDrawer";
@@ -58,6 +59,7 @@ export default function CustomersContent() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
   const isBulkRef = useRef(false);
 
   const { queryInput, onServerChange, tableKey, initialState } = useServerTable({
@@ -110,6 +112,7 @@ export default function CustomersContent() {
         accessorKey: "name",
         header: t("fields.name"),
         size: 250,
+        minSize: 200,
         cell: ({ row }) => {
           const m = row.original;
           return (
@@ -119,7 +122,7 @@ export default function CustomersContent() {
               </div>
               <button
                 type="button"
-                className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary"
+                className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary whitespace-nowrap"
                 onClick={() => setSelectedId(m.id)}
               >
                 {m.name || "—"}
@@ -133,10 +136,9 @@ export default function CustomersContent() {
         header: tUsers("fields.username"),
         size: 150,
         cell: ({ row }) => (
-          <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-            <AtSign className="h-3 w-3" />
-            {row.original.username}
-          </span>
+          <CopyCell value={row.original.username}>
+            <span className="text-sm text-muted-foreground">@{row.original.username}</span>
+          </CopyCell>
         ),
       },
       {
@@ -144,8 +146,24 @@ export default function CustomersContent() {
         header: t("fields.email"),
         size: 200,
         cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">{row.original.email}</span>
+          <CopyCell value={row.original.email}>
+            <span className="text-sm text-muted-foreground">{row.original.email}</span>
+          </CopyCell>
         ),
+      },
+      {
+        accessorKey: "phone",
+        header: t("fields.phone"),
+        size: 150,
+        cell: ({ row }) => {
+          const phone = row.original.phone;
+          if (!phone) return <span className="text-sm text-muted-foreground">—</span>;
+          return (
+            <CopyCell value={phone}>
+              <span className="text-sm text-muted-foreground">{phone}</span>
+            </CopyCell>
+          );
+        },
       },
       {
         accessorKey: "status",
@@ -168,7 +186,7 @@ export default function CustomersContent() {
       },
       {
         accessorKey: "createdAt",
-        header: t("detail.customerSince"),
+        header: tCommon("createdAt"),
         size: 150,
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">
@@ -177,7 +195,7 @@ export default function CustomersContent() {
         ),
       },
     ],
-    [t, tUsers],
+    [t, tUsers, tCommon],
   );
 
   // ── Filter fields ──────────────────────────────────────────────────────
@@ -215,7 +233,7 @@ export default function CustomersContent() {
       },
       {
         key: "createdAt",
-        label: t("detail.customerSince"),
+        label: tCommon("createdAt"),
         type: "date",
         operators: [
           { value: "greaterThanOrEqual", label: "greaterThanOrEqual" },
@@ -223,7 +241,7 @@ export default function CustomersContent() {
         ],
       },
     ],
-    [t],
+    [t, tCommon],
   );
 
   // ── Row actions ────────────────────────────────────────────────────────
@@ -231,10 +249,17 @@ export default function CustomersContent() {
     () => [
       {
         key: "view",
-        tooltip: t("detail.title"),
+        tooltip: tCommon("view"),
         icon: <Eye size={16} />,
         color: "primary",
         onClick: (row) => setSelectedId(row.id),
+      },
+      {
+        key: "edit",
+        tooltip: tCommon("edit"),
+        icon: <Pencil size={16} />,
+        color: "primary",
+        onClick: (row) => setEditId(row.id),
       },
       {
         key: "delete",
@@ -332,9 +357,16 @@ export default function CustomersContent() {
       />
 
       <CustomerFormDrawer
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        onSaved={() => setCreateOpen(false)}
+        customerId={editId}
+        open={createOpen || editId !== null}
+        onClose={() => {
+          setCreateOpen(false);
+          setEditId(null);
+        }}
+        onSaved={() => {
+          setCreateOpen(false);
+          setEditId(null);
+        }}
       />
 
       <CustomerDetailDrawer

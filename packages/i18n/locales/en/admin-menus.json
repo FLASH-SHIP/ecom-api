@@ -1,0 +1,37 @@
+{
+  "title": "Admin Menu",
+  "subtitle": "Manage admin panel navigation items and structure",
+  "newItem": "New Item",
+  "editItem": "Edit: {name}",
+  "deleteItem": "Delete",
+  "deleteConfirm": "Delete menu item \"{name}\" and all children?",
+  "noItemsTitle": "No menu items yet.",
+  "loading": "Loading...",
+  "creating": "Creating...",
+  "inactive": "inactive",
+  "noneTopLevel": "None (top-level)",
+  "noPermissions": "No permissions set (visible to all)",
+  "permissionsJson": "Permissions (JSON)",
+  "translations": "Translations",
+  "children": "Children ({count})",
+  "fields": {
+    "key": "Key",
+    "keyRequired": "Key *",
+    "name": "Name",
+    "nameRequired": "Name *",
+    "icon": "Icon",
+    "route": "Route",
+    "priority": "Priority",
+    "active": "Active",
+    "childrenDisplay": "Children Display",
+    "parent": "Parent"
+  },
+  "active": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "display": {
+    "sidebar": "Sidebar",
+    "panel": "Panel"
+  }
+}

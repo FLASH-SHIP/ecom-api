@@ -60,7 +60,7 @@ export default function SettingsOverviewPage() {
       <PageBreadcrumb className="mb-0" />
 
       {SETTING_SECTIONS.map((section) => (
-        <Card key={section.groupKey}>
+        <Card key={section.groupKey} className="rounded-lg shadow-none border-border/80">
           <CardHeader className="border-b border-border px-6 py-4">
             <CardTitle className="text-base font-semibold">{t(section.groupKey)}</CardTitle>
           </CardHeader>
@@ -81,9 +81,7 @@ export default function SettingsOverviewPage() {
                       <Icon className="size-[18px]" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-primary group-hover:underline">
-                        {t(item.titleKey)}
-                      </p>
+                      <p className="text-sm font-semibold text-primary">{t(item.titleKey)}</p>
                       <p className="mt-0.5 text-[13px] leading-snug text-muted-foreground">
                         {t(item.descKey)}
                       </p>

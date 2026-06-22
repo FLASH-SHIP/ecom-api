@@ -1,0 +1,14 @@
+{
+  "title": "Thông báo",
+  "unread": "{count} chưa đọc",
+  "allRead": "Tất cả đã được đọc!",
+  "markAllRead": "Đánh dấu tất cả đã đọc",
+  "noNotificationsTitle": "Không có thông báo nào",
+  "noNotificationsSubtitle": "Khi có hoạt động mới, chúng sẽ xuất hiện ở đây",
+  "newBadge": "Mới",
+  "tooltips": {
+    "markRead": "Đánh dấu đã đọc",
+    "viewDetail": "Xem chi tiết",
+    "delete": "Xóa"
+  }
+}

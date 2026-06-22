@@ -66,7 +66,10 @@ export function getCronJobs(): CronJobDefinition[] {
       description: "Clean up audit logs older than 90 days",
       enabled: true,
       handler: async () => {
-        log.info("Audit log cleanup completed");
+        const { getAuditService } = await import("@ecom/features/di/containers/AuditService");
+        const service = getAuditService();
+        const deleted = await service.purgeAuditLogs(90);
+        log.info("Audit log cleanup completed", { deletedCount: deleted.count });
       },
     },
     {
