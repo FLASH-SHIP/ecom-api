@@ -1,5 +1,6 @@
 import { router } from "@ecom/trpc/server/trpc";
 import {
+  auditHistory,
   checkUsername,
   create,
   get,
@@ -21,4 +22,5 @@ export const customersRouter = router({
   checkUsername,
   verifyEmail,
   setPassword,
+  auditHistory,
 });

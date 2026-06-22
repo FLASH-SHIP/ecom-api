@@ -1,0 +1,37 @@
+{
+  "title": "Menu quản trị",
+  "subtitle": "Quản lý các mục menu trong bảng quản trị",
+  "newItem": "Mục mới",
+  "editItem": "Sửa: {name}",
+  "deleteItem": "Xóa",
+  "deleteConfirm": "Xóa mục menu \"{name}\" và tất cả mục con?",
+  "noItemsTitle": "Chưa có mục menu.",
+  "loading": "Đang tải...",
+  "creating": "Đang tạo...",
+  "inactive": "ẩn",
+  "noneTopLevel": "Không có (cấp cao nhất)",
+  "noPermissions": "Chưa cài đặt quyền (hiển thị cho tất cả)",
+  "permissionsJson": "Quyền hạn (JSON)",
+  "translations": "Bản dịch",
+  "children": "Mục con ({count})",
+  "fields": {
+    "key": "Khóa",
+    "keyRequired": "Khóa *",
+    "name": "Tên",
+    "nameRequired": "Tên *",
+    "icon": "Biểu tượng",
+    "route": "Đường dẫn",
+    "priority": "Ưu tiên",
+    "active": "Kích hoạt",
+    "childrenDisplay": "Hiển thị mục con",
+    "parent": "Mục cha"
+  },
+  "active": {
+    "yes": "Có",
+    "no": "Không"
+  },
+  "display": {
+    "sidebar": "Thanh bên",
+    "panel": "Bảng"
+  }
+}

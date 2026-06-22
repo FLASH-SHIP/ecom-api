@@ -1,0 +1,14 @@
+{
+  "title": "Notifications",
+  "unread": "{count} unread",
+  "allRead": "All caught up!",
+  "markAllRead": "Mark all as read",
+  "noNotificationsTitle": "No notifications",
+  "noNotificationsSubtitle": "New activity will appear here",
+  "newBadge": "New",
+  "tooltips": {
+    "markRead": "Mark as read",
+    "viewDetail": "View detail",
+    "delete": "Delete"
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { trpc } from "@admin/lib/trpc";
 import { Button } from "@ecom/ui/components/button";
 import { Input } from "@ecom/ui/components/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@ecom/ui/components/popover";
@@ -9,14 +10,14 @@ import * as React from "react";
 
 // ── Country data ──────────────────────────────────────────────────────────────
 
-interface Country {
+export interface Country {
   code: string; // ISO 3166-1 alpha-2
   dial: string; // e.g. "+84"
   name: string;
   flag: string; // emoji flag
 }
 
-const COUNTRIES: Country[] = [
+export const COUNTRIES: Country[] = [
   { code: "AF", dial: "+93", name: "Afghanistan", flag: "🇦🇫" },
   { code: "AL", dial: "+355", name: "Albania", flag: "🇦🇱" },
   { code: "DZ", dial: "+213", name: "Algeria", flag: "🇩🇿" },
@@ -243,20 +244,79 @@ export function PhoneInput({
   id = "phone-input",
   placeholder = "Enter a phone number",
 }: PhoneInputProps) {
-  const parsed = parsePhone(value ?? "");
-  const [selectedCountry, setSelectedCountry] = React.useState<Country>(parsed.country);
-  const [number, setNumber] = React.useState(parsed.number);
+  // Query configurations from setting store
+  const { data: settings } = trpc.viewer.settings.getMany.useQuery(
+    {
+      keys: [
+        "phone_number_enable_country_code",
+        "phone_number_available_countries",
+        "phone_number_min_length",
+        "phone_number_max_length",
+      ],
+    },
+    {
+      trpc: {
+        context: {
+          skipBatch: true,
+        },
+      },
+      staleTime: 5 * 60 * 1000,
+    },
+  );
+
+  const enableCountryCodeSetting = settings?.phone_number_enable_country_code;
+  const enableCountryCode =
+    enableCountryCodeSetting === "1" ||
+    enableCountryCodeSetting === null ||
+    enableCountryCodeSetting === undefined;
+
+  const availableCountriesSetting = settings?.phone_number_available_countries;
+  const availableCountries = React.useMemo(() => {
+    if (!availableCountriesSetting) return COUNTRIES;
+    try {
+      const codes = JSON.parse(availableCountriesSetting) as string[];
+      return COUNTRIES.filter((c) => codes.includes(c.code));
+    } catch {
+      return COUNTRIES;
+    }
+  }, [availableCountriesSetting]);
+
+  const minLengthSetting = settings?.phone_number_min_length;
+  const minLength = minLengthSetting ? parseInt(minLengthSetting, 10) : 8;
+
+  const maxLengthSetting = settings?.phone_number_max_length;
+  const maxLength = maxLengthSetting ? parseInt(maxLengthSetting, 10) : 15;
+
+  // React state with hooks
+  const [selectedCountry, setSelectedCountry] = React.useState<Country>(() => {
+    const parsed = parsePhone(value ?? "");
+    return parsed.country;
+  });
+  const [number, setNumber] = React.useState(() => {
+    const parsed = parsePhone(value ?? "");
+    return parsed.number;
+  });
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
 
+  // Keep state in sync with external values and settings
+  React.useEffect(() => {
+    const parsed = !enableCountryCode
+      ? { country: DEFAULT_COUNTRY, number: value ?? "" }
+      : parsePhone(value ?? "");
+    setSelectedCountry(parsed.country);
+    setNumber(parsed.number);
+  }, [value, enableCountryCode]);
+
   const filteredCountries = React.useMemo(() => {
-    if (!search.trim()) return COUNTRIES;
+    const baseList = availableCountries;
+    if (!search.trim()) return baseList;
     const q = search.toLowerCase();
-    return COUNTRIES.filter(
+    return baseList.filter(
       (c) =>
         c.name.toLowerCase().includes(q) || c.dial.includes(q) || c.code.toLowerCase().includes(q),
     );
-  }, [search]);
+  }, [availableCountries, search]);
 
   const handleCountrySelect = (country: Country) => {
     setSelectedCountry(country);
@@ -268,8 +328,19 @@ export function PhoneInput({
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const n = e.target.value.replace(/[^\d\s\-().+]/g, "");
     setNumber(n);
-    onChange?.(`${selectedCountry.dial} ${n}`.trim());
+    if (enableCountryCode) {
+      onChange?.(`${selectedCountry.dial} ${n}`.trim());
+    } else {
+      onChange?.(n);
+    }
   };
+
+  // Limit input length based on configured max length and dial prefix
+  const inputMaxLength = React.useMemo(() => {
+    if (!enableCountryCode) return maxLength;
+    const dialLength = selectedCountry.dial.replace(/[^0-9]/g, "").length;
+    return Math.max(1, maxLength - dialLength);
+  }, [enableCountryCode, maxLength, selectedCountry]);
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -287,71 +358,73 @@ export function PhoneInput({
 
       <div className="flex">
         {/* Country selector button */}
-        <Popover
-          modal
-          open={open}
-          onOpenChange={(o) => {
-            setOpen(o);
-            if (!o) setSearch("");
-          }}
-        >
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={disabled}
-              className={cn(
-                "flex h-10 items-center gap-1 rounded-r-none border-r-0 px-3 focus:z-10",
-                error && "border-destructive",
-              )}
-              aria-label="Select country code"
-            >
-              <span className="text-base leading-none">{selectedCountry.flag}</span>
-              <ChevronsUpDown className="-mr-1 size-3.5 shrink-0 opacity-60" />
-            </Button>
-          </PopoverTrigger>
+        {enableCountryCode && (
+          <Popover
+            modal
+            open={open}
+            onOpenChange={(o) => {
+              setOpen(o);
+              if (!o) setSearch("");
+            }}
+          >
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={disabled}
+                className={cn(
+                  "flex h-10 items-center gap-1 rounded-r-none border-r-0 px-3 focus:z-10",
+                  error && "border-destructive",
+                )}
+                aria-label="Select country code"
+              >
+                <span className="text-base leading-none">{selectedCountry.flag}</span>
+                <ChevronsUpDown className="-mr-1 size-3.5 shrink-0 opacity-60" />
+              </Button>
+            </PopoverTrigger>
 
-          <PopoverContent className="flex w-[300px] flex-col overflow-hidden p-0" align="start">
-            {/* Search — sticky at top */}
-            <div className="flex shrink-0 items-center border-b border-border px-3 py-2">
-              <Search className="mr-2 size-4 shrink-0 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search country..."
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              />
-            </div>
+            <PopoverContent className="flex w-[300px] flex-col overflow-hidden p-0" align="start">
+              {/* Search — sticky at top */}
+              <div className="flex shrink-0 items-center border-b border-border px-3 py-2">
+                <Search className="mr-2 size-4 shrink-0 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search country..."
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+              </div>
 
-            {/* Country list — scrollable */}
-            <div className="h-72 overflow-y-auto p-1">
-              {filteredCountries.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  No country found.
-                </div>
-              ) : (
-                filteredCountries.map((country) => (
-                  <button
-                    key={country.code}
-                    type="button"
-                    onClick={() => handleCountrySelect(country)}
-                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                  >
-                    <span className="text-base">{country.flag}</span>
-                    <span className="flex-1 truncate text-left">{country.name}</span>
-                    <span className="text-xs text-muted-foreground">{country.dial}</span>
-                    <Check
-                      className={cn(
-                        "size-3.5 shrink-0",
-                        country.code === selectedCountry.code ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                  </button>
-                ))
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
+              {/* Country list — scrollable */}
+              <div className="h-72 overflow-y-auto p-1">
+                {filteredCountries.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    No country found.
+                  </div>
+                ) : (
+                  filteredCountries.map((country) => (
+                    <button
+                      key={country.code}
+                      type="button"
+                      onClick={() => handleCountrySelect(country)}
+                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <span className="text-base">{country.flag}</span>
+                      <span className="flex-1 truncate text-left">{country.name}</span>
+                      <span className="text-xs text-muted-foreground">{country.dial}</span>
+                      <Check
+                        className={cn(
+                          "size-3.5 shrink-0",
+                          country.code === selectedCountry.code ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                    </button>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
 
         {/* Phone number input — joined to button */}
         <Input
@@ -362,7 +435,9 @@ export function PhoneInput({
           disabled={disabled}
           placeholder={placeholder}
           aria-invalid={!!error}
-          className={cn("rounded-l-none", error && "border-destructive")}
+          minLength={minLength}
+          maxLength={inputMaxLength}
+          className={cn(enableCountryCode && "rounded-l-none", error && "border-destructive")}
         />
       </div>
 

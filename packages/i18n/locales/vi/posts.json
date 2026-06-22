@@ -1,0 +1,44 @@
+{
+  "title": "Bài viết",
+  "subtitle": "Quản lý bài viết blog",
+  "newPost": "Bài viết mới",
+  "editPost": "Sửa bài viết",
+  "noPostsTitle": "Không tìm thấy bài viết",
+  "noPostsDescription": "Bắt đầu bằng cách tạo bài viết blog đầu tiên.",
+  "createPost": "Tạo bài viết",
+  "fields": {
+    "title": "Tiêu đề",
+    "slug": "Đường dẫn",
+    "content": "Nội dung",
+    "excerpt": "Tóm tắt",
+    "featuredImage": "Ảnh đại diện",
+    "bannerImage": "Ảnh banner",
+    "author": "Tác giả",
+    "category": "Danh mục",
+    "tags": "Thẻ",
+    "status": "Trạng thái",
+    "publishedAt": "Ngày xuất bản",
+    "isFeatured": "Nổi bật",
+    "views": "Lượt xem",
+    "date": "Ngày tạo",
+    "actions": "Tác vụ"
+  },
+  "status": {
+    "DRAFT": "Bản nháp",
+    "PENDING": "Chờ duyệt",
+    "PUBLISHED": "Đã xuất bản",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "actions": {
+    "edit": "Chỉnh sửa",
+    "preview": "Xem trước",
+    "clone": "Nhân bản",
+    "publish": "Xuất bản",
+    "unpublish": "Gỡ xuất bản",
+    "archive": "Lưu trữ",
+    "restore": "Khôi phục",
+    "permanentlyDelete": "Xóa vĩnh viễn",
+    "delete": "Xóa",
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa bài viết này?"
+  }
+}

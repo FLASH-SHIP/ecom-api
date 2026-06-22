@@ -1,0 +1,29 @@
+{
+  "title": "Tools",
+  "exportTitle": "Data Export",
+  "exportSubtitle": "Export your CMS data as JSON. Select a module or export everything.",
+  "exporting": "Exporting...",
+  "exportButton": "Export {module}",
+  "downloadJson": "Download JSON",
+  "copyClipboard": "Copy to Clipboard",
+  "truncated": "... (truncated)",
+  "importTitle": "Data Import",
+  "importSubtitle": "Import data from a JSON export file.",
+  "importComingSoon": "Import functionality coming soon. Export your data first to create a backup.",
+  "modules": {
+    "all": "All Data",
+    "allDesc": "Complete export of all modules",
+    "posts": "Posts",
+    "postsDesc": "Blog posts with categories and tags",
+    "categories": "Categories",
+    "categoriesDesc": "Category tree structure",
+    "tags": "Tags",
+    "tagsDesc": "All tags",
+    "pages": "Pages",
+    "pagesDesc": "Static pages",
+    "customers": "Customers",
+    "customersDesc": "Customer accounts",
+    "settings": "Settings",
+    "settingsDesc": "System settings key-value pairs"
+  }
+}

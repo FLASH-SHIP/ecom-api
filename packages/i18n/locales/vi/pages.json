@@ -1,0 +1,42 @@
+{
+  "title": "Trang",
+  "subtitle": "Quản lý các trang tĩnh",
+  "newPage": "Trang mới",
+  "editPage": "Sửa trang",
+  "noPagesTitle": "Không tìm thấy trang",
+  "noPagesDescription": "Tạo trang tĩnh đầu tiên.",
+  "createPage": "Tạo trang",
+  "fields": {
+    "title": "Tiêu đề",
+    "slug": "Đường dẫn",
+    "content": "Nội dung",
+    "template": "Mẫu",
+    "order": "Thứ tự",
+    "isHomepage": "Trang chủ",
+    "status": "Trạng thái",
+    "author": "Tác giả",
+    "date": "Ngày tạo",
+    "actions": "Tác vụ"
+  },
+  "status": {
+    "DRAFT": "Bản nháp",
+    "PENDING": "Chờ duyệt",
+    "PUBLISHED": "Đã xuất bản",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "template": {
+    "default": "Mặc định",
+    "full-width": "Toàn chiều rộng",
+    "sidebar": "Có thanh bên",
+    "landing": "Trang đích"
+  },
+  "actions": {
+    "edit": "Chỉnh sửa",
+    "close": "Đóng",
+    "preview": "Xem trước",
+    "clone": "Nhân bản",
+    "publish": "Xuất bản",
+    "delete": "Xóa",
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa trang này?"
+  }
+}

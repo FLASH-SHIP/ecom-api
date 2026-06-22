@@ -1,3 +1,4 @@
+import ModuleI18nProvider from "@admin/components/i18n/ModuleI18nProvider";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -7,5 +8,20 @@ export const metadata: Metadata = {
 };
 
 export default function SystemLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+  return (
+    <ModuleI18nProvider
+      namespaces={[
+        "users",
+        "roles",
+        "cache",
+        "systemInfo",
+        "auditLogs",
+        "requestLogs",
+        "system",
+        "tools",
+      ]}
+    >
+      {children}
+    </ModuleI18nProvider>
+  );
 }

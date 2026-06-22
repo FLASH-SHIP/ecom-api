@@ -1,0 +1,30 @@
+{
+  "title": "Danh mục",
+  "subtitle": "Tổ chức bài viết blog theo danh mục",
+  "newCategory": "Danh mục mới",
+  "editCategory": "Sửa danh mục",
+  "noCategoriesTitle": "Chưa có danh mục",
+  "noCategoriesDescription": "Tạo danh mục đầu tiên để phân loại bài viết.",
+  "noCategories": "Không tìm thấy danh mục.",
+  "viewList": "Danh sách",
+  "viewTree": "Dạng cây",
+  "deleteConfirm": "Bạn có chắc chắn muốn xóa danh mục này?",
+  "actions": {
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa"
+  },
+  "fields": {
+    "name": "Tên",
+    "slug": "Đường dẫn",
+    "description": "Mô tả",
+    "icon": "Biểu tượng",
+    "parent": "Danh mục cha",
+    "order": "Thứ tự",
+    "status": "Trạng thái",
+    "isFeatured": "Nổi bật",
+    "isDefault": "Mặc định",
+    "postCount": "Bài viết",
+    "actions": "Tác vụ",
+    "date": "Ngày tạo"
+  }
+}

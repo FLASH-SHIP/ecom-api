@@ -859,7 +859,11 @@ export function DataTable<T extends Record<string, unknown>>({
         )}
 
         {/* Table */}
-        <Table key={tableKey} onDragLeave={draggingColumnId ? handleTableDragLeave : undefined}>
+        <Table
+          key={tableKey}
+          onDragLeave={draggingColumnId ? handleTableDragLeave : undefined}
+          style={{ width: table.getTotalSize(), minWidth: "100%" }}
+        >
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="bg-muted/30 hover:bg-muted/30">
@@ -890,8 +894,7 @@ export function DataTable<T extends Record<string, unknown>>({
                           : {}),
                       }}
                       className={cn(
-                        isPinned &&
-                          "bg-card group-hover/row:bg-muted/50 group-data-[state=selected]/row:bg-muted",
+                        isPinned && "sticky-cell-pinned",
                         header.column.id === draggingColumnId &&
                           "opacity-50 bg-primary/5 border-x-2 border-t-2 border-dashed border-primary",
                         header.column.id === dragOverColumnId &&
@@ -983,8 +986,7 @@ export function DataTable<T extends Record<string, unknown>>({
                         key={cell.id}
                         className={cn(
                           densityPadding,
-                          isPinned &&
-                            "bg-card group-hover/row:bg-muted/50 group-data-[state=selected]/row:bg-muted",
+                          isPinned && "sticky-cell-pinned",
                           cell.column.id === draggingColumnId &&
                             "opacity-50 bg-primary/5 border-x-2 border-dashed border-primary",
                           cell.column.id === dragOverColumnId &&

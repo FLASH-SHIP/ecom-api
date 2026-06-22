@@ -1,0 +1,42 @@
+{
+  "title": "Pages",
+  "subtitle": "Manage static pages",
+  "newPage": "New Page",
+  "editPage": "Edit Page",
+  "noPagesTitle": "No pages found",
+  "noPagesDescription": "Create your first static page.",
+  "createPage": "Create Page",
+  "fields": {
+    "title": "Title",
+    "slug": "Slug",
+    "content": "Content",
+    "template": "Template",
+    "order": "Order",
+    "isHomepage": "Homepage",
+    "status": "Status",
+    "author": "Author",
+    "date": "Date",
+    "actions": "Actions"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "PENDING": "Pending Review",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived"
+  },
+  "template": {
+    "default": "Default",
+    "full-width": "Full Width",
+    "sidebar": "With Sidebar",
+    "landing": "Landing Page"
+  },
+  "actions": {
+    "edit": "Edit",
+    "close": "Close",
+    "preview": "Preview",
+    "clone": "Clone",
+    "publish": "Publish",
+    "delete": "Delete",
+    "deleteConfirm": "Are you sure you want to delete this page?"
+  }
+}

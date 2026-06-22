@@ -1,0 +1,60 @@
+{
+  "title": "Audit Logs",
+  "subtitle": "Track system changes and user actions",
+  "noLogsTitle": "No audit logs",
+  "noLogsSubtitle": "Admin activities will be recorded here",
+  "purge": "Purge Logs",
+  "purgeConfirm": "Are you sure you want to purge audit logs older than {days} days?",
+  "purgeAll": "Delete all records",
+  "purgeAllTitle": "Delete all records",
+  "purgeAllMessage": "All audit logs will be permanently deleted. Are you sure?",
+  "purgeAllConfirm": "Delete all",
+  "reload": "Reload",
+  "deleteSuccess": "Audit log deleted",
+  "deleteError": "Failed to delete record",
+  "purgeAllSuccess": "All audit logs deleted",
+  "purgeAllError": "Failed to purge logs",
+  "bulkDeleteSuccess": "Deleted {count} audit log records",
+  "bulkDeleteError": "Bulk delete failed",
+  "bulkDeleteConfirm": "Delete {count} selected audit log records?",
+  "deleteRowConfirm": "Delete audit log #{id}?",
+  "systemUser": "System",
+  "fields": {
+    "action": "Action",
+    "module": "Module",
+    "user": "User",
+    "entityType": "Entity Type",
+    "entityId": "Entity ID",
+    "ipAddress": "IP Address",
+    "timestamp": "Timestamp"
+  },
+  "tableColAction": "Activity",
+  "tableColActionType": "Action Type",
+  "tableColModule": "Module",
+  "actions": {
+    "delete": "Delete",
+    "bulkDelete": "Delete"
+  },
+  "detail": {
+    "title": "Log detail #{id}",
+    "close": "Close",
+    "time": "Time",
+    "user": "User",
+    "actionModule": "Action / Module",
+    "entity": "Entity",
+    "ip": "IP",
+    "oldValues": "Old values",
+    "newValues": "New values"
+  },
+  "actionDesc": {
+    "LOGIN": "logged in",
+    "LOGOUT": "logged out",
+    "CREATE": "created {module}",
+    "UPDATE": "updated {module}",
+    "DELETE": "deleted {module}",
+    "PURGE": "purged {module} logs",
+    "CLEAR_CACHE": "cleared system cache",
+    "VIEW": "viewed {module}",
+    "default": "performed {action} on {module}"
+  }
+}
