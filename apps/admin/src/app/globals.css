@@ -90,6 +90,15 @@
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Admin dynamic color defaults (overridden at runtime by AppInitializer) */
+  --admin-primary-color: #206bc4;
+  --admin-primary-color-hover: #1b5ba6;
+  --admin-secondary-color: #6c7a91;
+  --admin-heading-color: inherit;
+  --admin-text-color: #182433;
+  --admin-link-color: #206bc4;
+  --admin-link-hover-color: #1a569d;
 }
 
 /* Dark mode */
