@@ -1,5 +1,40 @@
-import { prisma } from "@ecom/prisma";
+import { getCommentService } from "@ecom/features/di/containers/CommentService";
 import { Body, Controller, Get, NotFoundException, Param, Post, Query } from "@nestjs/common";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, ValidateIf } from "class-validator";
+
+class CreateCommentDto {
+  @IsString()
+  @IsNotEmpty()
+  content!: string;
+
+  @IsOptional()
+  @IsNumber()
+  postId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  pageId?: number;
+
+  @IsOptional()
+  @IsString()
+  authorName?: string;
+
+  @IsOptional()
+  @IsString()
+  authorEmail?: string;
+
+  @IsOptional()
+  @IsNumber()
+  parentId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  customerId?: number;
+
+  @ValidateIf((o: CreateCommentDto) => !o.postId && !o.pageId)
+  @IsNotEmpty({ message: "Either postId or pageId is required" })
+  _requireTarget?: never;
+}
 
 @Controller("v2/comments")
 export class CommentsController {
@@ -11,104 +46,34 @@ export class CommentsController {
     @Query("perPage") perPage = "20",
   ) {
     const take = Math.min(Number(perPage), 50);
-    const skip = (Number(page) - 1) * take;
 
-    const where: Record<string, unknown> = {};
-    if (postId) where.postId = Number(postId);
-    if (status) where.status = status;
-
-    const [data, total] = await Promise.all([
-      prisma.comment.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take,
-        skip,
-        select: {
-          id: true,
-          content: true,
-          authorName: true,
-          authorEmail: true,
-          status: true,
-          parentId: true,
-          createdAt: true,
-          postId: true,
-          pageId: true,
-        },
-      }),
-      prisma.comment.count({ where }),
-    ]);
-
-    return {
-      data,
-      meta: {
-        total,
-        page: Number(page),
-        perPage: take,
-        totalPages: Math.ceil(total / take),
-      },
-    };
+    return getCommentService().listComments({
+      postId: postId ? Number(postId) : undefined,
+      status: status as "pending" | "approved" | "spam" | "trash" | undefined,
+      page: Number(page),
+      perPage: take,
+    });
   }
 
   @Get(":id")
   async getComment(@Param("id") id: string) {
-    const comment = await prisma.comment.findUnique({
-      where: { id: Number(id) },
-      select: {
-        id: true,
-        content: true,
-        authorName: true,
-        authorEmail: true,
-        status: true,
-        parentId: true,
-        createdAt: true,
-        postId: true,
-        pageId: true,
-        replies: {
-          select: {
-            id: true,
-            content: true,
-            authorName: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
-
-    if (!comment) throw new NotFoundException("Comment not found");
-    return comment;
+    try {
+      return await getCommentService().getComment(Number(id));
+    } catch {
+      throw new NotFoundException("Comment not found");
+    }
   }
 
   @Post()
-  async createComment(
-    @Body()
-    body: {
-      content: string;
-      postId?: number;
-      pageId?: number;
-      authorName?: string;
-      authorEmail?: string;
-      parentId?: number;
-      memberId?: number;
-    },
-  ) {
-    return prisma.comment.create({
-      data: {
-        content: body.content,
-        postId: body.postId,
-        pageId: body.pageId,
-        authorName: body.authorName,
-        authorEmail: body.authorEmail,
-        parentId: body.parentId,
-        memberId: body.memberId,
-        status: "pending",
-      },
-      select: {
-        id: true,
-        content: true,
-        authorName: true,
-        status: true,
-        createdAt: true,
-      },
+  async createComment(@Body() body: CreateCommentDto) {
+    return getCommentService().createComment({
+      content: body.content,
+      postId: body.postId,
+      pageId: body.pageId,
+      authorName: body.authorName,
+      authorEmail: body.authorEmail,
+      parentId: body.parentId,
+      customerId: body.customerId,
     });
   }
 }

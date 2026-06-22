@@ -55,7 +55,10 @@
     "successSaved": "Saved successfully",
     "errorOccurred": "An error occurred. Please try again.",
     "unexpectedError": "This page encountered an unexpected error.",
-    "customFields": "Custom Fields"
+    "customFields": "Custom Fields",
+    "optional": "optional",
+    "socialAccounts": "Social Accounts",
+    "recentActivity": "Recent Activity"
   },
   "auth": {
     "login": "Sign in",
@@ -86,7 +89,7 @@
     "tags": "Tags",
     "media": "Media",
     "engagement": "Engagement",
-    "members": "Members",
+    "customers": "Customers",
     "comments": "Comments",
     "contacts": "Contacts",
     "utilities": "Utilities",
@@ -114,12 +117,12 @@
     "title": "Dashboard",
     "subtitle": "Overview of your content management system",
     "systemOverview": "System Overview",
-    "memberOverview": "Member Overview",
+    "customerOverview": "Customer Overview",
     "auditSummary": "Audit Summary",
     "statCards": {
       "totalPosts": "Total Posts",
       "categories": "Categories",
-      "members": "Members",
+      "customers": "Customers",
       "activityToday": "Activity Today",
       "pendingComments": "Pending Comments",
       "newContacts": "New Contacts"
@@ -140,7 +143,7 @@
     "totalPages": "Total Pages",
     "totalCategories": "Categories",
     "totalUsers": "Users",
-    "totalMembers": "Members",
+    "totalCustomers": "Customers",
     "viewsToday": "Views Today",
     "recentActivity": "Recent Activity",
     "noActivity": "No recent activity to display. Start by creating your first post.",
@@ -457,13 +460,15 @@
       "phone": "Phone"
     }
   },
-  "members": {
-    "title": "Members",
+  "customers": {
+    "title": "Customers",
     "subtitle": "Manage registered customers",
-    "newMember": "New Member",
-    "addMember": "Add Member",
-    "editMember": "Edit Member",
-    "noMembersTitle": "No members found",
+    "newCustomer": "New Customer",
+    "addCustomer": "Add Customer",
+    "editCustomer": "Edit Customer",
+    "noCustomersTitle": "No customers found",
+    "noCustomersSubtitle": "Add a customer to get started",
+    "unauthorized": "You need to log in to view this page.",
     "fields": {
       "name": "Name",
       "email": "Email",
@@ -479,28 +484,61 @@
       "BANNED": "Banned"
     },
     "stats": {
-      "total": "Total Members",
+      "total": "Total Customers",
       "active": "Active",
       "inactive": "Inactive",
       "banned": "Banned"
     },
     "form": {
-      "emailLabel": "Email *",
-      "nameLabel": "Name",
+      "emailLabel": "Email",
+      "nameLabel": "Full Name",
+      "namePlaceholder": "e.g. Nguyen Van An",
       "phoneLabel": "Phone",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Min. 8 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "passwordMismatch": "Passwords do not match",
+      "dobLabel": "Date of Birth",
+      "genderLabel": "Gender",
+      "genderPlaceholder": "Select gender",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Notes about this customer...",
       "creating": "Creating...",
-      "create": "Create Member",
+      "create": "Create Customer",
       "cancel": "Cancel"
     },
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "drawer": {
+      "createTitle": "Add New Customer",
+      "editTitle": "Edit Customer",
+      "saving": "Saving...",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Password is required",
+      "passwordMin": "Password must be at least 8 characters",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordMismatch": "Passwords do not match"
+    },
     "detail": {
-      "title": "Member Detail",
-      "noMemberSelected": "Select a member to view details",
+      "title": "Customer Detail",
+      "noCustomerSelected": "Select a customer to view details",
       "status": "Status",
       "changeStatus": "Change Status",
-      "memberSince": "Member since",
+      "customerSince": "Customer since",
       "lastLogin": "Last login",
       "never": "Never",
-      "deleteConfirm": "Are you sure you want to delete this member?"
+      "deleteConfirm": "Are you sure you want to delete this customer?",
+      "statusConfirm": "Change status to {status}?",
+      "statusConfirmTitle": "Confirm Status Change",
+      "statusConfirmButton": "Change Status"
     }
   },
   "roles": {
@@ -1171,8 +1209,8 @@
       "tagsDesc": "All tags",
       "pages": "Pages",
       "pagesDesc": "Static pages",
-      "members": "Members",
-      "membersDesc": "Customer members",
+      "customers": "Customers",
+      "customersDesc": "Customer accounts",
       "settings": "Settings",
       "settingsDesc": "System settings key-value pairs"
     }
@@ -1278,6 +1316,29 @@
         "empty": "Empty",
         "notEmpty": "Not empty"
       }
+    }
+  },
+  "errors": {
+    "401": {
+      "title": "Unauthorized Access",
+      "subtitle": "You do not have permission to view this page.",
+      "backToDashboard": "Back to Dashboard"
+    },
+    "403": {
+      "title": "Access Denied",
+      "subtitle": "You do not have permission to perform this action.",
+      "backToDashboard": "Back to Dashboard"
+    },
+    "404": {
+      "title": "Ooops... 404!",
+      "subtitle": "The page you requested could not be found.",
+      "backToDashboard": "Back to Dashboard"
+    },
+    "500": {
+      "title": "Something went wrong!",
+      "subtitle": "Server Error 500. Our staff has been notified, thank you for your understanding.",
+      "backToDashboard": "Back to Dashboard",
+      "tryAgain": "Try Again"
     }
   },
   "media": {

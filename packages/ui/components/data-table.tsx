@@ -120,6 +120,7 @@ export function DataTable<T extends Record<string, unknown>>({
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no stable identity
                   <tr key={`skeleton-${i}`} className="animate-pulse">
                     {onSelectRow && getRowId && (
                       <td className="px-4 py-3">

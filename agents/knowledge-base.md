@@ -29,7 +29,7 @@ Examples:
 - `users.roles.assign` — can assign roles to users
 - `media.files.upload` — can upload media files
 
-Default roles: `super-admin`, `admin`, `editor`, `author`
+Default roles: `admin` (Super Admin), `editor`, `viewer`
 
 ### Important RBAC Rules
 
@@ -100,13 +100,19 @@ Control logging verbosity by setting `LOG_LEVEL` in .env:
 - `warn` — Warn, error only
 - `error` — Error only
 
+### Default Dev Credentials
+
+After seeding (`yarn db:seed`):
+- `admin@ecom.com` / `password123` (Super Admin — role: `admin`, all 58 permissions)
+
 ### UI Component Locations
 
-- Login page: `apps/web/app/(auth)/login/page.tsx`
-- Dashboard: `apps/web/app/(dashboard)/page.tsx`
-- Blog posts: `apps/web/app/(dashboard)/blog/posts/page.tsx`
-- Users: `apps/web/app/(dashboard)/users/page.tsx`
-- Roles: `apps/web/app/(dashboard)/settings/roles/page.tsx`
+- Login page: `apps/admin/src/app/(auth)/login/page.tsx`
+- Dashboard: `apps/admin/src/app/(main)/page.tsx`
+- Blog posts: `apps/admin/src/app/(main)/posts/page.tsx`
+- Users: `apps/admin/src/app/(main)/users/page.tsx`
+- Customers: `apps/admin/src/app/(main)/customers/page.tsx`
+- Roles: `apps/admin/src/app/(main)/settings/roles/page.tsx`
 
 ### DataTable
 

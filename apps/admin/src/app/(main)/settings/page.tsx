@@ -62,9 +62,7 @@ export default function SettingsOverviewPage() {
       {SETTING_SECTIONS.map((section) => (
         <Card key={section.groupKey}>
           <CardHeader className="border-b border-border px-6 py-4">
-            <CardTitle className="text-base font-semibold">
-              {t(section.groupKey)}
-            </CardTitle>
+            <CardTitle className="text-base font-semibold">{t(section.groupKey)}</CardTitle>
           </CardHeader>
           <CardContent className="px-4 py-5">
             <div className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">

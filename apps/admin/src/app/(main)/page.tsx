@@ -22,17 +22,24 @@ const colorMap = {
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
-  const { data: postStats } = trpc.viewer.posts.list.useQuery({ page: 1, perPage: 1 });
-  const { data: categoryStats } = trpc.viewer.categories.list.useQuery();
-  const { data: memberStats } = trpc.viewer.members.stats.useQuery();
-  const { data: auditStats } = trpc.viewer.auditLogs.stats.useQuery();
-  const { data: sysInfo } = trpc.viewer.system.systemInfo.useQuery();
-  const { data: commentCounts } = trpc.viewer.comments.statusCounts.useQuery();
-  const { data: contactCounts } = trpc.viewer.contacts.statusCounts.useQuery();
+  const { data: postStats } = trpc.viewer.posts.list.useQuery(
+    { page: 1, perPage: 1 },
+    { retry: false },
+  );
+  const { data: categoryStats } = trpc.viewer.categories.list.useQuery(undefined, { retry: false });
+  const { data: customerStats } = trpc.viewer.customers.stats.useQuery(undefined, { retry: false });
+  const { data: auditStats } = trpc.viewer.auditLogs.stats.useQuery(undefined, { retry: false });
+  const { data: sysInfo } = trpc.viewer.system.systemInfo.useQuery(undefined, { retry: false });
+  const { data: commentCounts } = trpc.viewer.comments.statusCounts.useQuery(undefined, {
+    retry: false,
+  });
+  const { data: contactCounts } = trpc.viewer.contacts.statusCounts.useQuery(undefined, {
+    retry: false,
+  });
 
   const totalPosts = postStats?.meta?.total ?? 0;
   const totalCategories = Array.isArray(categoryStats) ? categoryStats.length : 0;
-  const totalMembers = memberStats?.total ?? 0;
+  const totalCustomers = customerStats?.total ?? 0;
   const auditToday = auditStats?.todayCount ?? 0;
   const pendingComments = (commentCounts as Record<string, number> | undefined)?.pending ?? 0;
   const newContacts = (contactCounts as Record<string, number> | undefined)?.new ?? 0;
@@ -50,7 +57,12 @@ export default function DashboardPage() {
       icon: FolderTree,
       color: "warning" as const,
     },
-    { label: t("statCards.members"), value: totalMembers, icon: Users, color: "success" as const },
+    {
+      label: t("statCards.customers"),
+      value: totalCustomers,
+      icon: Users,
+      color: "success" as const,
+    },
     {
       label: t("statCards.activityToday"),
       value: auditToday,
@@ -111,27 +123,27 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* Member Stats */}
-        {memberStats && (
+        {/* Customer Stats */}
+        {customerStats && (
           <Card>
             <CardContent className="p-6">
               <div className="mb-4 flex items-center gap-2">
                 <Users size={20} className="text-primary" />
-                <h3 className="font-semibold">{t("memberOverview")}</h3>
+                <h3 className="font-semibold">{t("customerOverview")}</h3>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <InfoCard
                   label={t("infoCards.active")}
-                  value={String(memberStats.active)}
+                  value={String(customerStats.active)}
                   variant="success"
                 />
-                <InfoCard label={t("infoCards.inactive")} value={String(memberStats.inactive)} />
+                <InfoCard label={t("infoCards.inactive")} value={String(customerStats.inactive)} />
                 <InfoCard
                   label={t("infoCards.banned")}
-                  value={String(memberStats.banned)}
+                  value={String(customerStats.banned)}
                   variant="destructive"
                 />
-                <InfoCard label={t("infoCards.total")} value={String(memberStats.total)} />
+                <InfoCard label={t("infoCards.total")} value={String(customerStats.total)} />
               </div>
             </CardContent>
           </Card>

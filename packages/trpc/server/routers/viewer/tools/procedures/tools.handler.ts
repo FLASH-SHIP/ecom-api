@@ -4,7 +4,7 @@ import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
 import { authedProcedure, requirePermission } from "@ecom/trpc/server/trpc";
 import { z } from "zod";
 
-const moduleEnum = z.enum(["posts", "categories", "tags", "pages", "members", "settings", "all"]);
+const moduleEnum = z.enum(["posts", "categories", "tags", "pages", "customers", "settings", "all"]);
 const importModuleEnum = z.enum(["posts", "categories", "tags", "pages", "settings"]);
 
 export const exportData = authedProcedure
@@ -21,8 +21,8 @@ export const exportData = authedProcedure
         return { module: "tags", data: await service.exportTags() };
       case "pages":
         return { module: "pages", data: await service.exportPages() };
-      case "members":
-        return { module: "members", data: await service.exportMembers() };
+      case "customers":
+        return { module: "customers", data: await service.exportCustomers() };
       case "settings":
         return { module: "settings", data: await service.exportSettings() };
       case "all":

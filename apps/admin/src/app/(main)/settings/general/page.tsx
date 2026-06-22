@@ -214,7 +214,9 @@ export default function GeneralSettingsPage() {
           >
             <div className="flex items-end gap-4 border-b border-border px-6 py-4">
               <div className="flex-1 flex flex-col gap-1.5">
-                <Label htmlFor="custom-key">{t("fields.key")} <span className="text-destructive">*</span></Label>
+                <Label htmlFor="custom-key">
+                  {t("fields.key")} <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="custom-key"
                   value={customKey}

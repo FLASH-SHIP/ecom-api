@@ -45,11 +45,11 @@ export const Permissions = {
   ROLES_UPDATE: "roles.update",
   ROLES_DELETE: "roles.delete",
 
-  // Members (Customers)
-  MEMBERS_READ: "members.read",
-  MEMBERS_CREATE: "members.create",
-  MEMBERS_UPDATE: "members.update",
-  MEMBERS_DELETE: "members.delete",
+  // Customers
+  CUSTOMERS_READ: "customers.read",
+  CUSTOMERS_CREATE: "customers.create",
+  CUSTOMERS_UPDATE: "customers.update",
+  CUSTOMERS_DELETE: "customers.delete",
 
   // Custom Fields
   CUSTOM_FIELDS_READ: "custom-fields.read",
@@ -144,11 +144,11 @@ export const ALL_PERMISSIONS: Array<{ name: string; displayName: string; group: 
   { name: Permissions.ROLES_UPDATE, displayName: "Update Roles", group: "roles" },
   { name: Permissions.ROLES_DELETE, displayName: "Delete Roles", group: "roles" },
 
-  // Members
-  { name: Permissions.MEMBERS_READ, displayName: "View Members", group: "members" },
-  { name: Permissions.MEMBERS_CREATE, displayName: "Create Members", group: "members" },
-  { name: Permissions.MEMBERS_UPDATE, displayName: "Update Members", group: "members" },
-  { name: Permissions.MEMBERS_DELETE, displayName: "Delete Members", group: "members" },
+  // Customers
+  { name: Permissions.CUSTOMERS_READ, displayName: "View Customers", group: "customers" },
+  { name: Permissions.CUSTOMERS_CREATE, displayName: "Create Customers", group: "customers" },
+  { name: Permissions.CUSTOMERS_UPDATE, displayName: "Update Customers", group: "customers" },
+  { name: Permissions.CUSTOMERS_DELETE, displayName: "Delete Customers", group: "customers" },
 
   // Custom Fields
   {

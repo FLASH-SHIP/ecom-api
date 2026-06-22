@@ -68,10 +68,10 @@ function LanguagePicker({
           >
             {selected ? (
               <span className="flex items-center gap-2">
-                {selected.flag && (
-                  <span className="text-base">{getFlagEmoji(selected.flag)}</span>
-                )}
-                <span>{selected.name} ({selected.locale})</span>
+                {selected.flag && <span className="text-base">{getFlagEmoji(selected.flag)}</span>}
+                <span>
+                  {selected.name} ({selected.locale})
+                </span>
               </span>
             ) : (
               <span className="text-muted-foreground">{label}</span>
@@ -89,6 +89,7 @@ function LanguagePicker({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search language..."
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              // biome-ignore lint/a11y/noAutofocus: intentional — search input inside a popover should receive focus immediately when the dropdown opens
               autoFocus
             />
           </div>
@@ -402,14 +403,13 @@ function FlagPicker({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search flag..."
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              // biome-ignore lint/a11y/noAutofocus: intentional — search input inside a popover should receive focus immediately when the dropdown opens
               autoFocus
             />
           </div>
           <PerfectScroll className="max-h-56 py-1">
             {filtered.length === 0 ? (
-              <p className="px-3 py-4 text-center text-sm text-muted-foreground">
-                No flags found.
-              </p>
+              <p className="px-3 py-4 text-center text-sm text-muted-foreground">No flags found.</p>
             ) : (
               filtered.map((f) => (
                 <button
@@ -569,7 +569,9 @@ export function LanguageFormDrawer({
 
               {/* Language name */}
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="lang-name">{t("name")} <span className="text-destructive">*</span></Label>
+                <Label htmlFor="lang-name">
+                  {t("name")} <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="lang-name"
                   value={formData.name}
@@ -582,7 +584,9 @@ export function LanguageFormDrawer({
 
               {/* Locale */}
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="lang-locale">{t("locale")} <span className="text-destructive">*</span></Label>
+                <Label htmlFor="lang-locale">
+                  {t("locale")} <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="lang-locale"
                   value={formData.locale}
@@ -596,7 +600,9 @@ export function LanguageFormDrawer({
 
               {/* Code */}
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="lang-code">{t("code")} <span className="text-destructive">*</span></Label>
+                <Label htmlFor="lang-code">
+                  {t("code")} <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="lang-code"
                   value={formData.code}

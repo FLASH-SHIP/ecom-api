@@ -13,6 +13,7 @@ const nextAuth: NextAuthResult = NextAuth({
   pages: {
     signIn: "/login",
   },
+  debug: true,
   providers: [
     Credentials({
       name: "credentials",

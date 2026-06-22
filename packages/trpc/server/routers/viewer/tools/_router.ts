@@ -5,7 +5,7 @@ import {
   bulkDeletePages,
   bulkDeletePosts,
   bulkDeleteTags,
-  bulkStatusMembers,
+  bulkStatusCustomers,
   bulkStatusPosts,
 } from "./procedures/bulk.handler";
 import {
@@ -31,6 +31,6 @@ export const toolsRouter = router({
     deleteCategories: bulkDeleteCategories,
     deleteTags: bulkDeleteTags,
     deletePages: bulkDeletePages,
-    statusMembers: bulkStatusMembers,
+    statusCustomers: bulkStatusCustomers,
   }),
 });

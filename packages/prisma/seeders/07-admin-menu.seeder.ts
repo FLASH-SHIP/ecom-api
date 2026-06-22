@@ -357,6 +357,7 @@ const MENU_ITEMS: SeedItem[] = [
 export const AdminMenuSeeder: Seeder = {
   name: "Admin Menu",
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: hierarchical menu seeding — must process parents before children, batch creates/updates separately
   async run(prisma: PrismaClient) {
     // Step 1: Fetch all existing items in 1 query — build key → id map
     const existing = await prisma.adminMenuItem.findMany({

@@ -46,7 +46,7 @@ export function generateSecureToken(length = 32): string {
  * Hash a password using bcrypt with 12 salt rounds.
  */
 export async function hashPassword(password: string): Promise<string> {
-  const bcrypt = await import("bcryptjs");
+  const { default: bcrypt } = await import("bcryptjs");
   return bcrypt.hash(password, 12);
 }
 
@@ -54,6 +54,6 @@ export async function hashPassword(password: string): Promise<string> {
  * Verify a password against a bcrypt hash.
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const bcrypt = await import("bcryptjs");
+  const { default: bcrypt } = await import("bcryptjs");
   return bcrypt.compare(password, hash);
 }

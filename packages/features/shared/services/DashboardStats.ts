@@ -21,7 +21,7 @@ export async function getDashboardStats() {
     pendingComments,
     totalContacts,
     newContacts,
-    totalMembers,
+    totalCustomers,
     totalMedia,
     totalMediaSize,
     recentPosts,
@@ -38,7 +38,7 @@ export async function getDashboardStats() {
     prisma.comment.count({ where: { status: "PENDING" } }),
     prisma.contactSubmission.count(),
     prisma.contactSubmission.count({ where: { status: "NEW" } }),
-    prisma.member.count(),
+    prisma.customer.count(),
     prisma.mediaFile.count(),
     prisma.mediaFile.aggregate({ _sum: { size: true } }),
     prisma.post.findMany({
@@ -72,7 +72,7 @@ export async function getDashboardStats() {
       newContacts,
     },
     people: {
-      totalMembers,
+      totalCustomers,
     },
     media: {
       totalMedia,

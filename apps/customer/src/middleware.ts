@@ -21,6 +21,7 @@ const LOCALE_COOKIE = "NEXT_LOCALE";
  *
  * Skip paths: /api, /_next, static assets.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: locale resolution requires multiple priority checks (path → cookie → Accept-Language → default)
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 

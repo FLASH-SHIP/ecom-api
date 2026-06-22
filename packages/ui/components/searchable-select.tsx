@@ -55,7 +55,7 @@ function SearchableSelect({
     setSearch("");
   };
 
-  const handleClear = (e: React.MouseEvent) => {
+  const _handleClear = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onValueChange?.("");
@@ -94,8 +94,8 @@ function SearchableSelect({
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-1">
             {showClear && (
-              <span
-                role="button"
+              <button
+                type="button"
                 tabIndex={-1}
                 aria-label="Clear selection"
                 onPointerDownCapture={(e) => {
@@ -106,9 +106,12 @@ function SearchableSelect({
                 className="rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
               >
                 <X className="size-3.5" />
-              </span>
+              </button>
             )}
-            <span className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground cursor-pointer">
+            <span
+              aria-hidden="true"
+              className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
+            >
               <ChevronsUpDown className="size-3.5 shrink-0" />
             </span>
           </span>

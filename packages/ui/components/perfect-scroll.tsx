@@ -2,9 +2,9 @@
 
 import PerfectScrollbar from "perfect-scrollbar";
 import "perfect-scrollbar/css/perfect-scrollbar.css";
+import { cn } from "@ecom/ui/lib/utils";
 import type { HTMLAttributes, ReactNode } from "react";
 import { forwardRef, useEffect, useRef } from "react";
-import { cn } from "@ecom/ui/lib/utils";
 
 export interface PerfectScrollProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;

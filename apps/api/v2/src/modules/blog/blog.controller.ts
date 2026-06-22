@@ -1,4 +1,4 @@
-import { prisma } from "@ecom/prisma";
+import { getCategoryService, getPostService } from "@ecom/features/di/containers/BlogService";
 import { Controller, Get, NotFoundException, Param, Query } from "@nestjs/common";
 
 @Controller("v2/blog")
@@ -11,105 +11,39 @@ export class BlogController {
     @Query("category") categoryId?: string,
   ) {
     const take = Math.min(Number(perPage), 50);
-    const skip = (Number(page) - 1) * take;
 
-    const where: Record<string, unknown> = {
+    const result = await getPostService().listPosts({
       status: "PUBLISHED",
-      deletedAt: null,
-    };
+      search,
+      categoryId: categoryId ? Number(categoryId) : undefined,
+      page: Number(page),
+      perPage: take,
+      sortBy: "publishedAt",
+      sortOrder: "desc",
+    });
 
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { excerpt: { contains: search, mode: "insensitive" } },
-      ];
-    }
-
-    if (categoryId) {
-      where.categories = {
-        some: { categoryId: Number(categoryId) },
-      };
-    }
-
-    const [data, total] = await Promise.all([
-      prisma.post.findMany({
-        where,
-        orderBy: { publishedAt: "desc" },
-        take,
-        skip,
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          excerpt: true,
-          featuredImage: true,
-          publishedAt: true,
-          views: true,
-          author: { select: { id: true, name: true } },
-          categories: {
-            select: { category: { select: { id: true, name: true, slug: true } } },
-          },
-        },
-      }),
-      prisma.post.count({ where }),
-    ]);
-
-    return {
-      data,
-      meta: {
-        total,
-        page: Number(page),
-        perPage: take,
-        totalPages: Math.ceil(total / take),
-      },
-    };
+    return result;
   }
 
   @Get("posts/:slug")
   async getPostBySlug(@Param("slug") slug: string) {
-    const post = await prisma.post.findFirst({
-      where: { slug, status: "PUBLISHED", deletedAt: null },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        content: true,
-        excerpt: true,
-        featuredImage: true,
-        publishedAt: true,
-        views: true,
-        author: { select: { id: true, name: true } },
-        categories: {
-          select: { category: { select: { id: true, name: true, slug: true } } },
-        },
-        tags: {
-          select: { tag: { select: { id: true, name: true, slug: true } } },
-        },
-      },
-    });
+    try {
+      const post = await getPostService().getPostBySlug(slug);
 
-    if (!post) throw new NotFoundException("Post not found");
+      // Fire-and-forget view increment — non-blocking
+      getPostService()
+        .recordView(post.id)
+        .catch(() => {});
 
-    prisma.post
-      .update({ where: { id: post.id }, data: { views: { increment: 1 } } })
-      .catch(() => {});
-
-    return post;
+      return post;
+    } catch {
+      throw new NotFoundException("Post not found");
+    }
   }
 
   @Get("categories")
   async listCategories() {
-    return prisma.category.findMany({
-      where: { status: "PUBLISHED", deletedAt: null },
-      orderBy: { order: "asc" },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        icon: true,
-        parentId: true,
-      },
-    });
+    const result = await getCategoryService().listCategories({ status: "PUBLISHED" });
+    return result;
   }
 }

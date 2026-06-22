@@ -4,6 +4,7 @@ import { trpc } from "@admin/lib/trpc";
 import { Button } from "@ecom/ui/components/button";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
+import { PerfectScroll } from "@ecom/ui/components/perfect-scroll";
 import {
   Select,
   SelectContent,
@@ -11,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
-import { PerfectScroll } from "@ecom/ui/components/perfect-scroll";
 import { Separator } from "@ecom/ui/components/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@ecom/ui/components/sheet";
 import { AlertCircle, Loader2, Save } from "lucide-react";

@@ -1,5 +1,35 @@
-import { prisma } from "@ecom/prisma";
+import { getContactService } from "@ecom/features/di/containers/ContactService";
 import { Body, Controller, Get, NotFoundException, Param, Post, Query } from "@nestjs/common";
+import { IsEmail, IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
+
+class CreateSubmissionDto {
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  subject?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  message!: string;
+
+  @IsOptional()
+  @IsString()
+  formSlug?: string;
+
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, unknown>;
+}
 
 @Controller("v2/contacts")
 export class ContactsController {
@@ -11,105 +41,34 @@ export class ContactsController {
     @Query("perPage") perPage = "20",
   ) {
     const take = Math.min(Number(perPage), 50);
-    const skip = (Number(page) - 1) * take;
 
-    const where: Record<string, unknown> = {};
-    if (formSlug) where.formSlug = formSlug;
-    if (status) where.status = status;
-
-    const [data, total] = await Promise.all([
-      prisma.contactSubmission.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take,
-        skip,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          subject: true,
-          status: true,
-          formSlug: true,
-          createdAt: true,
-        },
-      }),
-      prisma.contactSubmission.count({ where }),
-    ]);
-
-    return {
-      data,
-      meta: {
-        total,
-        page: Number(page),
-        perPage: take,
-        totalPages: Math.ceil(total / take),
-      },
-    };
+    return getContactService().listSubmissions({
+      formSlug,
+      status: status as "new" | "read" | "replied" | "archived" | undefined,
+      page: Number(page),
+      perPage: take,
+    });
   }
 
   @Get(":id")
   async getSubmission(@Param("id") id: string) {
-    const submission = await prisma.contactSubmission.findUnique({
-      where: { id: Number(id) },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        subject: true,
-        message: true,
-        status: true,
-        formSlug: true,
-        metadata: true,
-        createdAt: true,
-      },
-    });
-
-    if (!submission) throw new NotFoundException("Submission not found");
-
-    // Auto-mark as read
-    if (submission.status === "new") {
-      await prisma.contactSubmission.update({
-        where: { id: Number(id) },
-        data: { status: "read" },
-      });
+    try {
+      return await getContactService().getSubmission(Number(id));
+    } catch {
+      throw new NotFoundException("Submission not found");
     }
-
-    return submission;
   }
 
   @Post()
-  async createSubmission(
-    @Body()
-    body: {
-      name: string;
-      email: string;
-      phone?: string;
-      subject?: string;
-      message: string;
-      formSlug?: string;
-      metadata?: Record<string, unknown>;
-    },
-  ) {
-    return prisma.contactSubmission.create({
-      data: {
-        name: body.name,
-        email: body.email,
-        phone: body.phone,
-        subject: body.subject,
-        message: body.message,
-        formSlug: body.formSlug ?? "default",
-        metadata: (body.metadata as never) ?? undefined,
-        status: "new",
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        status: true,
-        createdAt: true,
-      },
+  async createSubmission(@Body() body: CreateSubmissionDto) {
+    return getContactService().createSubmission({
+      name: body.name,
+      email: body.email,
+      phone: body.phone,
+      subject: body.subject,
+      message: body.message,
+      formSlug: body.formSlug ?? "default",
+      metadata: body.metadata,
     });
   }
 }

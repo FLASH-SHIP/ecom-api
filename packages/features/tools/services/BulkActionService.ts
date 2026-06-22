@@ -74,12 +74,12 @@ export class BulkActionService {
     });
   }
 
-  async bulkStatusMembers(
+  async bulkStatusCustomers(
     ids: number[],
     status: "ACTIVE" | "INACTIVE" | "BANNED",
   ): Promise<BulkResult> {
     return this.processBulk(ids, async (id) => {
-      await this.prisma.member.update({ where: { id }, data: { status } });
+      await this.prisma.customer.update({ where: { id }, data: { status } });
     });
   }
 

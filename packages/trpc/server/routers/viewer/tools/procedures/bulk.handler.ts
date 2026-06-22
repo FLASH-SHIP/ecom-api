@@ -72,9 +72,9 @@ export const bulkDeletePages = authedProcedure
     return svc.bulkDeletePages(input.ids);
   });
 
-export const bulkStatusMembers = authedProcedure
-  .use(requirePermission(Permissions.MEMBERS_UPDATE))
-  .use(auditLog({ module: "bulk", action: "BULK_STATUS", entityType: "Member" }))
+export const bulkStatusCustomers = authedProcedure
+  .use(requirePermission(Permissions.CUSTOMERS_UPDATE))
+  .use(auditLog({ module: "bulk", action: "BULK_STATUS", entityType: "Customer" }))
   .input(
     z.object({
       ids: z.array(z.number().int().positive()).min(1).max(100),
@@ -83,5 +83,5 @@ export const bulkStatusMembers = authedProcedure
   )
   .mutation(async ({ input }) => {
     const svc = getBulkActionService();
-    return svc.bulkStatusMembers(input.ids, input.status);
+    return svc.bulkStatusCustomers(input.ids, input.status);
   });

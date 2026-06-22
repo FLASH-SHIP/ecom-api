@@ -3,15 +3,8 @@ import { ErrorWithCode } from "@ecom/lib/errors";
 import bcrypt from "bcryptjs";
 import type { UserRepository } from "../repositories/UserRepository";
 
-/** Minimal interface for media cleanup — avoids importing the full MediaFileService module */
-interface IMediaFileCleanup {
-  deleteByUrl(url: string): Promise<boolean>;
-}
-
 interface IAuthServiceDeps {
   userRepo: UserRepository;
-  /** Optional — required for avatar cleanup on profile update */
-  mediaFileService?: IMediaFileCleanup;
 }
 
 export class AuthService {
@@ -82,6 +75,7 @@ export class AuthService {
       avatarUrl?: string | null;
       locale?: string;
     },
+    cleanupAvatar?: (oldUrl: string) => Promise<unknown> | undefined,
   ) {
     // Validate username uniqueness
     if (data.username) {
@@ -92,11 +86,11 @@ export class AuthService {
     }
 
     // Clean up old avatar when a new one is uploaded
-    if (data.avatarUrl !== undefined && data.avatarUrl !== null && this.deps.mediaFileService) {
+    if (data.avatarUrl !== undefined && data.avatarUrl !== null && cleanupAvatar) {
       const current = await this.deps.userRepo.findById(userId);
       if (current?.avatarUrl && current.avatarUrl !== data.avatarUrl) {
         // Fire-and-forget: don't block profile update if cleanup fails
-        void this.deps.mediaFileService.deleteByUrl(current.avatarUrl).catch(() => undefined);
+        void Promise.resolve(cleanupAvatar(current.avatarUrl)).catch(() => undefined);
       }
     }
 

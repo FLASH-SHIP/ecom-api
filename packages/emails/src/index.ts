@@ -84,6 +84,21 @@ export interface MemberWelcomeEmailData {
   loginUrl: string;
 }
 
+export interface EmailVerificationData {
+  name: string;
+  verifyUrl: string;
+}
+
+export interface CustomerPasswordResetData {
+  name: string;
+  resetUrl: string;
+}
+
+export interface CustomerWelcomeEmailData {
+  customerName: string;
+  loginUrl: string;
+}
+
 // ─── Email Template Builders ─────────────────────────────────
 
 const BRAND = "Ecom";
@@ -160,15 +175,48 @@ export function buildCommentNotificationEmail(data: CommentNotificationData): Em
   };
 }
 
+/** @deprecated Use buildCustomerWelcomeEmail instead */
 export function buildMemberWelcomeEmail(data: MemberWelcomeEmailData): EmailPayload {
+  return buildCustomerWelcomeEmail({ customerName: data.memberName, loginUrl: data.loginUrl });
+}
+
+export function buildCustomerWelcomeEmail(data: CustomerWelcomeEmailData): EmailPayload {
   return {
     to: "",
-    subject: `Chào mừng thành viên mới — ${BRAND}`,
+    subject: `Chào mừng khách hàng mới — ${BRAND}`,
     html: wrap(`
-      <h2 style="color:#1e293b;">Chào mừng ${data.memberName}!</h2>
-      <p>Tài khoản thành viên của bạn đã được đăng ký thành công.</p>
+      <h2 style="color:#1e293b;">Chào mừng ${data.customerName}!</h2>
+      <p>Tài khoản của bạn đã được đăng ký thành công.</p>
       <a href="${data.loginUrl}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">Đăng nhập</a>
     `),
-    text: `Chào mừng ${data.memberName}! Đăng nhập: ${data.loginUrl}`,
+    text: `Chào mừng ${data.customerName}! Đăng nhập: ${data.loginUrl}`,
+  };
+}
+
+export function buildEmailVerificationEmail(data: EmailVerificationData): EmailPayload {
+  return {
+    to: "",
+    subject: `Xác minh email — ${BRAND}`,
+    html: wrap(`
+      <h2 style="color:#1e293b;">Xin chào ${data.name},</h2>
+      <p>Vui lòng xác minh địa chỉ email của bạn bằng cách nhấn vào nút bên dưới:</p>
+      <a href="${data.verifyUrl}" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">Xác minh email</a>
+      <p style="margin-top:16px;color:#64748b;">Link này sẽ hết hạn sau 24 giờ.</p>
+    `),
+    text: `Xác minh email: ${data.verifyUrl}`,
+  };
+}
+
+export function buildCustomerPasswordResetEmail(data: CustomerPasswordResetData): EmailPayload {
+  return {
+    to: "",
+    subject: `Đặt lại mật khẩu tài khoản — ${BRAND}`,
+    html: wrap(`
+      <h2 style="color:#1e293b;">Xin chào ${data.name},</h2>
+      <p>Bạn đã yêu cầu đặt lại mật khẩu tài khoản khách hàng. Nhấn vào nút bên dưới:</p>
+      <a href="${data.resetUrl}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">Đặt lại mật khẩu</a>
+      <p style="margin-top:16px;color:#64748b;">Link này sẽ hết hạn sau 1 giờ. Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
+    `),
+    text: `Đặt lại mật khẩu: ${data.resetUrl}`,
   };
 }
