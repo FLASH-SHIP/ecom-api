@@ -188,24 +188,28 @@ export class TranslationRepository {
   async findTagTranslation(tagId: number, langCode: string) {
     return this.prisma.tagTranslation.findUnique({
       where: { tagId_langCode: { tagId, langCode } },
-      select: { id: true, langCode: true, name: true },
+      select: { id: true, langCode: true, name: true, description: true },
     });
   }
 
   async findTagTranslations(tagId: number) {
     return this.prisma.tagTranslation.findMany({
       where: { tagId },
-      select: { id: true, langCode: true, name: true },
+      select: { id: true, langCode: true, name: true, description: true },
       orderBy: { langCode: "asc" },
     });
   }
 
-  async upsertTagTranslation(tagId: number, langCode: string, data: { name: string }) {
+  async upsertTagTranslation(
+    tagId: number,
+    langCode: string,
+    data: { name: string; description?: string | null },
+  ) {
     return this.prisma.tagTranslation.upsert({
       where: { tagId_langCode: { tagId, langCode } },
       create: { tagId, langCode, ...data },
       update: data,
-      select: { id: true, langCode: true, name: true },
+      select: { id: true, langCode: true, name: true, description: true },
     });
   }
 

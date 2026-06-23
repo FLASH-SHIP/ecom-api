@@ -1,6 +1,7 @@
 "use client";
 
 import { TagForm } from "@admin/components/blog/tag-form";
+import { useLanguageSwitcher } from "@admin/hooks/useLanguageSwitcher";
 import { trpc } from "@admin/lib/trpc";
 import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
@@ -16,6 +17,13 @@ export default function EditTagPage() {
     isLoading,
     error,
   } = trpc.viewer.tags.get.useQuery({ id: tagId }, { enabled: !Number.isNaN(tagId) });
+
+  const { activeCode, isDefaultLanguage } = useLanguageSwitcher("tag", tagId);
+
+  const { data: translation } = trpc.viewer.translations.get.useQuery(
+    { entityType: "tag", entityId: tagId, langCode: activeCode ?? "" },
+    { enabled: !isDefaultLanguage && !!activeCode },
+  );
 
   if (isLoading) {
     return (
@@ -33,23 +41,45 @@ export default function EditTagPage() {
     );
   }
 
+  const formInitialData = isDefaultLanguage
+    ? {
+        name: tag.name,
+        slug: tag.slug,
+        description: tag.description ?? "",
+        status: tag.status as "DRAFT" | "PENDING" | "PUBLISHED",
+        createdAt: tag.createdAt,
+      }
+    : {
+        name: getTranslationField(translation, "name") ?? "",
+        slug: tag.slug,
+        description: getTranslationField(translation, "description") ?? "",
+        status: tag.status as "DRAFT" | "PENDING" | "PUBLISHED",
+        createdAt: tag.createdAt,
+      };
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-bold">{t("editTag")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{tag.name}</p>
       </div>
+
       <TagForm
+        key={activeCode ?? "default"}
         mode="edit"
         tagId={tagId}
-        initialData={{
-          name: tag.name,
-          slug: tag.slug,
-          description: tag.description ?? "",
-          status: tag.status as "DRAFT" | "PENDING" | "PUBLISHED",
-          createdAt: tag.createdAt,
-        }}
+        initialData={formInitialData}
+        translationMode={!isDefaultLanguage ? activeCode : undefined}
       />
     </div>
   );
+}
+
+function getTranslationField(
+  data: Record<string, unknown> | null | undefined,
+  field: string,
+): string | undefined {
+  if (!data || !(field in data)) return undefined;
+  const val = data[field];
+  return typeof val === "string" ? val : undefined;
 }

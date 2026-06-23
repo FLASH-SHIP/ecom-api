@@ -1,5 +1,8 @@
 "use client";
 
+import type { MediaItem } from "@admin/app/(main)/media/model/media.model";
+import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
+import { SearchEngineOptimize } from "@admin/components/blog/SearchEngineOptimize";
 import { useToast } from "@admin/components/toast-provider";
 import { RichTextEditor } from "@admin/components/ui/RichTextEditor";
 import { trpc } from "@admin/lib/trpc";
@@ -7,7 +10,6 @@ import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ecom/ui/components/card";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
-import { Textarea } from "@ecom/ui/components/textarea";
 import {
   Select,
   SelectContent,
@@ -15,14 +17,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
-import { Loader2, Save, ImagePlus } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { Textarea } from "@ecom/ui/components/textarea";
 import type { Editor } from "@tiptap/react";
-import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
-import type { MediaItem } from "@admin/app/(main)/media/model/media.model";
-import { SearchEngineOptimize } from "@admin/components/blog/SearchEngineOptimize";
+import { ExternalLink, Globe, ImagePlus, Info, Loader2, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type TagStatus = "DRAFT" | "PENDING" | "PUBLISHED";
 
@@ -52,12 +52,24 @@ const STATUS_OPTIONS: { value: TagStatus; labelKey: string }[] = [
 
 const PERMALINK_PREFIX = "/tag/";
 
+function getFlagEmoji(countryCode: string): string {
+  const code = countryCode.toUpperCase();
+  if (code.length !== 2) return countryCode;
+  const codePoints = [...code].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65);
+  return String.fromCodePoint(...codePoints);
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: form with create/edit modes, validation, slug preview, translation mode, and conditional sidebar
 export function TagForm({ mode, tagId, initialData, translationMode }: TagFormProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const { toast } = useToast();
   const t = useTranslations("tags");
+  const { data: activeLanguages } = trpc.viewer.languages.getActive.useQuery();
+  const locale = useLocale();
+  const bannerLangCode =
+    translationMode ||
+    (mode === "create" ? locale : activeLanguages?.find((l) => l.isDefault)?.code || locale);
 
   const [formData, setFormData] = useState<TagFormData>({
     name: initialData?.name ?? "",
@@ -76,7 +88,7 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
 
   // tRPC query to load SEO Meta
   const { data: seoMeta } = trpc.viewer.seo.get.useQuery(
-    { entityType: "tag", entityId: tagId! },
+    { entityType: "tag", entityId: tagId ?? 0 },
     { enabled: mode === "edit" && !!tagId },
   );
 
@@ -172,17 +184,40 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
     onError: (err) => toast(err.message, "error"),
   });
 
+  const saveTranslationMut = trpc.viewer.translations.save.useMutation({
+    onSuccess: () => {
+      toast(t("updateSuccess"), "success");
+      utils.viewer.translations.list.invalidate();
+      utils.viewer.translations.translationStatus.invalidate();
+    },
+    onError: (err) => toast(err.message, "error"),
+  });
+
+  const saveTranslationAndExitMut = trpc.viewer.translations.save.useMutation({
+    onSuccess: () => {
+      toast(t("updateSuccess"), "success");
+      utils.viewer.translations.list.invalidate();
+      utils.viewer.translations.translationStatus.invalidate();
+      router.push("/tags");
+    },
+    onError: (err) => toast(err.message, "error"),
+  });
+
   const isPending =
     createMutation.isPending ||
     createAndExitMutation.isPending ||
     updateMutation.isPending ||
-    updateAndExitMutation.isPending;
+    updateAndExitMutation.isPending ||
+    saveTranslationMut.isPending ||
+    saveTranslationAndExitMut.isPending;
 
   const error =
     createMutation.error ||
     createAndExitMutation.error ||
     updateMutation.error ||
-    updateAndExitMutation.error;
+    updateAndExitMutation.error ||
+    saveTranslationMut.error ||
+    saveTranslationAndExitMut.error;
 
   function buildPayload() {
     return {
@@ -195,6 +230,18 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
 
   function handleSaveAndContinue(e: React.FormEvent) {
     e.preventDefault();
+    if (translationMode && tagId) {
+      saveTranslationMut.mutate({
+        entityType: "tag",
+        entityId: tagId,
+        langCode: translationMode,
+        data: {
+          name: formData.name,
+          description: formData.description || undefined,
+        },
+      });
+      return;
+    }
     const payload = buildPayload();
     if (mode === "edit" && tagId) {
       updateMutation.mutate({ id: tagId, ...payload });
@@ -204,6 +251,18 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
   }
 
   function handleSave() {
+    if (translationMode && tagId) {
+      saveTranslationAndExitMut.mutate({
+        entityType: "tag",
+        entityId: tagId,
+        langCode: translationMode,
+        data: {
+          name: formData.name,
+          description: formData.description || undefined,
+        },
+      });
+      return;
+    }
     const payload = buildPayload();
     if (mode === "edit" && tagId) {
       updateAndExitMutation.mutate({ id: tagId, ...payload });
@@ -227,7 +286,9 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
         editor
           .chain()
           .focus()
-          .insertContent(`<a href="${url}" target="_blank" rel="noopener noreferrer">${item.name || url}</a> `)
+          .insertContent(
+            `<a href="${url}" target="_blank" rel="noopener noreferrer">${item.name || url}</a> `,
+          )
           .run();
       }
     }
@@ -255,18 +316,21 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
         </div>
       )}
 
-      <div
-        className={`grid items-start gap-5 ${!translationMode ? "lg:grid-cols-[1fr_280px]" : ""}`}
-      >
+      <div className="grid items-start gap-5 lg:grid-cols-[1fr_280px]">
         {/* ── Left: Main Content ── */}
         <div className="flex flex-col gap-5">
           <Card>
             <CardContent className="flex flex-col gap-5 p-5">
-              {translationMode && (
-                <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
-                  🌐 You are editing the <strong>{translationMode}</strong> translation.
-                </div>
-              )}
+              <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                <Info className="size-4 shrink-0" />
+                <span>
+                  {t("editingVersion", {
+                    language:
+                      activeLanguages?.find((l) => l.code === bannerLangCode)?.name ??
+                      bannerLangCode,
+                  })}
+                </span>
+              </div>
               {/* Name */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="tag-name" className="text-sm font-medium">
@@ -344,7 +408,9 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
                   <Textarea
                     id="tag-content-text"
                     value={formData.description ?? ""}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, description: e.target.value }))
+                    }
                     placeholder={t("form.contentPlaceholder")}
                     rows={12}
                     className="min-h-[250px]"
@@ -359,7 +425,9 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
               seoTitle={formData.seoTitle}
               onChangeSeoTitle={(val) => setFormData((prev) => ({ ...prev, seoTitle: val }))}
               seoDescription={formData.seoDescription}
-              onChangeSeoDescription={(val) => setFormData((prev) => ({ ...prev, seoDescription: val }))}
+              onChangeSeoDescription={(val) =>
+                setFormData((prev) => ({ ...prev, seoDescription: val }))
+              }
               seoImage={formData.seoImage}
               onChangeSeoImage={(val) => setFormData((prev) => ({ ...prev, seoImage: val }))}
               indexMode={formData.indexMode}
@@ -371,44 +439,94 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
           )}
         </div>
 
-        {/* ── Right: Sidebar — hidden in translation mode ── */}
-        {!translationMode ? (
-          <div className="flex flex-col gap-4">
-            {/* Publish */}
+        {/* ── Right: Sidebar ── */}
+        <div className="flex flex-col gap-4">
+          {/* Publish */}
+          <Card>
+            <CardHeader className="border-b border-border px-4 py-3">
+              <CardTitle className="text-sm font-semibold">{t("form.publish")}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex gap-2 p-4">
+              <Button
+                id="tag-save-continue"
+                type="submit"
+                disabled={isPending || !formData.name.trim()}
+                size="sm"
+                className="flex-1 font-semibold"
+              >
+                {isPending ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 size-4" />
+                )}
+                {t("form.saveAndContinue")}
+              </Button>
+              <Button
+                id="tag-save"
+                type="button"
+                variant="outline"
+                disabled={isPending || !formData.name.trim()}
+                onClick={handleSave}
+                size="sm"
+              >
+                <Save className="mr-2 size-4" />
+                {t("form.save")}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Languages */}
+          {mode === "edit" && tagId && (
             <Card>
               <CardHeader className="border-b border-border px-4 py-3">
-                <CardTitle className="text-sm font-semibold">{t("form.publish")}</CardTitle>
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Globe className="size-4 text-muted-foreground" />
+                  {t("languages")}
+                </CardTitle>
               </CardHeader>
-              <CardContent className="flex gap-2 p-4">
-                <Button
-                  id="tag-save-continue"
-                  type="submit"
-                  disabled={isPending || !formData.name.trim()}
-                  size="sm"
-                  className="flex-1 font-semibold"
-                >
-                  {isPending ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 size-4" />
-                  )}
-                  {t("form.saveAndContinue")}
-                </Button>
-                <Button
-                  id="tag-save"
-                  type="button"
-                  variant="outline"
-                  disabled={isPending || !formData.name.trim()}
-                  onClick={handleSave}
-                  size="sm"
-                >
-                  <Save className="mr-2 size-4" />
-                  {t("form.save")}
-                </Button>
+              <CardContent className="p-4 flex flex-col gap-3">
+                {activeLanguages?.map((lang) => {
+                  const isDefault = lang.isDefault;
+                  const link = isDefault
+                    ? `/tags/${tagId}/edit`
+                    : `/tags/${tagId}/edit?ref_lang=${lang.code}`;
+                  return (
+                    <div key={lang.id} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 font-medium">
+                        {lang.flag && (
+                          <span className="text-base" role="img" aria-label={lang.name}>
+                            {getFlagEmoji(lang.flag)}
+                          </span>
+                        )}
+                        <span>{lang.name}</span>
+                        {lang.code === translationMode && (
+                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            editing
+                          </span>
+                        )}
+                        {lang.isDefault && !translationMode && (
+                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            editing
+                          </span>
+                        )}
+                      </div>
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary transition-colors animate-pulse-subtle"
+                      >
+                        <ExternalLink className="size-3.5" />
+                      </a>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
+          )}
 
-            {/* Status */}
+          {/* Status */}
+          {!translationMode && (
             <Card>
               <CardHeader className="border-b border-border px-4 py-3">
                 <CardTitle className="text-sm font-semibold">
@@ -435,21 +553,8 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
                 </Select>
               </CardContent>
             </Card>
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="p-4">
-              <Button type="submit" disabled={isPending} className="w-full font-semibold">
-                {isPending ? (
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 size-4" />
-                )}
-                {`Save ${translationMode.toUpperCase()} Translation`}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+          )}
+        </div>
       </div>
 
       <MediaPickerDialog

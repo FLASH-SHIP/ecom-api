@@ -85,6 +85,7 @@ export class TranslationService {
       case "tag":
         return this.deps.translationRepo.upsertTagTranslation(entityId, langCode, {
           name: data.name ?? "",
+          description: data.description,
         });
       case "menuItem":
         return this.deps.translationRepo.upsertMenuItemTranslation(entityId, langCode, {

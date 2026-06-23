@@ -27,6 +27,7 @@ type CategoryLike = {
 type TagLike = {
   id: number;
   name: string;
+  description?: string | null;
   [key: string]: unknown;
 };
 
@@ -187,7 +188,7 @@ export async function overlayTagTranslations<T extends TagLike>(
   const tagIds = tags.map((t) => t.id);
   const translations = await prisma.tagTranslation.findMany({
     where: { tagId: { in: tagIds }, langCode: locale },
-    select: { tagId: true, name: true },
+    select: { tagId: true, name: true, description: true },
   });
 
   const translationMap = new Map(translations.map((t) => [t.tagId, t]));
@@ -198,6 +199,7 @@ export async function overlayTagTranslations<T extends TagLike>(
     return {
       ...tag,
       name: t.name || tag.name,
+      description: t.description ?? tag.description,
       _translatedFrom: locale,
     };
   });
