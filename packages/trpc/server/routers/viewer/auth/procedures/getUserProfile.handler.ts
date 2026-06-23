@@ -18,7 +18,7 @@ export const getUserProfile = authedProcedure
     if (!isSelf && !canRead) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Không có quyền xem thông tin người dùng này",
+        message: "users.profile.forbiddenRead",
       });
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { trpc } from "@customer/lib/trpc";
+import { trpc } from "@web/lib/trpc";
 
 export default function PagesListPage() {
   const { data: pages, isLoading } = trpc.public.pages.list.useQuery();

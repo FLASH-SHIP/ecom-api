@@ -4,6 +4,9 @@ import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
+import { I18nValidationException } from "./common/exceptions/i18n-validation.exception";
+import { I18nHttpExceptionFilter } from "./common/filters/i18n-http-exception.filter";
+import { I18nValidationExceptionFilter } from "./common/filters/i18n-validation-exception.filter";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,8 +18,11 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors) => new I18nValidationException(errors),
     }),
   );
+
+  app.useGlobalFilters(new I18nHttpExceptionFilter(), new I18nValidationExceptionFilter());
 
   const configService = app.get(ConfigService);
 

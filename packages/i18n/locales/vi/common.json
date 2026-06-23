@@ -182,5 +182,17 @@
       "backToDashboard": "Quay về trang chủ",
       "tryAgain": "Thử lại"
     }
+  },
+  "validation": {
+    "isNotEmpty": "Không được để trống",
+    "isEmail": "Email không hợp lệ",
+    "minLength": "Tối thiểu {limit} ký tự",
+    "maxLength": "Tối đa {limit} ký tự",
+    "isNumber": "Phải là số",
+    "isString": "Phải là chuỗi ký tự",
+    "isBoolean": "Phải là giá trị logic (true/false)",
+    "invalid_url": "Đường dẫn URL không hợp lệ",
+    "invalid_format": "Định dạng không hợp lệ",
+    "invalid_type": "Kiểu dữ liệu không hợp lệ"
   }
 }

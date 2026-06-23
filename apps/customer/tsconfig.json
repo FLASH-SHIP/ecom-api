@@ -10,7 +10,8 @@
       "@ecom/types": ["../../packages/types/src/index.ts"],
       "@ecom/trpc/*": ["../../packages/trpc/*"],
       "@ecom/features/*": ["../../packages/features/*"],
-      "@ecom/ui/*": ["../../packages/ui/*"]
+      "@ecom/ui/*": ["../../packages/ui/*"],
+      "@ecom/shared/*": ["../../packages/shared/src/*"]
     }
   },
   "include": [
@@ -19,7 +20,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "../../packages/shared/src/@auth/next-auth.d.ts"
   ],
   "exclude": ["node_modules"]
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { trpc } from "@customer/lib/trpc";
+import { trpc } from "@web/lib/trpc";
 import { useParams } from "next/navigation";
 
 export default function PageDetailPage() {

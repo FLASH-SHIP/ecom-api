@@ -86,6 +86,15 @@
     "cropZoom": "Thu phóng",
     "cropPreview": "Xem trước",
     "cropSave": "Lưu & chỉnh sửa",
-    "phone": "Điện thoại"
+    "phone": "Điện thoại",
+    "nameWhitespace": "Tên không được chỉ có khoảng trắng",
+    "usernameMin": "Tên đăng nhập tối thiểu 3 ký tự",
+    "usernameInvalid": "Tên đăng nhập chỉ được dùng chữ cái, số, gạch dưới (_) và gạch ngang (-)",
+    "phoneInvalid": "Số điện thoại không hợp lệ",
+    "forbidden": "Không có quyền thực hiện hành động này",
+    "forbiddenUpdate": "Không có quyền chỉnh sửa người dùng này",
+    "forbiddenRead": "Không có quyền xem thông tin người dùng này",
+    "forbiddenPreferencesRead": "Không có quyền xem tùy chọn của người dùng này",
+    "forbiddenPreferencesUpdate": "Không có quyền chỉnh sửa tùy chọn của người dùng này"
   }
 }

@@ -1,16 +1,54 @@
 "use client";
 
-import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { Button } from "@ecom/ui/components/button";
+import { Input } from "@ecom/ui/components/input";
+import { Label } from "@ecom/ui/components/label";
+import { Eye, EyeOff } from "lucide-react";
 import NextLink from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { setTokens } from "../../../lib/auth";
+import { AuthCard } from "../../../components/auth/AuthCard";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from "../../../lib/i18n";
 import { trpc } from "../../../lib/trpc";
+
+const translations = {
+  vi: {
+    title: "Đăng ký",
+    nameLabel: "Họ và tên",
+    namePlaceholder: "Nguyễn Văn An",
+    emailLabel: "Email",
+    emailPlaceholder: "your@email.com",
+    passwordLabel: "Mật khẩu",
+    passwordPlaceholder: "Tối thiểu 8 ký tự",
+    confirmPasswordLabel: "Xác nhận mật khẩu",
+    confirmPasswordPlaceholder: "Nhập lại mật khẩu",
+    signUp: "Đăng ký",
+    signUpLoading: "Đang đăng ký...",
+    alreadyHaveAccount: "Đã có tài khoản?",
+    signIn: "Đăng nhập ngay",
+  },
+  en: {
+    title: "Sign up",
+    nameLabel: "Full Name",
+    namePlaceholder: "John Doe",
+    emailLabel: "Email",
+    emailPlaceholder: "your@email.com",
+    passwordLabel: "Password",
+    passwordPlaceholder: "Minimum 8 characters",
+    confirmPasswordLabel: "Confirm Password",
+    confirmPasswordPlaceholder: "Re-enter your password",
+    signUp: "Sign up",
+    signUpLoading: "Signing up...",
+    alreadyHaveAccount: "Already have an account?",
+    signIn: "Sign in",
+  },
+};
 
 export default function RegisterPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const [name, setName] = useState("");
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -18,10 +56,28 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [validationError, setValidationError] = useState("");
 
+  // Detect current locale from path
+  const currentLocale: SupportedLocale = pathname
+    ? ((SUPPORTED_LOCALES.find(
+        (l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`,
+      ) as SupportedLocale) ?? DEFAULT_LOCALE)
+    : DEFAULT_LOCALE;
+
+  const text = translations[currentLocale];
+
   const registerMutation = trpc.customer.auth.register.useMutation({
-    onSuccess: (data) => {
-      setTokens(data.accessToken, data.refreshToken);
-      router.push("/customer/dashboard");
+    onSuccess: async () => {
+      try {
+        await signIn("credentials", {
+          redirect: false,
+          identifier: email,
+          password,
+        });
+        router.push(`/${currentLocale}/customer/dashboard`);
+      } catch (err) {
+        console.error("Auto sign in failed:", err);
+        router.push(`/${currentLocale}/auth/login`);
+      }
     },
   });
 
@@ -30,23 +86,23 @@ export default function RegisterPage() {
     setValidationError("");
 
     if (password !== confirmPassword) {
-      setValidationError("Mật khẩu xác nhận không khớp");
+      setValidationError(
+        currentLocale === "vi" ? "Mật khẩu xác nhận không khớp" : "Passwords do not match",
+      );
       return;
     }
     if (password.length < 8) {
-      setValidationError("Mật khẩu phải có ít nhất 8 ký tự");
-      return;
-    }
-
-    if (username && !/^[a-z0-9_.]{3,30}$/.test(username)) {
-      setValidationError("Username chỉ gồm chữ thường, số, dấu chấm và gạch dưới (3-30 ký tự)");
+      setValidationError(
+        currentLocale === "vi"
+          ? "Mật khẩu phải có ít nhất 8 ký tự"
+          : "Password must be at least 8 characters",
+      );
       return;
     }
 
     registerMutation.mutate({
       email,
       password,
-      username: username || undefined,
       name: name || undefined,
     });
   }
@@ -54,148 +110,145 @@ export default function RegisterPage() {
   const error = validationError || registerMutation.error?.message;
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-12 md:py-20">
-      <div className="rounded-2xl border border-border p-8 md:p-12">
-        {/* Icon + Header */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#2563EB] to-[#7C3AED]">
-            <UserPlus className="h-6 w-6 text-white" />
-          </div>
-          <h1 className="mb-1 text-2xl font-extrabold">Đăng ký</h1>
-          <p className="text-sm text-muted-foreground">Tạo tài khoản để bắt đầu trải nghiệm</p>
+    <AuthCard showLogo showLanguageSelector showSocials showSupport>
+      {/* Title */}
+      <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-1 select-none">
+        {text.title}
+      </h1>
+
+      {/* Error display */}
+      {error && (
+        <div className="rounded-xl border border-rose-100 dark:border-rose-950/50 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 text-xs font-semibold text-rose-600 dark:text-rose-400">
+          {error}
+        </div>
+      )}
+
+      {/* Register Form */}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Họ và tên */}
+        <div className="flex flex-col gap-1.5">
+          <Label
+            htmlFor="register-name"
+            className="text-xs font-bold text-slate-600 dark:text-slate-300"
+          >
+            {text.nameLabel}
+          </Label>
+          <Input
+            id="register-name"
+            type="text"
+            required
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={text.namePlaceholder}
+            className="w-full bg-background/50 dark:bg-slate-900/30"
+          />
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          {/* Full Name */}
-          <div>
-            <label htmlFor="register-name" className="mb-1.5 block text-sm font-medium">
-              Họ và tên
-            </label>
-            <input
-              id="register-name"
-              type="text"
-              autoComplete="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nguyễn Văn An"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="register-username" className="mb-1.5 block text-sm font-medium">
-              Username <span className="text-muted-foreground">(tùy chọn)</span>
-            </label>
-            <input
-              id="register-username"
-              type="text"
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value.toLowerCase())}
-              placeholder="Để trống sẽ tự tạo từ email"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Chữ thường, số, dấu chấm và gạch dưới (3-30 ký tự)
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="register-email" className="mb-1.5 block text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="register-email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="register-password" className="mb-1.5 block text-sm font-medium">
-              Mật khẩu
-            </label>
-            <div className="relative">
-              <input
-                id="register-password"
-                type={showPassword ? "text" : "password"}
-                required
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tối thiểu 8 ký tự"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-                aria-label="toggle password visibility"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">Mật khẩu phải có ít nhất 8 ký tự</p>
-          </div>
-
-          <div>
-            <label htmlFor="register-confirm-password" className="mb-1.5 block text-sm font-medium">
-              Xác nhận mật khẩu
-            </label>
-            <div className="relative">
-              <input
-                id="register-confirm-password"
-                type={showConfirm ? "text" : "password"}
-                required
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Nhập lại mật khẩu"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm((s) => !s)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-                aria-label="toggle confirm password visibility"
-              >
-                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={registerMutation.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#2563EB] to-[#7C3AED] px-6 py-3 font-semibold text-white transition-transform hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:hover:translate-y-0"
+        {/* Email */}
+        <div className="flex flex-col gap-1.5">
+          <Label
+            htmlFor="register-email"
+            className="text-xs font-bold text-slate-600 dark:text-slate-300"
           >
-            {registerMutation.isPending && (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            )}
-            {registerMutation.isPending ? "Đang đăng ký..." : "Tạo tài khoản"}
-          </button>
-        </form>
+            {text.emailLabel}
+          </Label>
+          <Input
+            id="register-email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={text.emailPlaceholder}
+            className="w-full bg-background/50 dark:bg-slate-900/30"
+          />
+        </div>
 
-        <hr className="my-6 border-border" />
+        {/* Password */}
+        <div className="flex flex-col gap-1.5">
+          <Label
+            htmlFor="register-password"
+            className="text-xs font-bold text-slate-600 dark:text-slate-300"
+          >
+            {text.passwordLabel}
+          </Label>
+          <div className="relative">
+            <Input
+              id="register-password"
+              type={showPassword ? "text" : "password"}
+              required
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={text.passwordPlaceholder}
+              className="w-full bg-background/50 dark:bg-slate-900/30 pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              aria-label="toggle password visibility"
+            >
+              {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+            </button>
+          </div>
+        </div>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Đã có tài khoản?{" "}
-          <NextLink href="/auth/login" className="font-semibold text-primary hover:underline">
-            Đăng nhập
-          </NextLink>
-        </p>
-      </div>
-    </div>
+        {/* Confirm Password */}
+        <div className="flex flex-col gap-1.5">
+          <Label
+            htmlFor="register-confirm-password"
+            className="text-xs font-bold text-slate-600 dark:text-slate-300"
+          >
+            {text.confirmPasswordLabel}
+          </Label>
+          <div className="relative">
+            <Input
+              id="register-confirm-password"
+              type={showConfirm ? "text" : "password"}
+              required
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder={text.confirmPasswordPlaceholder}
+              className="w-full bg-background/50 dark:bg-slate-900/30 pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((s) => !s)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              aria-label="toggle confirm password visibility"
+            >
+              {showConfirm ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Submit button */}
+        <Button
+          type="submit"
+          disabled={registerMutation.isPending}
+          className="w-full mt-2"
+          size="lg"
+        >
+          {registerMutation.isPending && (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+          )}
+          {registerMutation.isPending ? text.signUpLoading : text.signUp}
+        </Button>
+      </form>
+
+      {/* Footer Info */}
+      <p className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+        {text.alreadyHaveAccount}{" "}
+        <NextLink
+          href={`/${currentLocale}/auth/login`}
+          className="font-bold text-cyan-500 hover:underline transition-colors"
+        >
+          {text.signIn}
+        </NextLink>
+      </p>
+    </AuthCard>
   );
 }

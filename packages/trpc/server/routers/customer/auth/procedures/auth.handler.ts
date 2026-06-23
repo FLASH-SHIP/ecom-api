@@ -4,6 +4,7 @@ import {
 } from "@ecom/features/di/containers/CustomerService";
 import { rateLimiters } from "@ecom/trpc/server/middleware/rateLimit";
 import { publicProcedure } from "@ecom/trpc/server/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const register = publicProcedure
@@ -60,21 +61,32 @@ export const refreshToken = publicProcedure
   });
 
 export const me = publicProcedure
-  .input(z.object({ accessToken: z.string().min(1) }))
-  .query(async ({ input }) => {
-    const tokenService = getCustomerTokenService();
+  .input(z.object({ accessToken: z.string().optional() }).optional())
+  .query(async ({ input, ctx }) => {
     const { getCustomerRepository } = await import("@ecom/features/di/containers/CustomerService");
 
-    const payload = tokenService.verifyAccessToken(input.accessToken);
-    const customer = await getCustomerRepository().findById(payload.sub);
+    let customerId: number | null = null;
+    if (ctx.user?.id) {
+      customerId = ctx.user.id;
+    } else if (input?.accessToken) {
+      const tokenService = getCustomerTokenService();
+      const payload = tokenService.verifyAccessToken(input.accessToken);
+      customerId = payload.sub;
+    }
 
+    if (!customerId) {
+      return null;
+    }
+
+    const customer = await getCustomerRepository().findById(customerId);
     return customer;
   });
 
 export const updateProfile = publicProcedure
+  .use(rateLimiters.mutation)
   .input(
     z.object({
-      accessToken: z.string().min(1),
+      accessToken: z.string().optional(),
       username: z
         .string()
         .regex(/^[a-z0-9_.]{3,30}$/)
@@ -90,17 +102,28 @@ export const updateProfile = publicProcedure
       description: z.string().max(1000).nullable().optional(),
     }),
   )
-  .mutation(async ({ input }) => {
-    const tokenService = getCustomerTokenService();
-    const { getCustomerService } = await import("@ecom/features/di/containers/CustomerService");
+  .mutation(async ({ input, ctx }) => {
+    let customerId: number | null = null;
+    if (ctx.user?.id) {
+      customerId = ctx.user.id;
+    } else if (input.accessToken) {
+      const tokenService = getCustomerTokenService();
+      const payload = tokenService.verifyAccessToken(input.accessToken);
+      customerId = payload.sub;
+    }
 
-    const payload = tokenService.verifyAccessToken(input.accessToken);
+    if (!customerId) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Unauthorized" });
+    }
+
+    const { getCustomerService } = await import("@ecom/features/di/containers/CustomerService");
     const { accessToken: _, ...data } = input;
     const service = getCustomerService();
-    return service.updateCustomer(payload.sub, data);
+    return service.updateCustomer(customerId, data);
   });
 
 export const verifyEmail = publicProcedure
+  .use(rateLimiters.auth)
   .input(z.object({ token: z.string().min(1) }))
   .mutation(async ({ input }) => {
     const authService = getCustomerAuthService();
@@ -129,19 +152,30 @@ export const resetPassword = publicProcedure
   });
 
 export const changePassword = publicProcedure
+  .use(rateLimiters.auth)
   .input(
     z.object({
-      accessToken: z.string().min(1),
+      accessToken: z.string().optional(),
       oldPassword: z.string().min(1),
       newPassword: z.string().min(8).max(100),
     }),
   )
-  .mutation(async ({ input }) => {
-    const tokenService = getCustomerTokenService();
-    const authService = getCustomerAuthService();
+  .mutation(async ({ input, ctx }) => {
+    let customerId: number | null = null;
+    if (ctx.user?.id) {
+      customerId = ctx.user.id;
+    } else if (input.accessToken) {
+      const tokenService = getCustomerTokenService();
+      const payload = tokenService.verifyAccessToken(input.accessToken);
+      customerId = payload.sub;
+    }
 
-    const payload = tokenService.verifyAccessToken(input.accessToken);
-    await authService.changePassword(payload.sub, input.oldPassword, input.newPassword);
+    if (!customerId) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Unauthorized" });
+    }
+
+    const authService = getCustomerAuthService();
+    await authService.changePassword(customerId, input.oldPassword, input.newPassword);
     return { success: true };
   });
 

@@ -24,7 +24,7 @@ export const getPreferences = authedProcedure
     if (!isSelf && !canRead) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Không có quyền xem tùy chọn của người dùng này",
+        message: "users.profile.forbiddenPreferencesRead",
       });
     }
 

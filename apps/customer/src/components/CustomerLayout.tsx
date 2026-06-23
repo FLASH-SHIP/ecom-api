@@ -12,9 +12,10 @@ import {
   X,
 } from "lucide-react";
 import NextLink from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
-import { clearTokens, isLoggedIn } from "../lib/auth";
+import { env } from "../env";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../lib/i18n";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
@@ -27,9 +28,9 @@ const NAV_ITEMS = [
 
 function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(() => typeof window !== "undefined" && isLoggedIn());
+  const { data: session, status } = useSession();
+  const loggedIn = status === "authenticated";
   const [avatarOpen, setAvatarOpen] = useState(false);
   const avatarRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -48,11 +49,13 @@ function Header() {
     return `/${currentLocale}${href === "/" ? "" : href}`;
   };
 
+  const getMarketingHref = (href: string) => {
+    return `${env.NEXT_PUBLIC_WEB_URL}/${currentLocale}${href === "/" ? "" : href}`;
+  };
+
   function handleLogout() {
-    clearTokens();
-    setLoggedIn(false);
+    signOut({ callbackUrl: getLocalizedHref("/") });
     setAvatarOpen(false);
-    router.push(getLocalizedHref("/"));
   }
 
   // Close avatar menu on outside click
@@ -94,7 +97,7 @@ function Header() {
               return (
                 <NextLink
                   key={item.href}
-                  href={getLocalizedHref(item.href)}
+                  href={getMarketingHref(item.href)}
                   className={`relative px-3 py-1.5 text-sm font-medium transition-colors ${
                     active
                       ? "font-bold text-primary"
@@ -123,7 +126,7 @@ function Header() {
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
                   aria-label="Tài khoản"
                 >
-                  M
+                  {session?.db?.displayName?.[0]?.toUpperCase() ?? "C"}
                 </button>
                 {avatarOpen && (
                   <div
@@ -216,7 +219,7 @@ function Header() {
                 return (
                   <NextLink
                     key={item.href}
-                    href={getLocalizedHref(item.href)}
+                    href={getMarketingHref(item.href)}
                     onClick={() => setDrawerOpen(false)}
                     className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                       active
@@ -289,6 +292,10 @@ function Footer() {
     return `/${currentLocale}${href === "/" ? "" : href}`;
   };
 
+  const getMarketingHref = (href: string) => {
+    return `${env.NEXT_PUBLIC_WEB_URL}/${currentLocale}${href === "/" ? "" : href}`;
+  };
+
   return (
     <footer className="mt-auto border-t border-border bg-muted/50 py-12">
       <div className="mx-auto max-w-5xl px-4">
@@ -305,7 +312,7 @@ function Footer() {
             {NAV_ITEMS.map((item) => (
               <NextLink
                 key={item.href}
-                href={getLocalizedHref(item.href)}
+                href={getMarketingHref(item.href)}
                 className="mb-1.5 block text-sm text-muted-foreground hover:text-foreground"
               >
                 {item.label}
@@ -347,6 +354,13 @@ function Footer() {
 }
 
 export function CustomerLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAuthPage = pathname?.includes("/auth/");
+
+  if (isAuthPage) {
+    return <main className="flex-1 flex flex-col">{children}</main>;
+  }
+
   return (
     <>
       <Header />

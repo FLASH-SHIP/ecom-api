@@ -651,6 +651,7 @@ __metadata:
   dependencies:
     "@ecom/config": "workspace:*"
     "@ecom/features": "workspace:*"
+    "@ecom/i18n": "workspace:*"
     "@ecom/lib": "workspace:*"
     "@ecom/prisma": "workspace:*"
     "@ecom/tsconfig": "workspace:*"
@@ -835,6 +836,7 @@ __metadata:
   dependencies:
     "@ecom/config": "workspace:*"
     "@ecom/features": "workspace:*"
+    "@ecom/i18n": "workspace:*"
     "@ecom/lib": "workspace:*"
     "@ecom/prisma": "workspace:*"
     "@ecom/tsconfig": "workspace:*"
@@ -894,6 +896,37 @@ __metadata:
   peerDependencies:
     react: ^19.0.0
     react-dom: ^19.0.0
+  languageName: unknown
+  linkType: soft
+
+"@ecom/web@workspace:apps/web":
+  version: 0.0.0-use.local
+  resolution: "@ecom/web@workspace:apps/web"
+  dependencies:
+    "@ecom/config": "workspace:*"
+    "@ecom/lib": "workspace:*"
+    "@ecom/prisma": "workspace:*"
+    "@ecom/trpc": "workspace:*"
+    "@ecom/tsconfig": "workspace:*"
+    "@ecom/types": "workspace:*"
+    "@ecom/ui": "workspace:*"
+    "@prisma/client": "npm:^6.8.0"
+    "@tailwindcss/postcss": "npm:^4"
+    "@tailwindcss/typography": "npm:^0.5.16"
+    "@tanstack/react-query": "npm:^5.75.0"
+    "@trpc/client": "npm:^11.1.0"
+    "@trpc/react-query": "npm:^11.1.0"
+    "@trpc/server": "npm:^11.1.0"
+    "@types/node": "npm:^20"
+    "@types/react": "npm:^19"
+    "@types/react-dom": "npm:^19"
+    lucide-react: "npm:^0.468.0"
+    next: "npm:16.2.6"
+    react: "npm:19.2.4"
+    react-dom: "npm:19.2.4"
+    superjson: "npm:^2.2.0"
+    tailwindcss: "npm:^4"
+    typescript: "npm:^5.8.0"
   languageName: unknown
   linkType: soft
 

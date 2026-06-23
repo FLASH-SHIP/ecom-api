@@ -81,6 +81,40 @@ export function getCronJobs(): CronJobDefinition[] {
         log.info("Redirect cleanup completed");
       },
     },
+    {
+      name: "sessions.cleanup",
+      cron: "0 2 * * *",
+      description: "Purge expired customer session records from the database",
+      enabled: true,
+      handler: async () => {
+        const { prisma } = await import("@ecom/prisma");
+        const result = await prisma.customerSession.deleteMany({
+          where: {
+            expires: {
+              lt: new Date(),
+            },
+          },
+        });
+        log.info("Expired customer sessions cleanup completed", { deletedCount: result.count });
+      },
+    },
+    {
+      name: "admin.sessions.cleanup",
+      cron: "30 2 * * *",
+      description: "Purge expired admin session records from the database",
+      enabled: true,
+      handler: async () => {
+        const { prisma } = await import("@ecom/prisma");
+        const result = await prisma.session.deleteMany({
+          where: {
+            expires: {
+              lt: new Date(),
+            },
+          },
+        });
+        log.info("Expired admin sessions cleanup completed", { deletedCount: result.count });
+      },
+    },
   ];
 }
 

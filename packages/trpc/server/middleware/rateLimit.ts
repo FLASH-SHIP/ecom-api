@@ -6,22 +6,41 @@ function getClientKey(ctx: { ip?: string | null }): string {
   return ctx.ip ?? "unknown";
 }
 
-/**
- * Redis-backed rate limiter middleware for tRPC procedures.
- *
- * Uses sliding window algorithm via Redis sorted sets for accurate,
- * distributed rate limiting across multiple server instances.
- *
- * Falls back to allow-all if Redis is unavailable (fail-open).
- */
-export function rateLimit(maxRequests: number, windowSeconds: number, prefix = "global") {
-  const limiter = new RedisRateLimiter(prefix, maxRequests, windowSeconds);
+export type RateLimitConfig = {
+  maxRequests: number;
+  windowSeconds: number;
+  key: string;
+  enabled?: boolean;
+} | null;
 
-  return middleware(async ({ ctx, next }) => {
-    const clientKey = getClientKey(ctx);
+/**
+ * Dynamic Redis-backed rate limiter middleware for tRPC procedures.
+ * Evaluates the limit configuration dynamically at request-time based on context and input.
+ */
+export function dynamicRateLimit(
+  configFn: (ctx: unknown, input: unknown) => RateLimitConfig,
+  prefix = "global",
+) {
+  const limiters = new Map<string, RedisRateLimiter>();
+
+  return middleware(async ({ ctx, input, next }) => {
+    const config = configFn(ctx, input);
+
+    if (!config || config.enabled === false) {
+      return next();
+    }
+
+    const { maxRequests, windowSeconds, key } = config;
+    const cacheKey = `${maxRequests}:${windowSeconds}`;
+
+    let limiter = limiters.get(cacheKey);
+    if (!limiter) {
+      limiter = new RedisRateLimiter(prefix, maxRequests, windowSeconds);
+      limiters.set(cacheKey, limiter);
+    }
 
     try {
-      const result = await limiter.check(clientKey);
+      const result = await limiter.check(key);
 
       if (!result.allowed) {
         throw new TRPCError({
@@ -30,15 +49,26 @@ export function rateLimit(maxRequests: number, windowSeconds: number, prefix = "
         });
       }
     } catch (err) {
-      // Re-throw TRPCError (rate limit exceeded)
       if (err instanceof TRPCError) throw err;
-
-      // Redis connection failure → fail-open (allow request through)
-      // This prevents Redis outages from blocking all requests
     }
 
     return next();
   });
+}
+
+/**
+ * Redis-backed rate limiter middleware for tRPC procedures.
+ * (Static backwards-compatible wrapper calling dynamicRateLimit)
+ */
+export function rateLimit(maxRequests: number, windowSeconds: number, prefix = "global") {
+  return dynamicRateLimit(
+    (ctx) => ({
+      maxRequests,
+      windowSeconds,
+      key: getClientKey(ctx as { ip?: string | null }),
+    }),
+    prefix,
+  );
 }
 
 /**

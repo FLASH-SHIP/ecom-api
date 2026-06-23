@@ -26,7 +26,7 @@ export const updatePreferences = authedProcedure
     if (!isSelf && !canUpdate) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Không có quyền chỉnh sửa tùy chọn của người dùng này",
+        message: "users.profile.forbiddenPreferencesUpdate",
       });
     }
 

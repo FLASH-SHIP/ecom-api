@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
 import { CustomerLayout } from "../components/CustomerLayout";
 import { HrefLangTags } from "../components/HrefLangTags";
 import { CustomerThemeProvider } from "../lib/CustomerThemeProvider";
@@ -40,11 +41,13 @@ export default async function RootLayout({
       </head>
       <body>
         <CustomerThemeProvider>
-          <TRPCProvider>
-            <div className="flex min-h-screen flex-col">
-              <CustomerLayout>{children}</CustomerLayout>
-            </div>
-          </TRPCProvider>
+          <SessionProvider>
+            <TRPCProvider>
+              <div className="flex min-h-screen flex-col">
+                <CustomerLayout>{children}</CustomerLayout>
+              </div>
+            </TRPCProvider>
+          </SessionProvider>
         </CustomerThemeProvider>
       </body>
     </html>

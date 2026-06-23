@@ -2,36 +2,35 @@ import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { getMediaFileService } from "@ecom/features/di/containers/MediaService";
 import { Permissions } from "@ecom/lib/permissions";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
+import { rateLimiters } from "@ecom/trpc/server/middleware/rateLimit";
 import { authedProcedure } from "@ecom/trpc/server/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const updateProfile = authedProcedure
   .use(auditLog({ module: "profile", action: "UPDATE", entityType: "User" }))
+  .use(rateLimiters.mutation)
   .input(
     z.object({
       /** Target user ID. Defaults to the logged-in user. Admins may pass another userId. */
       userId: z.number().int().positive().optional(),
       name: z
         .string()
-        .min(1, "Tên không được để trống")
+        .min(1, "users.profile.nameRequired")
         .max(100)
         .transform((s) => s.trim())
-        .refine((s) => s.length > 0, "Tên không được chỉ có khoảng trắng")
+        .refine((s) => s.length > 0, "users.profile.nameWhitespace")
         .optional(),
       username: z
         .string()
-        .min(3, "Tên đăng nhập tối thiểu 3 ký tự")
+        .min(3, "users.profile.usernameMin")
         .max(50)
-        .regex(
-          /^[a-zA-Z0-9_-]+$/,
-          "Tên đăng nhập chỉ được dùng chữ cái, số, gạch dưới (_) và gạch ngang (-)",
-        )
+        .regex(/^[a-zA-Z0-9_-]+$/, "users.profile.usernameInvalid")
         .optional(),
       phone: z
         .string()
         .max(20)
-        .regex(/^\+?[0-9\s\-().]{7,20}$/, "Số điện thoại không hợp lệ")
+        .regex(/^\+?[0-9\s\-().]{7,20}$/, "users.profile.phoneInvalid")
         .nullable()
         .optional(),
       avatarUrl: z.string().url().nullable().optional(),
@@ -49,7 +48,7 @@ export const updateProfile = authedProcedure
     if (!isSelf && !isAdmin) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Không có quyền chỉnh sửa người dùng này",
+        message: "users.profile.forbiddenUpdate",
       });
     }
 

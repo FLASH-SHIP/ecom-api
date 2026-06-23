@@ -1,11 +1,10 @@
 "use client";
 
-import { getAccessToken } from "@customer/lib/auth";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@customer/lib/i18n";
 import { AtSign, FileText, LayoutDashboard, Mail, User } from "lucide-react";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { trpc } from "../../../lib/trpc";
 
 const QUICK_LINKS = [
@@ -27,7 +26,7 @@ const QUICK_LINKS = [
 
 export default function CustomerDashboardPage() {
   const pathname = usePathname();
-  const [token] = useState<string | null>(() => getAccessToken());
+  const { status } = useSession();
 
   const currentLocale =
     SUPPORTED_LOCALES.find((l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`) ??
@@ -37,12 +36,13 @@ export default function CustomerDashboardPage() {
     return `/${currentLocale}${href === "/" ? "" : href}`;
   };
 
-  const { data: profile, isLoading } = trpc.customer.auth.me.useQuery(
-    { accessToken: token ?? "" },
-    { enabled: !!token },
-  );
+  const { data: profile, isLoading: isLoadingProfile } = trpc.customer.auth.me.useQuery(undefined, {
+    enabled: status === "authenticated",
+  });
 
-  if (!token) {
+  const isLoading = status === "loading" || isLoadingProfile;
+
+  if (status === "unauthenticated") {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <div className="mx-auto max-w-md rounded-lg border border-blue-200 bg-blue-50 px-6 py-4 text-sm text-blue-800">
@@ -56,7 +56,7 @@ export default function CustomerDashboardPage() {
     );
   }
 
-  if (isLoading || token === null) {
+  if (isLoading) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16">
         <div className="mb-2 h-12 w-[280px] animate-pulse rounded bg-muted" />
