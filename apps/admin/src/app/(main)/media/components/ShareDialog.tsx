@@ -55,7 +55,7 @@ const convertItem = (item: MediaItem, shareType: ShareType): string => {
 // ── Component ─────────────────────────────────────────────────
 
 const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode => {
-  const t = useTranslations();
+  const t = useTranslations('media');
   const [shareType, setShareType] = useState<ShareType>(ShareType.URL);
 
   const shareResult = useMemo(() => {
@@ -66,7 +66,7 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
   const handleCopy = useCallback(() => {
     if (!shareResult) return;
     navigator.clipboard.writeText(shareResult);
-    showToast(ToastType.SUCCESS, t('media.copiedToClipboard'));
+    showToast(ToastType.SUCCESS, t('copiedToClipboard'));
   }, [shareResult]);
 
   const handleShareTypeChange = useCallback((value: ShareType) => {
@@ -82,7 +82,7 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
             className="text-[1.25rem] font-semibold"
             style={{ color: 'var(--admin-text-color)' }}
           >
-            {t('media.share')}
+            {t('share')}
           </DialogTitle>
           <DialogClose asChild>
             <ButtonField
@@ -107,7 +107,7 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
               className="text-[0.875rem] font-semibold"
               style={{ color: 'var(--admin-text-color)' }}
             >
-              {t('media.shareType')}
+              {t('shareType')}
             </span>
             <Select
               value={shareType}
@@ -129,7 +129,7 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
           {/* Share Results */}
           <InputField
             as="textarea"
-            label={t('media.shareResults')}
+            label={t('shareResults')}
             readOnly
             value={shareResult}
             onValueChange={() => {}}
@@ -153,7 +153,7 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
                     <Copy className="size-4 text-[#fff]" />
                   </ButtonField>
                 </TooltipTrigger>
-                <TooltipContent>{t('media.copyToClipboard')}</TooltipContent>
+                <TooltipContent>{t('copyToClipboard')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

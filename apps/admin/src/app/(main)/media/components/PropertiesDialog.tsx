@@ -28,7 +28,7 @@ const PropertiesDialog = ({
   onSubmit,
   loading = false,
 }: PropertiesDialogProps): ReactNode => {
-  const t = useTranslations();
+  const t = useTranslations('media');
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
   // Pre-select current folder color when dialog opens (only if all items share the same color)
@@ -58,7 +58,7 @@ const PropertiesDialog = ({
             className="text-[1.25rem] font-semibold"
             style={{ color: 'var(--admin-text-color)' }}
           >
-            {t('media.properties')}
+            {t('properties')}
           </DialogTitle>
           <DialogClose asChild>
             <ButtonField
@@ -78,7 +78,7 @@ const PropertiesDialog = ({
         {/* Body */}
         <div className="px-6 pt-4 pb-6 flex flex-col gap-4">
           <span className="text-[0.875rem]" style={{ color: 'var(--admin-text-color)' }}>
-            {t('media.chooseColor')}
+            {t('chooseColor')}
           </span>
 
           {isLoadingOptions ? (

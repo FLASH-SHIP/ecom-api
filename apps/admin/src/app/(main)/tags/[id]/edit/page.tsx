@@ -47,6 +47,7 @@ export default function EditTagPage() {
           slug: tag.slug,
           description: tag.description ?? "",
           status: tag.status as "DRAFT" | "PENDING" | "PUBLISHED",
+          createdAt: tag.createdAt,
         }}
       />
     </div>

@@ -97,7 +97,7 @@ const MediaContent = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [page, setPage] = useState(1);
   const [selectedSort, setSelectedSort] = useState<SortOption>(DEFAULT_SORT);
-  const t = useTranslations();
+  const t = useTranslations('media');
 
   // ── Trash confirm state ─────────────────────────────────────
   const [trashConfirmOpen, setTrashConfirmOpen] = useState(false);
@@ -140,7 +140,7 @@ const MediaContent = ({
 
   const { mutate: doMediaAction, isPending: isActionPending } = useMutationMediaAction({
     onSuccess: () => {
-      showToast(ToastType.SUCCESS, t('media.actionSuccess'));
+      showToast(ToastType.SUCCESS, t('actionSuccess'));
       // Close any open modals/dialogs
       setTrashConfirmOpen(false);
       setTrashItems([]);
@@ -621,9 +621,9 @@ const MediaContent = ({
         onOpenChange={setDeletePermanentlyConfirmOpen}
         onConfirm={handleDeletePermanentlyConfirm}
         loading={isActionPending}
-        title={t('media.deleteItems')}
+        title={t('deleteItems')}
         description="This action is irreversible. Are you sure you want to delete these items?"
-        confirmLabel={t('media.confirm')}
+        confirmLabel={t('confirm')}
         cancelLabel={t('common.close')}
       />
 

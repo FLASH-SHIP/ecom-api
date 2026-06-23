@@ -36,7 +36,7 @@ const MediaDetailSidebar = ({
   item,
   onClose,
 }: MediaDetailSidebarProps & { onClose?: () => void }): ReactNode => {
-  const t = useTranslations();
+  const t = useTranslations('media');
   if (!item) return <EmptyPreview />;
 
   const isFolder = item.type === MediaItemType.FOLDER;
@@ -87,7 +87,7 @@ const MediaDetailSidebar = ({
 
         {/* Full URL (files only) */}
         {item.full_url ? (
-          <DetailRow label={t('media.fullUrl')}>
+          <DetailRow label={t('fullUrl')}>
             <div className="flex items-center gap-1.5">
               <InputField
                 readOnly
@@ -109,14 +109,14 @@ const MediaDetailSidebar = ({
         ) : null}
 
         {/* Size (files only) */}
-        {item.size != null ? <DetailRow label={t('media.size')}>{item.size}</DetailRow> : null}
+        {item.size != null ? <DetailRow label={t('size')}>{item.size}</DetailRow> : null}
 
-        <DetailRow label={t('media.uploadedAt')}>{formatDate(item.created_at)}</DetailRow>
-        <DetailRow label={t('media.modifiedAt')}>{formatDate(item.updated_at)}</DetailRow>
+        <DetailRow label={t('uploadedAt')}>{formatDate(item.created_at)}</DetailRow>
+        <DetailRow label={t('modifiedAt')}>{formatDate(item.updated_at)}</DetailRow>
 
         {/* Alt text (images only) */}
         {item.type === MediaItemType.IMAGE ? (
-          <DetailRow label={t('media.altText')}>
+          <DetailRow label={t('altText')}>
             <span className="text-muted-foreground">{item.alt ?? '-'}</span>
           </DetailRow>
         ) : null}

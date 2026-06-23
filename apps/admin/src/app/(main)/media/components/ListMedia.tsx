@@ -15,16 +15,16 @@ import { MediaDataKeys } from '../api/queries';
 import { useTranslations } from 'next-intl';
 
 const ListMedia = (): ReactNode => {
-  const t = useTranslations();
+  const t = useTranslations('media');
   const cardClass = 'flex flex-col h-full overflow-hidden';
 
   const DEFAULT_VIEW_MEDIA: MediaOption = {
-    label: t('media.allMedia'),
+    label: t('allMedia'),
     value: 'all_media',
     icon: Globe,
   };
   const DEFAULT_FILTER: MediaOption = {
-    label: t('media.everything'),
+    label: t('everything'),
     value: 'everything',
     icon: Filter,
   };

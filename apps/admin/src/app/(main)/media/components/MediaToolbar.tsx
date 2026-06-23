@@ -58,15 +58,15 @@ const MediaToolbar = ({
   isFullscreen = false,
   onToggleFullscreen,
 }: MediaToolbarProps): ReactNode => {
-  const t = useTranslations();
+  const t = useTranslations('media');
 
   const SORT_OPTIONS: SortOption[] = [
-    { label: t('media.fileNameAsc'), value: 'name-asc', icon: ArrowDownAZ },
+    { label: t('fileNameAsc'), value: 'name-asc', icon: ArrowDownAZ },
     { label: t('media.fileNameDesc'), value: 'name-desc', icon: ArrowUpAZ },
-    { label: t('media.uploadedDateAsc'), value: 'created_at-asc', icon: ArrowDown01 },
-    { label: t('media.uploadedDateDesc'), value: 'created_at-desc', icon: ArrowUp01 },
-    { label: t('media.sizeAsc'), value: 'size-asc', icon: ArrowDown01 },
-    { label: t('media.sizeDesc'), value: 'size-desc', icon: ArrowUp01 },
+    { label: t('uploadedDateAsc'), value: 'created_at-asc', icon: ArrowDown01 },
+    { label: t('uploadedDateDesc'), value: 'created_at-desc', icon: ArrowUp01 },
+    { label: t('sizeAsc'), value: 'size-asc', icon: ArrowDown01 },
+    { label: t('sizeDesc'), value: 'size-desc', icon: ArrowUp01 },
   ];
 
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -196,9 +196,9 @@ const MediaToolbar = ({
               },
               'media-download',
             );
-            showToast(ToastType.SUCCESS, t('media.downloadCompleted'));
+            showToast(ToastType.SUCCESS, t('downloadCompleted'));
           } catch {
-            showToast(ToastType.ERROR, t('media.downloadFailed'));
+            showToast(ToastType.ERROR, t('downloadFailed'));
           }
           closeActions();
         },
@@ -251,22 +251,22 @@ const MediaToolbar = ({
 
   // Translate action labels for display
   const labelMap: Record<string, string> = {
-    Preview: t('media.preview'),
-    Rename: t('media.rename'),
-    Download: t('media.download'),
-    'Delete permanently': t('media.deletePermanently'),
-    Restore: t('media.restore'),
-    Open: t('media.open'),
-    'Make a copy': t('common.create'),
-    Move: t('media.move'),
-    'Add to favorite': t('media.favorites'),
-    'Move to trash': t('media.moveToTrash'),
-    Properties: t('media.properties'),
+    Preview: t('preview'),
+    Rename: t('rename'),
+    Download: t('download'),
+    'Delete permanently': t('deletePermanently'),
+    Restore: t('restore'),
+    Open: t('open'),
+    'Make a copy': t('ccreate'),
+    Move: t('move'),
+    'Add to favorite': t('favorites'),
+    'Move to trash': t('moveToTrash'),
+    Properties: t('properties'),
     Crop: 'Crop',
-    'ALT text': t('media.altText'),
-    'Copy link': t('media.copyLink'),
-    'Copy indirect link': t('media.copyIndirectLink'),
-    Share: t('media.share'),
+    'ALT text': t('altText'),
+    'Copy link': t('copyLink'),
+    'Copy indirect link': t('copyIndirectLink'),
+    Share: t('share'),
   };
 
   return (
@@ -288,7 +288,7 @@ const MediaToolbar = ({
                 style={{ color: 'var(--admin-text-color)' }}
               >
                 <selectedSort.icon className="size-4" />
-                {t('media.sort')}
+                {t('sort')}
                 <ChevronDown className="size-3.5" />
               </ButtonField>
             </DropdownMenuTrigger>
@@ -318,7 +318,7 @@ const MediaToolbar = ({
                 disabled={selectedItems.length === 0}
               >
                 <Hand className="size-4" />
-                {t('media.actions')}
+                {t('actions')}
               </ButtonField>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[11.25rem]">
@@ -369,7 +369,7 @@ const MediaToolbar = ({
                   <LayoutGrid className="size-4" />
                 </ButtonField>
               </TooltipTrigger>
-              <TooltipContent>{t('media.gridView')}</TooltipContent>
+              <TooltipContent>{t('gridView')}</TooltipContent>
             </Tooltip>
 
             <Tooltip>

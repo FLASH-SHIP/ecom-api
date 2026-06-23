@@ -40,7 +40,7 @@ interface TagFormData {
 interface TagFormProps {
   mode: "create" | "edit";
   tagId?: number;
-  initialData?: Partial<TagFormData>;
+  initialData?: Partial<TagFormData> & { createdAt?: string | Date | null };
   translationMode?: string | null;
 }
 
@@ -366,6 +366,7 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
               onChangeIndexMode={(val) => setFormData((prev) => ({ ...prev, indexMode: val }))}
               defaultTitle={formData.name}
               defaultUrl={`${PERMALINK_PREFIX}${slugPreview}`}
+              publishDate={initialData?.createdAt ?? (mode === "create" ? new Date() : null)}
             />
           )}
         </div>

@@ -63,22 +63,22 @@ const ListButtonActionMedia = ({
   onEmptyTrash,
   emptyTrashLoading,
 }: ListButtonActionMediaProps): ReactNode => {
-  const t = useTranslations();
+  const t = useTranslations('media');
 
   const filterTypeOptions: MediaOption[] = [
-    { label: t('media.everything'), value: 'everything', icon: Filter },
-    { label: t('media.image'), value: 'image', icon: Image },
-    { label: t('media.video'), value: 'video', icon: Video },
-    { label: t('media.document'), value: 'document', icon: FileText },
-    { label: t('media.zip'), value: 'zip', icon: FileArchive },
-    { label: t('media.audio'), value: 'audio', icon: Music },
+    { label: t('everything'), value: 'everything', icon: Filter },
+    { label: t('image'), value: 'image', icon: Image },
+    { label: t('video'), value: 'video', icon: Video },
+    { label: t('document'), value: 'document', icon: FileText },
+    { label: t('zip'), value: 'zip', icon: FileArchive },
+    { label: t('audio'), value: 'audio', icon: Music },
   ];
 
   const viewMediaOptions: MediaOption[] = [
-    { label: t('media.allMedia'), value: 'all_media', icon: Globe },
-    { label: t('media.trash'), value: 'trash', icon: Trash2 },
-    { label: t('media.recent'), value: 'recent', icon: Clock },
-    { label: t('media.favorites'), value: 'favorites', icon: Star },
+    { label: t('allMedia'), value: 'all_media', icon: Globe },
+    { label: t('trash'), value: 'trash', icon: Trash2 },
+    { label: t('recent'), value: 'recent', icon: Clock },
+    { label: t('favorites'), value: 'favorites', icon: Star },
   ];
 
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
@@ -126,7 +126,7 @@ const ListButtonActionMedia = ({
               style={{ backgroundColor: 'var(--admin-primary-color)' }}
             >
               <Upload className="size-4" />
-              {t('media.upload')}
+              {t('upload')}
               <ChevronDown className="size-3.5" />
             </ButtonField>
           </DropdownMenuTrigger>
@@ -137,7 +137,7 @@ const ListButtonActionMedia = ({
               style={{ color: 'var(--admin-text-color)' }}
             >
               <Upload className="size-4" style={{ color: 'var(--admin-secondary-color)' }} />
-              {t('media.uploadFromLocal')}
+              {t('uploadFromLocal')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleUploadFromURL}
@@ -145,7 +145,7 @@ const ListButtonActionMedia = ({
               style={{ color: 'var(--admin-text-color)' }}
             >
               <Link className="size-4" style={{ color: 'var(--admin-secondary-color)' }} />
-              {t('media.uploadFromURL')}
+              {t('uploadFromURL')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -162,7 +162,7 @@ const ListButtonActionMedia = ({
               <FolderPlus className="size-4" />
             </ButtonField>
           </TooltipTrigger>
-          <TooltipContent>{t('media.createFolder')}</TooltipContent>
+          <TooltipContent>{t('createFolder')}</TooltipContent>
         </Tooltip>
 
         {/* Refresh Button */}
@@ -178,7 +178,7 @@ const ListButtonActionMedia = ({
               <RefreshCw className={`size-4 ${isFetchingMedia > 0 ? 'animate-spin' : ''}`} />
             </ButtonField>
           </TooltipTrigger>
-          <TooltipContent>{t('media.refresh')}</TooltipContent>
+          <TooltipContent>{t('refresh')}</TooltipContent>
         </Tooltip>
 
         {/* Filter Type Dropdown */}
@@ -272,7 +272,7 @@ const ListButtonActionMedia = ({
             onClick={() => setEmptyTrashConfirmOpen(true)}
           >
             <Trash2 className="size-4" />
-            {t('media.emptyTrash')}
+            {t('emptyTrash')}
           </ButtonField>
         ) : null}
       </div>
@@ -280,7 +280,7 @@ const ListButtonActionMedia = ({
       {/* Search input */}
       <div className="mt-2 w-full md:w-[18.75rem]">
         <InputField
-          placeholder={t('media.searchPlaceholder')}
+          placeholder={t('searchPlaceholder')}
           className="h-[2.5rem]"
           value={searchValue}
           onValueChange={setSearchValue}
@@ -327,9 +327,9 @@ const ListButtonActionMedia = ({
           onEmptyTrash?.();
           setEmptyTrashConfirmOpen(false);
         }}
-        title={t('media.emptyTrash')}
-        description={t('media.emptyTrashDesc')}
-        confirmLabel={t('media.confirm')}
+        title={t('emptyTrash')}
+        description={t('emptyTrashDesc')}
+        confirmLabel={t('confirm')}
         cancelLabel={t('common.close')}
         loading={emptyTrashLoading}
       />

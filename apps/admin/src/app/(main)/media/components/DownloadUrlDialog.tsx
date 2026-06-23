@@ -52,7 +52,7 @@ const statusSuffix = (status: DownloadUrlStatus): string => {
 };
 
 const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): ReactNode => {
-  const t = useTranslations();
+  const t = useTranslations('media');
   const [urlText, setUrlText] = useState('');
   const [items, setItems] = useState<DownloadUrlItem[]>([]);
   const [downloading, setDownloading] = useState(false);
@@ -113,7 +113,7 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
               ? {
                   ...it,
                   status: DownloadUrlStatus.ERROR,
-                  errorMessage: err instanceof Error ? err.message : t('media.downloadFailed'),
+                  errorMessage: err instanceof Error ? err.message : t('downloadFailed'),
                 }
               : it,
           ),
@@ -141,8 +141,8 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
   );
 
   const title = downloading
-    ? `${t('media.downloading')} (${completedCount} / ${items.length})`
-    : t('media.download');
+    ? `${t('downloading')} (${completedCount} / ${items.length})`
+    : t('download');
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -176,7 +176,7 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
             disabled={downloading || !urlText.trim()}
             className="w-full h-[2.75rem] bg-[#3b82f6] hover:bg-[#2563eb] cursor-pointer text-base font-medium"
           >
-            {downloading ? <Loader2 className="size-5 animate-spin" /> : t('media.download')}
+            {downloading ? <Loader2 className="size-5 animate-spin" /> : t('download')}
           </ButtonField>
 
           {/* Status list */}

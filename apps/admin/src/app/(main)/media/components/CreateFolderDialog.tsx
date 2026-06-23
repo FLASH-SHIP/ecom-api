@@ -16,7 +16,7 @@ const CreateFolderDialog = ({
   onOpenChange,
   parentId,
 }: CreateFolderDialogProps): ReactNode => {
-  const t = useTranslations();
+  const t = useTranslations('media');
   const [folderName, setFolderName] = useState('');
   const queryClient = useQueryClient();
 
@@ -25,7 +25,7 @@ const CreateFolderDialog = ({
       setFolderName('');
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: MediaDataKeys.all });
-      showToast(ToastType.SUCCESS, t('media.createFolderSuccess'));
+      showToast(ToastType.SUCCESS, t('createFolderSuccess'));
     },
     onError: (error: any) => {
       showToast(ToastType.ERROR, error?.response?.data?.message);
@@ -57,14 +57,14 @@ const CreateFolderDialog = ({
       <DialogContent className="sm:max-w-[28.75rem]">
         <DialogHeader>
           <DialogTitle style={{ color: 'var(--admin-text-color)' }}>
-            {t('media.createFolder')}
+            {t('createFolder')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex items-center gap-2 pt-2">
           <InputField
             containerClassName="flex-1"
-            placeholder={t('media.folderName')}
+            placeholder={t('folderName')}
             value={folderName}
             onValueChange={setFolderName}
             onKeyDown={handleKeyDown}

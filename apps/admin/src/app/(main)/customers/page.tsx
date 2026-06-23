@@ -1,3 +1,5 @@
+"use client";
+
 import { DataTableSkeleton } from "@admin/components/data-table";
 import ModuleI18nProvider from "@admin/components/i18n/ModuleI18nProvider";
 import dynamic from "next/dynamic";
