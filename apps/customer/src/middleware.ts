@@ -41,10 +41,19 @@ export function middleware(request: NextRequest) {
   );
 
   if (pathnameLocale) {
-    // Locale already present — set X-Locale header for downstream
-    const response = NextResponse.next();
-    response.headers.set("x-locale", pathnameLocale);
-    return response;
+    // Locale already present — set X-Locale header and rewrite path to match folder structure without prefix
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-locale", pathnameLocale);
+
+    const url = request.nextUrl.clone();
+    url.pathname =
+      pathname === `/${pathnameLocale}` ? "/" : pathname.slice(pathnameLocale.length + 1);
+
+    return NextResponse.rewrite(url, {
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   // No locale prefix — resolve from cookie → Accept-Language → default

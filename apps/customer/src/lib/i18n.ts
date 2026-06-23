@@ -25,8 +25,10 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
  * }
  * ```
  */
+import { env } from "@customer/env";
+
 export function generateHrefLangAlternates(pathname: string): Record<string, string> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
+  const baseUrl = env.NEXT_PUBLIC_APP_URL;
   const cleanPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
 
   const alternates: Record<string, string> = {};

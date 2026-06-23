@@ -1,10 +1,11 @@
 "use client";
 
+import { env } from "@customer/env";
 import { usePathname } from "next/navigation";
 import type { SupportedLocale } from "../lib/i18n";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../lib/i18n";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
+const BASE_URL = env.NEXT_PUBLIC_APP_URL;
 
 /**
  * OG locale mapping for social sharing.

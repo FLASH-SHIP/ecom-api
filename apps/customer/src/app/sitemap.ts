@@ -1,8 +1,9 @@
+import { env } from "@customer/env";
 import type { MetadataRoute } from "next";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../lib/i18n";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+const BASE_URL = env.NEXT_PUBLIC_APP_URL;
+const API_URL = env.NEXT_PUBLIC_API_URL;
 
 /**
  * Builds hreflang alternates for a given pathname.

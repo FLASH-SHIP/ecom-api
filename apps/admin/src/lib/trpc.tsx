@@ -1,5 +1,6 @@
 "use client";
 
+import { env } from "@admin/env";
 import type { AppRouter } from "@ecom/trpc/server/routers/_app";
 import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
@@ -13,7 +14,7 @@ export type RouterOutputs = inferRouterOutputs<AppRouter>;
 
 function getBaseUrl() {
   if (typeof window !== "undefined") return "";
-  return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  return env.NEXT_PUBLIC_APP_URL;
 }
 
 let redirecting = false;

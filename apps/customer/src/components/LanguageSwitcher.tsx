@@ -81,7 +81,7 @@ export function LanguageSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border border-border bg-white py-1 shadow-xl">
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border border-border bg-background py-1 shadow-xl">
           {SUPPORTED_LOCALES.map((locale) => {
             const info = LOCALE_LABELS[locale];
             const isActive = locale === currentLocale;

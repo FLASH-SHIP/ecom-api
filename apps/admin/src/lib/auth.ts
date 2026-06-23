@@ -1,3 +1,4 @@
+import { env } from "@admin/env";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { prisma } from "@ecom/prisma";
@@ -8,7 +9,7 @@ import Credentials from "next-auth/providers/credentials";
 
 const nextAuth: NextAuthResult = NextAuth({
   adapter: PrismaAdapter(prisma),
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  secret: env.AUTH_SECRET,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",

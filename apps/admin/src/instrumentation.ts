@@ -9,6 +9,9 @@ export async function register() {
     const { gracefulShutdown } = await import("@ecom/features/shutdown/GracefulShutdown");
     const { disconnectRedis } = await import("@ecom/lib/redis");
 
+    // Validate environment variables on startup
+    await import("./env");
+
     gracefulShutdown.register("Prisma", async () => {
       const { prisma } = await import("@ecom/prisma");
       await prisma.$disconnect();

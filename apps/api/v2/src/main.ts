@@ -1,19 +1,12 @@
 import "reflect-metadata";
-import * as dotenv from "dotenv";
-import * as path from "path";
-const envPath = path.join(__dirname, "../../../../.env");
-const result = dotenv.config({ path: envPath });
-if (result.error) {
-  console.error("Failed to load .env file from path:", envPath, result.error);
-} else {
-  console.log("Successfully loaded .env. DATABASE_URL:", process.env.DATABASE_URL);
-}
+import { ConfigService } from "@nestjs/config";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { AppModule } from "./app.module";
 
 async function bootstrap() {
   const { NestFactory } = await import("@nestjs/core");
   const { ValidationPipe } = await import("@nestjs/common");
   const { DocumentBuilder, SwaggerModule } = await import("@nestjs/swagger");
-  const { AppModule } = await import("./app.module");
 
   const app = await NestFactory.create(AppModule);
 
@@ -27,17 +20,10 @@ async function bootstrap() {
     }),
   );
 
-  const allowedOrigins = [
-    process.env.WEB_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:4000",
-    "http://localhost:4001",
-  ].filter(Boolean) as string[];
+  const configService = app.get(ConfigService);
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: configService.get<string>("WEB_URL") ?? "http://localhost:3000",
     credentials: true,
   });
 
@@ -51,7 +37,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup("api/v2/docs", app, document);
 
-  const port = process.env.API_PORT ?? 4000;
+  const port = configService.get<number>("API_PORT") ?? 4000;
   await app.listen(port);
   console.log(`🚀 API v2 running on http://localhost:${port}/api/v2`);
   console.log(`📚 Swagger docs: http://localhost:${port}/api/v2/docs`);

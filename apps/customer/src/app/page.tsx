@@ -3,6 +3,8 @@
 import { ArrowRight, FileText } from "lucide-react";
 import Image from "next/image";
 import NextLink from "next/link";
+import { usePathname } from "next/navigation";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../lib/i18n";
 import { trpc } from "../lib/trpc";
 
 function PostCardSkeleton() {
@@ -19,7 +21,16 @@ function PostCardSkeleton() {
 }
 
 export default function HomePage() {
+  const pathname = usePathname();
   const { data: posts, isLoading } = trpc.public.blog.listPosts.useQuery({ page: 1, perPage: 6 });
+
+  const currentLocale =
+    SUPPORTED_LOCALES.find((l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`) ??
+    DEFAULT_LOCALE;
+
+  const getLocalizedHref = (href: string) => {
+    return `/${currentLocale}${href === "/" ? "" : href}`;
+  };
 
   return (
     <>
@@ -38,13 +49,13 @@ export default function HomePage() {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <NextLink
-              href="/blog"
+              href={getLocalizedHref("/blog")}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5 hover:shadow-lg"
             >
               Đọc Blog <ArrowRight className="h-4 w-4" />
             </NextLink>
             <NextLink
-              href="/contact"
+              href={getLocalizedHref("/contact")}
               className="inline-flex items-center rounded-lg border border-border px-6 py-3 font-semibold transition-colors hover:bg-muted"
             >
               Liên hệ
@@ -64,7 +75,7 @@ export default function HomePage() {
               </p>
             </div>
             <NextLink
-              href="/blog"
+              href={getLocalizedHref("/blog")}
               className="hidden shrink-0 items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted sm:inline-flex"
             >
               Xem tất cả <ArrowRight className="h-4 w-4" />
@@ -88,7 +99,7 @@ export default function HomePage() {
               posts.data.map((post) => (
                 <NextLink
                   key={post.id}
-                  href={`/blog/${post.slug}`}
+                  href={getLocalizedHref(`/blog/${post.slug}`)}
                   className="group flex h-full flex-col overflow-hidden rounded-xl border border-border transition-shadow hover:shadow-lg"
                 >
                   {post.featuredImage ? (
@@ -126,7 +137,7 @@ export default function HomePage() {
 
           <div className="mt-8 flex justify-center sm:hidden">
             <NextLink
-              href="/blog"
+              href={getLocalizedHref("/blog")}
               className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted"
             >
               Xem tất cả bài viết <ArrowRight className="h-4 w-4" />
