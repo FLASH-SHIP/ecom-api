@@ -1,30 +1,30 @@
-'use client';
+"use client";
 
-import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { MediaItemType } from '../model/media.model';
-import type { MediaItem, MediaContextMenuProps, MenuAction } from '../model/media.model';
-import { ButtonField } from './Compat';
-import { showToast, ToastType } from '@admin/components/toast-provider';
-import { downloadFile, downloadFolderAsZip, downloadMultipleItemsAsZip } from '@admin/utils/func';
-import { getMediaList } from '../api/queries';
-import { useTranslations } from 'next-intl';
+import { showToast, ToastType } from "@admin/components/toast-provider";
+import { downloadFile, downloadFolderAsZip, downloadMultipleItemsAsZip } from "@admin/utils/func";
 import {
-  Eye,
-  Crop,
-  Pencil,
   Copy,
-  FolderInput,
-  Star,
+  Crop,
   Download,
-  Trash2,
-  Settings,
+  Eye,
   FileText,
-  Link2,
-  Link,
-  Share2,
-  RotateCcw,
+  FolderInput,
   FolderOpen,
-} from 'lucide-react';
+  Link,
+  Link2,
+  Pencil,
+  RotateCcw,
+  Settings,
+  Share2,
+  Star,
+  Trash2,
+} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { getMediaList } from "../api/queries";
+import type { MediaContextMenuProps, MediaItem, MenuAction } from "../model/media.model";
+import { MediaItemType } from "../model/media.model";
+import { ButtonField } from "./Compat";
 
 /** Actions for items in Trash view */
 export const buildTrashActions = (
@@ -37,7 +37,7 @@ export const buildTrashActions = (
   t?: (key: string) => string,
 ): MenuAction[] => [
   {
-    label: 'Preview',
+    label: "Preview",
     icon: Eye,
     onClick: () => {
       if (onPreviewRequest) {
@@ -47,7 +47,7 @@ export const buildTrashActions = (
     },
   },
   {
-    label: 'Rename',
+    label: "Rename",
     icon: Pencil,
     onClick: () => {
       if (onRenameRequest) {
@@ -57,22 +57,22 @@ export const buildTrashActions = (
     },
   },
   {
-    label: 'Download',
+    label: "Download",
     icon: Download,
     onClick: async () => {
       if (item.full_url) {
         try {
           await downloadFile(item.full_url, item.basename || item.name);
-          showToast(ToastType.SUCCESS, t?.('media.downloadStarted') ?? 'Download started');
+          showToast(ToastType.SUCCESS, t?.("media.downloadStarted") ?? "Download started");
         } catch {
-          showToast(ToastType.ERROR, t?.('media.downloadFailed') ?? 'Download failed');
+          showToast(ToastType.ERROR, t?.("media.downloadFailed") ?? "Download failed");
         }
       }
       onClose();
     },
   },
   {
-    label: 'Delete permanently',
+    label: "Delete permanently",
     icon: Trash2,
     danger: true,
     onClick: () => {
@@ -83,7 +83,7 @@ export const buildTrashActions = (
     },
   },
   {
-    label: 'Restore',
+    label: "Restore",
     icon: RotateCcw,
     onClick: () => {
       if (onRestoreRequest) {
@@ -110,7 +110,7 @@ export const buildFolderActions = (
   t?: (key: string) => string,
 ): MenuAction[] => [
   {
-    label: 'Open',
+    label: "Open",
     icon: FolderOpen,
     onClick: () => {
       if (onOpenFolder) {
@@ -120,7 +120,7 @@ export const buildFolderActions = (
     },
   },
   {
-    label: 'Rename',
+    label: "Rename",
     icon: Pencil,
     onClick: () => {
       if (onRenameRequest) {
@@ -130,7 +130,7 @@ export const buildFolderActions = (
     },
   },
   {
-    label: 'Make a copy',
+    label: "Make a copy",
     icon: Copy,
     onClick: () => {
       if (onMakeCopyRequest) {
@@ -140,7 +140,7 @@ export const buildFolderActions = (
     },
   },
   {
-    label: 'Move',
+    label: "Move",
     icon: FolderInput,
     onClick: () => {
       if (onMoveRequest) {
@@ -150,7 +150,7 @@ export const buildFolderActions = (
     },
   },
   {
-    label: 'Add to favorite',
+    label: "Add to favorite",
     icon: Star,
     onClick: () => {
       if (onFavoriteRequest) {
@@ -160,35 +160,35 @@ export const buildFolderActions = (
     },
   },
   {
-    label: 'Download',
+    label: "Download",
     icon: Download,
     onClick: async () => {
       try {
-        showToast(ToastType.INFO, t?.('media.preparingDownload') ?? 'Preparing download...');
+        showToast(ToastType.INFO, t?.("media.preparingDownload") ?? "Preparing download...");
         // Lấy tất cả files trong folder
         const response = await getMediaList({
           folder_id: item.id,
-          view_in: 'all_media',
+          view_in: "all_media",
           per_page: 1000,
         });
         const files = response?.data?.files || [];
         if (files.length === 0) {
-          showToast(ToastType.WARNING, t?.('media.folderIsEmpty') ?? 'Folder is empty');
+          showToast(ToastType.WARNING, t?.("media.folderIsEmpty") ?? "Folder is empty");
           onClose();
           return;
         }
         // Map dùng basename (có extension) thay vì name
         const zipFiles = files.map((f) => ({ name: f.basename || f.name, full_url: f.full_url }));
         await downloadFolderAsZip(zipFiles, item.name);
-        showToast(ToastType.SUCCESS, t?.('media.downloadCompleted') ?? 'Download completed');
+        showToast(ToastType.SUCCESS, t?.("media.downloadCompleted") ?? "Download completed");
       } catch {
-        showToast(ToastType.ERROR, t?.('media.downloadFolderFailed') ?? 'Download folder failed');
+        showToast(ToastType.ERROR, t?.("media.downloadFolderFailed") ?? "Download folder failed");
       }
       onClose();
     },
   },
   {
-    label: 'Move to trash',
+    label: "Move to trash",
     icon: Trash2,
     danger: true,
     onClick: () => {
@@ -199,7 +199,7 @@ export const buildFolderActions = (
     },
   },
   {
-    label: 'Properties',
+    label: "Properties",
     icon: Settings,
     onClick: () => {
       if (onPropertiesRequest) {
@@ -225,7 +225,7 @@ export const buildFileActions = (
   t?: (key: string) => string,
 ): MenuAction[] => [
   {
-    label: 'Preview',
+    label: "Preview",
     icon: Eye,
     onClick: () => {
       if (onPreviewRequest) {
@@ -237,7 +237,7 @@ export const buildFileActions = (
   ...(item.type === MediaItemType.IMAGE
     ? [
         {
-          label: 'Crop',
+          label: "Crop",
           icon: Crop,
           onClick: () => {
             if (onCropRequest) {
@@ -249,7 +249,7 @@ export const buildFileActions = (
       ]
     : []),
   {
-    label: 'Rename',
+    label: "Rename",
     icon: Pencil,
     onClick: () => {
       if (onRenameRequest) {
@@ -259,7 +259,7 @@ export const buildFileActions = (
     },
   },
   {
-    label: 'Make a copy',
+    label: "Make a copy",
     icon: Copy,
     onClick: () => {
       if (onMakeCopyRequest) {
@@ -269,7 +269,7 @@ export const buildFileActions = (
     },
   },
   {
-    label: 'Move',
+    label: "Move",
     icon: FolderInput,
     onClick: () => {
       if (onMoveRequest) {
@@ -279,7 +279,7 @@ export const buildFileActions = (
     },
   },
   {
-    label: 'ALT text',
+    label: "ALT text",
     icon: FileText,
     onClick: () => {
       if (onAltTextRequest) {
@@ -289,34 +289,34 @@ export const buildFileActions = (
     },
   },
   {
-    label: 'Copy link',
+    label: "Copy link",
     icon: Link2,
     onClick: () => {
-      const url = item.full_url || '';
+      const url = item.full_url || "";
       if (url) {
         navigator.clipboard.writeText(url);
-        showToast(ToastType.SUCCESS, t?.('media.linkCopied') ?? 'Link copied to clipboard');
+        showToast(ToastType.SUCCESS, t?.("media.linkCopied") ?? "Link copied to clipboard");
       }
       onClose();
     },
   },
   {
-    label: 'Copy indirect link',
+    label: "Copy indirect link",
     icon: Link,
     onClick: () => {
-      const url = item.indirect_url || '';
+      const url = item.indirect_url || "";
       if (url) {
         navigator.clipboard.writeText(url);
         showToast(
           ToastType.SUCCESS,
-          t?.('media.indirectLinkCopied') ?? 'Indirect link copied to clipboard',
+          t?.("media.indirectLinkCopied") ?? "Indirect link copied to clipboard",
         );
       }
       onClose();
     },
   },
   {
-    label: 'Share',
+    label: "Share",
     icon: Share2,
     onClick: () => {
       if (onShareRequest) {
@@ -326,7 +326,7 @@ export const buildFileActions = (
     },
   },
   {
-    label: 'Add to favorite',
+    label: "Add to favorite",
     icon: Star,
     onClick: () => {
       if (onFavoriteRequest) {
@@ -336,22 +336,22 @@ export const buildFileActions = (
     },
   },
   {
-    label: 'Download',
+    label: "Download",
     icon: Download,
     onClick: async () => {
       if (item.full_url) {
         try {
           await downloadFile(item.full_url, item.basename || item.name);
-          showToast(ToastType.SUCCESS, t?.('media.downloadStarted') ?? 'Download started');
+          showToast(ToastType.SUCCESS, t?.("media.downloadStarted") ?? "Download started");
         } catch {
-          showToast(ToastType.ERROR, t?.('media.downloadFailed') ?? 'Download failed');
+          showToast(ToastType.ERROR, t?.("media.downloadFailed") ?? "Download failed");
         }
       }
       onClose();
     },
   },
   {
-    label: 'Move to trash',
+    label: "Move to trash",
     icon: Trash2,
     danger: true,
     onClick: () => {
@@ -393,8 +393,8 @@ const MediaContextMenu = ({
         onClose();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside, { passive: true });
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside, { passive: true });
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
   // Determine which actions to show based on selection
@@ -402,7 +402,7 @@ const MediaContextMenu = ({
 
   if (selectedItems.length > 1) {
     // ── TRASH view: multi-select ──
-    if (viewIn === 'trash') {
+    if (viewIn === "trash") {
       actions = buildTrashActions(
         item,
         onClose,
@@ -417,7 +417,7 @@ const MediaContextMenu = ({
           if (onRenameRequest) onRenameRequest(selectedItems);
           onClose();
         },
-        'Delete permanently': () => {
+        "Delete permanently": () => {
           if (onDeletePermanentlyRequest) {
             onDeletePermanentlyRequest(selectedItems);
           }
@@ -458,7 +458,7 @@ const MediaContextMenu = ({
           onPreviewRequest,
           onOpenFolder,
           t,
-        ).filter((a) => a.label !== 'Properties');
+        ).filter((a) => a.label !== "Properties");
       } else if (hasFolders) {
         actions = buildFolderActions(
           item,
@@ -494,22 +494,22 @@ const MediaContextMenu = ({
 
       // Override actions cho multi-select
       const multiOverrides: Record<string, () => void> = {
-        'Copy link': () => {
+        "Copy link": () => {
           const urls = selectedItems
             .map((si) => si.full_url)
             .filter(Boolean)
-            .join(' ');
+            .join(" ");
           if (urls) {
             navigator.clipboard.writeText(urls);
             showToast(ToastType.SUCCESS, `Copied ${selectedItems.length} links to clipboard`);
           }
           onClose();
         },
-        'Copy indirect link': () => {
+        "Copy indirect link": () => {
           const urls = selectedItems
             .map((si) => si.indirect_url)
             .filter(Boolean)
-            .join(' ');
+            .join(" ");
           if (urls) {
             navigator.clipboard.writeText(urls);
             showToast(
@@ -526,13 +526,13 @@ const MediaContextMenu = ({
               selectedItems.map((si) => ({
                 id: si.id,
                 name: si.basename || si.name,
-                type: si.type === MediaItemType.FOLDER ? 'folder' : 'file',
+                type: si.type === MediaItemType.FOLDER ? "folder" : "file",
                 full_url: si.full_url,
               })),
               async (folderId: string) => {
                 const res = await getMediaList({
                   folder_id: folderId,
-                  view_in: 'all_media',
+                  view_in: "all_media",
                   per_page: 1000,
                 });
                 // Dùng basename (có extension) cho files trong zip
@@ -541,15 +541,15 @@ const MediaContextMenu = ({
                   full_url: f.full_url,
                 }));
               },
-              'media-download',
+              "media-download",
             );
-            showToast(ToastType.SUCCESS, t('media.downloadCompleted'));
+            showToast(ToastType.SUCCESS, t("media.downloadCompleted"));
           } catch {
-            showToast(ToastType.ERROR, t('media.downloadFailed'));
+            showToast(ToastType.ERROR, t("media.downloadFailed"));
           }
           onClose();
         },
-        'Move to trash': () => {
+        "Move to trash": () => {
           if (onTrashRequest) {
             onTrashRequest(selectedItems);
           }
@@ -561,7 +561,7 @@ const MediaContextMenu = ({
           }
           onClose();
         },
-        'ALT text': () => {
+        "ALT text": () => {
           if (onAltTextRequest) {
             onAltTextRequest(selectedItems);
           }
@@ -585,13 +585,13 @@ const MediaContextMenu = ({
           }
           onClose();
         },
-        'Make a copy': () => {
+        "Make a copy": () => {
           if (onMakeCopyRequest) {
             onMakeCopyRequest(selectedItems);
           }
           onClose();
         },
-        'Add to favorite': () => {
+        "Add to favorite": () => {
           if (onFavoriteRequest) {
             onFavoriteRequest(selectedItems);
           }
@@ -600,12 +600,12 @@ const MediaContextMenu = ({
       };
 
       actions = actions
-        .filter((a) => a.label !== 'Crop')
+        .filter((a) => a.label !== "Crop")
         .map((a) => (multiOverrides[a.label] ? { ...a, onClick: multiOverrides[a.label] } : a));
     }
   } else {
     // ── TRASH view: single-select ──
-    if (viewIn === 'trash') {
+    if (viewIn === "trash") {
       actions = buildTrashActions(
         item,
         onClose,
@@ -679,22 +679,22 @@ const MediaContextMenu = ({
 
   // Translate context-menu labels while keeping English keys for overrides
   const labelMap: Record<string, string> = {
-    Preview: t('media.preview'),
-    Rename: t('media.rename'),
-    Download: t('media.download'),
-    'Delete permanently': t('media.deletePermanently'),
-    Restore: t('media.restore'),
-    Open: t('media.open'),
-    'Make a copy': t('common.create'),
-    Move: t('media.move'),
-    'Add to favorite': t('media.favorites'),
-    'Move to trash': t('media.moveToTrash'),
-    Properties: t('media.properties'),
-    Crop: 'Crop',
-    'ALT text': t('media.altText'),
-    'Copy link': t('media.copyLink'),
-    'Copy indirect link': t('media.copyIndirectLink'),
-    Share: t('media.share'),
+    Preview: t("media.preview"),
+    Rename: t("media.rename"),
+    Download: t("media.download"),
+    "Delete permanently": t("media.deletePermanently"),
+    Restore: t("media.restore"),
+    Open: t("media.open"),
+    "Make a copy": t("common.create"),
+    Move: t("media.move"),
+    "Add to favorite": t("media.favorites"),
+    "Move to trash": t("media.moveToTrash"),
+    Properties: t("media.properties"),
+    Crop: "Crop",
+    "ALT text": t("media.altText"),
+    "Copy link": t("media.copyLink"),
+    "Copy indirect link": t("media.copyIndirectLink"),
+    Share: t("media.share"),
   };
 
   return (
@@ -704,7 +704,7 @@ const MediaContextMenu = ({
       style={{
         top: adjustedPos.y,
         left: adjustedPos.x,
-        visibility: ready ? 'visible' : 'hidden',
+        visibility: ready ? "visible" : "hidden",
       }}
     >
       {actions.map((action) => (
@@ -715,7 +715,7 @@ const MediaContextMenu = ({
           className={`
             w-full flex items-center justify-start gap-2 px-2.5 py-1.5 text-sm rounded-sm
             transition-colors cursor-pointer h-auto
-            ${action.danger ? 'text-destructive hover:bg-destructive/10' : 'hover:bg-accent'}
+            ${action.danger ? "text-destructive hover:bg-destructive/10" : "hover:bg-accent"}
           `}
         >
           <action.icon className="size-4 shrink-0" />

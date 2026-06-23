@@ -1,29 +1,34 @@
-'use client';
+"use client";
 
-import { type ReactNode, useCallback, useMemo, useState } from 'react';
-import { Dialog, DialogClose, DialogContent, DialogTitle } from '@ecom/ui/components/dialog';
-import { Separator } from '@ecom/ui/components/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@ecom/ui/components/tooltip';
+import { showToast, ToastType } from "@admin/components/toast-provider";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@ecom/ui/components/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ecom/ui/components/select';
-import { ButtonField, InputField } from './Compat';
-import { Copy, X } from 'lucide-react';
-import { showToast, ToastType } from '@admin/components/toast-provider';
-import { MediaItemType, ShareType } from '../model/media.model';
-import type { ShareDialogProps, MediaItem } from '../model/media.model';
-import { useTranslations } from 'next-intl';
+} from "@ecom/ui/components/select";
+import { Separator } from "@ecom/ui/components/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@ecom/ui/components/tooltip";
+import { Copy, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useCallback, useMemo, useState } from "react";
+import type { MediaItem, ShareDialogProps } from "../model/media.model";
+import { MediaItemType, ShareType } from "../model/media.model";
+import { ButtonField, InputField } from "./Compat";
 
 // ── Share Type Options ────────────────────────────────────────
 const SHARE_TYPE_OPTIONS = [
-  { label: 'URL', value: ShareType.URL },
-  { label: 'Indirect URL', value: ShareType.INDIRECT_URL },
-  { label: 'HTML', value: ShareType.HTML },
-  { label: 'Markdown', value: ShareType.MARKDOWN },
+  { label: "URL", value: ShareType.URL },
+  { label: "Indirect URL", value: ShareType.INDIRECT_URL },
+  { label: "HTML", value: ShareType.HTML },
+  { label: "Markdown", value: ShareType.MARKDOWN },
 ];
 
 // ── Conversion helpers ────────────────────────────────────────
@@ -31,10 +36,10 @@ const SHARE_TYPE_OPTIONS = [
 const isImageType = (item: MediaItem): boolean => item.type === MediaItemType.IMAGE;
 
 const convertItem = (item: MediaItem, shareType: ShareType): string => {
-  const url = item.full_url || '';
-  const indirectUrl = item.indirect_url || '';
-  const alt = item.alt || item.name || '';
-  const name = item.name || '';
+  const url = item.full_url || "";
+  const indirectUrl = item.indirect_url || "";
+  const alt = item.alt || item.name || "";
+  const name = item.name || "";
 
   switch (shareType) {
     case ShareType.URL:
@@ -55,18 +60,18 @@ const convertItem = (item: MediaItem, shareType: ShareType): string => {
 // ── Component ─────────────────────────────────────────────────
 
 const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode => {
-  const t = useTranslations('media');
+  const t = useTranslations("media");
   const [shareType, setShareType] = useState<ShareType>(ShareType.URL);
 
   const shareResult = useMemo(() => {
-    if (items.length === 0) return '';
-    return items.map((item) => convertItem(item, shareType)).join('\n');
+    if (items.length === 0) return "";
+    return items.map((item) => convertItem(item, shareType)).join("\n");
   }, [items, shareType]);
 
   const handleCopy = useCallback(() => {
     if (!shareResult) return;
     navigator.clipboard.writeText(shareResult);
-    showToast(ToastType.SUCCESS, t('copiedToClipboard'));
+    showToast(ToastType.SUCCESS, t("copiedToClipboard"));
   }, [shareResult]);
 
   const handleShareTypeChange = useCallback((value: ShareType) => {
@@ -80,9 +85,9 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
         <div className="relative px-6 pt-6 pb-3">
           <DialogTitle
             className="text-[1.25rem] font-semibold"
-            style={{ color: 'var(--admin-text-color)' }}
+            style={{ color: "var(--admin-text-color)" }}
           >
-            {t('share')}
+            {t("share")}
           </DialogTitle>
           <DialogClose asChild>
             <ButtonField
@@ -90,7 +95,7 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
               size="icon"
               className="absolute right-6 top-4 rounded-md p-1 text-[#9ca3af] hover:bg-muted cursor-pointer h-auto w-auto"
               aria-label="Close"
-              style={{ color: 'var(--admin-text-color)' }}
+              style={{ color: "var(--admin-text-color)" }}
             >
               <X className="size-4" />
             </ButtonField>
@@ -105,14 +110,11 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
           <div className="flex flex-col gap-2">
             <span
               className="text-[0.875rem] font-semibold"
-              style={{ color: 'var(--admin-text-color)' }}
+              style={{ color: "var(--admin-text-color)" }}
             >
-              {t('shareType')}
+              {t("shareType")}
             </span>
-            <Select
-              value={shareType}
-              onValueChange={handleShareTypeChange}
-            >
+            <Select value={shareType} onValueChange={handleShareTypeChange}>
               <SelectTrigger className="w-full h-[2.5rem] rounded-[0.625rem] border border-[#e5e7eb] bg-white px-4 text-[0.875rem] outline-none focus:border-[#94a3b8]">
                 <SelectValue />
               </SelectTrigger>
@@ -129,7 +131,7 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
           {/* Share Results */}
           <InputField
             as="textarea"
-            label={t('shareResults')}
+            label={t("shareResults")}
             readOnly
             value={shareResult}
             onValueChange={() => {}}
@@ -148,12 +150,12 @@ const ShareDialog = ({ open, onOpenChange, items }: ShareDialogProps): ReactNode
                     variant="outline"
                     size="icon"
                     className="h-[2.25rem] w-[2.25rem] rounded-[0.5rem] cursor-pointer"
-                    style={{ backgroundColor: 'var(--admin-primary-color)' }}
+                    style={{ backgroundColor: "var(--admin-primary-color)" }}
                   >
                     <Copy className="size-4 text-[#fff]" />
                   </ButtonField>
                 </TooltipTrigger>
-                <TooltipContent>{t('copyToClipboard')}</TooltipContent>
+                <TooltipContent>{t("copyToClipboard")}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

@@ -63,6 +63,7 @@
   "actionFailed": "Action failed",
   "createFolderSuccess": "Create folder successfully",
   "createFolderFailed": "Create folder failed",
+  "folderName": "Folder name",
   "selectDestination": "Select a destination folder",
   "moveToRoot": "Move to root folder",
   "chooseColor": "Choose a color for this folder",

@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import { ReactNode, useCallback, useState } from 'react';
-import { Card, CardContent, CardHeader } from '@ecom/ui/components/card';
-import { Separator } from '@ecom/ui/components/separator';
-import ListButtonActionMedia from './ListButtonActionMedia';
-import MediaContent from './MediaContent';
-import type { MediaOption } from '../model/media.model';
-import { MediaAction } from '../model/media.model';
-import { Globe, Filter } from 'lucide-react';
-import { useMutationMediaAction } from '../api/hook';
-import { showToast, ToastType } from '@admin/components/toast-provider';
-import { useQueryClient } from '@tanstack/react-query';
-import { MediaDataKeys } from '../api/queries';
-import { useTranslations } from 'next-intl';
+import { showToast, ToastType } from "@admin/components/toast-provider";
+import { Card, CardContent, CardHeader } from "@ecom/ui/components/card";
+import { Separator } from "@ecom/ui/components/separator";
+import { useQueryClient } from "@tanstack/react-query";
+import { Filter, Globe } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useCallback, useState } from "react";
+import { useMutationMediaAction } from "../api/hook";
+import { MediaDataKeys } from "../api/queries";
+import type { MediaOption } from "../model/media.model";
+import { MediaAction } from "../model/media.model";
+import ListButtonActionMedia from "./ListButtonActionMedia";
+import MediaContent from "./MediaContent";
 
 const ListMedia = (): ReactNode => {
-  const t = useTranslations('media');
-  const cardClass = 'flex flex-col h-full overflow-hidden';
+  const t = useTranslations("media");
+  const cardClass = "flex flex-col h-full overflow-hidden";
 
   const DEFAULT_VIEW_MEDIA: MediaOption = {
-    label: t('allMedia'),
-    value: 'all_media',
+    label: t("allMedia"),
+    value: "all_media",
     icon: Globe,
   };
   const DEFAULT_FILTER: MediaOption = {
-    label: t('everything'),
-    value: 'everything',
+    label: t("everything"),
+    value: "everything",
     icon: Filter,
   };
 
@@ -33,12 +33,12 @@ const ListMedia = (): ReactNode => {
   const [currentFolderId, setCurrentFolderId] = useState<number | string>(0);
   const [selectedViewMedia, setSelectedViewMedia] = useState<MediaOption>(DEFAULT_VIEW_MEDIA);
   const [selectedFilterType, setSelectedFilterType] = useState<MediaOption>(DEFAULT_FILTER);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
 
   const { mutate: doEmptyTrash, isPending: emptyTrashLoading } = useMutationMediaAction({
     onSuccess: () => {
-      showToast(ToastType.SUCCESS, 'Trash emptied successfully');
+      showToast(ToastType.SUCCESS, "Trash emptied successfully");
       queryClient.invalidateQueries({ queryKey: MediaDataKeys.all });
     },
     onError: (error: any) => {
@@ -53,7 +53,7 @@ const ListMedia = (): ReactNode => {
     });
   }, [doEmptyTrash]);
 
-  const viewIn = selectedViewMedia.value as 'all_media' | 'trash' | 'recent' | 'favorites';
+  const viewIn = selectedViewMedia.value as "all_media" | "trash" | "recent" | "favorites";
 
   return (
     <Card className={cardClass}>

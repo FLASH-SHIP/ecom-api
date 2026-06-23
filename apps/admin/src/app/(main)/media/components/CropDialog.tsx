@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { type ReactNode } from 'react';
 import {
   CropDialog as BaseCropDialog,
   type CropData,
-} from '@admin/components/base/CropDialog/CropDialog';
-import type { MediaItem } from '../model/media.model';
+} from "@admin/components/base/CropDialog/CropDialog";
+import type { ReactNode } from "react";
+import type { MediaItem } from "../model/media.model";
 
 // ── Props ─────────────────────────────────────────────────────
 
@@ -26,14 +26,14 @@ const CropDialog = ({
   onSubmit,
   loading = false,
 }: MediaCropDialogProps): ReactNode => {
-  const imageUrl = item?.preview_url || item?.full_url || item?.thumbnailUrl || '';
+  const imageUrl = item?.preview_url || item?.full_url || item?.thumbnailUrl || "";
 
   return (
     <BaseCropDialog
       open={open}
       onOpenChange={onOpenChange}
       imageUrl={imageUrl}
-      imageAlt={item?.name ?? 'Crop preview'}
+      imageAlt={item?.name ?? "Crop preview"}
       onSubmit={(cropData) => {
         if (item) {
           onSubmit(item.id, cropData);

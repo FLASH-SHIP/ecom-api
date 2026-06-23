@@ -1,42 +1,49 @@
-'use client';
+"use client";
 
-import { ReactNode, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { X, FileIcon, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import { ButtonField } from './Compat';
-import { useMutationUploadMediaFile } from '../api/hook';
-import { MediaDataKeys } from '../api/queries';
-import { useQueryClient } from '@tanstack/react-query';
+import { formatSize, getAcceptExtensions, type MediaFileType } from "@admin/utils/func";
+import { useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, FileIcon, Loader2, X, XCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
-  UploadFileStatus,
+  forwardRef,
+  type ReactNode,
+  useCallback,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
+import { useMutationUploadMediaFile } from "../api/hook";
+import { MediaDataKeys } from "../api/queries";
+import {
   type UploadFileItem,
+  UploadFileStatus,
   type UploadProgressPanelHandle,
-} from '../model/media.model';
-import { getAcceptExtensions, formatSize, type MediaFileType } from '@admin/utils/func';
-import { useTranslations } from 'next-intl';
+} from "../model/media.model";
+import { ButtonField } from "./Compat";
 
 const statusColor = (status: UploadFileStatus): string => {
   switch (status) {
     case UploadFileStatus.UPLOADING:
-      return 'text-blue-500';
+      return "text-blue-500";
     case UploadFileStatus.SUCCESS:
-      return 'text-green-500';
+      return "text-green-500";
     case UploadFileStatus.ERROR:
-      return 'text-red-500';
+      return "text-red-500";
     default:
-      return 'text-muted-foreground';
+      return "text-muted-foreground";
   }
 };
 
 const statusLabel = (status: UploadFileStatus): string => {
   switch (status) {
     case UploadFileStatus.UPLOADING:
-      return 'Uploading…';
+      return "Uploading…";
     case UploadFileStatus.SUCCESS:
-      return 'Success';
+      return "Success";
     case UploadFileStatus.ERROR:
-      return 'Error';
+      return "Error";
     default:
-      return 'Waiting…';
+      return "Waiting…";
   }
 };
 
@@ -106,12 +113,12 @@ const UploadProgressPanel = forwardRef<UploadProgressPanelHandle, UploadProgress
 
           try {
             // Extract filename without extension
-            const nameWithoutExt = item.file.name.replace(/\.[^/.]+$/, '');
+            const nameWithoutExt = item.file.name.replace(/\.[^/.]+$/, "");
 
             await uploadMutation.mutateAsync({
               file: item.file,
-              folder_id: '0',
-              visibility: 'public',
+              folder_id: "0",
+              visibility: "public",
               filename: nameWithoutExt,
             });
 
@@ -129,7 +136,7 @@ const UploadProgressPanel = forwardRef<UploadProgressPanelHandle, UploadProgress
                   ? {
                       ...it,
                       status: UploadFileStatus.ERROR,
-                      errorMessage: err instanceof Error ? err.message : t('media.uploadFailed'),
+                      errorMessage: err instanceof Error ? err.message : t("media.uploadFailed"),
                     }
                   : it,
               ),
@@ -167,7 +174,7 @@ const UploadProgressPanel = forwardRef<UploadProgressPanelHandle, UploadProgress
           accept={acceptString}
           onChange={(e) => {
             onFilesSelected(e.target.files);
-            e.target.value = '';
+            e.target.value = "";
           }}
         />
 
@@ -177,7 +184,7 @@ const UploadProgressPanel = forwardRef<UploadProgressPanelHandle, UploadProgress
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-b-[#e5e7eb] bg-muted/30">
               <h4 className="text-sm font-semibold">
-                Upload progress{uploading ? ` (${completedCount}/${items.length})` : ''}
+                Upload progress{uploading ? ` (${completedCount}/${items.length})` : ""}
               </h4>
               <ButtonField
                 variant="ghost"
@@ -186,11 +193,11 @@ const UploadProgressPanel = forwardRef<UploadProgressPanelHandle, UploadProgress
                 disabled={uploading}
                 className={`p-1 rounded-full transition-colors ${
                   uploading
-                    ? 'text-muted-foreground cursor-not-allowed'
-                    : 'hover:bg-accent cursor-pointer'
+                    ? "text-muted-foreground cursor-not-allowed"
+                    : "hover:bg-accent cursor-pointer"
                 }`}
               >
-                <X className="size-4" style={{ color: 'var(--admin-text-color)' }} />
+                <X className="size-4" style={{ color: "var(--admin-text-color)" }} />
               </ButtonField>
             </div>
 
@@ -212,11 +219,11 @@ const UploadProgressPanel = forwardRef<UploadProgressPanelHandle, UploadProgress
                   </span>
                   <span className={`text-xs shrink-0 ${statusColor(item.status)}`}>
                     {item.status === UploadFileStatus.UPLOADING
-                      ? t('media.uploading')
+                      ? t("media.uploading")
                       : item.status === UploadFileStatus.SUCCESS
-                        ? t('media.uploadSuccess')
+                        ? t("media.uploadSuccess")
                         : item.status === UploadFileStatus.ERROR
-                          ? t('media.uploadError')
+                          ? t("media.uploadError")
                           : statusLabel(item.status)}
                   </span>
                 </div>
@@ -229,6 +236,6 @@ const UploadProgressPanel = forwardRef<UploadProgressPanelHandle, UploadProgress
   },
 );
 
-UploadProgressPanel.displayName = 'UploadProgressPanel';
+UploadProgressPanel.displayName = "UploadProgressPanel";
 
 export default UploadProgressPanel;

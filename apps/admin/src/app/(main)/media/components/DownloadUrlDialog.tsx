@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { ReactNode, useState, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ecom/ui/components/dialog';
-import { ButtonField, InputField } from './Compat';
-import { Download, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import { useMutationDownloadMediaFromRemote } from '../api/hook';
-import { MediaDataKeys } from '../api/queries';
-import { useQueryClient } from '@tanstack/react-query';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@ecom/ui/components/dialog";
+import { useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, CheckCircle2, Download, Loader2, XCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useCallback, useState } from "react";
+import { useMutationDownloadMediaFromRemote } from "../api/hook";
+import { MediaDataKeys } from "../api/queries";
 import {
-  DownloadUrlStatus,
-  type DownloadUrlItem,
   type DownloadUrlDialogProps,
-} from '../model/media.model';
-import { useTranslations } from 'next-intl';
+  type DownloadUrlItem,
+  DownloadUrlStatus,
+} from "../model/media.model";
+import { ButtonField, InputField } from "./Compat";
 
 const StatusIcon = ({ status }: { status: DownloadUrlStatus }): ReactNode => {
   switch (status) {
@@ -30,30 +30,30 @@ const StatusIcon = ({ status }: { status: DownloadUrlStatus }): ReactNode => {
 const statusColor = (status: DownloadUrlStatus): string => {
   switch (status) {
     case DownloadUrlStatus.DOWNLOADING:
-      return 'text-blue-500';
+      return "text-blue-500";
     case DownloadUrlStatus.SUCCESS:
-      return 'text-green-500';
+      return "text-green-500";
     case DownloadUrlStatus.ERROR:
-      return 'text-red-500';
+      return "text-red-500";
     default:
-      return 'text-muted-foreground';
+      return "text-muted-foreground";
   }
 };
 
 const statusSuffix = (status: DownloadUrlStatus): string => {
   switch (status) {
     case DownloadUrlStatus.SUCCESS:
-      return ': Success';
+      return ": Success";
     case DownloadUrlStatus.ERROR:
-      return ': Error';
+      return ": Error";
     default:
-      return '';
+      return "";
   }
 };
 
 const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): ReactNode => {
-  const t = useTranslations('media');
-  const [urlText, setUrlText] = useState('');
+  const t = useTranslations("media");
+  const [urlText, setUrlText] = useState("");
   const [items, setItems] = useState<DownloadUrlItem[]>([]);
   const [downloading, setDownloading] = useState(false);
 
@@ -67,7 +67,7 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
   const handleDownload = useCallback(async () => {
     // Parse URLs: split by newline, filter empty
     const urls = urlText
-      .split('\n')
+      .split("\n")
       .map((u) => u.trim())
       .filter(Boolean);
 
@@ -97,8 +97,8 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
       try {
         await downloadMutation.mutateAsync({
           url: item.url,
-          folder_id: '0',
-          visibility: 'public',
+          folder_id: "0",
+          visibility: "public",
         });
 
         // Mark success
@@ -113,7 +113,7 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
               ? {
                   ...it,
                   status: DownloadUrlStatus.ERROR,
-                  errorMessage: err instanceof Error ? err.message : t('downloadFailed'),
+                  errorMessage: err instanceof Error ? err.message : t("downloadFailed"),
                 }
               : it,
           ),
@@ -132,7 +132,7 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
       if (!downloading) {
         onOpenChange(isOpen);
         if (!isOpen) {
-          setUrlText('');
+          setUrlText("");
           setItems([]);
         }
       }
@@ -141,8 +141,8 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
   );
 
   const title = downloading
-    ? `${t('downloading')} (${completedCount} / ${items.length})`
-    : t('download');
+    ? `${t("downloading")} (${completedCount} / ${items.length})`
+    : t("download");
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -176,7 +176,7 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
             disabled={downloading || !urlText.trim()}
             className="w-full h-[2.75rem] bg-[#3b82f6] hover:bg-[#2563eb] cursor-pointer text-base font-medium"
           >
-            {downloading ? <Loader2 className="size-5 animate-spin" /> : t('download')}
+            {downloading ? <Loader2 className="size-5 animate-spin" /> : t("download")}
           </ButtonField>
 
           {/* Status list */}
@@ -184,7 +184,7 @@ const DownloadUrlDialog = ({ open, onOpenChange }: DownloadUrlDialogProps): Reac
             <div className="flex flex-col gap-1.5 max-h-[12.5rem] overflow-y-auto">
               {items.map((item) => {
                 // Extract filename from URL
-                const filename = item.url.split('/').pop() || item.url;
+                const filename = item.url.split("/").pop() || item.url;
 
                 return (
                   <div key={item.id} className="flex items-center gap-2">

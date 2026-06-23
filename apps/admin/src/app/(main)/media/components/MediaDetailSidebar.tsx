@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import Image from 'next/image';
-import { MediaItemType } from '../model/media.model';
-import type { MediaDetailSidebarProps } from '../model/media.model';
-import { ButtonField, InputField } from './Compat';
-import { Folder, Copy, X } from 'lucide-react';
-import { Separator } from '@ecom/ui/components/separator';
-import { getFileTypeIcon } from '@admin/components/base/FileTypeIcon/FileTypeIcon';
-import { useTranslations } from 'next-intl';
-import { formatDate, copyToClipboard } from '@admin/utils/func';
+import { getFileTypeIcon } from "@admin/components/base/FileTypeIcon/FileTypeIcon";
+import { copyToClipboard, formatDate } from "@admin/utils/func";
+import { Separator } from "@ecom/ui/components/separator";
+import { Copy, Folder, X } from "lucide-react";
+import Image from "next/image";
+import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
+import type { MediaDetailSidebarProps } from "../model/media.model";
+import { MediaItemType } from "../model/media.model";
+import { ButtonField, InputField } from "./Compat";
 
 /** Empty state placeholder */
 const EmptyPreview = (): ReactNode => (
@@ -23,10 +23,10 @@ const EmptyPreview = (): ReactNode => (
 /** Detail row: label + value */
 const DetailRow = ({ label, children }: { label: string; children: ReactNode }): ReactNode => (
   <div className="py-2">
-    <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--admin-text-color)' }}>
+    <p className="text-xs font-medium mb-0.5" style={{ color: "var(--admin-text-color)" }}>
       {label}
     </p>
-    <div className="text-sm" style={{ color: 'var(--admin-text-color)' }}>
+    <div className="text-sm" style={{ color: "var(--admin-text-color)" }}>
       {children}
     </div>
   </div>
@@ -36,7 +36,8 @@ const MediaDetailSidebar = ({
   item,
   onClose,
 }: MediaDetailSidebarProps & { onClose?: () => void }): ReactNode => {
-  const t = useTranslations('media');
+  const t = useTranslations("media");
+  const tGlobal = useTranslations();
   if (!item) return <EmptyPreview />;
 
   const isFolder = item.type === MediaItemType.FOLDER;
@@ -52,16 +53,16 @@ const MediaDetailSidebar = ({
             className="size-7 cursor-pointer"
             onClick={onClose}
           >
-            <X className="size-4" style={{ color: 'var(--admin-text-color)' }} />
+            <X className="size-4" style={{ color: "var(--admin-text-color)" }} />
           </ButtonField>
         </div>
       ) : null}
       {/* Preview area */}
       <div className="relative flex items-center justify-center py-3 md:py-6">
-        {(item.preview_url || item.full_url) && item.mime_type?.startsWith('image/') ? (
+        {(item.preview_url || item.full_url) && item.mime_type?.startsWith("image/") ? (
           <div className="relative w-full h-[5rem] md:h-[12.5rem]">
             <Image
-              src={item.preview_url || item.full_url || ''}
+              src={item.preview_url || item.full_url || ""}
               alt={item.name}
               fill
               sizes="260px"
@@ -71,7 +72,7 @@ const MediaDetailSidebar = ({
           </div>
         ) : isFolder ? (
           <Folder
-            className={item.color ? 'size-20' : 'size-20 text-muted-foreground'}
+            className={item.color ? "size-20" : "size-20 text-muted-foreground"}
             style={item.color ? { color: item.color } : undefined}
           />
         ) : (
@@ -83,11 +84,11 @@ const MediaDetailSidebar = ({
 
       {/* Details */}
       <div className="p-4 flex flex-col gap-0.5 overflow-y-auto">
-        <DetailRow label={t('common.name')}>{item.name}</DetailRow>
+        <DetailRow label={tGlobal("common.name")}>{item.name}</DetailRow>
 
         {/* Full URL (files only) */}
         {item.full_url ? (
-          <DetailRow label={t('fullUrl')}>
+          <DetailRow label={t("fullUrl")}>
             <div className="flex items-center gap-1.5">
               <InputField
                 readOnly
@@ -109,15 +110,15 @@ const MediaDetailSidebar = ({
         ) : null}
 
         {/* Size (files only) */}
-        {item.size != null ? <DetailRow label={t('size')}>{item.size}</DetailRow> : null}
+        {item.size != null ? <DetailRow label={t("size")}>{item.size}</DetailRow> : null}
 
-        <DetailRow label={t('uploadedAt')}>{formatDate(item.created_at)}</DetailRow>
-        <DetailRow label={t('modifiedAt')}>{formatDate(item.updated_at)}</DetailRow>
+        <DetailRow label={t("uploadedAt")}>{formatDate(item.created_at)}</DetailRow>
+        <DetailRow label={t("modifiedAt")}>{formatDate(item.updated_at)}</DetailRow>
 
         {/* Alt text (images only) */}
         {item.type === MediaItemType.IMAGE ? (
-          <DetailRow label={t('altText')}>
-            <span className="text-muted-foreground">{item.alt ?? '-'}</span>
+          <DetailRow label={t("altText")}>
+            <span className="text-muted-foreground">{item.alt ?? "-"}</span>
           </DetailRow>
         ) : null}
       </div>

@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import { MediaItemType } from '../model/media.model';
-import type { MediaItem, MediaGridItemProps, MediaGridBackItemProps } from '../model/media.model';
-import { Folder, Undo2, Check } from 'lucide-react';
-import Image from 'next/image';
-import { getFileTypeIcon } from '@admin/components/base/FileTypeIcon/FileTypeIcon';
+import { getFileTypeIcon } from "@admin/components/base/FileTypeIcon/FileTypeIcon";
+import { Check, Folder, Undo2 } from "lucide-react";
+import Image from "next/image";
+import type { ReactNode } from "react";
+import type { MediaGridBackItemProps, MediaGridItemProps, MediaItem } from "../model/media.model";
+import { MediaItemType } from "../model/media.model";
 
 /** Check xem mime_type có phải image không */
 const isImageMime = (mimeType?: string): boolean => {
   if (!mimeType) return false;
-  return mimeType.toLowerCase().startsWith('image/');
+  return mimeType.toLowerCase().startsWith("image/");
 };
 
 /** Render thumbnail: folder → icon, ảnh → next/image, file khác → custom SVG icon */
@@ -18,7 +18,7 @@ const renderThumbnail = (item: MediaItem): ReactNode => {
   if (item.type === MediaItemType.FOLDER) {
     return (
       <Folder
-        className={item.color ? 'size-12' : 'size-12 text-muted-foreground'}
+        className={item.color ? "size-12" : "size-12 text-muted-foreground"}
         style={item.color ? { color: item.color } : undefined}
       />
     );
@@ -60,7 +60,7 @@ const MediaGridItem = ({
       onDoubleClick={() => onDoubleClick(item)}
       onContextMenu={(e) => onContextMenu(e, item)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onDoubleClick(item);
+        if (e.key === "Enter") onDoubleClick(item);
       }}
       className={`
         relative group flex flex-col items-center justify-center gap-1.5
@@ -68,8 +68,8 @@ const MediaGridItem = ({
         transition-all select-none
         ${
           isSelected
-            ? 'border-primary bg-primary/5 ring-1 ring-primary'
-            : 'border-transparent hover:bg-accent/50'
+            ? "border-primary bg-primary/5 ring-1 ring-primary"
+            : "border-transparent hover:bg-accent/50"
         }
       `}
     >
@@ -87,7 +87,7 @@ const MediaGridItem = ({
       {/* Name */}
       <span
         className="text-xs text-center truncate max-w-[8.75rem] px-1"
-        style={{ color: 'var(--admin-text-color)' }}
+        style={{ color: "var(--admin-text-color)" }}
       >
         {item.name}
       </span>
@@ -106,14 +106,14 @@ export const MediaGridBackItem = ({ onClick }: MediaGridBackItemProps): ReactNod
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onClick();
+        if (e.key === "Enter") onClick();
       }}
       className="flex flex-col items-center justify-center gap-1.5 w-full h-[8.5rem] rounded-lg border border-transparent hover:bg-accent/50 cursor-pointer transition-all select-none"
     >
       <div className="flex items-center justify-center w-[4.5rem] h-[4.5rem]">
-        <Undo2 className="size-12" style={{ color: 'var(--admin-text-color)' }} />
+        <Undo2 className="size-12" style={{ color: "var(--admin-text-color)" }} />
       </div>
-      <span className="text-xs text-center" style={{ color: 'var(--admin-text-color)' }}>
+      <span className="text-xs text-center" style={{ color: "var(--admin-text-color)" }}>
         ...
       </span>
     </div>

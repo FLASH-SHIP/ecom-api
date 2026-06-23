@@ -1,6 +1,5 @@
 import "reflect-metadata";
 import { ConfigService } from "@nestjs/config";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -22,8 +21,28 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
+  const nodeEnv = configService.get<string>("NODE_ENV") ?? "development";
+  const webUrl = configService.get<string>("WEB_URL") ?? "http://localhost:3000";
+
   app.enableCors({
-    origin: configService.get<string>("WEB_URL") ?? "http://localhost:3000",
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      const isAllowed =
+        origin === webUrl ||
+        (nodeEnv !== "production" &&
+          (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")));
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     credentials: true,
   });
 

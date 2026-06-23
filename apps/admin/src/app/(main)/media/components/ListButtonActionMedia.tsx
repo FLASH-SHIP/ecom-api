@@ -1,41 +1,47 @@
-'use client';
+"use client";
 
-import React, { ReactNode, useRef, useState } from 'react';
-import { ButtonField, InputField } from './Compat';
+import ConfirmDeleteModal from "@admin/components/layouts/ConfirmDeleteModal";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from '@ecom/ui/components/dropdown-menu';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@ecom/ui/components/tooltip';
+  DropdownMenuTrigger,
+} from "@ecom/ui/components/dropdown-menu";
 import {
-  Upload,
-  FolderPlus,
-  RefreshCw,
-  Filter,
-  Eye,
-  Globe,
-  Trash2,
-  Clock,
-  Star,
-  Image,
-  Video,
-  FileText,
-  Link,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@ecom/ui/components/tooltip";
+import { useIsFetching, useQueryClient } from "@tanstack/react-query";
+import {
   ChevronDown,
+  Clock,
+  Eye,
   FileArchive,
+  FileText,
+  Filter,
+  FolderPlus,
+  Globe,
+  Image,
+  Link,
   Music,
+  RefreshCw,
   Search,
-} from 'lucide-react';
-import UploadProgressPanel from './UploadProgressPanel';
-import DownloadUrlDialog from './DownloadUrlDialog';
-import CreateFolderDialog from './CreateFolderDialog';
-import type { MediaOption, UploadProgressPanelHandle } from '../model/media.model';
-import { useQueryClient, useIsFetching } from '@tanstack/react-query';
-import { MediaDataKeys } from '../api/queries';
-import ConfirmDeleteModal from '@admin/components/layouts/ConfirmDeleteModal';
-import { useTranslations } from 'next-intl';
+  Star,
+  Trash2,
+  Upload,
+  Video,
+} from "lucide-react";
+import { useTranslations } from "next-intl";
+import type React from "react";
+import { type ReactNode, useRef, useState } from "react";
+import { MediaDataKeys } from "../api/queries";
+import type { MediaOption, UploadProgressPanelHandle } from "../model/media.model";
+import { ButtonField, InputField } from "./Compat";
+import CreateFolderDialog from "./CreateFolderDialog";
+import DownloadUrlDialog from "./DownloadUrlDialog";
+import UploadProgressPanel from "./UploadProgressPanel";
 
 interface ListButtonActionMediaProps {
   currentFolderId: number | string;
@@ -63,28 +69,29 @@ const ListButtonActionMedia = ({
   onEmptyTrash,
   emptyTrashLoading,
 }: ListButtonActionMediaProps): ReactNode => {
-  const t = useTranslations('media');
+  const t = useTranslations("media");
+  const tGlobal = useTranslations();
 
   const filterTypeOptions: MediaOption[] = [
-    { label: t('everything'), value: 'everything', icon: Filter },
-    { label: t('image'), value: 'image', icon: Image },
-    { label: t('video'), value: 'video', icon: Video },
-    { label: t('document'), value: 'document', icon: FileText },
-    { label: t('zip'), value: 'zip', icon: FileArchive },
-    { label: t('audio'), value: 'audio', icon: Music },
+    { label: t("everything"), value: "everything", icon: Filter },
+    { label: t("image"), value: "image", icon: Image },
+    { label: t("video"), value: "video", icon: Video },
+    { label: t("document"), value: "document", icon: FileText },
+    { label: t("zip"), value: "zip", icon: FileArchive },
+    { label: t("audio"), value: "audio", icon: Music },
   ];
 
   const viewMediaOptions: MediaOption[] = [
-    { label: t('allMedia'), value: 'all_media', icon: Globe },
-    { label: t('trash'), value: 'trash', icon: Trash2 },
-    { label: t('recent'), value: 'recent', icon: Clock },
-    { label: t('favorites'), value: 'favorites', icon: Star },
+    { label: t("allMedia"), value: "all_media", icon: Globe },
+    { label: t("trash"), value: "trash", icon: Trash2 },
+    { label: t("recent"), value: "recent", icon: Clock },
+    { label: t("favorites"), value: "favorites", icon: Star },
   ];
 
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const [createFolderDialogOpen, setCreateFolderDialogOpen] = useState(false);
   const [emptyTrashConfirmOpen, setEmptyTrashConfirmOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState("");
 
   // Ref to trigger the file picker from UploadProgressPanel
   const uploadPanelRef = useRef<UploadProgressPanelHandle>(null);
@@ -123,10 +130,10 @@ const ListButtonActionMedia = ({
           <DropdownMenuTrigger asChild>
             <ButtonField
               className="h-[2.5rem] cursor-pointer gap-1.5 "
-              style={{ backgroundColor: 'var(--admin-primary-color)' }}
+              style={{ backgroundColor: "var(--admin-primary-color)" }}
             >
               <Upload className="size-4" />
-              {t('upload')}
+              {t("upload")}
               <ChevronDown className="size-3.5" />
             </ButtonField>
           </DropdownMenuTrigger>
@@ -134,18 +141,18 @@ const ListButtonActionMedia = ({
             <DropdownMenuItem
               onClick={handleUploadFromLocal}
               className="gap-2 cursor-pointer"
-              style={{ color: 'var(--admin-text-color)' }}
+              style={{ color: "var(--admin-text-color)" }}
             >
-              <Upload className="size-4" style={{ color: 'var(--admin-secondary-color)' }} />
-              {t('uploadFromLocal')}
+              <Upload className="size-4" style={{ color: "var(--admin-secondary-color)" }} />
+              {t("uploadFromLocal")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleUploadFromURL}
               className="gap-2 cursor-pointer"
-              style={{ color: 'var(--admin-text-color)' }}
+              style={{ color: "var(--admin-text-color)" }}
             >
-              <Link className="size-4" style={{ color: 'var(--admin-secondary-color)' }} />
-              {t('uploadFromURL')}
+              <Link className="size-4" style={{ color: "var(--admin-secondary-color)" }} />
+              {t("uploadFromURL")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -156,13 +163,13 @@ const ListButtonActionMedia = ({
             <ButtonField
               size="icon"
               className="h-[2.5rem] w-[2.5rem] cursor-pointer "
-              style={{ backgroundColor: 'var(--admin-primary-color)' }}
+              style={{ backgroundColor: "var(--admin-primary-color)" }}
               onClick={handleCreateFolder}
             >
               <FolderPlus className="size-4" />
             </ButtonField>
           </TooltipTrigger>
-          <TooltipContent>{t('createFolder')}</TooltipContent>
+          <TooltipContent>{t("createFolder")}</TooltipContent>
         </Tooltip>
 
         {/* Refresh Button */}
@@ -171,14 +178,14 @@ const ListButtonActionMedia = ({
             <ButtonField
               size="icon"
               className="h-[2.5rem] w-[2.5rem] cursor-pointer "
-              style={{ backgroundColor: 'var(--admin-primary-color)' }}
+              style={{ backgroundColor: "var(--admin-primary-color)" }}
               onClick={handleRefresh}
               disabled={isFetchingMedia > 0}
             >
-              <RefreshCw className={`size-4 ${isFetchingMedia > 0 ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`size-4 ${isFetchingMedia > 0 ? "animate-spin" : ""}`} />
             </ButtonField>
           </TooltipTrigger>
-          <TooltipContent>{t('refresh')}</TooltipContent>
+          <TooltipContent>{t("refresh")}</TooltipContent>
         </Tooltip>
 
         {/* Filter Type Dropdown */}
@@ -186,12 +193,11 @@ const ListButtonActionMedia = ({
           <DropdownMenuTrigger asChild>
             <ButtonField
               className="h-[2.5rem] cursor-pointer gap-1.5 "
-              style={{ backgroundColor: 'var(--admin-primary-color)' }}
+              style={{ backgroundColor: "var(--admin-primary-color)" }}
             >
-              <Filter className="size-4" />
-              ( <selectedFilterType.icon className="size-4" />{' '}
+              <Filter className="size-4" />( <selectedFilterType.icon className="size-4" />{" "}
               {filterTypeOptions.find((o) => o.value === selectedFilterType.value)?.label ??
-                selectedFilterType.label}{' '}
+                selectedFilterType.label}{" "}
               )
               <ChevronDown className="size-3.5" />
             </ButtonField>
@@ -203,17 +209,17 @@ const ListButtonActionMedia = ({
                 <DropdownMenuItem
                   key={option.value}
                   onClick={() => handleFilterTypeChange(option)}
-                  className={`gap-2 cursor-pointer ${isActive ? 'font-medium' : ''}`}
+                  className={`gap-2 cursor-pointer ${isActive ? "font-medium" : ""}`}
                   style={{
-                    color: isActive ? 'var(--admin-primary-color)' : 'var(--admin-text-color)',
+                    color: isActive ? "var(--admin-primary-color)" : "var(--admin-text-color)",
                   }}
                 >
                   <option.icon
                     className="size-4"
                     style={{
                       color: isActive
-                        ? 'var(--admin-primary-color)'
-                        : 'var(--admin-secondary-color)',
+                        ? "var(--admin-primary-color)"
+                        : "var(--admin-secondary-color)",
                     }}
                   />
                   {option.label}
@@ -228,12 +234,11 @@ const ListButtonActionMedia = ({
           <DropdownMenuTrigger asChild>
             <ButtonField
               className="h-[2.5rem] cursor-pointer gap-1.5 "
-              style={{ backgroundColor: 'var(--admin-primary-color)' }}
+              style={{ backgroundColor: "var(--admin-primary-color)" }}
             >
-              <Eye className="size-4" />
-              ( <selectedViewMedia.icon className="size-4" />{' '}
+              <Eye className="size-4" />( <selectedViewMedia.icon className="size-4" />{" "}
               {viewMediaOptions.find((o) => o.value === selectedViewMedia.value)?.label ??
-                selectedViewMedia.label}{' '}
+                selectedViewMedia.label}{" "}
               )
               <ChevronDown className="size-3.5" />
             </ButtonField>
@@ -245,17 +250,17 @@ const ListButtonActionMedia = ({
                 <DropdownMenuItem
                   key={option.value}
                   onClick={() => handleViewMediaChange(option)}
-                  className={`gap-2 cursor-pointer ${isActive ? 'font-medium' : ''}`}
+                  className={`gap-2 cursor-pointer ${isActive ? "font-medium" : ""}`}
                   style={{
-                    color: isActive ? 'var(--admin-primary-color)' : 'var(--admin-text-color)',
+                    color: isActive ? "var(--admin-primary-color)" : "var(--admin-text-color)",
                   }}
                 >
                   <option.icon
                     className="size-4"
                     style={{
                       color: isActive
-                        ? 'var(--admin-primary-color)'
-                        : 'var(--admin-secondary-color)',
+                        ? "var(--admin-primary-color)"
+                        : "var(--admin-secondary-color)",
                     }}
                   />
                   {option.label}
@@ -266,13 +271,13 @@ const ListButtonActionMedia = ({
         </DropdownMenu>
 
         {/* Empty Trash Button — only visible in trash view */}
-        {viewIn === 'trash' ? (
+        {viewIn === "trash" ? (
           <ButtonField
             className="h-[2.5rem] bg-red-600 hover:bg-red-700 text-white cursor-pointer gap-1.5"
             onClick={() => setEmptyTrashConfirmOpen(true)}
           >
             <Trash2 className="size-4" />
-            {t('emptyTrash')}
+            {t("emptyTrash")}
           </ButtonField>
         ) : null}
       </div>
@@ -280,17 +285,17 @@ const ListButtonActionMedia = ({
       {/* Search input */}
       <div className="mt-2 w-full md:w-[18.75rem]">
         <InputField
-          placeholder={t('searchPlaceholder')}
+          placeholder={t("searchPlaceholder")}
           className="h-[2.5rem]"
           value={searchValue}
           onValueChange={setSearchValue}
           onKeyDown={(e: React.KeyboardEvent) => {
-            if (e.key === 'Enter') onSearch(searchValue);
+            if (e.key === "Enter") onSearch(searchValue);
           }}
           actions={[
             {
-              key: 'search-btn',
-              position: 'end' as const,
+              key: "search-btn",
+              position: "end" as const,
               render: () => (
                 <ButtonField
                   variant="ghost"
@@ -298,7 +303,7 @@ const ListButtonActionMedia = ({
                   className="size-7 cursor-pointer"
                   onClick={() => onSearch(searchValue)}
                 >
-                  <Search className="size-4" style={{ color: 'var(--admin-text-color)' }} />
+                  <Search className="size-4" style={{ color: "var(--admin-text-color)" }} />
                 </ButtonField>
               ),
             },
@@ -327,10 +332,10 @@ const ListButtonActionMedia = ({
           onEmptyTrash?.();
           setEmptyTrashConfirmOpen(false);
         }}
-        title={t('emptyTrash')}
-        description={t('emptyTrashDesc')}
-        confirmLabel={t('confirm')}
-        cancelLabel={t('common.close')}
+        title={t("emptyTrash")}
+        description={t("emptyTrashDesc")}
+        confirmLabel={t("confirm")}
+        cancelLabel={tGlobal("common.close")}
         loading={emptyTrashLoading}
       />
     </TooltipProvider>

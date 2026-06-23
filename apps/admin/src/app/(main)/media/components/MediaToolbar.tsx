@@ -1,22 +1,25 @@
-'use client';
+"use client";
 
-import { ReactNode, useState } from 'react';
-import { ViewMode, MediaItemType } from '../model/media.model';
-import type { SortOption, MediaToolbarProps, MediaItem } from '../model/media.model';
-import { ButtonField } from './Compat';
+import { showToast, ToastType } from "@admin/components/toast-provider";
+import { downloadMultipleItemsAsZip } from "@admin/utils/func";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from '@ecom/ui/components/dropdown-menu';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@ecom/ui/components/tooltip';
+  DropdownMenuTrigger,
+} from "@ecom/ui/components/dropdown-menu";
 import {
-  ArrowDownAZ,
-  ArrowUpAZ,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@ecom/ui/components/tooltip";
+import {
   ArrowDown01,
+  ArrowDownAZ,
   ArrowUp01,
+  ArrowUpAZ,
   ChevronDown,
   Hand,
   LayoutGrid,
@@ -24,13 +27,15 @@ import {
   Maximize,
   Minimize,
   PanelRight,
-} from 'lucide-react';
-import { showToast, ToastType } from '@admin/components/toast-provider';
-import { downloadMultipleItemsAsZip } from '@admin/utils/func';
-import { getMediaList } from '../api/queries';
-import MediaBreadcrumb from './MediaBreadcrumb';
-import { buildFolderActions, buildFileActions, buildTrashActions } from './MediaContextMenu';
-import { useTranslations } from 'next-intl';
+} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useState } from "react";
+import { getMediaList } from "../api/queries";
+import type { MediaItem, MediaToolbarProps, SortOption } from "../model/media.model";
+import { MediaItemType, ViewMode } from "../model/media.model";
+import { ButtonField } from "./Compat";
+import MediaBreadcrumb from "./MediaBreadcrumb";
+import { buildFileActions, buildFolderActions, buildTrashActions } from "./MediaContextMenu";
 
 const MediaToolbar = ({
   breadcrumb,
@@ -58,15 +63,16 @@ const MediaToolbar = ({
   isFullscreen = false,
   onToggleFullscreen,
 }: MediaToolbarProps): ReactNode => {
-  const t = useTranslations('media');
+  const t = useTranslations("media");
+  const tGlobal = useTranslations();
 
   const SORT_OPTIONS: SortOption[] = [
-    { label: t('fileNameAsc'), value: 'name-asc', icon: ArrowDownAZ },
-    { label: t('media.fileNameDesc'), value: 'name-desc', icon: ArrowUpAZ },
-    { label: t('uploadedDateAsc'), value: 'created_at-asc', icon: ArrowDown01 },
-    { label: t('uploadedDateDesc'), value: 'created_at-desc', icon: ArrowUp01 },
-    { label: t('sizeAsc'), value: 'size-asc', icon: ArrowDown01 },
-    { label: t('sizeDesc'), value: 'size-desc', icon: ArrowUp01 },
+    { label: t("fileNameAsc"), value: "name-asc", icon: ArrowDownAZ },
+    { label: t("fileNameDesc"), value: "name-desc", icon: ArrowUpAZ },
+    { label: t("uploadedDateAsc"), value: "created_at-asc", icon: ArrowDown01 },
+    { label: t("uploadedDateDesc"), value: "created_at-desc", icon: ArrowUp01 },
+    { label: t("sizeAsc"), value: "size-asc", icon: ArrowDown01 },
+    { label: t("sizeDesc"), value: "size-desc", icon: ArrowUp01 },
   ];
 
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -84,7 +90,7 @@ const MediaToolbar = ({
     const activeItem = selectedItems[0];
 
     // Trash view: show trash-specific actions
-    if (viewIn === 'trash') {
+    if (viewIn === "trash") {
       let trashActions = buildTrashActions(
         activeItem,
         closeActions,
@@ -100,7 +106,7 @@ const MediaToolbar = ({
             if (onRenameRequest) onRenameRequest(selectedItems);
             closeActions();
           },
-          'Delete permanently': () => {
+          "Delete permanently": () => {
             if (onDeletePermanentlyRequest) onDeletePermanentlyRequest(selectedItems);
             closeActions();
           },
@@ -151,22 +157,22 @@ const MediaToolbar = ({
     if (selectedItems.length > 1) {
       // Multi-select overrides (same as context menu)
       const multiOverrides: Record<string, () => void> = {
-        'Copy link': () => {
+        "Copy link": () => {
           const urls = selectedItems
             .map((si) => si.full_url)
             .filter(Boolean)
-            .join(' ');
+            .join(" ");
           if (urls) {
             navigator.clipboard.writeText(urls);
             showToast(ToastType.SUCCESS, `Copied ${selectedItems.length} links to clipboard`);
           }
           closeActions();
         },
-        'Copy indirect link': () => {
+        "Copy indirect link": () => {
           const urls = selectedItems
             .map((si) => si.indirect_url)
             .filter(Boolean)
-            .join(' ');
+            .join(" ");
           if (urls) {
             navigator.clipboard.writeText(urls);
             showToast(ToastType.SUCCESS, `Copied ${selectedItems.length} indirect links`);
@@ -180,13 +186,13 @@ const MediaToolbar = ({
               selectedItems.map((si) => ({
                 id: si.id,
                 name: si.basename || si.name,
-                type: si.type === MediaItemType.FOLDER ? 'folder' : 'file',
+                type: si.type === MediaItemType.FOLDER ? "folder" : "file",
                 full_url: si.full_url,
               })),
               async (folderId: string) => {
                 const res = await getMediaList({
                   folder_id: folderId,
-                  view_in: 'all_media',
+                  view_in: "all_media",
                   per_page: 1000,
                 });
                 return (res?.data?.files || []).map((f) => ({
@@ -194,15 +200,15 @@ const MediaToolbar = ({
                   full_url: f.full_url,
                 }));
               },
-              'media-download',
+              "media-download",
             );
-            showToast(ToastType.SUCCESS, t('downloadCompleted'));
+            showToast(ToastType.SUCCESS, t("downloadCompleted"));
           } catch {
-            showToast(ToastType.ERROR, t('downloadFailed'));
+            showToast(ToastType.ERROR, t("downloadFailed"));
           }
           closeActions();
         },
-        'Move to trash': () => {
+        "Move to trash": () => {
           if (onTrashRequest) onTrashRequest(selectedItems);
           closeActions();
         },
@@ -210,7 +216,7 @@ const MediaToolbar = ({
           if (onRenameRequest) onRenameRequest(selectedItems);
           closeActions();
         },
-        'ALT text': () => {
+        "ALT text": () => {
           if (onAltTextRequest) onAltTextRequest(selectedItems);
           closeActions();
         },
@@ -222,11 +228,11 @@ const MediaToolbar = ({
           if (onMoveRequest) onMoveRequest(selectedItems);
           closeActions();
         },
-        'Make a copy': () => {
+        "Make a copy": () => {
           if (onMakeCopyRequest) onMakeCopyRequest(selectedItems);
           closeActions();
         },
-        'Add to favorite': () => {
+        "Add to favorite": () => {
           if (onFavoriteRequest) onFavoriteRequest(selectedItems);
           closeActions();
         },
@@ -251,22 +257,22 @@ const MediaToolbar = ({
 
   // Translate action labels for display
   const labelMap: Record<string, string> = {
-    Preview: t('preview'),
-    Rename: t('rename'),
-    Download: t('download'),
-    'Delete permanently': t('deletePermanently'),
-    Restore: t('restore'),
-    Open: t('open'),
-    'Make a copy': t('ccreate'),
-    Move: t('move'),
-    'Add to favorite': t('favorites'),
-    'Move to trash': t('moveToTrash'),
-    Properties: t('properties'),
-    Crop: 'Crop',
-    'ALT text': t('altText'),
-    'Copy link': t('copyLink'),
-    'Copy indirect link': t('copyIndirectLink'),
-    Share: t('share'),
+    Preview: t("preview"),
+    Rename: t("rename"),
+    Download: t("download"),
+    "Delete permanently": t("deletePermanently"),
+    Restore: t("restore"),
+    Open: t("open"),
+    "Make a copy": tGlobal("common.create"),
+    Move: t("move"),
+    "Add to favorite": t("favorites"),
+    "Move to trash": t("moveToTrash"),
+    Properties: t("properties"),
+    Crop: "Crop",
+    "ALT text": t("altText"),
+    "Copy link": t("copyLink"),
+    "Copy indirect link": t("copyIndirectLink"),
+    Share: t("share"),
   };
 
   return (
@@ -285,10 +291,10 @@ const MediaToolbar = ({
               <ButtonField
                 variant="outline"
                 className="h-[2.125rem] gap-1.5 cursor-pointer text-sm"
-                style={{ color: 'var(--admin-text-color)' }}
+                style={{ color: "var(--admin-text-color)" }}
               >
                 <selectedSort.icon className="size-4" />
-                {t('sort')}
+                {t("sort")}
                 <ChevronDown className="size-3.5" />
               </ButtonField>
             </DropdownMenuTrigger>
@@ -298,7 +304,7 @@ const MediaToolbar = ({
                   key={option.value}
                   onClick={() => handleSortChange(option)}
                   className={`gap-2 cursor-pointer ${
-                    selectedSort.value === option.value ? 'text-primary font-medium' : ''
+                    selectedSort.value === option.value ? "text-primary font-medium" : ""
                   }`}
                 >
                   <option.icon className="size-4" />
@@ -314,11 +320,11 @@ const MediaToolbar = ({
               <ButtonField
                 variant="outline"
                 className="h-[2.125rem] gap-1.5 text-sm"
-                style={{ color: 'var(--admin-text-color)' }}
+                style={{ color: "var(--admin-text-color)" }}
                 disabled={selectedItems.length === 0}
               >
                 <Hand className="size-4" />
-                {t('actions')}
+                {t("actions")}
               </ButtonField>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[11.25rem]">
@@ -358,18 +364,18 @@ const MediaToolbar = ({
                   variant="ghost"
                   onClick={() => onViewModeChange(ViewMode.GRID)}
                   className={`h-[34px] w-[34px] p-1.5 transition-colors cursor-pointer rounded-none ${
-                    viewMode === ViewMode.GRID ? 'text-white' : 'hover:bg-accent'
+                    viewMode === ViewMode.GRID ? "text-white" : "hover:bg-accent"
                   }`}
                   style={
                     viewMode === ViewMode.GRID
-                      ? { backgroundColor: 'var(--admin-primary-color)' }
+                      ? { backgroundColor: "var(--admin-primary-color)" }
                       : undefined
                   }
                 >
                   <LayoutGrid className="size-4" />
                 </ButtonField>
               </TooltipTrigger>
-              <TooltipContent>{t('gridView')}</TooltipContent>
+              <TooltipContent>{t("gridView")}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -378,18 +384,18 @@ const MediaToolbar = ({
                   variant="ghost"
                   onClick={() => onViewModeChange(ViewMode.LIST)}
                   className={`h-[34px] w-[34px] p-1.5 transition-colors cursor-pointer rounded-none ${
-                    viewMode === ViewMode.LIST ? 'text-white' : 'hover:bg-accent'
+                    viewMode === ViewMode.LIST ? "text-white" : "hover:bg-accent"
                   }`}
                   style={
                     viewMode === ViewMode.LIST
-                      ? { backgroundColor: 'var(--admin-primary-color)' }
+                      ? { backgroundColor: "var(--admin-primary-color)" }
                       : undefined
                   }
                 >
                   <List className="size-4" />
                 </ButtonField>
               </TooltipTrigger>
-              <TooltipContent>{t('media.listView')}</TooltipContent>
+              <TooltipContent>{t("listView")}</TooltipContent>
             </Tooltip>
           </div>
 
@@ -401,16 +407,16 @@ const MediaToolbar = ({
                   variant="ghost"
                   onClick={onToggleSidebar}
                   className={`h-[34px] w-[34px] p-1.5 transition-colors cursor-pointer rounded-none ${
-                    showSidebar ? 'text-white' : 'hover:bg-accent'
+                    showSidebar ? "text-white" : "hover:bg-accent"
                   }`}
                   style={
-                    showSidebar ? { backgroundColor: 'var(--admin-primary-color)' } : undefined
+                    showSidebar ? { backgroundColor: "var(--admin-primary-color)" } : undefined
                   }
                 >
                   <PanelRight className="size-4" />
                 </ButtonField>
               </TooltipTrigger>
-              <TooltipContent>{t('media.toggleDetails')}</TooltipContent>
+              <TooltipContent>{t("toggleDetails")}</TooltipContent>
             </Tooltip>
           </div>
 
@@ -423,17 +429,23 @@ const MediaToolbar = ({
                     variant="ghost"
                     onClick={onToggleFullscreen}
                     className={`h-[34px] w-[34px] p-1.5 transition-colors cursor-pointer rounded-none ${
-                      isFullscreen ? 'text-white' : 'hover:bg-accent'
+                      isFullscreen ? "text-white" : "hover:bg-accent"
                     }`}
                     style={
-                      isFullscreen ? { backgroundColor: 'var(--admin-primary-color)' } : undefined
+                      isFullscreen ? { backgroundColor: "var(--admin-primary-color)" } : undefined
                     }
                   >
-                    {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+                    {isFullscreen ? (
+                      <Minimize className="size-4" />
+                    ) : (
+                      <Maximize className="size-4" />
+                    )}
                   </ButtonField>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {isFullscreen ? t('dataTable.exitFullscreen') : t('dataTable.enterFullscreen')}
+                  {isFullscreen
+                    ? tGlobal("dataTable.exitFullscreen")
+                    : tGlobal("dataTable.enterFullscreen")}
                 </TooltipContent>
               </Tooltip>
             </div>

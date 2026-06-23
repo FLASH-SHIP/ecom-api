@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { type ReactNode, useCallback, useState } from 'react';
-import { Dialog, DialogClose, DialogContent, DialogTitle } from '@ecom/ui/components/dialog';
-import { Separator } from '@ecom/ui/components/separator';
-import { ButtonField } from './Compat';
-import { Checkbox } from '@ecom/ui/components/checkbox';
-import { FolderInput, Folder, GripVertical, Loader2, X } from 'lucide-react';
+import { Checkbox } from "@ecom/ui/components/checkbox";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@ecom/ui/components/dialog";
+import { Separator } from "@ecom/ui/components/separator";
+import { Folder, FolderInput, GripVertical, Loader2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useCallback, useState } from "react";
 
-import { useMediaFolderTree } from '../api/hook';
-import type { MoveDialogProps, MediaFolderTreeItem } from '../model/media.model';
-import { MediaItemType } from '../model/media.model';
-import { useTranslations } from 'next-intl';
+import { useMediaFolderTree } from "../api/hook";
+import type { MediaFolderTreeItem, MoveDialogProps } from "../model/media.model";
+import { MediaItemType } from "../model/media.model";
+import { ButtonField } from "./Compat";
 
 // ── Recursive folder row ──────────────────────────────────────
 
@@ -32,14 +32,14 @@ const FolderRow = ({ folder, selectedId, onSelect, depth = 0 }: FolderRowProps):
         className={`
           w-full flex items-center justify-start gap-3 px-3 py-2.5 h-auto rounded-[0.5rem]
           transition-colors cursor-pointer
-          ${isActive ? '' : 'hover:bg-[#f3f4f6]'}
+          ${isActive ? "" : "hover:bg-[#f3f4f6]"}
         `}
         style={{
           paddingLeft: `${12 + depth * 20}px`,
           ...(isActive
             ? {
-                backgroundColor: 'color-mix(in srgb, var(--admin-primary-color) 15%, transparent)',
-                color: 'var(--admin-primary-color)',
+                backgroundColor: "color-mix(in srgb, var(--admin-primary-color) 15%, transparent)",
+                color: "var(--admin-primary-color)",
               }
             : {}),
         }}
@@ -47,17 +47,17 @@ const FolderRow = ({ folder, selectedId, onSelect, depth = 0 }: FolderRowProps):
         <GripVertical
           className="size-4 shrink-0"
           style={{
-            color: isActive ? 'var(--admin-primary-color)' : 'var(--admin-text-color)',
+            color: isActive ? "var(--admin-primary-color)" : "var(--admin-text-color)",
             opacity: isActive ? 1 : 0.5,
           }}
         />
         <Folder
           className="size-4 shrink-0"
-          style={{ color: isActive ? 'var(--admin-primary-color)' : 'var(--admin-text-color)' }}
+          style={{ color: isActive ? "var(--admin-primary-color)" : "var(--admin-text-color)" }}
         />
         <span
-          className={`text-[0.875rem] truncate ${isActive ? 'font-medium' : ''}`}
-          style={{ color: isActive ? 'var(--admin-primary-color)' : 'var(--admin-text-color)' }}
+          className={`text-[0.875rem] truncate ${isActive ? "font-medium" : ""}`}
+          style={{ color: isActive ? "var(--admin-primary-color)" : "var(--admin-text-color)" }}
         >
           {folder.name}
         </span>
@@ -104,7 +104,7 @@ const MoveDialog = ({
     setSelectedFolderId((prev) => (prev === id ? null : id));
   }, []);
 
-  const handleMoveToRootChange = useCallback((checked: boolean | 'indeterminate') => {
+  const handleMoveToRootChange = useCallback((checked: boolean | "indeterminate") => {
     const isChecked = checked === true;
     setMoveToRoot(isChecked);
     if (isChecked) {
@@ -113,8 +113,8 @@ const MoveDialog = ({
   }, []);
 
   const handleSubmit = useCallback(() => {
-    const destination = moveToRoot ? 0 : (selectedFolderId ?? '');
-    if (destination === '') return;
+    const destination = moveToRoot ? 0 : (selectedFolderId ?? "");
+    if (destination === "") return;
     onSubmit(items, destination);
   }, [moveToRoot, selectedFolderId, items, onSubmit]);
 
@@ -127,9 +127,9 @@ const MoveDialog = ({
         <div className="relative px-6 pt-6 pb-3">
           <DialogTitle
             className="text-[1.25rem] font-semibold"
-            style={{ color: 'var(--admin-text-color)' }}
+            style={{ color: "var(--admin-text-color)" }}
           >
-            {t('media.move')}
+            {t("media.move")}
           </DialogTitle>
           <DialogClose asChild>
             <ButtonField
@@ -137,7 +137,7 @@ const MoveDialog = ({
               size="icon"
               className="absolute right-6 top-4 rounded-md p-1 text-[#9ca3af] hover:bg-muted cursor-pointer h-auto w-auto"
               aria-label="Close"
-              style={{ color: 'var(--admin-text-color)' }}
+              style={{ color: "var(--admin-text-color)" }}
             >
               <X className="size-4" />
             </ButtonField>
@@ -149,7 +149,7 @@ const MoveDialog = ({
         {/* Body */}
         <div className="px-6 pt-4 pb-2 flex flex-col gap-4">
           {/* Label */}
-          <span className="text-[0.875rem] text-[#6b7280]">{t('media.selectDestination')}</span>
+          <span className="text-[0.875rem] text-[#6b7280]">{t("media.selectDestination")}</span>
 
           {/* Folder list */}
           <div className="border border-[#e5e7eb] rounded-[0.625rem] overflow-hidden max-h-[18.75rem] overflow-y-auto">
@@ -184,8 +184,8 @@ const MoveDialog = ({
               onCheckedChange={handleMoveToRootChange}
               className="rounded-full"
             />
-            <span className="text-[0.875rem]" style={{ color: 'var(--admin-text-color)' }}>
-              {t('media.moveToRoot')}
+            <span className="text-[0.875rem]" style={{ color: "var(--admin-text-color)" }}>
+              {t("media.moveToRoot")}
             </span>
           </label>
         </div>
@@ -196,9 +196,9 @@ const MoveDialog = ({
             <ButtonField
               variant="outline"
               className="h-[2.5rem] px-6 rounded-[0.625rem] cursor-pointer"
-              style={{ color: 'var(--admin-text-color)' }}
+              style={{ color: "var(--admin-text-color)" }}
             >
-              {t('common.close')}
+              {t("common.close")}
             </ButtonField>
           </DialogClose>
           <ButtonField
@@ -206,7 +206,7 @@ const MoveDialog = ({
             disabled={!canSubmit || loading}
             className="h-[2.5rem] px-6 rounded-[0.625rem] text-white cursor-pointer flex items-center gap-2"
             style={
-              !canSubmit || loading ? undefined : { backgroundColor: 'var(--admin-primary-color)' }
+              !canSubmit || loading ? undefined : { backgroundColor: "var(--admin-primary-color)" }
             }
           >
             {loading ? (
@@ -214,7 +214,7 @@ const MoveDialog = ({
             ) : (
               <FolderInput className="size-4" />
             )}
-            {t('media.move')}
+            {t("media.move")}
           </ButtonField>
         </div>
       </DialogContent>

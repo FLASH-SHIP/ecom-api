@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import { ReactNode, useState, useCallback, useEffect } from 'react';
-import { MediaItemType } from '../model/media.model';
-import type { MediaItem } from '../model/media.model';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ecom/ui/components/dialog';
-import { ButtonField, InputField } from './Compat';
-import { Loader2, Folder } from 'lucide-react';
-import { Checkbox } from '@ecom/ui/components/checkbox';
+import { Checkbox } from "@ecom/ui/components/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@ecom/ui/components/dialog";
+import { Folder, Loader2 } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
+import type { MediaItem } from "../model/media.model";
+import { MediaItemType } from "../model/media.model";
+import { ButtonField, InputField } from "./Compat";
 
 // ── Helper: lấy label ngắn cho file type (PNG, MP3, PDF, ...) ───
 export const getFileTypeLabel = (item: MediaItem): string => {
-  if (item.type === MediaItemType.FOLDER) return '';
-  const ext = item.basename?.split('.').pop()?.toUpperCase();
+  if (item.type === MediaItemType.FOLDER) return "";
+  const ext = item.basename?.split(".").pop()?.toUpperCase();
   if (ext) return ext;
-  if (!item.mime_type) return 'FILE';
+  if (!item.mime_type) return "FILE";
   const m = item.mime_type.toLowerCase();
-  if (m.startsWith('image/')) return m.split('/')[1]?.toUpperCase() || 'IMG';
-  if (m.startsWith('video/')) return 'VIDEO';
-  if (m.startsWith('audio/')) return 'MP3';
-  if (m === 'application/pdf') return 'PDF';
-  if (m.includes('word')) return 'DOC';
-  if (m.includes('sheet') || m.includes('excel')) return 'XLS';
-  if (m.includes('presentation') || m.includes('powerpoint')) return 'PPT';
-  if (m.includes('zip') || m.includes('rar')) return 'ZIP';
-  if (m === 'text/csv') return 'CSV';
-  if (m.startsWith('text/')) return 'TXT';
-  return 'FILE';
+  if (m.startsWith("image/")) return m.split("/")[1]?.toUpperCase() || "IMG";
+  if (m.startsWith("video/")) return "VIDEO";
+  if (m.startsWith("audio/")) return "MP3";
+  if (m === "application/pdf") return "PDF";
+  if (m.includes("word")) return "DOC";
+  if (m.includes("sheet") || m.includes("excel")) return "XLS";
+  if (m.includes("presentation") || m.includes("powerpoint")) return "PPT";
+  if (m.includes("zip") || m.includes("rar")) return "ZIP";
+  if (m === "text/csv") return "CSV";
+  if (m.startsWith("text/")) return "TXT";
+  return "FILE";
 };
 
 // ── Config cho từng mode ───────────────────────────────────────
@@ -96,7 +96,7 @@ const MediaItemEditDialog = ({
     const data: Record<string, { value: string; checked: boolean }> = {};
     items.forEach((item) => {
       data[item._uid] = {
-        value: values[item._uid]?.trim() ?? '',
+        value: values[item._uid]?.trim() ?? "",
         checked: checks[item._uid] ?? false,
       };
     });
@@ -105,7 +105,7 @@ const MediaItemEditDialog = ({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !loading) {
+      if (e.key === "Enter" && !loading) {
         handleSubmit();
       }
     },
@@ -116,7 +116,7 @@ const MediaItemEditDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[35rem]">
         <DialogHeader>
-          <DialogTitle style={{ color: 'var(--admin-text-color)' }}>{title}</DialogTitle>
+          <DialogTitle style={{ color: "var(--admin-text-color)" }}>{title}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 pt-2 max-h-[25rem] overflow-y-auto">
@@ -141,7 +141,7 @@ const MediaItemEditDialog = ({
                     containerClassName="flex-1"
                     className="border-0 shadow-none h-[2.75rem] focus-visible:ring-0"
                     placeholder={field.placeholder}
-                    value={values[item._uid] || ''}
+                    value={values[item._uid] || ""}
                     onValueChange={(v) => handleValueChange(item._uid, v)}
                     onKeyDown={handleKeyDown}
                     disabled={loading}
@@ -153,7 +153,7 @@ const MediaItemEditDialog = ({
                 {checkbox ? (
                   <label
                     className="flex items-center gap-2 mt-2 cursor-pointer text-[0.875rem]"
-                    style={{ color: 'var(--admin-secondary-color)' }}
+                    style={{ color: "var(--admin-secondary-color)" }}
                   >
                     <Checkbox
                       checked={checks[item._uid] ?? false}
@@ -176,7 +176,7 @@ const MediaItemEditDialog = ({
             onClick={() => onOpenChange(false)}
             disabled={loading}
             className="h-[2.5rem] min-w-[6.25rem] rounded-[0.5rem] border border-[#e5e7eb] bg-white hover:bg-[#f9fafb] cursor-pointer"
-            style={{ color: 'var(--admin-text-color)' }}
+            style={{ color: "var(--admin-text-color)" }}
           >
             Close
           </ButtonField>
@@ -184,9 +184,9 @@ const MediaItemEditDialog = ({
             onClick={handleSubmit}
             disabled={loading}
             className="h-[2.5rem] min-w-[7.5rem] rounded-[0.5rem] text-white cursor-pointer"
-            style={loading ? undefined : { backgroundColor: 'var(--admin-primary-color)' }}
+            style={loading ? undefined : { backgroundColor: "var(--admin-primary-color)" }}
           >
-            {loading ? <Loader2 className="size-4 animate-spin" /> : 'Save changes'}
+            {loading ? <Loader2 className="size-4 animate-spin" /> : "Save changes"}
           </ButtonField>
         </div>
       </DialogContent>

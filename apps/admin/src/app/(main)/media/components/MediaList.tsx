@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { ReactNode, useMemo } from 'react';
-import type { MediaListProps } from '../model/media.model';
-import MediaListItem, { MediaListBackItem } from './MediaListItem';
+import { type ReactNode, useMemo } from "react";
+import type { MediaListProps } from "../model/media.model";
+import MediaListItem, { MediaListBackItem } from "./MediaListItem";
 
 const MediaList = ({
   folders = [],

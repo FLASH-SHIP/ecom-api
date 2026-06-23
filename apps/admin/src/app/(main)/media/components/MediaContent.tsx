@@ -1,48 +1,47 @@
-'use client';
+"use client";
 
+import PaginationBar from "@admin/components/base/PaginationBar";
+import type { PreviewItem } from "@admin/components/base/PreviewDialog";
+import PreviewDialog from "@admin/components/base/PreviewDialog";
+import ConfirmDeleteModal from "@admin/components/layouts/ConfirmDeleteModal";
+import { showToast, ToastType } from "@admin/components/toast-provider";
+import { Separator } from "@ecom/ui/components/separator";
+import { cn } from "@ecom/ui/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { ArrowDownAZ, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 /* eslint-disable no-console */
-import { ReactNode, MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  MediaItemType,
-  ViewMode,
-  MediaAction,
-  MediaPickerFilter,
-  MEDIA_PICKER_MIME_MAP,
-} from '../model/media.model';
+import { type MouseEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { useMediaList, useMutationMediaAction } from "../api/hook";
+import { MediaDataKeys } from "../api/queries";
 import type {
   BreadcrumbSegment,
-  MediaItem,
   ContextMenuState,
   MediaFileItem,
   MediaFolderItem,
+  MediaItem,
   SortOption,
-} from '../model/media.model';
-import { useMediaList, useMutationMediaAction } from '../api/hook';
-import { MediaDataKeys } from '../api/queries';
-import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, ArrowDownAZ } from 'lucide-react';
-import { showToast, ToastType } from '@admin/components/toast-provider';
-import ConfirmDeleteModal from '@admin/components/layouts/ConfirmDeleteModal';
-import { useTranslations } from 'next-intl';
-
-import MediaToolbar from './MediaToolbar';
-import MediaGrid from './MediaGrid';
-import MediaList from './MediaList';
-import MediaContextMenu from './MediaContextMenu';
-import MediaDetailSidebar from './MediaDetailSidebar';
-import MediaItemEditDialog from './MediaItemEditDialog';
-import ShareDialog from './ShareDialog';
-import MoveDialog from './MoveDialog';
-import PropertiesDialog from './PropertiesDialog';
-import CropDialog from './CropDialog';
-import PreviewDialog from '@admin/components/base/PreviewDialog';
-import type { PreviewItem } from '@admin/components/base/PreviewDialog';
-import PaginationBar from '@admin/components/base/PaginationBar';
-import { Separator } from '@ecom/ui/components/separator';
-import { cn } from '@ecom/ui/lib/utils';
+} from "../model/media.model";
+import {
+  MEDIA_PICKER_MIME_MAP,
+  MediaAction,
+  MediaItemType,
+  MediaPickerFilter,
+  ViewMode,
+} from "../model/media.model";
+import CropDialog from "./CropDialog";
+import MediaContextMenu from "./MediaContextMenu";
+import MediaDetailSidebar from "./MediaDetailSidebar";
+import MediaGrid from "./MediaGrid";
+import MediaItemEditDialog from "./MediaItemEditDialog";
+import MediaList from "./MediaList";
+import MediaToolbar from "./MediaToolbar";
+import MoveDialog from "./MoveDialog";
+import PropertiesDialog from "./PropertiesDialog";
+import ShareDialog from "./ShareDialog";
 
 // Default sort option — value only, label will be set by MediaToolbar
-const DEFAULT_SORT: SortOption = { label: 'File name - ASC', value: 'name-asc', icon: ArrowDownAZ };
+const DEFAULT_SORT: SortOption = { label: "File name - ASC", value: "name-asc", icon: ArrowDownAZ };
 
 // ── Mappers: API → UI ───────────────────────────────────────
 
@@ -73,12 +72,12 @@ const mapFolderToMediaItem = (folder: MediaFolderItem): MediaItem => ({
   id: String(folder.id),
   name: folder.name,
   type: MediaItemType.FOLDER,
-  created_at: folder.created_at ?? '',
-  updated_at: folder.updated_at ?? '',
+  created_at: folder.created_at ?? "",
+  updated_at: folder.updated_at ?? "",
   color: folder.color,
 });
 
-import type { MediaContentProps } from '../model/media.model';
+import type { MediaContentProps } from "../model/media.model";
 
 const MediaContent = ({
   currentFolderId,
@@ -97,7 +96,8 @@ const MediaContent = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [page, setPage] = useState(1);
   const [selectedSort, setSelectedSort] = useState<SortOption>(DEFAULT_SORT);
-  const t = useTranslations('media');
+  const t = useTranslations("media");
+  const tGlobal = useTranslations();
 
   // ── Trash confirm state ─────────────────────────────────────
   const [trashConfirmOpen, setTrashConfirmOpen] = useState(false);
@@ -140,7 +140,7 @@ const MediaContent = ({
 
   const { mutate: doMediaAction, isPending: isActionPending } = useMutationMediaAction({
     onSuccess: () => {
-      showToast(ToastType.SUCCESS, t('actionSuccess'));
+      showToast(ToastType.SUCCESS, t("actionSuccess"));
       // Close any open modals/dialogs
       setTrashConfirmOpen(false);
       setTrashItems([]);
@@ -189,8 +189,8 @@ const MediaContent = ({
       const mimePatterns = MEDIA_PICKER_MIME_MAP[mediaFilter];
       if (mimePatterns.length > 0) {
         files = files.filter((f) => {
-          const mime = f.mime_type?.toLowerCase() ?? '';
-          return mimePatterns.some((p) => (p.endsWith('/') ? mime.startsWith(p) : mime === p));
+          const mime = f.mime_type?.toLowerCase() ?? "";
+          return mimePatterns.some((p) => (p.endsWith("/") ? mime.startsWith(p) : mime === p));
         });
       }
     }
@@ -199,7 +199,7 @@ const MediaContent = ({
 
   const breadcrumb: BreadcrumbSegment[] = useMemo(() => {
     if (!apiResponse?.data?.breadcrumbs) {
-      return [{ label: 'All media', folderId: 0 }];
+      return [{ label: "All media", folderId: 0 }];
     }
     return apiResponse.data.breadcrumbs.map((bc) => ({
       label: bc.name,
@@ -249,12 +249,12 @@ const MediaContent = ({
   const handleOpen = useCallback(
     (item: MediaItem) => {
       if (item.type === MediaItemType.FOLDER) {
-        console.log('Open folder:', item.name, 'id:', item.id);
+        console.log("Open folder:", item.name, "id:", item.id);
         onFolderChange(item.id);
         setSelectedItems([]);
         setPage(1);
       } else {
-        console.log('Open file (preview):', item.name);
+        console.log("Open file (preview):", item.name);
       }
     },
     [onFolderChange],
@@ -268,7 +268,7 @@ const MediaContent = ({
     onFolderChange(parentBc.folderId);
     setSelectedItems([]);
     setPage(1);
-    console.log('Navigate back to:', parentBc.label, 'id:', parentBc.folderId);
+    console.log("Navigate back to:", parentBc.label, "id:", parentBc.folderId);
   }, [breadcrumb, onFolderChange]);
 
   /** Breadcrumb click → navigate to that folder level */
@@ -280,7 +280,7 @@ const MediaContent = ({
       onFolderChange(target.folderId);
       setSelectedItems([]);
       setPage(1);
-      console.log('Breadcrumb navigate to:', target.label, 'id:', target.folderId);
+      console.log("Breadcrumb navigate to:", target.label, "id:", target.folderId);
     },
     [breadcrumb, onFolderChange],
   );
@@ -434,8 +434,8 @@ const MediaContent = ({
           ? selectedItems.filter((s) => s.type !== MediaItemType.FOLDER)
           : [item];
       const mapped: PreviewItem[] = itemsToPreview.map((f: MediaItem) => ({
-        url: f.preview_url || f.full_url || f.thumbnailUrl || '',
-        downloadUrl: f.full_url || '',
+        url: f.preview_url || f.full_url || f.thumbnailUrl || "",
+        downloadUrl: f.full_url || "",
         name: f.name,
         mimeType: f.mime_type,
       }));
@@ -464,7 +464,7 @@ const MediaContent = ({
     <div
       className={cn(
         "relative h-full overflow-hidden bg-background",
-        isFullscreen && "fixed inset-0 z-[60] p-4"
+        isFullscreen && "fixed inset-0 z-[60] p-4",
       )}
     >
       {/* Main content — luôn chiếm full width */}
@@ -542,7 +542,7 @@ const MediaContent = ({
           {/* Right sidebar — overlay inside content area only */}
           <div
             className={`absolute top-0 right-0 h-full w-[75%] md:w-[17.5rem] bg-background border-l shadow-lg transition-transform duration-200 z-20 ${
-              showSidebar ? 'translate-x-0' : 'translate-x-full'
+              showSidebar ? "translate-x-0" : "translate-x-full"
             }`}
           >
             <MediaDetailSidebar item={lastSelectedItem} onClose={() => setShowSidebar(false)} />
@@ -596,11 +596,11 @@ const MediaContent = ({
         onOpenChange={setTrashConfirmOpen}
         onConfirm={handleTrashConfirm}
         loading={isActionPending}
-        title={t('common.confirmDelete')}
+        title={tGlobal("common.confirmDelete")}
         description={
           <div>
             <p>
-              Do you really want to delete {trashItems.length > 1 ? 'these items' : 'this item'}?
+              Do you really want to delete {trashItems.length > 1 ? "these items" : "this item"}?
             </p>
             <div className="mt-2 flex flex-col gap-1">
               {trashItems.map((item) => (
@@ -611,8 +611,8 @@ const MediaContent = ({
             </div>
           </div>
         }
-        confirmLabel={t('common.delete')}
-        cancelLabel={t('common.cancel')}
+        confirmLabel={tGlobal("common.delete")}
+        cancelLabel={tGlobal("common.cancel")}
       />
 
       {/* Delete permanently confirm modal */}
@@ -621,10 +621,10 @@ const MediaContent = ({
         onOpenChange={setDeletePermanentlyConfirmOpen}
         onConfirm={handleDeletePermanentlyConfirm}
         loading={isActionPending}
-        title={t('deleteItems')}
+        title={t("deleteItems")}
         description="This action is irreversible. Are you sure you want to delete these items?"
-        confirmLabel={t('confirm')}
-        cancelLabel={t('common.close')}
+        confirmLabel={t("confirm")}
+        cancelLabel={tGlobal("common.close")}
       />
 
       {/* Rename dialog */}
@@ -634,16 +634,16 @@ const MediaContent = ({
         items={renameItems}
         title="Rename"
         field={{
-          key: 'name',
-          placeholder: 'Enter new name...',
+          key: "name",
+          placeholder: "Enter new name...",
           getInitialValue: (item) => item.name,
         }}
         checkbox={{
-          key: 'rename_physical_file',
+          key: "rename_physical_file",
           getLabel: (item) =>
             item.type === MediaItemType.FOLDER
-              ? 'Rename physical folder name on disk too'
-              : 'Rename physical file name on disk too',
+              ? "Rename physical folder name on disk too"
+              : "Rename physical file name on disk too",
         }}
         onSubmit={(data, dialogItems) => {
           doMediaAction({
@@ -666,9 +666,9 @@ const MediaContent = ({
         items={altTextItems}
         title="ALT Text"
         field={{
-          key: 'alt',
-          placeholder: 'Enter alt text...',
-          getInitialValue: (item) => item.alt || '',
+          key: "alt",
+          placeholder: "Enter alt text...",
+          getInitialValue: (item) => item.alt || "",
         }}
         onSubmit={(data, dialogItems) => {
           doMediaAction({

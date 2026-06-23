@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import { MediaItemType } from '../model/media.model';
-import type { MediaItem, MediaListItemProps, MediaListBackItemProps } from '../model/media.model';
-import { Undo2 } from 'lucide-react';
-import { Checkbox } from '@ecom/ui/components/checkbox';
-import { formatDate } from '@admin/utils/func';
+import { formatDate } from "@admin/utils/func";
+import { Checkbox } from "@ecom/ui/components/checkbox";
+import { Undo2 } from "lucide-react";
+import type { ReactNode } from "react";
+import type { MediaItem, MediaListBackItemProps, MediaListItemProps } from "../model/media.model";
+import { MediaItemType } from "../model/media.model";
 
 /** Get a short type badge label from mime or type */
 const getTypeBadge = (item: MediaItem): string => {
-  if (item.type === MediaItemType.FOLDER) return 'DIR';
+  if (item.type === MediaItemType.FOLDER) return "DIR";
   if (item.mime_type) {
-    const sub = item.mime_type.split('/')[1]?.toUpperCase();
+    const sub = item.mime_type.split("/")[1]?.toUpperCase();
     return sub ?? item.type.toUpperCase();
   }
   return item.type.toUpperCase();
@@ -35,11 +35,11 @@ const MediaListItem = ({
       onDoubleClick={() => onDoubleClick(item)}
       onContextMenu={(e) => onContextMenu(e, item)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onDoubleClick(item);
+        if (e.key === "Enter") onDoubleClick(item);
       }}
       className={`
         flex items-center gap-3 px-3 py-2 border-b cursor-pointer transition-colors select-none
-        ${isSelected ? 'bg-primary/5' : 'hover:bg-accent/50'}
+        ${isSelected ? "bg-primary/5" : "hover:bg-accent/50"}
       `}
     >
       {/* Checkbox */}
@@ -56,22 +56,22 @@ const MediaListItem = ({
       </span>
 
       {/* Name */}
-      <span className="flex-1 text-sm truncate" style={{ color: 'var(--admin-text-color)' }}>
+      <span className="flex-1 text-sm truncate" style={{ color: "var(--admin-text-color)" }}>
         {item.name}
       </span>
 
       {/* Size */}
       <span
         className="text-sm w-[5.625rem] text-right shrink-0"
-        style={{ color: 'var(--admin-text-color)' }}
+        style={{ color: "var(--admin-text-color)" }}
       >
-        {item.size ?? '-'}
+        {item.size ?? "-"}
       </span>
 
       {/* Date */}
       <span
         className="text-sm w-[10rem] text-right shrink-0"
-        style={{ color: 'var(--admin-text-color)' }}
+        style={{ color: "var(--admin-text-color)" }}
       >
         {formatDate(item.created_at)}
       </span>
@@ -90,7 +90,7 @@ export const MediaListBackItem = ({ onClick }: MediaListBackItemProps): ReactNod
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onClick();
+        if (e.key === "Enter") onClick();
       }}
       className="flex items-center gap-3 px-3 py-2 border-b cursor-pointer hover:bg-accent/50 transition-colors select-none"
     >

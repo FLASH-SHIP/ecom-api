@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
-import { Dialog, DialogClose, DialogContent, DialogTitle } from '@ecom/ui/components/dialog';
-import { Separator } from '@ecom/ui/components/separator';
-import { ButtonField } from './Compat';
-import { Check, Loader2, X } from 'lucide-react';
-import { useMediaOptions } from '../api/hook';
-import type { MediaItem } from '../model/media.model';
-import { useTranslations } from 'next-intl';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@ecom/ui/components/dialog";
+import { Separator } from "@ecom/ui/components/separator";
+import { Check, Loader2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { useMediaOptions } from "../api/hook";
+import type { MediaItem } from "../model/media.model";
+import { ButtonField } from "./Compat";
 
 // ── Props ─────────────────────────────────────────────────────
 
@@ -28,7 +28,8 @@ const PropertiesDialog = ({
   onSubmit,
   loading = false,
 }: PropertiesDialogProps): ReactNode => {
-  const t = useTranslations('media');
+  const t = useTranslations("media");
+  const tGlobal = useTranslations();
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
   // Pre-select current folder color when dialog opens (only if all items share the same color)
@@ -56,9 +57,9 @@ const PropertiesDialog = ({
         <div className="relative px-6 pt-6 pb-3">
           <DialogTitle
             className="text-[1.25rem] font-semibold"
-            style={{ color: 'var(--admin-text-color)' }}
+            style={{ color: "var(--admin-text-color)" }}
           >
-            {t('properties')}
+            {t("properties")}
           </DialogTitle>
           <DialogClose asChild>
             <ButtonField
@@ -66,7 +67,7 @@ const PropertiesDialog = ({
               size="icon"
               className="absolute right-6 top-4 rounded-md p-1 text-[#9ca3af] hover:bg-muted cursor-pointer h-auto w-auto"
               aria-label="Close"
-              style={{ color: 'var(--admin-text-color)' }}
+              style={{ color: "var(--admin-text-color)" }}
             >
               <X className="size-4" />
             </ButtonField>
@@ -77,8 +78,8 @@ const PropertiesDialog = ({
 
         {/* Body */}
         <div className="px-6 pt-4 pb-6 flex flex-col gap-4">
-          <span className="text-[0.875rem]" style={{ color: 'var(--admin-text-color)' }}>
-            {t('chooseColor')}
+          <span className="text-[0.875rem]" style={{ color: "var(--admin-text-color)" }}>
+            {t("chooseColor")}
           </span>
 
           {isLoadingOptions ? (
@@ -115,9 +116,9 @@ const PropertiesDialog = ({
             <ButtonField
               variant="outline"
               className="h-[2.5rem] px-6 rounded-[0.625rem] cursor-pointer"
-              style={{ color: 'var(--admin-text-color)' }}
+              style={{ color: "var(--admin-text-color)" }}
             >
-              {t('common.close')}
+              {tGlobal("common.close")}
             </ButtonField>
           </DialogClose>
           <ButtonField
@@ -127,10 +128,10 @@ const PropertiesDialog = ({
             style={
               !selectedColor || loading
                 ? undefined
-                : { backgroundColor: 'var(--admin-primary-color)' }
+                : { backgroundColor: "var(--admin-primary-color)" }
             }
           >
-            {loading ? <Loader2 className="size-4 animate-spin" /> : t('common.save')}
+            {loading ? <Loader2 className="size-4 animate-spin" /> : tGlobal("common.save")}
           </ButtonField>
         </div>
       </DialogContent>

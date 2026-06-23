@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { ReactNode, useMemo } from 'react';
-import type { MediaGridProps } from '../model/media.model';
-import MediaGridItem, { MediaGridBackItem } from './MediaGridItem';
+import { type ReactNode, useMemo } from "react";
+import type { MediaGridProps } from "../model/media.model";
+import MediaGridItem, { MediaGridBackItem } from "./MediaGridItem";
 
 const MediaGrid = ({
   folders = [],
