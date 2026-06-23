@@ -15,6 +15,7 @@ import NextLink from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { clearTokens, isLoggedIn } from "../lib/auth";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../lib/i18n";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const NAV_ITEMS = [
@@ -33,11 +34,25 @@ function Header() {
   const avatarRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const currentLocale =
+    SUPPORTED_LOCALES.find((l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`) ??
+    DEFAULT_LOCALE;
+
+  const cleanPathname = pathname.startsWith(`/${currentLocale}/`)
+    ? pathname.slice(currentLocale.length + 1)
+    : pathname === `/${currentLocale}`
+      ? "/"
+      : pathname;
+
+  const getLocalizedHref = (href: string) => {
+    return `/${currentLocale}${href === "/" ? "" : href}`;
+  };
+
   function handleLogout() {
     clearTokens();
     setLoggedIn(false);
     setAvatarOpen(false);
-    router.push("/");
+    router.push(getLocalizedHref("/"));
   }
 
   // Close avatar menu on outside click
@@ -60,11 +75,11 @@ function Header() {
   return (
     <>
       {/* AppBar */}
-      <header className="sticky top-0 z-50 border-b border-border bg-white/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4 sm:h-16">
           {/* Logo */}
           <NextLink
-            href="/"
+            href={getLocalizedHref("/")}
             className="flex shrink-0 items-center gap-1 text-xl font-extrabold tracking-tight text-primary no-underline"
           >
             ⚡ Ecom
@@ -74,11 +89,12 @@ function Header() {
           <nav className="ml-2 hidden flex-1 items-center gap-1 md:flex">
             {NAV_ITEMS.map((item) => {
               const active =
-                pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                cleanPathname === item.href ||
+                (item.href !== "/" && cleanPathname.startsWith(item.href));
               return (
                 <NextLink
                   key={item.href}
-                  href={item.href}
+                  href={getLocalizedHref(item.href)}
                   className={`relative px-3 py-1.5 text-sm font-medium transition-colors ${
                     active
                       ? "font-bold text-primary"
@@ -112,17 +128,17 @@ function Header() {
                 {avatarOpen && (
                   <div
                     ref={menuRef}
-                    className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-border bg-white py-1 shadow-xl"
+                    className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-border bg-background py-1 shadow-xl"
                   >
                     <NextLink
-                      href="/member/dashboard"
+                      href={getLocalizedHref("/customer/dashboard")}
                       onClick={() => setAvatarOpen(false)}
                       className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                     >
                       <LayoutDashboard className="h-4 w-4" /> Dashboard
                     </NextLink>
                     <NextLink
-                      href="/member/profile"
+                      href={getLocalizedHref("/customer/profile")}
                       onClick={() => setAvatarOpen(false)}
                       className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                     >
@@ -142,13 +158,13 @@ function Header() {
             ) : (
               <>
                 <NextLink
-                  href="/auth/login"
+                  href={getLocalizedHref("/auth/login")}
                   className="hidden items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-muted sm:inline-flex"
                 >
                   <User className="h-4 w-4" /> Đăng nhập
                 </NextLink>
                 <NextLink
-                  href="/auth/register"
+                  href={getLocalizedHref("/auth/register")}
                   className="hidden rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5 hover:shadow-md sm:inline-flex"
                 >
                   Đăng ký
@@ -178,7 +194,7 @@ function Header() {
             onClick={() => setDrawerOpen(false)}
             role="presentation"
           />
-          <aside className="fixed inset-y-0 right-0 z-[70] w-[260px] bg-white shadow-2xl">
+          <aside className="fixed inset-y-0 right-0 z-[70] w-[260px] bg-background shadow-2xl">
             <div className="flex items-center justify-between p-4">
               <span className="text-lg font-extrabold text-primary">⚡ Ecom</span>
               <button
@@ -194,12 +210,13 @@ function Header() {
             <nav className="py-2">
               {NAV_ITEMS.map((item) => {
                 const active =
-                  pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                  cleanPathname === item.href ||
+                  (item.href !== "/" && cleanPathname.startsWith(item.href));
                 const Icon = item.icon;
                 return (
                   <NextLink
                     key={item.href}
-                    href={item.href}
+                    href={getLocalizedHref(item.href)}
                     onClick={() => setDrawerOpen(false)}
                     className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                       active
@@ -219,7 +236,7 @@ function Header() {
               {loggedIn ? (
                 <>
                   <NextLink
-                    href="/member/dashboard"
+                    href={getLocalizedHref("/customer/dashboard")}
                     onClick={() => setDrawerOpen(false)}
                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
                   >
@@ -239,14 +256,14 @@ function Header() {
               ) : (
                 <>
                   <NextLink
-                    href="/auth/login"
+                    href={getLocalizedHref("/auth/login")}
                     onClick={() => setDrawerOpen(false)}
                     className="flex w-full items-center justify-center rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
                   >
                     Đăng nhập
                   </NextLink>
                   <NextLink
-                    href="/auth/register"
+                    href={getLocalizedHref("/auth/register")}
                     onClick={() => setDrawerOpen(false)}
                     className="flex w-full items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
                   >
@@ -263,6 +280,15 @@ function Header() {
 }
 
 function Footer() {
+  const pathname = usePathname();
+  const currentLocale =
+    SUPPORTED_LOCALES.find((l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`) ??
+    DEFAULT_LOCALE;
+
+  const getLocalizedHref = (href: string) => {
+    return `/${currentLocale}${href === "/" ? "" : href}`;
+  };
+
   return (
     <footer className="mt-auto border-t border-border bg-muted/50 py-12">
       <div className="mx-auto max-w-5xl px-4">
@@ -279,7 +305,7 @@ function Footer() {
             {NAV_ITEMS.map((item) => (
               <NextLink
                 key={item.href}
-                href={item.href}
+                href={getLocalizedHref(item.href)}
                 className="mb-1.5 block text-sm text-muted-foreground hover:text-foreground"
               >
                 {item.label}
@@ -290,19 +316,19 @@ function Footer() {
           <div>
             <h4 className="mb-2 text-sm font-bold">Tài khoản</h4>
             <NextLink
-              href="/auth/login"
+              href={getLocalizedHref("/auth/login")}
               className="mb-1.5 block text-sm text-muted-foreground hover:text-foreground"
             >
               Đăng nhập
             </NextLink>
             <NextLink
-              href="/auth/register"
+              href={getLocalizedHref("/auth/register")}
               className="mb-1.5 block text-sm text-muted-foreground hover:text-foreground"
             >
               Đăng ký
             </NextLink>
             <NextLink
-              href="/member/dashboard"
+              href={getLocalizedHref("/customer/dashboard")}
               className="mb-1.5 block text-sm text-muted-foreground hover:text-foreground"
             >
               Dashboard

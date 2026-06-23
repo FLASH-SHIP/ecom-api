@@ -18,7 +18,7 @@ The architecture consists of four pillars:
 
 ## 2. Directory Structure & Namespace Files
 
-Locales are maintained inside the `@ecom/i18n` package under the [packages/i18n/locales/](file:///Users/tuandang/Data/FlashShip/ecom/packages/i18n/locales/) directory:
+Locales are maintained inside the `@ecom/i18n` package under the [packages/i18n/locales/](../../packages/i18n/locales/) directory:
 
 ```bash
 packages/i18n/locales/
@@ -39,7 +39,7 @@ packages/i18n/locales/
 
 ## 3. next-intl Request Loader
 
-The request configuration resides in [apps/admin/src/i18n/request.ts](file:///Users/tuandang/Data/FlashShip/ecom/apps/admin/src/i18n/request.ts). It imports all namespace files explicitly (retaining full Next.js Turbopack compatibility) and merges them into the returned `messages` context:
+The request configuration resides in [apps/admin/src/i18n/request.ts](../../apps/admin/src/i18n/request.ts). It imports all namespace files explicitly (retaining full Next.js Turbopack compatibility) and merges them into the returned `messages` context:
 
 ```typescript
 export default getRequestConfig(async () => {
@@ -70,7 +70,7 @@ export default getRequestConfig(async () => {
 
 By default, loading all translations inside Next.js's root layout sends the entire translation database (all 24 JSON files) to the client browser. 
 
-To resolve this, we use the custom React Server Component [ModuleI18nProvider.tsx](file:///Users/tuandang/Data/FlashShip/ecom/apps/admin/src/components/i18n/ModuleI18nProvider.tsx) to wrap page/module routes:
+To resolve this, we use the custom React Server Component [ModuleI18nProvider.tsx](../../apps/admin/src/components/i18n/ModuleI18nProvider.tsx) to wrap page/module routes:
 
 ```tsx
 import ModuleI18nProvider from "@admin/components/i18n/ModuleI18nProvider";
@@ -94,7 +94,7 @@ export default function CustomersPage() {
 
 ## 5. Strict Type-Safety
 
-We configure TypeScript declaration merges in [i18n.d.ts](file:///Users/tuandang/Data/FlashShip/ecom/apps/admin/src/types/i18n.d.ts) to type check all next-intl translation calls:
+We configure TypeScript declaration merges in [i18n.d.ts](../../apps/admin/src/types/i18n.d.ts) to type check all next-intl translation calls:
 
 ```typescript
 import type enCommon from "@ecom/i18n/locales/en/common.json";

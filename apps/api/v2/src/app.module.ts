@@ -1,5 +1,6 @@
 import { type MiddlewareConsumer, Module, type NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { validate } from "./env";
 import { AuthModule } from "./modules/auth/auth.module";
 import { BlogModule } from "./modules/blog/blog.module";
 import { CommentsModule } from "./modules/comments/comments.module";
@@ -14,6 +15,7 @@ import { UsersModule } from "./modules/users/users.module";
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: "../../../.env",
+      validate,
     }),
     AuthModule,
     BlogModule,

@@ -1,9 +1,11 @@
 "use client";
 
+import { getAccessToken } from "@customer/lib/auth";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@customer/lib/i18n";
 import { AtSign, FileText, LayoutDashboard, Mail, User } from "lucide-react";
 import NextLink from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { getAccessToken } from "../../../lib/auth";
 import { trpc } from "../../../lib/trpc";
 
 const QUICK_LINKS = [
@@ -24,7 +26,16 @@ const QUICK_LINKS = [
 ];
 
 export default function CustomerDashboardPage() {
+  const pathname = usePathname();
   const [token] = useState<string | null>(() => getAccessToken());
+
+  const currentLocale =
+    SUPPORTED_LOCALES.find((l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`) ??
+    DEFAULT_LOCALE;
+
+  const getLocalizedHref = (href: string) => {
+    return `/${currentLocale}${href === "/" ? "" : href}`;
+  };
 
   const { data: profile, isLoading } = trpc.customer.auth.me.useQuery(
     { accessToken: token ?? "" },
@@ -36,7 +47,7 @@ export default function CustomerDashboardPage() {
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
         <div className="mx-auto max-w-md rounded-lg border border-blue-200 bg-blue-50 px-6 py-4 text-sm text-blue-800">
           Vui lòng{" "}
-          <NextLink href="/auth/login" className="font-semibold underline">
+          <NextLink href={getLocalizedHref("/auth/login")} className="font-semibold underline">
             đăng nhập
           </NextLink>{" "}
           để xem trang này.
@@ -66,7 +77,7 @@ export default function CustomerDashboardPage() {
         <h2 className="mb-2 text-xl font-bold">Chưa đăng nhập</h2>
         <p className="mb-6 text-sm text-muted-foreground">Vui lòng đăng nhập để xem trang này.</p>
         <NextLink
-          href="/auth/login"
+          href={getLocalizedHref("/auth/login")}
           className="inline-block rounded-lg bg-primary px-6 py-2.5 font-semibold text-primary-foreground"
         >
           Đăng nhập
@@ -147,7 +158,7 @@ export default function CustomerDashboardPage() {
           return (
             <NextLink
               key={link.href}
-              href={link.href}
+              href={getLocalizedHref(link.href)}
               className="group flex items-center gap-4 rounded-xl border border-border p-5 transition-colors hover:bg-muted/50"
             >
               <Icon className={`h-8 w-8 ${link.color}`} />

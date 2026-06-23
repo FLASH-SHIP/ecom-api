@@ -6,6 +6,8 @@ import { CustomerThemeProvider } from "../lib/CustomerThemeProvider";
 import { TRPCProvider } from "../lib/trpc";
 import "./globals.css";
 
+import { env } from "@customer/env";
+
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
   display: "swap",
@@ -18,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s | Ecom",
   },
   description: "Discover articles, guides, and resources on Ecom.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001"),
+  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
 };
 
 export default async function RootLayout({

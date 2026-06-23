@@ -272,8 +272,8 @@ body {
  * a double-border effect.
  */
 a:focus-visible,
-button:focus-visible,
-[tabindex]:not([role="combobox"]):not([role^="menuitem"]):focus-visible {
+button:not([role="combobox"]):focus-visible,
+[tabindex]:not([role="combobox"]):not([role^="menuitem"]):not([role="option"]):focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
@@ -438,4 +438,10 @@ label {
 .group\/row[data-state=selected] .sticky-cell-pinned {
   background-color: var(--muted) !important;
 }
+
+/* Remove outline from select/combobox options */
+[role="option"] {
+  outline: none !important;
+}
+
 

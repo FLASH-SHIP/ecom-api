@@ -1,13 +1,24 @@
 "use client";
 
 import { getAccessToken } from "@customer/lib/auth";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@customer/lib/i18n";
 import { trpc } from "@customer/lib/trpc";
 import { AlertCircle, AtSign, CheckCircle } from "lucide-react";
 import NextLink from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function CustomerProfilePage() {
+  const pathname = usePathname();
   const [token] = useState<string | null>(() => getAccessToken());
+
+  const currentLocale =
+    SUPPORTED_LOCALES.find((l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`) ??
+    DEFAULT_LOCALE;
+
+  const getLocalizedHref = (href: string) => {
+    return `/${currentLocale}${href === "/" ? "" : href}`;
+  };
 
   const { data: profile, isLoading } = trpc.customer.auth.me.useQuery(
     { accessToken: token ?? "" },
@@ -51,7 +62,10 @@ export default function CustomerProfilePage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 text-center">
         <h1 className="text-2xl font-bold">Chưa đăng nhập</h1>
-        <NextLink href="/auth/login" className="mt-4 inline-block text-primary hover:underline">
+        <NextLink
+          href={getLocalizedHref("/auth/login")}
+          className="mt-4 inline-block text-primary hover:underline"
+        >
           Đăng nhập
         </NextLink>
       </div>
@@ -64,7 +78,10 @@ export default function CustomerProfilePage() {
     <div className="mx-auto max-w-2xl px-4 py-12">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Hồ sơ cá nhân</h1>
-        <NextLink href="/customer/dashboard" className="text-sm text-primary hover:underline">
+        <NextLink
+          href={getLocalizedHref("/customer/dashboard")}
+          className="text-sm text-primary hover:underline"
+        >
           ← Dashboard
         </NextLink>
       </div>
