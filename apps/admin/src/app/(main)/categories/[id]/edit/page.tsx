@@ -3,11 +3,13 @@
 import { CategoryForm } from "@admin/components/blog/category-form";
 import { useLanguageSwitcher } from "@admin/hooks/useLanguageSwitcher";
 import { trpc } from "@admin/lib/trpc";
-import { LanguageSwitcher } from "@ecom/ui/components/language-switcher";
 import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: page component with multiple conditional data mappings for categories and translations
 export default function EditCategoryPage() {
+  const t = useTranslations("categories");
   const params = useParams<{ id: string }>();
   const categoryId = Number(params.id);
 
@@ -20,8 +22,10 @@ export default function EditCategoryPage() {
     { enabled: !Number.isNaN(categoryId) },
   );
 
-  const { languageTabs, activeCode, isDefaultLanguage, onLanguageChange, isSwitcherLoading } =
-    useLanguageSwitcher("category", categoryId);
+  const { activeCode, isDefaultLanguage, isSwitcherLoading, originLangCode } = useLanguageSwitcher(
+    "category",
+    categoryId,
+  );
 
   const { data: translation } = trpc.viewer.translations.get.useQuery(
     { entityType: "category", entityId: categoryId, langCode: activeCode ?? "" },
@@ -55,10 +59,11 @@ export default function EditCategoryPage() {
         description: category.description ?? "",
         icon: category.icon ?? "",
         status: category.status as "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED",
-        isFeatured: category.isFeatured,
-        isDefault: category.isDefault,
+        isFeatured: category.isFeatured === 1,
+        isDefault: category.isDefault === 1,
         parentId: category.parentId,
         order: category.order,
+        createdAt: category.createdAt,
       }
     : {
         name: getTranslationField(translation, "name") ?? "",
@@ -66,30 +71,27 @@ export default function EditCategoryPage() {
         description: getTranslationField(translation, "description") ?? "",
         icon: category.icon ?? "",
         status: category.status as "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED",
-        isFeatured: category.isFeatured,
-        isDefault: category.isDefault,
+        isFeatured: category.isFeatured === 1,
+        isDefault: category.isDefault === 1,
         parentId: category.parentId,
         order: category.order,
+        createdAt: category.createdAt,
       };
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Edit Category</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Update category details.</p>
+        <h1 className="text-xl font-bold">{t("editCategory")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{category.name}</p>
       </div>
-
-      <LanguageSwitcher
-        languages={languageTabs}
-        activeCode={activeCode}
-        onLanguageChange={onLanguageChange}
-      />
 
       <CategoryForm
         key={activeCode ?? "default"}
         mode="edit"
         categoryId={categoryId}
         initialData={formInitialData}
+        translationMode={!isDefaultLanguage ? activeCode : undefined}
+        originLangCode={originLangCode ?? undefined}
       />
     </div>
   );

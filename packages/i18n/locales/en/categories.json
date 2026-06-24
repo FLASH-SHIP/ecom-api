@@ -1,14 +1,31 @@
 {
   "title": "Categories",
   "subtitle": "Organize your blog posts into categories",
-  "newCategory": "New Category",
-  "editCategory": "Edit Category",
+  "newCategory": "Create",
+  "editCategory": "Edit",
   "noCategoriesTitle": "No categories yet",
   "noCategoriesDescription": "Create your first category to organize posts.",
   "noCategories": "No categories found.",
   "viewList": "List",
   "viewTree": "Tree",
+  "languages": "Languages",
+  "editingVersion": "You are editing \"{language}\" version",
+  "createCategory": "Create",
+  "createSubtitle": "Add a new category to organize your blog posts.",
   "deleteConfirm": "Are you sure you want to delete this category?",
+  "deleteCategoryConfirm": "Delete category \"{name}\"?",
+  "deleteCategorySuccess": "Category \"{name}\" deleted successfully",
+  "deleteCategoryError": "Failed to delete category \"{name}\"",
+  "bulkDeleteConfirm": "Delete {count} selected category(ies)?",
+  "bulkDeleteSuccess": "Deleted {count} category(ies) successfully",
+  "bulkDeleteError": "Failed to delete some categories",
+  "bulkChangeSuccess": "Updated {count} category(ies) successfully",
+  "status": {
+    "published": "Published",
+    "draft": "Draft",
+    "pending": "Pending",
+    "archived": "Archived"
+  },
   "actions": {
     "edit": "Edit",
     "delete": "Delete"
@@ -26,5 +43,14 @@
     "postCount": "Posts",
     "actions": "Actions",
     "date": "Date"
+  },
+  "createSuccess": "Category created successfully",
+  "updateSuccess": "Category updated successfully",
+  "form": {
+    "publish": "Publish",
+    "save": "Save",
+    "saveAndContinue": "Save & Edit",
+    "cancel": "Cancel",
+    "permalinkPreview": "Preview:"
   }
 }

@@ -302,8 +302,8 @@ model Category {
   slug         String                @unique
   description  String?               @db.Text
   icon         String?
-  isFeatured   Boolean               @default(false)
-  isDefault    Boolean               @default(false)
+  isFeatured   Int                   @default(0) @db.SmallInt
+  isDefault    Int                   @default(0) @db.SmallInt
   status       ContentStatus         @default(PUBLISHED)
   parentId     Int?
   parent       Category?             @relation("CategoryTree", fields: [parentId], references: [id])

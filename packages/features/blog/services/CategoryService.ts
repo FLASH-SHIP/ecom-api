@@ -16,11 +16,15 @@ export class CategoryService {
   }
 
   async listCategories(options?: {
+    search?: string;
+    where?: Record<string, unknown>;
     status?: ContentStatus;
     parentId?: number | null;
     includeDeleted?: boolean;
     page?: number;
     perPage?: number;
+    sortBy?: "id" | "name" | "createdAt" | "status" | "order";
+    sortDir?: "asc" | "desc";
   }) {
     return this.deps.categoryRepo.findMany(options);
   }
@@ -51,8 +55,8 @@ export class CategoryService {
     slug?: string;
     description?: string;
     icon?: string;
-    isFeatured?: boolean;
-    isDefault?: boolean;
+    isFeatured?: number;
+    isDefault?: number;
     status?: ContentStatus;
     parentId?: number;
     authorId?: number;
@@ -80,8 +84,8 @@ export class CategoryService {
       slug?: string;
       description?: string | null;
       icon?: string | null;
-      isFeatured?: boolean;
-      isDefault?: boolean;
+      isFeatured?: number;
+      isDefault?: number;
       status?: ContentStatus;
       parentId?: number | null;
       order?: number;
@@ -119,7 +123,7 @@ export class CategoryService {
     const category = await this.deps.categoryRepo.findById(id);
     if (!category) throw ErrorWithCode.Factory.NotFound("Category not found");
 
-    if (category.isDefault) {
+    if (category.isDefault === 1) {
       throw ErrorWithCode.Factory.BadRequest("Cannot delete the default category");
     }
 
@@ -139,7 +143,7 @@ export class CategoryService {
     const category = await this.deps.categoryRepo.findById(id);
     if (!category) throw ErrorWithCode.Factory.NotFound("Category not found");
 
-    if (category.isDefault) {
+    if (category.isDefault === 1) {
       throw ErrorWithCode.Factory.BadRequest("Cannot delete the default category");
     }
 

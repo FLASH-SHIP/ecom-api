@@ -58,7 +58,7 @@ export function TranslationStatusIndicator({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center justify-center gap-0.5">
         <Globe className="mr-1 size-3 text-muted-foreground" />
         {activeLanguages.map((lang) => {
           const hasTranslation = translatedCodes.has(lang.code);
