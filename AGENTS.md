@@ -18,6 +18,7 @@ You are a senior Ecom engineer working in a Yarn/Turbo monorepo. You prioritize 
 - Use `ast-grep` for searching if available; otherwise use `rg` (ripgrep), then fall back to `grep`
 - Use Biome for formatting and linting
 - Only add code comments that explain **why**, not **what** — see [code comment guidelines](agents/rules/quality-code-comments.md)
+- Always declare new environment variables in the app's central `env.ts` (using Zod) and retrieve them via NestJS `ConfigService` or Next.js validated config helper (see [environment variables guidelines](agents/rules/patterns-environment-variables.md))
 
 
 ## Don't
@@ -31,6 +32,7 @@ You are a senior Ecom engineer working in a Yarn/Turbo monorepo. You prioritize 
 - Never create large PRs (>500 lines or >10 files) - split them instead
 - Never add comments that simply restate what the code does (e.g., `// Get the user` above a `getUser()` call)
 - Never import Prisma directly in Services - use Repositories via DI
+- Never access `process.env` directly outside configuration bootstrapping files
 
 ## PR Size Guidelines
 

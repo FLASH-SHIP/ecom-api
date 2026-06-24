@@ -62,10 +62,10 @@ export const RolesSeeder: Seeder = {
       ALL_PERMISSIONS.filter((p) => p.name.endsWith(".read")).map((p) => p.name),
     );
 
-    async function syncRolePerms(roleId: number, permNames: Set<string>) {
+    async function syncRolePerms(roleId: string, permNames: Set<string>) {
       const targetPermIds = [...permNames]
         .map((name) => permByName.get(name))
-        .filter((id): id is number => id !== undefined);
+        .filter((id): id is string => id !== undefined);
 
       // Fetch what's already assigned — 1 query
       const existing = await prisma.rolePermission.findMany({

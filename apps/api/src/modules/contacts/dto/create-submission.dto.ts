@@ -1,30 +1,31 @@
 import { IsEmail, IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
 
 export class CreateSubmissionDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ always: true })
+  @IsNotEmpty({ always: true })
   name!: string;
 
-  @IsEmail()
+  @IsEmail({}, { always: true })
   email!: string;
 
-  @IsOptional()
-  @IsString()
+  @IsString({ always: true })
+  @IsNotEmpty({ groups: ["vip"], message: "Số điện thoại là bắt buộc đối với liên hệ VIP." })
+  @IsOptional({ groups: ["default", "create"] })
   phone?: string;
 
-  @IsOptional()
-  @IsString()
+  @IsOptional({ always: true })
+  @IsString({ always: true })
   subject?: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ always: true })
+  @IsNotEmpty({ always: true })
   message!: string;
 
-  @IsOptional()
-  @IsString()
+  @IsOptional({ always: true })
+  @IsString({ always: true })
   formSlug?: string;
 
-  @IsOptional()
-  @IsObject()
+  @IsOptional({ always: true })
+  @IsObject({ always: true })
   metadata?: Record<string, unknown>;
 }

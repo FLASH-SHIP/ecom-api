@@ -25,7 +25,7 @@ interface FieldItemSeed {
   type: string;
   order: number;
   instructions?: string;
-  options?: Record<string, unknown>;
+  options?: Prisma.InputJsonValue;
 }
 
 // ── Seeder ───────────────────────────────────────────────────────────────────

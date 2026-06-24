@@ -1,13 +1,15 @@
 import { CategoryTransformer } from "@ecom/features/blog/transformers/CategoryTransformer";
 import { PostTransformer } from "@ecom/features/blog/transformers/PostTransformer";
 import { getCategoryService, getPostService } from "@ecom/features/di/containers/BlogService";
-import { Controller, Get, NotFoundException, Param, Query } from "@nestjs/common";
+import { Controller, Get, NotFoundException, Param, Query, UseInterceptors } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { CacheControlInterceptor } from "../../common/interceptors/cache-control.interceptor";
 // biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
 import { ListPostsQueryDto } from "./dto/list-posts-query.dto";
 
 @ApiTags("Blog")
 @Controller("blog")
+@UseInterceptors(CacheControlInterceptor)
 export class BlogController {
   @Get("posts")
   @ApiOperation({ summary: "List published blog posts" })

@@ -25,6 +25,7 @@
     "prisma:generate": "yarn workspace @ecom/prisma prisma generate",
     "prisma:migrate": "yarn workspace @ecom/prisma prisma migrate dev",
     "prisma:seed": "yarn workspace @ecom/prisma db:seed",
+    "prisma:seed:nestjs": "yarn workspace @ecom/api db:seed",
     "prisma:studio": "yarn workspace @ecom/prisma prisma studio",
     "prepare": "husky",
     "e2e": "playwright test",

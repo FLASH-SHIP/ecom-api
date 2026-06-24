@@ -62,6 +62,7 @@
 
 - [patterns-dependency-injection](rules/patterns-dependency-injection.md) - DI patterns
 - [patterns-factory-pattern](rules/patterns-factory-pattern.md) - Factory pattern
+- [patterns-environment-variables](rules/patterns-environment-variables.md) - Centrally validated env variables
 
 ### Culture
 
