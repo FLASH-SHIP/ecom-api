@@ -215,7 +215,7 @@ const nextAuth: NextAuthResult = NextAuth({
       return "";
     },
     async decode(params) {
-      if (!params.token) return null;
+      if (!params.token) return {};
 
       const sessionToken = params.token;
       const cacheKey = `admin_session:${sessionToken}`;
@@ -242,7 +242,7 @@ const nextAuth: NextAuthResult = NextAuth({
         if (dbSession) {
           await prisma.session.delete({ where: { id: dbSession.id } }).catch(() => {});
         }
-        return null;
+        return {};
       }
 
       const payload = {
