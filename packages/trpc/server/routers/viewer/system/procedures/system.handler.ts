@@ -2,6 +2,7 @@ import { getAuditService } from "@ecom/features/di/containers/AuditService";
 import type { FilterFieldConfigMap } from "@ecom/features/shared/utils/buildPrismaWhere";
 import { buildPrismaWhere } from "@ecom/features/shared/utils/buildPrismaWhere";
 import { categoryCache, permissionsCache, settingsCache } from "@ecom/lib/cache";
+import { signQueueDashboardToken } from "@ecom/lib/jwt";
 import { Permissions } from "@ecom/lib/permissions";
 import { getRedisClient } from "@ecom/lib/redis";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
@@ -293,4 +294,17 @@ export const getWorkflowDescription = authedProcedure
   .query(async () => {
     const { getWorkflowService } = await import("@ecom/features/workflow/services/WorkflowService");
     return getWorkflowService().getWorkflowDescription();
+  });
+
+export const getQueueDashboardUrl = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .query(async ({ ctx }) => {
+    const ssoToken = signQueueDashboardToken({
+      userId: ctx.user.id,
+      email: ctx.user.email,
+    });
+    const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+    return {
+      url: `${apiUrl}/api/v2/queues/sso?token=${ssoToken}`,
+    };
   });

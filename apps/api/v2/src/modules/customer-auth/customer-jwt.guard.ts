@@ -25,7 +25,7 @@ declare global {
  */
 @Injectable()
 export class CustomerJwtGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const authHeader = request.headers.authorization;
 
@@ -39,7 +39,7 @@ export class CustomerJwtGuard implements CanActivate {
     }
 
     try {
-      const payload = getCustomerTokenService().verifyAccessToken(token);
+      const payload = await getCustomerTokenService().verifyAccessToken(token);
       request.customerPayload = payload;
       return true;
     } catch {

@@ -186,4 +186,15 @@ export class JobQueue {
       return 0;
     }
   }
+
+  /**
+   * Get all registered queues as BullMQ Queue instances.
+   */
+  static getQueues(): Queue[] {
+    const list: Queue[] = [];
+    for (const name of registeredJobs.keys()) {
+      list.push(getQueue(name));
+    }
+    return list;
+  }
 }

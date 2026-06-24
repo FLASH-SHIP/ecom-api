@@ -1,4 +1,5 @@
 import { getUserManagementService } from "@ecom/features/di/containers/RbacService";
+import { UserTransformer } from "@ecom/features/rbac/transformers/UserTransformer";
 import { Permissions } from "@ecom/lib/permissions";
 import { UserStatus } from "@ecom/prisma";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
@@ -21,7 +22,8 @@ export const list = authedProcedure
   )
   .query(async ({ input }) => {
     const userService = getUserManagementService();
-    return userService.listUsers(input ?? {});
+    const result = await userService.listUsers(input ?? {});
+    return new UserTransformer().transformPaginated(result);
   });
 
 export const get = authedProcedure
@@ -29,7 +31,8 @@ export const get = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .query(async ({ input }) => {
     const userService = getUserManagementService();
-    return userService.getUser(input.id);
+    const result = await userService.getUser(input.id);
+    return new UserTransformer().transformItem(result!);
   });
 
 export const create = authedProcedure
@@ -47,7 +50,8 @@ export const create = authedProcedure
   )
   .mutation(async ({ input }) => {
     const userService = getUserManagementService();
-    return userService.createUser(input);
+    const result = await userService.createUser(input);
+    return new UserTransformer().transformItem(result!);
   });
 
 export const update = authedProcedure
@@ -66,7 +70,8 @@ export const update = authedProcedure
   .mutation(async ({ input }) => {
     const { id, ...data } = input;
     const userService = getUserManagementService();
-    return userService.updateUser(id, data);
+    const result = await userService.updateUser(id, data);
+    return new UserTransformer().transformItem(result!);
   });
 
 export const changePassword = authedProcedure
@@ -95,7 +100,8 @@ export const syncRoles = authedProcedure
   )
   .mutation(async ({ input }) => {
     const userService = getUserManagementService();
-    return userService.syncRoles(input.userId, input.roleIds);
+    const result = await userService.syncRoles(input.userId, input.roleIds);
+    return new UserTransformer().transformItem(result!);
   });
 
 export const remove = authedProcedure
@@ -104,5 +110,6 @@ export const remove = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ ctx, input }) => {
     const userService = getUserManagementService();
-    return userService.deleteUser(input.id, ctx.user.id);
+    const result = await userService.deleteUser(input.id, ctx.user.id);
+    return new UserTransformer().transformItem(result!);
   });

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { env } from "@admin/env";
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
+import { getRedisClient } from "@ecom/lib/redis";
 import { prisma } from "@ecom/prisma";
 import type { User as AppUser } from "@ecom/shared/@auth/user";
 import type { NextAuthResult } from "next-auth";
@@ -90,13 +91,20 @@ const adminAdapter = {
         where: { sessionToken },
       })
       .catch(() => {});
+
+    try {
+      const redis = getRedisClient();
+      await redis.del(`admin_session:${sessionToken}`);
+    } catch (_err) {
+      // Ignore cache invalidation failures
+    }
   },
 };
 
 const nextAuth: NextAuthResult = NextAuth({
   adapter: adminAdapter,
   secret: env.AUTH_SECRET,
-  session: { strategy: "database" },
+  session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
   },
@@ -132,7 +140,7 @@ const nextAuth: NextAuthResult = NextAuth({
     async jwt({ token, user, account }) {
       if (account?.provider === "credentials" && user) {
         const sessionToken = crypto.randomUUID();
-        const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        const expires = new Date(Date.now() + env.ADMIN_SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000);
 
         let ipAddress: string | null = null;
         let userAgent: string | null = null;
@@ -163,13 +171,14 @@ const nextAuth: NextAuthResult = NextAuth({
       }
       return token;
     },
-    async session({ session, user }) {
-      if (user?.id) {
-        session.user.id = user.id;
+    async session({ session, token, user }) {
+      const userId = user?.id || (token?.id ? String(token.id) : null);
+      if (userId) {
+        session.user.id = userId;
 
         // Populate session.db for the app's useUser hook
         const dbUser = await prisma.user.findUnique({
-          where: { id: Number(user.id) },
+          where: { id: Number(userId) },
           select: {
             id: true,
             name: true,
@@ -205,8 +214,76 @@ const nextAuth: NextAuthResult = NextAuth({
       }
       return "";
     },
-    async decode() {
-      return null;
+    async decode(params) {
+      if (!params.token) return null;
+
+      const sessionToken = params.token;
+      const cacheKey = `admin_session:${sessionToken}`;
+      const cacheTtl = env.ADMIN_SESSION_CACHE_TTL_SEC;
+
+      if (cacheTtl > 0) {
+        try {
+          const redis = getRedisClient();
+          const cached = await redis.get(cacheKey);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (_err) {
+          // Fallback to DB query on Redis failure
+        }
+      }
+
+      const dbSession = await prisma.session.findUnique({
+        where: { sessionToken },
+        include: { user: true },
+      });
+
+      if (!dbSession || dbSession.expires < new Date()) {
+        if (dbSession) {
+          await prisma.session.delete({ where: { id: dbSession.id } }).catch(() => {});
+        }
+        return null;
+      }
+
+      const payload = {
+        sessionId: dbSession.sessionToken,
+        id: dbSession.user.id,
+        email: dbSession.user.email,
+        name: dbSession.user.name,
+      };
+
+      if (cacheTtl > 0) {
+        try {
+          const redis = getRedisClient();
+          // Cache session lookup
+          await redis.set(cacheKey, JSON.stringify(payload), "EX", cacheTtl);
+        } catch (_err) {
+          // Ignore cache save failures
+        }
+      }
+
+      return payload;
+    },
+  },
+  events: {
+    async signOut(message) {
+      const token = "token" in message ? message.token : null;
+      const sessionToken = token?.sessionId as string | undefined;
+
+      if (sessionToken) {
+        await prisma.session
+          .delete({
+            where: { sessionToken },
+          })
+          .catch(() => {});
+
+        try {
+          const redis = getRedisClient();
+          await redis.del(`admin_session:${sessionToken}`);
+        } catch (_err) {
+          // Ignore
+        }
+      }
     },
   },
 });

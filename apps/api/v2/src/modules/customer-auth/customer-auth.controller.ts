@@ -5,18 +5,7 @@ import {
   getCustomerTokenService,
 } from "@ecom/features/di/containers/CustomerService";
 import { ErrorWithCode } from "@ecom/lib/errors";
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  ForbiddenException,
-  Get,
-  NotFoundException,
-  Post,
-  Req,
-  UnauthorizedException,
-  UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
 import {
   IsEmail,
   IsNotEmpty,
@@ -136,7 +125,7 @@ class ChangePasswordDto {
   newPassword!: string;
 }
 
-@Controller("v2/customer/auth")
+@Controller("customer/auth")
 export class CustomerAuthController {
   // ─── Profile ──────────────────────────────────────────────────────────────
 
@@ -150,8 +139,13 @@ export class CustomerAuthController {
   async getMe(@Req() req: Request) {
     const payload = req.customerPayload as CustomerTokenPayload;
     const customer = await getCustomerService().getCustomer(payload.sub);
-    if (!customer) throw new NotFoundException("Customer not found");
-    return customer;
+    if (!customer) throw ErrorWithCode.Factory.NotFound("Customer not found");
+    if (customer.status !== "ACTIVE") {
+      throw ErrorWithCode.Factory.Forbidden("Account is not active");
+    }
+    return {
+      data: customer,
+    };
   }
 
   // ─── Auth ──────────────────────────────────────────────────────────────────
@@ -160,24 +154,16 @@ export class CustomerAuthController {
     const authService = getCustomerAuthService();
     const tokenService = getCustomerTokenService();
 
-    try {
-      const customer = await authService.register({
-        email: body.email,
-        password: body.password,
-        username: body.username,
-        name: body.name,
-      });
-      const tokens = tokenService.generateTokens(customer);
-      return { customer, ...tokens };
-    } catch (error) {
-      if (error instanceof ErrorWithCode) {
-        if (error.message.includes("already registered") || error.message.includes("Conflict")) {
-          throw new BadRequestException(error.message);
-        }
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
+    const customer = await authService.register({
+      email: body.email,
+      password: body.password,
+      username: body.username,
+      name: body.name,
+    });
+    const tokens = tokenService.generateTokens(customer);
+    return {
+      data: { customer, ...tokens },
+    };
   }
 
   @Post("login")
@@ -185,38 +171,28 @@ export class CustomerAuthController {
     const authService = getCustomerAuthService();
     const tokenService = getCustomerTokenService();
 
-    try {
-      const customer = await authService.login(body.identifier, body.password);
-      const tokens = tokenService.generateTokens(customer);
-      return { customer, ...tokens };
-    } catch (error) {
-      if (error instanceof ErrorWithCode) {
-        if (error.message.toLowerCase().includes("invalid credentials")) {
-          throw new UnauthorizedException(error.message);
-        }
-        if (error.message.toLowerCase().includes("not active")) {
-          throw new ForbiddenException(error.message);
-        }
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
+    const customer = await authService.login(body.identifier, body.password);
+    const tokens = tokenService.generateTokens(customer);
+    return {
+      data: { customer, ...tokens },
+    };
   }
 
   @Post("refresh")
   async refreshToken(@Body() body: RefreshTokenDto) {
     const tokenService = getCustomerTokenService();
 
-    try {
-      const payload = tokenService.verifyRefreshToken(body.refreshToken);
-      const tokens = tokenService.generateTokens({ id: payload.sub, email: payload.email });
-      return tokens;
-    } catch (error) {
-      if (error instanceof ErrorWithCode) {
-        throw new UnauthorizedException(error.message);
-      }
-      throw new UnauthorizedException("Invalid refresh token");
+    const payload = await tokenService.verifyRefreshToken(body.refreshToken);
+
+    const customer = await getCustomerService().getCustomer(payload.sub);
+    if (!customer || customer.status !== "ACTIVE") {
+      throw ErrorWithCode.Factory.Forbidden("Account is not active");
     }
+
+    const tokens = tokenService.generateTokens({ id: payload.sub, email: payload.email });
+    return {
+      data: tokens,
+    };
   }
 
   @Post("update-profile")
@@ -224,27 +200,24 @@ export class CustomerAuthController {
     const tokenService = getCustomerTokenService();
     const customerService = getCustomerService();
 
-    try {
-      const payload = tokenService.verifyAccessToken(body.accessToken);
-      const { accessToken: _, dob, ...rest } = body;
-
-      const result = await customerService.updateCustomer(payload.sub, {
-        ...rest,
-        dob: dob ? new Date(dob) : dob === null ? null : undefined,
-        gender: body.gender ?? undefined,
-        description: body.description ?? undefined,
-      });
-
-      return result;
-    } catch (error) {
-      if (error instanceof ErrorWithCode) {
-        if (error.message.toLowerCase().includes("forbidden")) {
-          throw new ForbiddenException(error.message);
-        }
-        throw new BadRequestException(error.message);
-      }
-      throw new UnauthorizedException("Invalid or expired token");
+    const payload = await tokenService.verifyAccessToken(body.accessToken);
+    const customer = await customerService.getCustomer(payload.sub);
+    if (!customer || customer.status !== "ACTIVE") {
+      throw ErrorWithCode.Factory.Forbidden("Account is not active");
     }
+
+    const { accessToken: _, dob, ...rest } = body;
+
+    const result = await customerService.updateCustomer(payload.sub, {
+      ...rest,
+      dob: dob ? new Date(dob) : dob === null ? null : undefined,
+      gender: body.gender ?? undefined,
+      description: body.description ?? undefined,
+    });
+
+    return {
+      data: result,
+    };
   }
 
   @Post("forgot-password")
@@ -252,21 +225,18 @@ export class CustomerAuthController {
     const authService = getCustomerAuthService();
     // Intentionally does not reveal whether the email exists (security best practice)
     await authService.forgotPassword(body.email).catch(() => {});
-    return { message: "If this email exists, we have sent a password reset link." };
+    return {
+      data: { message: "If this email exists, we have sent a password reset link." },
+    };
   }
 
   @Post("reset-password")
   async resetPassword(@Body() body: ResetPasswordDto) {
     const authService = getCustomerAuthService();
-
-    try {
-      return await authService.resetPassword(body.token, body.password);
-    } catch (error) {
-      if (error instanceof ErrorWithCode) {
-        throw new BadRequestException(error.message);
-      }
-      throw new BadRequestException("Invalid or expired reset token");
-    }
+    const result = await authService.resetPassword(body.token, body.password);
+    return {
+      data: result,
+    };
   }
 
   @Post("change-password")
@@ -274,18 +244,28 @@ export class CustomerAuthController {
     const tokenService = getCustomerTokenService();
     const authService = getCustomerAuthService();
 
+    const payload = await tokenService.verifyAccessToken(body.accessToken);
+    await authService.changePassword(payload.sub, body.oldPassword, body.newPassword);
+    return {
+      data: { success: true },
+    };
+  }
+
+  @Post("logout")
+  async logout(@Body() body: RefreshTokenDto) {
+    const tokenService = getCustomerTokenService();
     try {
-      const payload = tokenService.verifyAccessToken(body.accessToken);
-      await authService.changePassword(payload.sub, body.oldPassword, body.newPassword);
-      return { success: true };
-    } catch (error) {
-      if (error instanceof ErrorWithCode) {
-        if (error.message.toLowerCase().includes("incorrect")) {
-          throw new BadRequestException(error.message);
-        }
-        throw new BadRequestException(error.message);
+      const payload = await tokenService.verifyRefreshToken(body.refreshToken);
+      // Blacklist token for up to 30 days
+      const secondsIn30Days = 30 * 24 * 60 * 60;
+      if (payload.jti) {
+        await tokenService.blacklistToken(payload.jti, secondsIn30Days);
       }
-      throw new UnauthorizedException("Invalid or expired token");
+    } catch {
+      // Ignore if expired
     }
+    return {
+      data: { success: true },
+    };
   }
 }

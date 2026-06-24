@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { env } from "@customer/env";
 import { getCustomerAuthService } from "@ecom/features/di/containers/CustomerService";
+import { getRedisClient } from "@ecom/lib/redis";
 import { prisma } from "@ecom/prisma";
 import type { User as AppUser } from "@ecom/shared/@auth/user";
 import type { NextAuthResult } from "next-auth";
@@ -45,17 +46,46 @@ const customerAdapter = {
     };
   },
   async getSessionAndUser(sessionToken: string) {
+    const cacheKey = `customer_session:${sessionToken}`;
+    try {
+      const redis = getRedisClient();
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Deserialize dates
+        parsed.session.expires = new Date(parsed.session.expires);
+        if (parsed.user.emailVerified) {
+          parsed.user.emailVerified = new Date(parsed.user.emailVerified);
+        }
+        return parsed;
+      }
+    } catch {
+      // Fallback to database query on Redis failure
+    }
+
     const dbSession = await prisma.customerSession.findUnique({
       where: { sessionToken },
       include: { customer: true },
     });
-    if (!dbSession || dbSession.expires < new Date()) {
+    if (
+      !dbSession ||
+      dbSession.expires < new Date() ||
+      dbSession.customer.status !== "ACTIVE" ||
+      dbSession.customer.deletedAt !== null
+    ) {
       if (dbSession) {
         await prisma.customerSession.delete({ where: { sessionToken } }).catch(() => {});
+        try {
+          const redis = getRedisClient();
+          await redis.del(cacheKey);
+        } catch {
+          // Ignore
+        }
       }
       return null;
     }
-    return {
+
+    const result = {
       session: {
         id: dbSession.id,
         sessionToken: dbSession.sessionToken,
@@ -69,6 +99,15 @@ const customerAdapter = {
         emailVerified: dbSession.customer.emailVerified,
       },
     };
+
+    try {
+      const redis = getRedisClient();
+      await redis.set(cacheKey, JSON.stringify(result), "EX", env.CUSTOMER_SESSION_CACHE_TTL_SEC);
+    } catch {
+      // Ignore
+    }
+
+    return result;
   },
   async updateSession(session: { sessionToken: string; expires?: Date; userId?: string }) {
     const updated = await prisma.customerSession.update({
@@ -77,6 +116,14 @@ const customerAdapter = {
         expires: session.expires,
       },
     });
+
+    try {
+      const redis = getRedisClient();
+      await redis.del(`customer_session:${session.sessionToken}`);
+    } catch {
+      // Ignore
+    }
+
     return {
       id: updated.id,
       sessionToken: updated.sessionToken,
@@ -90,6 +137,13 @@ const customerAdapter = {
         where: { sessionToken },
       })
       .catch(() => {});
+
+    try {
+      const redis = getRedisClient();
+      await redis.del(`customer_session:${sessionToken}`);
+    } catch {
+      // Ignore
+    }
   },
 };
 

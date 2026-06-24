@@ -1,6 +1,7 @@
 import { getContactService } from "@ecom/features/di/containers/ContactService";
-import { Body, Controller, Get, NotFoundException, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { IsEmail, IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
+import type { ListSubmissionsQueryDto } from "./dto/list-submissions-query.dto";
 
 class CreateSubmissionDto {
   @IsString()
@@ -31,37 +32,39 @@ class CreateSubmissionDto {
   metadata?: Record<string, unknown>;
 }
 
-@Controller("v2/contacts")
+@Controller("contacts")
 export class ContactsController {
   @Get()
-  async listSubmissions(
-    @Query("formSlug") formSlug?: string,
-    @Query("status") status?: string,
-    @Query("page") page = "1",
-    @Query("perPage") perPage = "20",
-  ) {
-    const take = Math.min(Number(perPage), 50);
-
-    return getContactService().listSubmissions({
-      formSlug,
-      status: status as "new" | "read" | "replied" | "archived" | undefined,
-      page: Number(page),
-      perPage: take,
+  async listSubmissions(@Query() query: ListSubmissionsQueryDto) {
+    const result = await getContactService().listSubmissions({
+      formSlug: query.formSlug,
+      status: query.status,
+      page: query.page,
+      perPage: query.perPage,
     });
+
+    return {
+      data: result.items,
+      meta: {
+        total: result.total,
+        page: result.page,
+        perPage: result.perPage,
+        totalPages: Math.ceil(result.total / result.perPage),
+      },
+    };
   }
 
   @Get(":id")
   async getSubmission(@Param("id") id: string) {
-    try {
-      return await getContactService().getSubmission(Number(id));
-    } catch {
-      throw new NotFoundException("Submission not found");
-    }
+    const submission = await getContactService().getSubmission(Number(id));
+    return {
+      data: submission,
+    };
   }
 
   @Post()
   async createSubmission(@Body() body: CreateSubmissionDto) {
-    return getContactService().createSubmission({
+    const submission = await getContactService().createSubmission({
       name: body.name,
       email: body.email,
       phone: body.phone,
@@ -70,5 +73,9 @@ export class ContactsController {
       formSlug: body.formSlug ?? "default",
       metadata: body.metadata,
     });
+
+    return {
+      data: submission,
+    };
   }
 }

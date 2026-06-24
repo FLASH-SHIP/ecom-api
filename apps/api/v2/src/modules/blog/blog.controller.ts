@@ -1,28 +1,24 @@
+import { CategoryTransformer } from "@ecom/features/blog/transformers/CategoryTransformer";
+import { PostTransformer } from "@ecom/features/blog/transformers/PostTransformer";
 import { getCategoryService, getPostService } from "@ecom/features/di/containers/BlogService";
 import { Controller, Get, NotFoundException, Param, Query } from "@nestjs/common";
+import type { ListPostsQueryDto } from "./dto/list-posts-query.dto";
 
-@Controller("v2/blog")
+@Controller("blog")
 export class BlogController {
   @Get("posts")
-  async listPosts(
-    @Query("page") page = "1",
-    @Query("perPage") perPage = "10",
-    @Query("search") search?: string,
-    @Query("category") categoryId?: string,
-  ) {
-    const take = Math.min(Number(perPage), 50);
-
+  async listPosts(@Query() query: ListPostsQueryDto) {
     const result = await getPostService().listPosts({
       status: "PUBLISHED",
-      search,
-      categoryId: categoryId ? Number(categoryId) : undefined,
-      page: Number(page),
-      perPage: take,
+      search: query.search,
+      categoryId: query.category,
+      page: query.page,
+      perPage: query.perPage,
       sortBy: "publishedAt",
       sortOrder: "desc",
     });
 
-    return result;
+    return new PostTransformer().transformPaginated(result);
   }
 
   @Get("posts/:slug")
@@ -35,7 +31,9 @@ export class BlogController {
         .recordView(post.id)
         .catch(() => {});
 
-      return post;
+      return {
+        data: new PostTransformer().transformItem(post),
+      };
     } catch {
       throw new NotFoundException("Post not found");
     }
@@ -44,6 +42,8 @@ export class BlogController {
   @Get("categories")
   async listCategories() {
     const result = await getCategoryService().listCategories({ status: "PUBLISHED" });
-    return result;
+    return {
+      data: new CategoryTransformer().transformCollection(result.items),
+    };
   }
 }

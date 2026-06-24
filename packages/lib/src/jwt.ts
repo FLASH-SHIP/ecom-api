@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { SignOptions } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
 
@@ -85,4 +86,36 @@ export function getExpirationDate(duration: string): Date {
   }
 
   return new Date(now + value * multiplier);
+}
+
+export interface QueueDashboardJwtPayload {
+  userId: number;
+  email: string;
+  type: "queue-dashboard-sso" | "queue-dashboard-session";
+  jti?: string;
+}
+
+/**
+ * Sign a short-lived SSO token for the Queue dashboard (expires in 60s).
+ */
+export function signQueueDashboardToken(
+  payload: Omit<QueueDashboardJwtPayload, "type" | "jti">,
+): string {
+  const options: SignOptions = { expiresIn: 60, jwtid: randomUUID() }; // 60 seconds
+  return jwt.sign({ ...payload, type: "queue-dashboard-sso" }, JWT_SECRET, options);
+}
+
+/**
+ * Sign a longer-lived session token for the Queue dashboard (expires in 2h).
+ */
+export function signQueueDashboardSession(payload: Omit<QueueDashboardJwtPayload, "type">): string {
+  const options: SignOptions = { expiresIn: "2h" };
+  return jwt.sign({ ...payload, type: "queue-dashboard-session" }, JWT_SECRET, options);
+}
+
+/**
+ * Verify queue dashboard JWT.
+ */
+export function verifyQueueDashboardToken(token: string): QueueDashboardJwtPayload {
+  return jwt.verify(token, JWT_SECRET) as QueueDashboardJwtPayload;
 }

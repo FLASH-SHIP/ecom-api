@@ -1,3 +1,4 @@
+import { CategoryTransformer } from "@ecom/features/blog/transformers/CategoryTransformer";
 import { getCategoryService } from "@ecom/features/di/containers/BlogService";
 import { Permissions } from "@ecom/lib/permissions";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
@@ -21,7 +22,14 @@ export const list = authedProcedure
   )
   .query(async ({ input }) => {
     const categoryService = getCategoryService();
-    return categoryService.listCategories(input ?? undefined);
+    const result = await categoryService.listCategories(input ?? undefined);
+    return {
+      items: new CategoryTransformer().transformCollection(result.items),
+      total: result.total,
+      page: result.page,
+      perPage: result.perPage,
+      totalPages: result.totalPages,
+    };
   });
 
 export const tree = authedProcedure
@@ -36,7 +44,8 @@ export const get = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .query(async ({ input }) => {
     const categoryService = getCategoryService();
-    return categoryService.getCategory(input.id);
+    const result = await categoryService.getCategory(input.id);
+    return new CategoryTransformer().transformItem(result!);
   });
 
 export const create = authedProcedure
@@ -57,10 +66,11 @@ export const create = authedProcedure
   )
   .mutation(async ({ ctx, input }) => {
     const categoryService = getCategoryService();
-    return categoryService.createCategory({
+    const result = await categoryService.createCategory({
       ...input,
       authorId: ctx.user.id,
     });
+    return new CategoryTransformer().transformItem(result!);
   });
 
 export const update = authedProcedure
@@ -83,7 +93,8 @@ export const update = authedProcedure
   .mutation(async ({ input }) => {
     const { id, ...data } = input;
     const categoryService = getCategoryService();
-    return categoryService.updateCategory(id, data);
+    const result = await categoryService.updateCategory(id, data);
+    return new CategoryTransformer().transformItem(result!);
   });
 
 export const remove = authedProcedure
@@ -92,7 +103,8 @@ export const remove = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const categoryService = getCategoryService();
-    return categoryService.deleteCategory(input.id);
+    const result = await categoryService.deleteCategory(input.id);
+    return new CategoryTransformer().transformItem(result!);
   });
 
 export const restore = authedProcedure
@@ -101,5 +113,6 @@ export const restore = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const categoryService = getCategoryService();
-    return categoryService.restoreCategory(input.id);
+    const result = await categoryService.restoreCategory(input.id);
+    return new CategoryTransformer().transformItem(result!);
   });

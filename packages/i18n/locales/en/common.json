@@ -77,7 +77,9 @@
     "rememberMe": "Remember me",
     "emailInvalid": "Invalid email address",
     "emailRequired": "Please enter your email",
-    "passwordRequired": "Please enter your password"
+    "passwordRequired": "Please enter your password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "nav": {
     "general": "General",
@@ -161,6 +163,25 @@
     "noMenusTitle": "No menus yet"
   },
   "errors": {
+    "INVALID_CREDENTIALS": "Email or password is incorrect.",
+    "EMAIL_ALREADY_EXISTS": "This email address is already registered.",
+    "USERNAME_ALREADY_EXISTS": "This username is already taken.",
+    "TOKEN_EXPIRED": "Session has expired. Please sign in again.",
+    "TOKEN_INVALID": "Invalid authentication token.",
+    "TOKEN_REVOKED": "Authentication token has been revoked.",
+    "REFRESH_TOKEN_INVALID": "Invalid refresh token.",
+    "FORBIDDEN": "You do not have permission to perform this action.",
+    "INSUFFICIENT_PERMISSIONS": "Insufficient permissions to access this resource.",
+    "USER_NOT_FOUND": "User could not be found.",
+    "POST_NOT_FOUND": "Blog post could not be found.",
+    "CATEGORY_NOT_FOUND": "Category could not be found.",
+    "TAG_NOT_FOUND": "Tag could not be found.",
+    "SLUG_ALREADY_EXISTS": "This URL slug is already taken.",
+    "NOT_FOUND": "The requested resource could not be found.",
+    "BAD_REQUEST": "Invalid request parameter or payload.",
+    "CONFLICT": "Resource conflict occurred.",
+    "INTERNAL_ERROR": "An internal server error occurred.",
+    "VALIDATION_ERROR": "Request validation failed.",
     "401": {
       "title": "Unauthorized Access",
       "subtitle": "You do not have permission to view this page.",
@@ -194,5 +215,78 @@
     "invalid_url": "Invalid URL",
     "invalid_format": "Invalid format",
     "invalid_type": "Invalid data type"
+  },
+  "customerAuth": {
+    "login": {
+      "emailUsername": "Email/ Username",
+      "emailUsernamePlaceholder": "email@example.com or username",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
+      "signIn": "Sign in",
+      "signInLoading": "Signing in...",
+      "dontHaveAccount": "Don't have account?",
+      "signUp": "Sign up",
+      "invalidCredentials": "Invalid username or password.",
+      "unexpectedError": "An unexpected error occurred. Please try again later.",
+      "emailUsernameRequired": "Please enter your email or username"
+    },
+    "register": {
+      "title": "Sign up",
+      "nameLabel": "Full Name",
+      "namePlaceholder": "John Doe",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Minimum 8 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter your password",
+      "signUp": "Sign up",
+      "signUpLoading": "Signing up...",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "passwordMismatch": "Passwords do not match",
+      "passwordMin": "Password must be at least 8 characters",
+      "nameRequired": "Please enter your full name",
+      "emailRequired": "Please enter your email",
+      "emailInvalid": "Invalid email address"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "desc": "We will send the OTP link to your email registered with us.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Enter your email",
+      "buttonLabel": "Reset password",
+      "buttonLoading": "Sending...",
+      "backToLogin": "Back to sign in",
+      "checkEmailTitle": "Check your email",
+      "checkEmailDesc": "If your email exists in the system, we have sent a reset password link."
+    },
+    "resetPassword": {
+      "title": "Reset your password",
+      "desc": "Enter your new password below to reset your account password.",
+      "newPasswordLabel": "New password",
+      "newPasswordPlaceholder": "Minimum 8 characters",
+      "confirmPasswordLabel": "Confirm password",
+      "confirmPasswordPlaceholder": "Re-enter your new password",
+      "buttonLabel": "Reset password",
+      "buttonLoading": "Processing...",
+      "invalidToken": "Invalid or expired verification token.",
+      "requestNewLink": "Request a new link",
+      "successTitle": "Reset successful",
+      "successDesc": "Your password has been successfully updated. You can now sign in with your new password.",
+      "signIn": "Sign in now"
+    },
+    "verifyEmail": {
+      "invalidTokenTitle": "Invalid Token",
+      "invalidTokenDesc": "Please check the verification link in your email.",
+      "backToLogin": "Back to sign in",
+      "verifyingTitle": "Verifying email...",
+      "verifyingDesc": "Please wait a moment.",
+      "errorTitle": "Verification Failed",
+      "successTitle": "Email Verified!",
+      "successDesc": "Your account has been successfully verified.",
+      "goToDashboard": "Go to Dashboard"
+    }
   }
 }

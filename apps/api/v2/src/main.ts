@@ -2,19 +2,28 @@ import "reflect-metadata";
 import { JobQueue } from "@ecom/features/queue/JobQueue";
 import { registerEmailWorker } from "@ecom/features/queue/workers/emailWorker";
 import { gracefulShutdown } from "@ecom/features/shutdown/GracefulShutdown";
-import { ValidationPipe } from "@nestjs/common";
+import { ValidationPipe, VersioningType } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { I18nValidationException } from "./common/exceptions/i18n-validation.exception";
+import { ErrorWithCodeExceptionFilter } from "./common/filters/error-with-code-exception.filter";
 import { I18nHttpExceptionFilter } from "./common/filters/i18n-http-exception.filter";
 import { I18nValidationExceptionFilter } from "./common/filters/i18n-validation-exception.filter";
+import { TimeoutInterceptor } from "./common/interceptors/timeout.interceptor";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix("api/v2");
+  app.use(helmet());
+
+  app.setGlobalPrefix("api");
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: "2",
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -25,7 +34,13 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new I18nHttpExceptionFilter(), new I18nValidationExceptionFilter());
+  app.useGlobalInterceptors(new TimeoutInterceptor());
+
+  app.useGlobalFilters(
+    new I18nHttpExceptionFilter(),
+    new I18nValidationExceptionFilter(),
+    new ErrorWithCodeExceptionFilter(),
+  );
 
   const configService = app.get(ConfigService);
 

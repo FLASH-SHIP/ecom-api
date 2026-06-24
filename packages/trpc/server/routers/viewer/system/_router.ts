@@ -9,6 +9,7 @@ import {
   getEngagementOverview,
   getPopularContent,
   getPublishingTrends,
+  getQueueDashboardUrl,
   getRequestStats,
   getStatusBreakdown,
   getSystemInfo,
@@ -35,4 +36,5 @@ export const systemRouter = router({
   workflowDescription: getWorkflowDescription,
   cacheStats: getCacheStats,
   clearCache: clearCacheNamespace,
+  getQueueDashboardUrl,
 });

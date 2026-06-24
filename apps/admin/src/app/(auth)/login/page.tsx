@@ -130,6 +130,8 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       className={cn(fieldState.error && "border-destructive")}
                       required
+                      showPasswordLabel={t("showPassword")}
+                      hidePasswordLabel={t("hidePassword")}
                     />
                     {fieldState.error && (
                       <p className="text-xs text-destructive">{fieldState.error.message}</p>

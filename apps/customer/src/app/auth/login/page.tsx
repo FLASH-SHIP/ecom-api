@@ -1,49 +1,28 @@
 "use client";
 
+import { translate } from "@ecom/i18n";
 import { Button } from "@ecom/ui/components/button";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
-import { Eye, EyeOff } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import NextLink from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 import { AuthCard } from "../../../components/auth/AuthCard";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from "../../../lib/i18n";
 
-const translations = {
-  vi: {
-    emailUsername: "Email/ Username",
-    emailUsernamePlaceholder: "email@example.com hoặc username",
-    password: "Mật khẩu",
-    passwordPlaceholder: "••••••••",
-    forgotPassword: "Quên mật khẩu?",
-    signIn: "Đăng nhập",
-    signInLoading: "Đang đăng nhập...",
-    dontHaveAccount: "Chưa có tài khoản?",
-    signUp: "Đăng ký ngay",
-  },
-  en: {
-    emailUsername: "Email/ Username",
-    emailUsernamePlaceholder: "email@example.com or username",
-    password: "Password",
-    passwordPlaceholder: "••••••••",
-    forgotPassword: "Forgot password?",
-    signIn: "Sign in",
-    signInLoading: "Signing in...",
-    dontHaveAccount: "Don't have account?",
-    signUp: "Sign up",
-  },
+type FormValues = {
+  identifier: string;
+  password: string;
 };
 
 export default function LoginPage() {
   const router = useRouter();
   const pathname = usePathname();
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   // Detect current locale from path
   const currentLocale: SupportedLocale = pathname
@@ -52,38 +31,42 @@ export default function LoginPage() {
       ) as SupportedLocale) ?? DEFAULT_LOCALE)
     : DEFAULT_LOCALE;
 
-  const text = translations[currentLocale];
+  const schema = z.object({
+    identifier: z
+      .string()
+      .min(1, translate("customerAuth.login.emailUsernameRequired", currentLocale)),
+    password: z.string().min(1, translate("customerAuth.register.passwordRequired", currentLocale)),
+  });
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const { control, handleSubmit, formState } = useForm<FormValues>({
+    mode: "onChange",
+    defaultValues: {
+      identifier: "",
+      password: "",
+    },
+    resolver: zodResolver(schema),
+  });
+
+  const { isSubmitting } = formState;
+
+  async function onSubmit(data: FormValues) {
     setError(null);
-    setLoading(true);
 
     try {
       const res = await signIn("credentials", {
         redirect: false,
-        identifier,
-        password,
+        identifier: data.identifier,
+        password: data.password,
       });
 
       if (res?.error) {
-        setError(
-          currentLocale === "vi"
-            ? "Tên đăng nhập hoặc mật khẩu không chính xác."
-            : "Invalid username or password.",
-        );
+        setError(translate("customerAuth.login.invalidCredentials", currentLocale));
       } else {
         router.push(`/${currentLocale}/customer/dashboard`);
       }
     } catch (err) {
       console.error(err);
-      setError(
-        currentLocale === "vi"
-          ? "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."
-          : "An unexpected error occurred. Please try again later.",
-      );
-    } finally {
-      setLoading(false);
+      setError(translate("customerAuth.login.unexpectedError", currentLocale));
     }
   }
 
@@ -97,56 +80,67 @@ export default function LoginPage() {
       )}
 
       {/* Login Form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         {/* Email or Username */}
-        <div className="flex flex-col gap-1.5">
-          <Label
-            htmlFor="login-identifier"
-            className="text-xs font-bold text-slate-600 dark:text-slate-300"
-          >
-            {text.emailUsername}
-          </Label>
-          <Input
-            id="login-identifier"
-            type="text"
-            required
-            autoComplete="username"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            placeholder={text.emailUsernamePlaceholder}
-            className="w-full bg-background/50 dark:bg-slate-900/30"
-          />
-        </div>
+        <Controller
+          name="identifier"
+          control={control}
+          render={({ field, fieldState }) => (
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="login-identifier"
+                className="text-xs font-bold text-slate-600 dark:text-slate-300"
+              >
+                {translate("customerAuth.login.emailUsername", currentLocale)}
+              </Label>
+              <Input
+                {...field}
+                id="login-identifier"
+                type="text"
+                autoComplete="username"
+                placeholder={translate(
+                  "customerAuth.login.emailUsernamePlaceholder",
+                  currentLocale,
+                )}
+                className="w-full bg-background/50 dark:bg-slate-900/30"
+                aria-invalid={!!fieldState.error}
+              />
+              {fieldState.error && (
+                <p className="text-xs text-destructive font-medium">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
 
         {/* Password */}
-        <div className="flex flex-col gap-1.5">
-          <Label
-            htmlFor="login-password"
-            className="text-xs font-bold text-slate-600 dark:text-slate-300"
-          >
-            {text.password}
-          </Label>
-          <div className="relative">
-            <Input
-              id="login-password"
-              type={showPassword ? "text" : "password"}
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={text.passwordPlaceholder}
-              className="w-full bg-background/50 dark:bg-slate-900/30 pr-11"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-              aria-label="toggle password visibility"
-            >
-              {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
-            </button>
-          </div>
-        </div>
+        <Controller
+          name="password"
+          control={control}
+          render={({ field, fieldState }) => (
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="login-password"
+                className="text-xs font-bold text-slate-600 dark:text-slate-300"
+              >
+                {translate("customerAuth.login.password", currentLocale)}
+              </Label>
+              <Input
+                {...field}
+                id="login-password"
+                type="password"
+                autoComplete="current-password"
+                placeholder={translate("customerAuth.login.passwordPlaceholder", currentLocale)}
+                className="w-full bg-background/50 dark:bg-slate-900/30"
+                showPasswordLabel={translate("auth.showPassword", currentLocale)}
+                hidePasswordLabel={translate("auth.hidePassword", currentLocale)}
+                aria-invalid={!!fieldState.error}
+              />
+              {fieldState.error && (
+                <p className="text-xs text-destructive font-medium">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
 
         {/* Forgot password */}
         <div className="flex justify-end -mt-1.5">
@@ -154,27 +148,29 @@ export default function LoginPage() {
             href={`/${currentLocale}/auth/forgot-password`}
             className="text-xs font-bold text-cyan-500 hover:text-cyan-600 transition-colors"
           >
-            {text.forgotPassword}
+            {translate("customerAuth.login.forgotPassword", currentLocale)}
           </NextLink>
         </div>
 
         {/* Submit button */}
-        <Button type="submit" disabled={loading} className="w-full mt-2" size="lg">
-          {loading && (
+        <Button type="submit" disabled={isSubmitting} className="w-full mt-2" size="lg">
+          {isSubmitting && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
           )}
-          {loading ? text.signInLoading : text.signIn}
+          {isSubmitting
+            ? translate("customerAuth.login.signInLoading", currentLocale)
+            : translate("customerAuth.login.signIn", currentLocale)}
         </Button>
       </form>
 
       {/* Footer Info */}
       <p className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
-        {text.dontHaveAccount}{" "}
+        {translate("customerAuth.login.dontHaveAccount", currentLocale)}{" "}
         <NextLink
           href={`/${currentLocale}/auth/register`}
           className="font-bold text-cyan-500 hover:underline transition-colors"
         >
-          {text.signUp}
+          {translate("customerAuth.login.signUp", currentLocale)}
         </NextLink>
       </p>
     </AuthCard>
