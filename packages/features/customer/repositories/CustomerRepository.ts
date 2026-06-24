@@ -269,7 +269,13 @@ export class CustomerRepository {
   async findByIdWithPassword(id: number) {
     return this.prisma.customer.findUnique({
       where: { id },
-      select: { id: true, hashedPassword: true, username: true, usernameChangeCount: true },
+      select: {
+        id: true,
+        hashedPassword: true,
+        username: true,
+        usernameChangeCount: true,
+        status: true,
+      },
     });
   }
 
@@ -314,6 +320,12 @@ export class CustomerRepository {
       where: { id },
       data: { emailVerified: new Date() },
       select: { id: true, emailVerified: true },
+    });
+  }
+
+  async deleteSessions(customerId: number): Promise<void> {
+    await this.prisma.customerSession.deleteMany({
+      where: { customerId },
     });
   }
 

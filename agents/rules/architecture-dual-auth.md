@@ -84,7 +84,7 @@ export const authOptions = {
 ### Correct (Mobile — JWT):
 
 ```typescript
-// apps/api/v2/src/modules/auth/controllers/auth.controller.ts
+// apps/api/src/modules/auth/controllers/auth.controller.ts
 @Post("login")
 async login(@Body() body: LoginDto) {
   const user = await this.authService.validateCredentials(body.email, body.password);

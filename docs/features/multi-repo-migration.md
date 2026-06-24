@@ -43,7 +43,7 @@ graph TD
 - **Output**: Publishes generated Prisma client definitions to the private registry.
 
 ### 3. `ecom-api` (Application Repository)
-- **Contains**: NestJS REST API (`apps/api/v2`).
+- **Contains**: NestJS REST API (`apps/api`).
 - **Access**: Backend engineers.
 - **Dependencies**: Installs `@ecom/lib`, `@ecom/prisma`, etc., from the private registry.
 
@@ -109,7 +109,7 @@ Since the code is hosted on GitHub, we will leverage **GitHub Packages** as our 
 
 ### Phase 4: Spin Off Backend API (`ecom-api`)
 1. Create a new repository: `ecom-api`.
-2. Copy `apps/api/v2` contents to the root of the repo.
+2. Copy `apps/api` contents to the root of the repo.
 3. Remove workspace configs (`yarn.lock` links to other apps).
 4. Update `package.json` to import packages from the registry:
    ```json

@@ -19,7 +19,9 @@
     "cacheTitle": "Quản lý bộ nhớ đệm",
     "cacheDesc": "Xóa bộ nhớ đệm để cập nhật trang web của bạn.",
     "infoTitle": "Thông tin hệ thống",
-    "infoDesc": "Tất cả thông tin về cấu hình hệ thống hiện tại."
+    "infoDesc": "Tất cả thông tin về cấu hình hệ thống hiện tại.",
+    "queuesTitle": "Hàng đợi BullMQ",
+    "queuesDesc": "Giám sát và quản lý các tác vụ ngầm & BullMQ workers."
   },
   "fields": {
     "nodeVersion": "Phiên bản Node.js",

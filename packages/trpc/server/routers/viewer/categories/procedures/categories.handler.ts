@@ -1,3 +1,4 @@
+import { CategoryTransformer } from "@ecom/features/blog/transformers/CategoryTransformer";
 import { getCategoryService } from "@ecom/features/di/containers/BlogService";
 import {
   getLanguageRepository,
@@ -38,13 +39,14 @@ export const list = authedProcedure
   )
   .query(async ({ input }) => {
     const categoryService = getCategoryService();
-    const { pageSize, filters = [], ...rest } = input ?? {};
-    const prismaWhere = buildPrismaWhere(filters, CATEGORY_FILTER_FIELDS);
-    return categoryService.listCategories({
-      ...rest,
-      where: prismaWhere,
-      perPage: pageSize,
-    });
+    const result = await categoryService.listCategories(input ?? undefined);
+    return {
+      items: new CategoryTransformer().transformCollection(result.items),
+      total: result.total,
+      page: result.page,
+      perPage: result.perPage,
+      totalPages: result.totalPages,
+    };
   });
 
 export const tree = authedProcedure
@@ -59,7 +61,8 @@ export const get = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .query(async ({ input }) => {
     const categoryService = getCategoryService();
-    return categoryService.getCategory(input.id);
+    const result = await categoryService.getCategory(input.id);
+    return new CategoryTransformer().transformItem(result!);
   });
 
 export const create = authedProcedure
@@ -80,27 +83,11 @@ export const create = authedProcedure
   )
   .mutation(async ({ ctx, input }) => {
     const categoryService = getCategoryService();
-    const category = await categoryService.createCategory({
+    const result = await categoryService.createCategory({
       ...input,
       authorId: ctx.user.id,
     });
-
-    if (ctx.locale) {
-      const languageRepo = getLanguageRepository();
-      const dbLang = await languageRepo.findByLocale(ctx.locale);
-      const langCode = dbLang?.code ?? ctx.locale;
-
-      const languageService = getLanguageService();
-      await languageService.saveContentLanguage(category.id, "category", langCode);
-
-      const translationService = getTranslationService();
-      await translationService.saveTranslation("category", category.id, langCode, {
-        name: input.name,
-        description: input.description ?? "",
-      });
-    }
-
-    return category;
+    return new CategoryTransformer().transformItem(result!);
   });
 
 export const update = authedProcedure
@@ -120,38 +107,11 @@ export const update = authedProcedure
       order: z.number().int().min(0).optional(),
     }),
   )
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: updates category and handles audit logging, active language meta check, and translation updates
-  .mutation(async ({ input, ctx }) => {
+  .mutation(async ({ input }) => {
     const { id, ...data } = input;
     const categoryService = getCategoryService();
-    const category = await categoryService.updateCategory(id, data);
-
-    if (ctx.locale) {
-      const languageRepo = getLanguageRepository();
-      const dbLang = await languageRepo.findByLocale(ctx.locale);
-      const langCode = dbLang?.code ?? ctx.locale;
-
-      const defaultLang = await languageRepo.findDefault();
-
-      if (langCode === defaultLang?.code) {
-        const languageService = getLanguageService();
-        await languageService.saveContentLanguage(id, "category", langCode);
-      } else if (data.name !== undefined || data.description !== undefined) {
-        const translationService = getTranslationService();
-        const currentCategory = await categoryService.getCategory(id);
-        if (currentCategory) {
-          await translationService.saveTranslation("category", id, langCode, {
-            name: data.name ?? currentCategory.name,
-            description:
-              data.description !== undefined
-                ? (data.description ?? "")
-                : (currentCategory.description ?? undefined),
-          });
-        }
-      }
-    }
-
-    return category;
+    const result = await categoryService.updateCategory(id, data);
+    return new CategoryTransformer().transformItem(result!);
   });
 
 export const remove = authedProcedure
@@ -160,7 +120,8 @@ export const remove = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const categoryService = getCategoryService();
-    return categoryService.deleteCategory(input.id);
+    const result = await categoryService.deleteCategory(input.id);
+    return new CategoryTransformer().transformItem(result!);
   });
 
 export const restore = authedProcedure
@@ -169,5 +130,6 @@ export const restore = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const categoryService = getCategoryService();
-    return categoryService.restoreCategory(input.id);
+    const result = await categoryService.restoreCategory(input.id);
+    return new CategoryTransformer().transformItem(result!);
   });

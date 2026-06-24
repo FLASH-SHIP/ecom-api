@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import { promisify } from "node:util";
+import { loggerContext } from "@ecom/lib/logger";
 import type { PrismaClient } from "@ecom/prisma";
 import type { AuditLogFilters, AuditLogRepository } from "../repositories/AuditLogRepository";
 import type { RequestLogFilters, RequestLogRepository } from "../repositories/RequestLogRepository";
@@ -34,7 +35,21 @@ export class AuditService {
     userAgent?: string;
     metadata?: unknown;
   }) {
-    return this.deps.auditLogRepo.create(data);
+    const traceId = loggerContext.getStore()?.traceId;
+    let finalMetadata = data.metadata;
+
+    if (traceId) {
+      if (finalMetadata && typeof finalMetadata === "object") {
+        finalMetadata = { ...finalMetadata, traceId };
+      } else {
+        finalMetadata = { traceId };
+      }
+    }
+
+    return this.deps.auditLogRepo.create({
+      ...data,
+      metadata: finalMetadata,
+    });
   }
 
   async getAuditLogs(filters: AuditLogFilters, page?: number, perPage?: number) {

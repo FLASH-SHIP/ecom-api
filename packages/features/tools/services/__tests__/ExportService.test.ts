@@ -7,7 +7,7 @@ function createMockPrisma() {
     category: { findMany: vi.fn().mockResolvedValue([{ id: 1, name: "Cat" }]) },
     tag: { findMany: vi.fn().mockResolvedValue([{ id: 1, name: "Tag" }]) },
     page: { findMany: vi.fn().mockResolvedValue([{ id: 1, title: "Page" }]) },
-    member: { findMany: vi.fn().mockResolvedValue([{ id: 1, email: "a@b.com" }]) },
+    customer: { findMany: vi.fn().mockResolvedValue([{ id: 1, email: "a@b.com" }]) },
     setting: { findMany: vi.fn().mockResolvedValue([{ id: 1, key: "site_name" }]) },
   };
 }
@@ -51,12 +51,12 @@ describe("ExportService", () => {
     expect(result).toHaveLength(1);
   });
 
-  it("should export members without sensitive fields", async () => {
+  it("should export customers without sensitive fields", async () => {
     const prisma = createMockPrisma();
     const service = new ExportService(prisma as never);
 
-    await service.exportMembers();
-    const selectArg = prisma.member.findMany.mock.calls[0][0].select;
+    await service.exportCustomers();
+    const selectArg = prisma.customer.findMany.mock.calls[0][0].select;
     expect(selectArg.password).toBeUndefined();
     expect(selectArg.email).toBe(true);
   });
@@ -80,7 +80,7 @@ describe("ExportService", () => {
     expect(result.data.categories).toHaveLength(1);
     expect(result.data.tags).toHaveLength(1);
     expect(result.data.pages).toHaveLength(1);
-    expect(result.data.members).toHaveLength(1);
+    expect(result.data.customers).toHaveLength(1);
     expect(result.data.settings).toHaveLength(1);
   });
 });

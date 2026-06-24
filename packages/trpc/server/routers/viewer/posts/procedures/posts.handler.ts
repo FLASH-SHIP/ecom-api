@@ -1,3 +1,4 @@
+import { PostTransformer } from "@ecom/features/blog/transformers/PostTransformer";
 import { getPostService } from "@ecom/features/di/containers/BlogService";
 import { getCustomFieldService } from "@ecom/features/di/containers/CustomFieldService";
 import { Permissions } from "@ecom/lib/permissions";
@@ -27,7 +28,8 @@ export const list = authedProcedure
   )
   .query(async ({ input }) => {
     const postService = getPostService();
-    return postService.listPosts(input ?? {});
+    const result = await postService.listPosts(input ?? {});
+    return new PostTransformer().transformPaginated(result);
   });
 
 export const get = authedProcedure
@@ -35,7 +37,8 @@ export const get = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .query(async ({ input }) => {
     const postService = getPostService();
-    return postService.getPost(input.id);
+    const result = await postService.getPost(input.id);
+    return new PostTransformer().transformItem(result!);
   });
 
 export const create = authedProcedure
@@ -61,10 +64,11 @@ export const create = authedProcedure
   )
   .mutation(async ({ ctx, input }) => {
     const postService = getPostService();
-    return postService.createPost({
+    const result = await postService.createPost({
       ...input,
       authorId: ctx.user.id,
     });
+    return new PostTransformer().transformItem(result!);
   });
 
 export const update = authedProcedure
@@ -92,7 +96,8 @@ export const update = authedProcedure
   .mutation(async ({ input }) => {
     const { id, ...data } = input;
     const postService = getPostService();
-    return postService.updatePost(id, data);
+    const result = await postService.updatePost(id, data);
+    return new PostTransformer().transformItem(result!);
   });
 
 export const publish = authedProcedure
@@ -101,7 +106,8 @@ export const publish = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const postService = getPostService();
-    return postService.publishPost(input.id);
+    const result = await postService.publishPost(input.id);
+    return new PostTransformer().transformItem(result!);
   });
 
 export const archive = authedProcedure
@@ -110,7 +116,8 @@ export const archive = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const postService = getPostService();
-    return postService.archivePost(input.id);
+    const result = await postService.archivePost(input.id);
+    return new PostTransformer().transformItem(result!);
   });
 
 export const remove = authedProcedure
@@ -119,7 +126,8 @@ export const remove = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const postService = getPostService();
-    return postService.deletePost(input.id);
+    const result = await postService.deletePost(input.id);
+    return new PostTransformer().transformItem(result!);
   });
 
 export const restore = authedProcedure
@@ -128,7 +136,8 @@ export const restore = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const postService = getPostService();
-    return postService.restorePost(input.id);
+    const result = await postService.restorePost(input.id);
+    return new PostTransformer().transformItem(result!);
   });
 
 export const permanentlyDelete = authedProcedure
@@ -207,5 +216,6 @@ export const clone = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ ctx, input }) => {
     const postService = getPostService();
-    return postService.clonePost(input.id, ctx.user.id);
+    const result = await postService.clonePost(input.id, ctx.user.id);
+    return new PostTransformer().transformItem(result!);
   });

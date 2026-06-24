@@ -36,7 +36,7 @@ ecom/
   │    │    └── src/
   │    │         ├── env.ts            # Customer App Zod schema & client/server guard proxy
   │    │         └── instrumentation.ts # Bootstrap file validating variables on Next.js startup
-  │    └── api/v2/
+  │    └── api/
   │         └── src/
   │              ├── env.ts            # NestJS API Zod schema & validation function
   │              └── app.module.ts     # Configures NestJS ConfigModule with validation
@@ -137,7 +137,7 @@ The NestJS backend application (`@ecom/api`) leverages NestJS's native `@nestjs/
 
 ### Schema Definition & Validation Function
 
-In [apps/api/v2/src/env.ts](../../apps/api/v2/src/env.ts):
+In [apps/api/src/env.ts](../../apps/api/src/env.ts):
 
 ```typescript
 import { z } from "zod";
@@ -163,7 +163,7 @@ export function validate(config: Record<string, unknown>) {
 
 ### Loading in AppModule
 
-The validator is loaded globally inside [apps/api/v2/src/app.module.ts](../../apps/api/v2/src/app.module.ts):
+The validator is loaded globally inside [apps/api/src/app.module.ts](../../apps/api/src/app.module.ts):
 
 ```typescript
 import { validate } from "./env";
@@ -189,7 +189,7 @@ When adding a new environment variable to the system, follow these steps to main
 1. **Document in Template**: Add the new key with dummy values or comments in the root [.env.example](../../.env.example).
 2. **Assign Value Local**: Add the actual variable value inside your git-ignored root `.env` file.
 3. **Declare in Schema**:
-   - If the variable is used in **NestJS**: Add the field to the Zod schema in [apps/api/v2/src/env.ts](../../apps/api/v2/src/env.ts).
+   - If the variable is used in **NestJS**: Add the field to the Zod schema in [apps/api/src/env.ts](../../apps/api/src/env.ts).
    - If the variable is used in **Next.js (Admin/Customer)**: Add it to either `serverSchema` or `clientSchema` in `src/env.ts` of the respective app directory.
    - If it is a client-side public variable, it **MUST** start with the `NEXT_PUBLIC_` prefix and be added to the `clientSchema`.
 4. **Declare in Turborepo (If Build-time dependent)**:

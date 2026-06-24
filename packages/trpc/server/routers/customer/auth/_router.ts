@@ -4,6 +4,7 @@ import {
   checkUsername,
   forgotPassword,
   login,
+  logout,
   me,
   refreshToken,
   register,
@@ -23,4 +24,5 @@ export const customerAuthRouter = router({
   resetPassword,
   changePassword,
   checkUsername,
+  logout,
 });

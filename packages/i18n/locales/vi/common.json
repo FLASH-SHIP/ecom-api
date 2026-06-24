@@ -77,7 +77,9 @@
     "rememberMe": "Ghi nhớ đăng nhập",
     "emailInvalid": "Email không hợp lệ",
     "emailRequired": "Vui lòng nhập email",
-    "passwordRequired": "Vui lòng nhập mật khẩu"
+    "passwordRequired": "Vui lòng nhập mật khẩu",
+    "showPassword": "Hiện mật khẩu",
+    "hidePassword": "Ẩn mật khẩu"
   },
   "nav": {
     "general": "Tổng quan",
@@ -788,6 +790,25 @@
     "noMenusTitle": "Chưa có menu"
   },
   "errors": {
+    "INVALID_CREDENTIALS": "Email hoặc mật khẩu không chính xác.",
+    "EMAIL_ALREADY_EXISTS": "Địa chỉ email này đã được đăng ký.",
+    "USERNAME_ALREADY_EXISTS": "Tên đăng nhập này đã được sử dụng.",
+    "TOKEN_EXPIRED": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+    "TOKEN_INVALID": "Token xác thực không hợp lệ.",
+    "TOKEN_REVOKED": "Token xác thực đã bị thu hồi.",
+    "REFRESH_TOKEN_INVALID": "Token làm mới không hợp lệ.",
+    "FORBIDDEN": "Bạn không có quyền thực hiện thao tác này.",
+    "INSUFFICIENT_PERMISSIONS": "Không đủ quyền hạn để truy cập tài nguyên này.",
+    "USER_NOT_FOUND": "Không tìm thấy người dùng.",
+    "POST_NOT_FOUND": "Không tìm thấy bài viết.",
+    "CATEGORY_NOT_FOUND": "Không tìm thấy danh mục.",
+    "TAG_NOT_FOUND": "Không tìm thấy thẻ.",
+    "SLUG_ALREADY_EXISTS": "Đường dẫn slug này đã được sử dụng.",
+    "NOT_FOUND": "Tài nguyên được yêu cầu không tồn tại.",
+    "BAD_REQUEST": "Yêu cầu hoặc dữ liệu gửi lên không hợp lệ.",
+    "CONFLICT": "Xảy ra xung đột tài nguyên.",
+    "INTERNAL_ERROR": "Đã xảy ra lỗi máy chủ nội bộ.",
+    "VALIDATION_ERROR": "Kiểm tra dữ liệu yêu cầu thất bại.",
     "401": {
       "title": "Truy cập trái phép",
       "subtitle": "Bạn không có quyền xem trang này.",
@@ -821,5 +842,78 @@
     "invalid_url": "Đường dẫn URL không hợp lệ",
     "invalid_format": "Định dạng không hợp lệ",
     "invalid_type": "Kiểu dữ liệu không hợp lệ"
+  },
+  "customerAuth": {
+    "login": {
+      "emailUsername": "Email/ Username",
+      "emailUsernamePlaceholder": "email@example.com hoặc username",
+      "password": "Mật khẩu",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Quên mật khẩu?",
+      "signIn": "Đăng nhập",
+      "signInLoading": "Đang đăng nhập...",
+      "dontHaveAccount": "Chưa có tài khoản?",
+      "signUp": "Đăng ký ngay",
+      "invalidCredentials": "Tên đăng nhập hoặc mật khẩu không chính xác.",
+      "unexpectedError": "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
+      "emailUsernameRequired": "Vui lòng nhập email hoặc tên đăng nhập"
+    },
+    "register": {
+      "title": "Đăng ký",
+      "nameLabel": "Họ và tên",
+      "namePlaceholder": "Nguyễn Văn An",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "Mật khẩu",
+      "passwordPlaceholder": "Tối thiểu 8 ký tự",
+      "confirmPasswordLabel": "Xác nhận mật khẩu",
+      "confirmPasswordPlaceholder": "Nhập lại mật khẩu",
+      "signUp": "Đăng ký",
+      "signUpLoading": "Đang đăng ký...",
+      "alreadyHaveAccount": "Đã có tài khoản?",
+      "signIn": "Đăng nhập ngay",
+      "passwordMismatch": "Mật khẩu xác nhận không khớp",
+      "passwordMin": "Mật khẩu phải có ít nhất 8 ký tự",
+      "nameRequired": "Vui lòng nhập họ và tên",
+      "emailRequired": "Vui lòng nhập email",
+      "emailInvalid": "Email không hợp lệ"
+    },
+    "forgotPassword": {
+      "title": "Đặt lại mật khẩu",
+      "desc": "Chúng tôi sẽ gửi liên kết đặt lại mật khẩu đến email đã đăng ký của bạn.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Nhập email của bạn",
+      "buttonLabel": "Đặt lại mật khẩu",
+      "buttonLoading": "Đang gửi...",
+      "backToLogin": "Quay lại đăng nhập",
+      "checkEmailTitle": "Kiểm tra email",
+      "checkEmailDesc": "Nếu email của bạn tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu."
+    },
+    "resetPassword": {
+      "title": "Đặt lại mật khẩu",
+      "desc": "Nhập mật khẩu mới cho tài khoản của bạn.",
+      "newPasswordLabel": "Mật khẩu mới",
+      "newPasswordPlaceholder": "Tối thiểu 8 ký tự",
+      "confirmPasswordLabel": "Xác nhận mật khẩu",
+      "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới",
+      "buttonLabel": "Đặt lại mật khẩu",
+      "buttonLoading": "Đang xử lý...",
+      "invalidToken": "Token không hợp lệ hoặc đã hết hạn.",
+      "requestNewLink": "Yêu cầu link mới",
+      "successTitle": "Đặt lại thành công",
+      "successDesc": "Mật khẩu của bạn đã được thay đổi. Bạn có thể đăng nhập bằng mật khẩu mới.",
+      "signIn": "Đăng nhập ngay"
+    },
+    "verifyEmail": {
+      "invalidTokenTitle": "Token không hợp lệ",
+      "invalidTokenDesc": "Vui lòng kiểm tra lại link xác minh trong email.",
+      "backToLogin": "Quay lại đăng nhập",
+      "verifyingTitle": "Đang xác minh email...",
+      "verifyingDesc": "Vui lòng đợi giây lát.",
+      "errorTitle": "Xác minh thất bại",
+      "successTitle": "Email đã được xác minh!",
+      "successDesc": "Tài khoản của bạn đã được xác minh thành công.",
+      "goToDashboard": "Đi đến Dashboard"
+    }
   }
 }

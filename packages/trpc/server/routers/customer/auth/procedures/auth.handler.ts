@@ -54,7 +54,14 @@ export const refreshToken = publicProcedure
   .mutation(async ({ input }) => {
     const tokenService = getCustomerTokenService();
 
-    const payload = tokenService.verifyRefreshToken(input.refreshToken);
+    const payload = await tokenService.verifyRefreshToken(input.refreshToken);
+
+    const { getCustomerRepository } = await import("@ecom/features/di/containers/CustomerService");
+    const customer = await getCustomerRepository().findById(payload.sub);
+    if (customer?.status !== "ACTIVE") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Account is not active" });
+    }
+
     const tokens = tokenService.generateTokens({ id: payload.sub, email: payload.email });
 
     return tokens;
@@ -70,7 +77,7 @@ export const me = publicProcedure
       customerId = ctx.user.id;
     } else if (input?.accessToken) {
       const tokenService = getCustomerTokenService();
-      const payload = tokenService.verifyAccessToken(input.accessToken);
+      const payload = await tokenService.verifyAccessToken(input.accessToken);
       customerId = payload.sub;
     }
 
@@ -79,6 +86,9 @@ export const me = publicProcedure
     }
 
     const customer = await getCustomerRepository().findById(customerId);
+    if (customer?.status !== "ACTIVE") {
+      return null;
+    }
     return customer;
   });
 
@@ -108,7 +118,7 @@ export const updateProfile = publicProcedure
       customerId = ctx.user.id;
     } else if (input.accessToken) {
       const tokenService = getCustomerTokenService();
-      const payload = tokenService.verifyAccessToken(input.accessToken);
+      const payload = await tokenService.verifyAccessToken(input.accessToken);
       customerId = payload.sub;
     }
 
@@ -116,7 +126,14 @@ export const updateProfile = publicProcedure
       throw new TRPCError({ code: "UNAUTHORIZED", message: "Unauthorized" });
     }
 
-    const { getCustomerService } = await import("@ecom/features/di/containers/CustomerService");
+    const { getCustomerRepository, getCustomerService } = await import(
+      "@ecom/features/di/containers/CustomerService"
+    );
+    const customer = await getCustomerRepository().findById(customerId);
+    if (customer?.status !== "ACTIVE") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Account is not active" });
+    }
+
     const { accessToken: _, ...data } = input;
     const service = getCustomerService();
     return service.updateCustomer(customerId, data);
@@ -140,6 +157,7 @@ export const forgotPassword = publicProcedure
   });
 
 export const resetPassword = publicProcedure
+  .use(rateLimiters.auth)
   .input(
     z.object({
       token: z.string().min(1),
@@ -166,7 +184,7 @@ export const changePassword = publicProcedure
       customerId = ctx.user.id;
     } else if (input.accessToken) {
       const tokenService = getCustomerTokenService();
-      const payload = tokenService.verifyAccessToken(input.accessToken);
+      const payload = await tokenService.verifyAccessToken(input.accessToken);
       customerId = payload.sub;
     }
 
@@ -186,4 +204,22 @@ export const checkUsername = publicProcedure
     const service = getCustomerService();
     const available = await service.checkUsernameAvailability(input.username);
     return { available };
+  });
+
+export const logout = publicProcedure
+  .use(rateLimiters.auth)
+  .input(z.object({ refreshToken: z.string().min(1) }))
+  .mutation(async ({ input }) => {
+    const tokenService = getCustomerTokenService();
+    try {
+      const payload = await tokenService.verifyRefreshToken(input.refreshToken);
+      // Blacklist token for up to 30 days
+      const secondsIn30Days = 30 * 24 * 60 * 60;
+      if (payload.jti) {
+        await tokenService.blacklistToken(payload.jti, secondsIn30Days);
+      }
+    } catch {
+      // Ignore if expired
+    }
+    return { success: true };
   });

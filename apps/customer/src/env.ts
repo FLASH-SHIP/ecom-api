@@ -4,6 +4,8 @@ import { z } from "zod";
 const serverSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required on server"),
+  CUSTOMER_SESSION_CACHE_TTL_SEC: z.coerce.number().int().nonnegative().default(30),
+  JWT_SECRET: z.string().min(8, "JWT_SECRET must be at least 8 characters long"),
 });
 
 // 2. Client-side validation schema (public parameters exposed to the browser)
@@ -20,10 +22,12 @@ type Env = z.infer<typeof serverSchema> & z.infer<typeof clientSchema>;
 const processEnv = {
   NODE_ENV: process.env.NODE_ENV,
   AUTH_SECRET: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  CUSTOMER_SESSION_CACHE_TTL_SEC: process.env.CUSTOMER_SESSION_CACHE_TTL_SEC,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_CUSTOMER_URL || process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,
   NEXT_PUBLIC_CUSTOMER_URL: process.env.NEXT_PUBLIC_CUSTOMER_URL || process.env.NEXT_PUBLIC_APP_URL,
+  JWT_SECRET: process.env.JWT_SECRET,
 };
 
 // Validate client variables on both server and browser

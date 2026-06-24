@@ -6,16 +6,9 @@ import { hashPassword, verifyPassword } from "@ecom/lib/crypto";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { createLogger } from "@ecom/lib/logger";
 import jwt from "jsonwebtoken";
+import { CustomerTokenService } from "./CustomerTokenService";
 
 const log = createLogger("CustomerAuthService");
-
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error("JWT_SECRET environment variable is required");
-  }
-  return secret;
-}
 
 const CUSTOMER_APP_URL = process.env.CUSTOMER_APP_URL ?? "http://localhost:3001";
 
@@ -25,8 +18,15 @@ export interface ICustomerAuthServiceDeps {
 
 export class CustomerAuthService {
   private deps: ICustomerAuthServiceDeps;
+  private jwtSecret: string;
+
   constructor(deps: ICustomerAuthServiceDeps) {
     this.deps = deps;
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error("JWT_SECRET environment variable is required");
+    }
+    this.jwtSecret = secret;
   }
 
   async register(data: { email: string; password: string; username?: string; name?: string }) {
@@ -111,6 +111,9 @@ export class CustomerAuthService {
     if (!customer?.hashedPassword) {
       throw ErrorWithCode.Factory.NotFound("Customer not found");
     }
+    if (customer.status !== "ACTIVE") {
+      throw ErrorWithCode.Factory.Forbidden("Account is not active");
+    }
 
     const isValid = await verifyPassword(oldPassword, customer.hashedPassword);
     if (!isValid) {
@@ -119,6 +122,10 @@ export class CustomerAuthService {
 
     const hashedPwd = await hashPassword(newPassword);
     await this.deps.customerRepo.updatePassword(customerId, hashedPwd);
+
+    // Revoke all existing customer tokens and NextAuth sessions on password change
+    await new CustomerTokenService().revokeAllTokens(customerId);
+    await this.deps.customerRepo.deleteSessions(customerId);
   }
 
   async sendVerificationEmail(customerId: number) {
@@ -131,7 +138,7 @@ export class CustomerAuthService {
       return;
     }
 
-    const jwtSecret = getJwtSecret();
+    const jwtSecret = this.jwtSecret;
 
     const token = jwt.sign({ sub: customerId, type: "email-verify" }, jwtSecret, {
       expiresIn: "24h",
@@ -150,7 +157,7 @@ export class CustomerAuthService {
   }
 
   async verifyEmailByToken(token: string) {
-    const jwtSecret = getJwtSecret();
+    const jwtSecret = this.jwtSecret;
     try {
       const payload = jwt.verify(token, jwtSecret) as unknown as { sub: number; type: string };
       if (payload.type !== "email-verify") {
@@ -173,7 +180,7 @@ export class CustomerAuthService {
       return;
     }
 
-    const jwtSecret = getJwtSecret();
+    const jwtSecret = this.jwtSecret;
 
     const token = jwt.sign({ sub: customer.id, type: "password-reset" }, jwtSecret, {
       expiresIn: "1h",
@@ -203,7 +210,7 @@ export class CustomerAuthService {
   }
 
   async resetPassword(token: string, newPassword: string) {
-    const jwtSecret = getJwtSecret();
+    const jwtSecret = this.jwtSecret;
     try {
       const payload = jwt.verify(token, jwtSecret) as unknown as { sub: number; type: string };
       if (payload.type !== "password-reset") {
@@ -212,6 +219,10 @@ export class CustomerAuthService {
 
       const hashedPwd = await hashPassword(newPassword);
       await this.deps.customerRepo.updatePassword(payload.sub, hashedPwd);
+
+      // Revoke all existing customer tokens and NextAuth sessions on password reset
+      await new CustomerTokenService().revokeAllTokens(payload.sub);
+      await this.deps.customerRepo.deleteSessions(payload.sub);
 
       log.info("Password reset completed", { customerId: payload.sub });
       return { customerId: payload.sub };

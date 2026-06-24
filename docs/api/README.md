@@ -1,7 +1,7 @@
 # Ecom — API Technical Documentation
 
-> **Version**: 2.0 · **Base URL**: `http://localhost:4000/api/v2`
-> **Swagger**: `http://localhost:4000/api/v2/docs`
+> **Version**: 1.0 · **Base URL**: `http://localhost:4000/api/v1`
+> **Swagger**: `http://localhost:4000/api/v1/docs`
 
 ## Mục lục
 
@@ -21,7 +21,7 @@ Ecom sử dụng **2 API layers** phục vụ các client khác nhau:
 
 | Layer | Framework | Transport | Client | Auth |
 |-------|-----------|-----------|--------|------|
-| **REST API v2** | NestJS | HTTP JSON | Mobile, Extension, Public | JWT / API Key |
+| **REST API v1** | NestJS | HTTP JSON | Mobile, Extension, Public | JWT / API Key |
 | **tRPC** | tRPC v11 | HTTP (superjson) | Web CMS (Next.js) | NextAuth Session (cookie) |
 
 ```
@@ -32,7 +32,7 @@ Ecom sử dụng **2 API layers** phục vụ các client khác nhau:
 │ (Next.js)│  (React      │ (Chrome)  │               │
 │          │   Native)    │           │               │
 ├──────────┼──────────────┴───────────┴───────────────┤
-│  tRPC    │           REST API v2                    │
+│  tRPC    │           REST API v1                    │
 │  (cookie)│     (JWT Access Token / API Key)         │
 ├──────────┴──────────────────────────────────────────┤
 │            packages/features (Business Logic)       │
@@ -51,9 +51,9 @@ Dùng cho: Mobile app (React Native), Chrome Extension.
 **Luồng:**
 
 ```
-1. POST /api/v2/auth/login → { accessToken, refreshToken }
+1. POST /api/v1/auth/login → { accessToken, refreshToken }
 2. Gọi API với header: Authorization: Bearer <accessToken>
-3. Khi accessToken hết hạn → POST /api/v2/auth/refresh → { accessToken }
+3. Khi accessToken hết hạn → POST /api/v1/auth/refresh → { accessToken }
 ```
 
 **Token Details:**
@@ -131,7 +131,7 @@ Request → Has "Authorization: Bearer xxx" header?
 | `422` | Validation Error | Zod/class-validator fail |
 | `500` | Internal Error | Server lỗi |
 
-### Error Response Format (REST API v2)
+### Error Response Format (REST API v1)
 
 ```json
 {
@@ -174,14 +174,14 @@ Request → Has "Authorization: Bearer xxx" header?
 
 ---
 
-## REST API v2 (NestJS)
+## REST API v1 (NestJS)
 
-> **Base URL**: `http://localhost:4000/api/v2`
+> **Base URL**: `http://localhost:4000/api/v1`
 
 ### Health Check
 
 ```
-GET /api/v2/health
+GET /api/v1/health
 ```
 
 **Response** `200`:
@@ -202,7 +202,7 @@ GET /api/v2/health
 > ⚠️ **Endpoint chưa implement** — đã có service layer, chỉ cần thêm NestJS controller.
 
 ```
-POST /api/v2/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 ```
 
@@ -237,7 +237,7 @@ Content-Type: application/json
 > ⚠️ **Endpoint chưa implement**
 
 ```
-POST /api/v2/auth/refresh
+POST /api/v1/auth/refresh
 Content-Type: application/json
 ```
 
@@ -263,7 +263,7 @@ Content-Type: application/json
 ### Users — Get Current User
 
 ```
-GET /api/v2/users/me
+GET /api/v1/users/me
 Authorization: Bearer <accessToken | ecom_apikey>
 ```
 
@@ -458,7 +458,7 @@ docs/api/bruno/
 
 | Variable | Default | Mô tả |
 |----------|---------|--------|
-| `baseUrl` | `http://localhost:4000/api/v2` | API base URL |
+| `baseUrl` | `http://localhost:4000/api/v1` | API base URL |
 | `accessToken` | _(empty)_ | JWT access token sau khi login |
 | `apiKey` | _(empty)_ | API Key (`ecom_xxx`) |
 

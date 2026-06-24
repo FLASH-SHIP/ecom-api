@@ -49,7 +49,7 @@ throw new TRPCError({
 
 The tRPC package has a middleware (`errorConversionMiddleware`) that automatically converts `ErrorWithCode` instances from services into `TRPCError` instances.
 
-### In NestJS Controllers Only (`apps/api/v2/`)
+### In NestJS Controllers Only (`apps/api/`)
 
 ```typescript
 import { NotFoundException, ForbiddenException } from "@nestjs/common";

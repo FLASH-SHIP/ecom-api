@@ -117,7 +117,7 @@ yarn docker:up               # Start PostgreSQL + Redis via Docker
 
 ```
 apps/web/                    # Next.js 16 Admin CMS (App Router)
-apps/api/v2/                 # NestJS REST API (Mobile, Extension, Public)
+apps/api/                    # NestJS REST API (Mobile, Extension, Public)
 packages/prisma/             # Database schema (schema.prisma) and migrations
 packages/trpc/               # tRPC API layer (routers in server/routers/)
 packages/features/           # Feature-specific business logic (vertical slices)
@@ -134,10 +134,10 @@ packages/tsconfig/           # Shared TS configs
 - Routes: `apps/web/app/` (App Router)
 - Database schema: `packages/prisma/schema.prisma`
 - tRPC routers: `packages/trpc/server/routers/`
-- NestJS controllers: `apps/api/v2/src/modules/`
+- NestJS controllers: `apps/api/src/modules/`
 - Translations (EN): `packages/i18n/locales/en/common.json`
 - Translations (VI): `packages/i18n/locales/vi/common.json`
-- Auth strategy: `apps/api/v2/src/modules/auth/strategies/api-auth.strategy.ts`
+- Auth strategy: `apps/api/src/modules/auth/strategies/api-auth.strategy.ts`
 
 ## Tech Stack
 
@@ -279,9 +279,9 @@ export class PostService {
 }
 ```
 
-### API v2 Imports (apps/api/v2)
+### API Imports (apps/api)
 
-When importing from `@ecom/features` or `@ecom/trpc` into `apps/api/v2`, **do not import directly** because the API v2 app's `tsconfig.json` doesn't have path mappings for these modules.
+When importing from `@ecom/features` or `@ecom/trpc` into `apps/api`, **do not import directly** because the API app's `tsconfig.json` doesn't have path mappings for these modules.
 
 Instead, re-export from `packages/platform/libraries/index.ts` and import from `@ecom/platform-libraries`:
 
@@ -289,10 +289,10 @@ Instead, re-export from `packages/platform/libraries/index.ts` and import from `
 // Step 1: In packages/platform/libraries/index.ts, add the export
 export { PostService } from "@ecom/features/blog/services/PostService";
 
-// Step 2: In apps/api/v2, import from platform-libraries
+// Step 2: In apps/api, import from platform-libraries
 import { PostService } from "@ecom/platform-libraries";
 
-// Bad - Direct import causes module not found error in apps/api/v2
+// Bad - Direct import causes module not found error in apps/api
 import { PostService } from "@ecom/features/blog/services/PostService";
 ```
 

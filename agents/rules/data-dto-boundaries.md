@@ -53,4 +53,4 @@ import { PostStatus } from "@prisma/client";
 
 **Prisma Boundaries:**
 - **Allowed**: `packages/prisma`, `packages/features/**/repositories/`
-- **Not allowed**: `packages/features/**` services, `packages/trpc/**`, `apps/web/**`, `apps/api/v2/**`
+- **Not allowed**: `packages/features/**` services, `packages/trpc/**`, `apps/web/**`, `apps/api/**`
