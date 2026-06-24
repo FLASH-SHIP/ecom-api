@@ -4,7 +4,16 @@ import { PageShell } from "@admin/components/layout/PageShell";
 import { trpc } from "@admin/lib/trpc";
 import { Card } from "@ecom/ui/components/card";
 import { cn } from "@ecom/ui/lib/utils";
-import { Activity, Database, History, Info, ScrollText, Shield, Users } from "lucide-react";
+import {
+  Activity,
+  Database,
+  ExternalLink,
+  History,
+  Info,
+  ScrollText,
+  Shield,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -88,6 +97,7 @@ export default function SystemOverviewPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card, index) => {
             const Icon = card.icon;
+            const isQueues = card.titleKey === "modules.queuesTitle";
             const isLastRow = index >= cards.length - (cards.length % 3 || 3);
             const isLastCol = (index + 1) % 3 === 0 || index === cards.length - 1;
 
@@ -107,13 +117,20 @@ export default function SystemOverviewPage() {
                     {t(card.descKey)}
                   </p>
                 </div>
+
+                {isQueues && (
+                  <ExternalLink size={16} className="ml-auto text-muted-foreground/60 mr-2" />
+                )}
               </>
             );
 
             const className = cn(
-              "flex items-center gap-4 px-6 py-5 no-underline transition-colors hover:bg-accent cursor-pointer",
-              !isLastCol && "lg:border-r lg:border-border",
-              !isLastRow && "border-b border-border",
+              "flex items-center gap-4 px-6 py-5 no-underline transition-colors cursor-pointer w-full text-left",
+              isQueues
+                ? "col-span-full bg-blue-50/20 dark:bg-blue-950/10 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 border-t border-border/40"
+                : "hover:bg-accent",
+              !isQueues && !isLastCol && "lg:border-r lg:border-border",
+              !isQueues && !isLastRow && "border-b border-border",
             );
 
             if (card.onClick) {
@@ -122,10 +139,7 @@ export default function SystemOverviewPage() {
                   type="button"
                   key={card.titleKey}
                   onClick={card.onClick}
-                  className={cn(
-                    className,
-                    "w-full bg-transparent border-none p-0 flex items-center",
-                  )}
+                  className={cn(className, "border-none")}
                 >
                   {content}
                 </button>
