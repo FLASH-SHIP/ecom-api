@@ -4,6 +4,8 @@ import type { ValidationError } from "class-validator";
 import type { Request, Response } from "express";
 import { I18nValidationException } from "../exceptions/i18n-validation.exception";
 
+import { getLocale } from "../utils/locale";
+
 interface TranslatedErrorDetail {
   field: string;
   message: string;
@@ -21,15 +23,7 @@ export class I18nValidationExceptionFilter implements ExceptionFilter<I18nValida
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const xLocale = request.headers["x-locale"];
-    const acceptLanguage = request.headers["accept-language"];
-
-    let locale = "en";
-    if (typeof xLocale === "string") {
-      locale = xLocale.toLowerCase().startsWith("vi") ? "vi" : "en";
-    } else if (typeof acceptLanguage === "string") {
-      locale = acceptLanguage.toLowerCase().startsWith("vi") ? "vi" : "en";
-    }
+    const locale = getLocale(request);
 
     const errors = exception.validationErrors;
     const details = this.formatErrors(errors, locale);

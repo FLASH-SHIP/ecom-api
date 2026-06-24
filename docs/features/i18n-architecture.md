@@ -196,9 +196,10 @@ For REST API clients (Mobile App, Browser Extension, Public REST endpoints) that
 
 ### 1. Custom Validation Pipe & Filter
 * **Validation Pipe**: Standard NestJS validation uses `class-validator` decorators on DTOs. We configure the global validation pipe to throw a custom `I18nValidationException(errors)` containing the list of validation errors.
-* **Exception Filter**: A global `I18nValidationExceptionFilter` catches this exception and handles translation based on headers:
-  - First, it checks the `x-locale` header.
-  - Second, it falls back to the `accept-language` header (e.g. mapping `vi` or defaulting to `en`).
+* **Exception Filter**: A global `I18nValidationExceptionFilter` catches this exception and resolves the locale via a shared negotiator [locale.ts](../../apps/api/v2/src/common/utils/locale.ts):
+  - First, it checks the custom `x-locale` request header.
+  - Second, it falls back to the standard `accept-language` header (e.g. mapping `vi-VN,vi;q=0.9` correctly to `vi`, and defaulting to `en`).
+  - It dynamically validates against the array of supported `locales` exported from the `@ecom/i18n` package, ensuring full forward compatibility for any new language without logic updates.
 
 ### 2. Localization Logic
 * **Direct Translation Keys**: If a developer specifies a dot-notation translation key in the DTO decorator message property (e.g., `@IsNotEmpty({ message: "users.profile.nameRequired" })`), the filter translates it using the `@ecom/i18n` workspace package.

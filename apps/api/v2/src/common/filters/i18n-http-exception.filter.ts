@@ -2,6 +2,7 @@ import { translate } from "@ecom/i18n";
 import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { I18nValidationException } from "../exceptions/i18n-validation.exception";
+import { getLocale } from "../utils/locale";
 
 /**
  * Global NestJS Http Exception Filter to localize standard HTTP exceptions
@@ -18,7 +19,7 @@ export class I18nHttpExceptionFilter implements ExceptionFilter<HttpException> {
       throw exception;
     }
 
-    const locale = this.getLocale(request);
+    const locale = getLocale(request);
     const status = exception.getStatus();
     const { rawMessage, rawError } = this.extractErrorAndMessage(exception);
 
@@ -43,19 +44,6 @@ export class I18nHttpExceptionFilter implements ExceptionFilter<HttpException> {
       error: translatedError || rawError || exception.name,
       message: translatedMessage,
     });
-  }
-
-  private getLocale(request: Request): string {
-    const xLocale = request.headers["x-locale"];
-    const acceptLanguage = request.headers["accept-language"];
-
-    if (typeof xLocale === "string") {
-      return xLocale.toLowerCase().startsWith("vi") ? "vi" : "en";
-    }
-    if (typeof acceptLanguage === "string") {
-      return acceptLanguage.toLowerCase().startsWith("vi") ? "vi" : "en";
-    }
-    return "en";
   }
 
   private extractErrorAndMessage(exception: HttpException): {
