@@ -19,7 +19,9 @@
     "cacheTitle": "Cache Management",
     "cacheDesc": "Clear cache to update your website.",
     "infoTitle": "System Info",
-    "infoDesc": "All information about current system configuration."
+    "infoDesc": "All information about current system configuration.",
+    "queuesTitle": "Queue Dashboard",
+    "queuesDesc": "Monitor and manage background tasks & BullMQ workers."
   },
   "fields": {
     "nodeVersion": "Node.js Version",
