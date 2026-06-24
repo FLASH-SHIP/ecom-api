@@ -10,6 +10,7 @@ const serverSchema = z.object({
   NEXTAUTH_URL: z.string().url().optional(),
   ADMIN_SESSION_MAX_AGE_DAYS: z.coerce.number().int().positive().default(30),
   ADMIN_SESSION_CACHE_TTL_SEC: z.coerce.number().int().nonnegative().default(30),
+  JWT_SECRET: z.string().min(8, "JWT_SECRET must be at least 8 characters long"),
 });
 
 // 2. Client-side validation schema (public parameters exposed to the browser)
@@ -32,6 +33,7 @@ const processEnv = {
   ADMIN_SESSION_CACHE_TTL_SEC: process.env.ADMIN_SESSION_CACHE_TTL_SEC,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  JWT_SECRET: process.env.JWT_SECRET,
 };
 
 // Validate client variables on both server and browser
