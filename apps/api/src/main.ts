@@ -49,20 +49,25 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle("Ecom API")
-    .setDescription("REST API for Mobile, Extension, and Public clients")
-    .setVersion("2.0")
-    .addBearerAuth()
-    .build();
+  const isProd = configService.get<string>("NODE_ENV") === "production";
+  if (!isProd) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle("Ecom API")
+      .setDescription("REST API for Mobile, Extension, and Public clients")
+      .setVersion("1.0")
+      .addBearerAuth()
+      .build();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup("api/v1/docs", app, document);
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup("api/v1/docs", app, document);
+  }
 
   const port = configService.get<number>("API_PORT") ?? 4000;
   await app.listen(port);
   console.log(`🚀 API v1 running on http://localhost:${port}/api/v1`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/api/v1/docs`);
+  if (!isProd) {
+    console.log(`📚 Swagger docs: http://localhost:${port}/api/v1/docs`);
+  }
 
   // Enable NestJS native shutdown hooks
   app.enableShutdownHooks();
