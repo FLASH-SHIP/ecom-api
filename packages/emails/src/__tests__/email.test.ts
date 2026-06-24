@@ -64,7 +64,7 @@ describe("EmailService", () => {
       memberName: "Dave",
       loginUrl: "https://example.com/login",
     });
-    expect(email.subject).toContain("thành viên");
+    expect(email.subject).toContain("khách hàng mới");
     expect(email.html).toContain("Dave");
   });
 

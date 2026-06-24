@@ -1,4 +1,9 @@
-import { getRedisClient } from "@ecom/lib/redis";
+import { createLogger } from "@ecom/lib/logger";
+import { Queue, Worker } from "bullmq";
+import Redis from "ioredis";
+import { gracefulShutdown } from "../shutdown/GracefulShutdown";
+
+const log = createLogger("JobQueue");
 
 type JobHandler = (payload: Record<string, unknown>) => Promise<void>;
 
@@ -7,25 +12,46 @@ interface JobDefinition {
   retries: number;
 }
 
-interface QueuedJob {
-  id: string;
-  queue: string;
-  payload: Record<string, unknown>;
-  attempts: number;
-  maxRetries: number;
-  createdAt: string;
+const registeredJobs = new Map<string, JobDefinition>();
+const queues = new Map<string, Queue>();
+const activeWorkers: Worker[] = [];
+let _queueRedisConnection: Redis | null = null;
+let isShutdownRegistered = false;
+
+function getQueueConnection(): Redis {
+  if (!_queueRedisConnection) {
+    const url = process.env.REDIS_URL ?? "redis://127.0.0.1:6379";
+    _queueRedisConnection = new Redis(url, {
+      maxRetriesPerRequest: null,
+    });
+  }
+  return _queueRedisConnection;
 }
 
-const registeredJobs = new Map<string, JobDefinition>();
-const QUEUE_PREFIX = "ecom:jobs:";
+function getQueue(queueName: string): Queue {
+  let q = queues.get(queueName);
+  if (!q) {
+    q = new Queue(queueName, {
+      // biome-ignore lint/suspicious/noExplicitAny: ioredis version mismatch between workspace and bullmq package
+      connection: getQueueConnection() as any,
+    });
+    queues.set(queueName, q);
+  }
+  return q;
+}
+
+function registerShutdown() {
+  if (isShutdownRegistered) return;
+  isShutdownRegistered = true;
+
+  gracefulShutdown.register("JobQueue", async () => {
+    await JobQueue.close();
+  });
+}
 
 /**
- * Redis-backed job queue system.
- * Uses Redis lists as FIFO queues with retry support.
- *
- * For production at scale, migrate to BullMQ by adding:
- *   yarn add bullmq
- * and replacing this implementation.
+ * BullMQ-backed job queue system.
+ * Falls back to synchronous execution if Redis is down.
  */
 // biome-ignore lint/complexity/noStaticOnlyClass: intentional namespace pattern for queue operations with module-level registered handlers
 export class JobQueue {
@@ -40,105 +66,124 @@ export class JobQueue {
    * Dispatch a job to a named queue.
    */
   static async dispatch(queueName: string, payload: Record<string, unknown>): Promise<string> {
-    const redis = getRedisClient();
-    if (!redis) {
-      // Fallback: execute synchronously if Redis is unavailable
+    try {
+      const q = getQueue(queueName);
+      const def = registeredJobs.get(queueName);
+      const retries = def?.retries ?? 3;
+
+      const job = await q.add("job", payload, {
+        attempts: retries,
+        backoff: {
+          type: "exponential",
+          delay: 1000,
+        },
+      });
+      return job.id ?? `bullmq-${Date.now()}`;
+    } catch (err) {
+      log.warn("BullMQ dispatch failed, falling back to sync execution", {
+        queue: queueName,
+        error: err instanceof Error ? err.message : String(err),
+      });
+
       const def = registeredJobs.get(queueName);
       if (def) {
-        def.handler(payload).catch((err) => {
-          console.error(`[JobQueue] Sync fallback failed for ${queueName}:`, err);
+        def.handler(payload).catch((syncErr) => {
+          log.error("Sync fallback failed", {
+            queue: queueName,
+            error: syncErr instanceof Error ? syncErr.message : String(syncErr),
+          });
         });
       }
       return `sync-${Date.now()}`;
     }
-
-    const jobId = `${queueName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const job: QueuedJob = {
-      id: jobId,
-      queue: queueName,
-      payload,
-      attempts: 0,
-      maxRetries: registeredJobs.get(queueName)?.retries ?? 3,
-      createdAt: new Date().toISOString(),
-    };
-
-    await redis.lpush(`${QUEUE_PREFIX}${queueName}`, JSON.stringify(job));
-    return jobId;
   }
 
   /**
-   * Process one job from a named queue.
-   * Returns true if a job was processed, false if queue was empty.
+   * Process one job.
+   * @deprecated Handled automatically by BullMQ Worker
    */
-  static async processOne(queueName: string): Promise<boolean> {
-    const redis = getRedisClient();
-    if (!redis) return false;
-
-    const raw = await redis.rpop(`${QUEUE_PREFIX}${queueName}`);
-    if (!raw) return false;
-
-    const job: QueuedJob = JSON.parse(raw);
-    const def = registeredJobs.get(queueName);
-
-    if (!def) {
-      console.error(`[JobQueue] No handler registered for queue: ${queueName}`);
-      return true;
-    }
-
-    try {
-      await def.handler(job.payload);
-    } catch (_err) {
-      job.attempts += 1;
-      if (job.attempts < job.maxRetries) {
-        // Re-queue for retry
-        await redis.lpush(`${QUEUE_PREFIX}${queueName}`, JSON.stringify(job));
-        console.warn(
-          `[JobQueue] Job ${job.id} failed (attempt ${job.attempts}/${job.maxRetries}), re-queued`,
-        );
-      } else {
-        // Move to dead letter queue
-        await redis.lpush(`${QUEUE_PREFIX}${queueName}:dead`, JSON.stringify(job));
-        console.error(`[JobQueue] Job ${job.id} exhausted retries, moved to dead letter queue`);
-      }
-    }
-
-    return true;
+  static async processOne(_queueName: string): Promise<boolean> {
+    return false;
   }
 
   /**
    * Start a worker loop that continuously processes jobs from a queue.
    */
-  static startWorker(queueName: string, pollIntervalMs = 1000): NodeJS.Timeout {
-    const timer = setInterval(async () => {
-      try {
-        let processed = true;
-        while (processed) {
-          processed = await JobQueue.processOne(queueName);
-        }
-      } catch (err) {
-        console.error(`[JobQueue] Worker error for ${queueName}:`, err);
-      }
-    }, pollIntervalMs);
+  static startWorker(queueName: string): Worker {
+    const def = registeredJobs.get(queueName);
+    if (!def) {
+      throw new Error(`[JobQueue] No handler registered for queue: ${queueName}`);
+    }
 
-    console.info(`[JobQueue] Worker started for queue: ${queueName}`);
-    return timer;
+    const connection = new Redis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379", {
+      maxRetriesPerRequest: null,
+    });
+
+    const worker = new Worker(
+      queueName,
+      async (job) => {
+        await def.handler(job.data);
+      },
+      {
+        // biome-ignore lint/suspicious/noExplicitAny: ioredis version mismatch between workspace and bullmq package
+        connection: connection as any,
+        concurrency: 1,
+      },
+    );
+
+    worker.on("failed", (job, err) => {
+      log.error("Job failed in queue", {
+        queue: queueName,
+        jobId: job?.id,
+        error: err.message,
+      });
+    });
+
+    activeWorkers.push(worker);
+    registerShutdown();
+
+    log.info("BullMQ Worker started for queue", { queue: queueName });
+    return worker;
+  }
+
+  /**
+   * Close all active workers and the queue Redis connection manually.
+   */
+  static async close(): Promise<void> {
+    log.info("Closing JobQueue...");
+    await Promise.all(activeWorkers.map((w) => w.close()));
+    activeWorkers.length = 0;
+
+    if (_queueRedisConnection) {
+      await _queueRedisConnection.quit();
+      _queueRedisConnection = null;
+    }
+    log.info("JobQueue closed successfully");
   }
 
   /**
    * Get the length of a named queue.
    */
   static async getQueueLength(queueName: string): Promise<number> {
-    const redis = getRedisClient();
-    if (!redis) return 0;
-    return redis.llen(`${QUEUE_PREFIX}${queueName}`);
+    try {
+      const q = getQueue(queueName);
+      const counts = await q.getJobCounts("waiting", "active", "delayed");
+      return (counts.waiting ?? 0) + (counts.active ?? 0) + (counts.delayed ?? 0);
+    } catch {
+      return 0;
+    }
   }
 
   /**
    * Get dead letter queue length.
    */
   static async getDeadLetterCount(queueName: string): Promise<number> {
-    const redis = getRedisClient();
-    if (!redis) return 0;
-    return redis.llen(`${QUEUE_PREFIX}${queueName}:dead`);
+    try {
+      const q = getQueue(queueName);
+      const counts = await q.getJobCounts("failed");
+      return counts.failed ?? 0;
+    } catch {
+      return 0;
+    }
   }
 }

@@ -1,4 +1,7 @@
 import "reflect-metadata";
+import { JobQueue } from "@ecom/features/queue/JobQueue";
+import { registerEmailWorker } from "@ecom/features/queue/workers/emailWorker";
+import { gracefulShutdown } from "@ecom/features/shutdown/GracefulShutdown";
 import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
@@ -45,6 +48,27 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`🚀 API v2 running on http://localhost:${port}/api/v2`);
   console.log(`📚 Swagger docs: http://localhost:${port}/api/v2/docs`);
+
+  // Enable NestJS native shutdown hooks
+  app.enableShutdownHooks();
+
+  // Register graceful shutdown cleanup handlers
+  gracefulShutdown.register("Prisma", async () => {
+    const { prisma } = await import("@ecom/prisma");
+    await prisma.$disconnect();
+  });
+
+  gracefulShutdown.register("Redis", async () => {
+    const { disconnectRedis } = await import("@ecom/lib/redis");
+    await disconnectRedis();
+  });
+
+  gracefulShutdown.enable();
+
+  // Start background email queue worker
+  registerEmailWorker();
+  JobQueue.startWorker("email");
+  console.log("✉️  Email queue worker started");
 }
 
 bootstrap();
