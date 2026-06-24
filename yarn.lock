@@ -818,6 +818,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ecom/prisma@workspace:packages/prisma"
   dependencies:
+    "@ecom/lib": "workspace:*"
     "@ecom/tsconfig": "workspace:*"
     "@prisma/adapter-pg": "npm:^7.8.0"
     "@prisma/client": "npm:^7.8.0"

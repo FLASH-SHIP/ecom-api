@@ -1,13 +1,15 @@
 import { type MiddlewareConsumer, Module, type NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE, REQUEST } from "@nestjs/core";
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { ThrottlerModule } from "@nestjs/throttler";
 import jwtConfig from "./common/config/jwt.config";
 import { I18nValidationException } from "./common/exceptions/i18n-validation.exception";
+import { AuthContextThrottlerGuard } from "./common/guards/auth-context-throttler.guard";
 import { ValidationGroupsGuard } from "./common/guards/validation-groups.guard";
 import { HttpClientModule } from "./common/http/http-client.module";
 import { ResponseInterceptor } from "./common/interceptors/response.interceptor";
 import { TimeoutInterceptor } from "./common/interceptors/timeout.interceptor";
+import { UserContextInterceptor } from "./common/interceptors/user-context.interceptor";
 import { TraceLoggerMiddleware } from "./common/middleware/trace-logger.middleware";
 import { DynamicValidationPipe } from "./common/pipes/dynamic-validation.pipe";
 import { SeedService } from "./common/seed/seed.service";
@@ -54,7 +56,7 @@ import { UsersModule } from "./modules/users/users.module";
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AuthContextThrottlerGuard,
     },
     {
       provide: APP_GUARD,
@@ -79,6 +81,10 @@ import { UsersModule } from "./modules/users/users.module";
     {
       provide: APP_INTERCEPTOR,
       useClass: TimeoutInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UserContextInterceptor,
     },
     IsUniqueConstraint,
     SeedService,

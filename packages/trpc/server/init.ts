@@ -154,6 +154,11 @@ const t = initTRPC.context<Context>().create({
   },
 });
 
+import { registerEventListeners } from "@ecom/features/events/listeners";
+
+// Initialize domain event listeners for tRPC environment
+registerEventListeners();
+
 export const router = t.router;
 export const publicProcedure = t.procedure;
 export const middleware = t.middleware;

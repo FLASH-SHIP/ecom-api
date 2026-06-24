@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { registerEventListeners } from "@ecom/features/events/listeners";
 import { JobQueue } from "@ecom/features/queue/JobQueue";
 import { queueCleanupJob, registerCleanupWorker } from "@ecom/features/queue/workers/cleanupWorker";
 import { registerEmailWorker } from "@ecom/features/queue/workers/emailWorker";
@@ -19,6 +20,14 @@ import { PrismaClientExceptionFilter } from "./common/filters/prisma-client-exce
 import { NestLogger } from "./common/logger/nest-logger.service";
 
 async function bootstrap() {
+  // Initialize domain event listeners
+  registerEventListeners();
+
+  // Start background Outbox worker
+  const { outboxWorker } = await import("@ecom/features/events/OutboxWorker");
+  outboxWorker.start();
+  console.log("📦 Transactional Outbox worker started");
+
   const app = await NestFactory.create(AppModule, {
     logger: new NestLogger(),
   });
@@ -84,6 +93,11 @@ async function bootstrap() {
   gracefulShutdown.register("Redis", async () => {
     const { disconnectRedis } = await import("@ecom/lib/redis");
     await disconnectRedis();
+  });
+
+  gracefulShutdown.register("OutboxWorker", async () => {
+    const { outboxWorker } = await import("@ecom/features/events/OutboxWorker");
+    outboxWorker.stop();
   });
 
   gracefulShutdown.enable();

@@ -1112,3 +1112,18 @@ model FormSubmission {
   @@index([createdAt])
   @@map("form_submissions")
 }
+
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  event       String
+  payload     Json
+  status      String    @default("PENDING") // PENDING, SENT, FAILED
+  attempts    Int       @default(0)
+  error       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([status])
+  @@map("outbox_events")
+}
+

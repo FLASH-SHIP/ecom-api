@@ -3,7 +3,9 @@ import { getPostService } from "@ecom/features/di/containers/BlogService";
 import { getCustomFieldService } from "@ecom/features/di/containers/CustomFieldService";
 import { Permissions } from "@ecom/lib/permissions";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
+import { requirePostPolicy } from "@ecom/trpc/server/middleware/requirePolicy";
 import { authedProcedure, requirePermission } from "@ecom/trpc/server/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 const ContentStatusEnum = z.enum(["DRAFT", "PENDING", "PUBLISHED", "ARCHIVED"]);
@@ -38,7 +40,8 @@ export const get = authedProcedure
   .query(async ({ input }) => {
     const postService = getPostService();
     const result = await postService.getPost(input.id);
-    return new PostTransformer().transformItem(result!);
+    if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+    return new PostTransformer().transformItem(result);
   });
 
 export const create = authedProcedure
@@ -68,11 +71,14 @@ export const create = authedProcedure
       ...input,
       authorId: ctx.user.id,
     });
-    return new PostTransformer().transformItem(result!);
+    if (!result)
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create post" });
+    return new PostTransformer().transformItem(result);
   });
 
 export const update = authedProcedure
   .use(requirePermission(Permissions.POSTS_UPDATE))
+  .use(requirePostPolicy("canUpdate"))
   .use(auditLog({ module: "posts", action: "UPDATE", entityType: "Post" }))
   .input(
     z.object({
@@ -97,51 +103,61 @@ export const update = authedProcedure
     const { id, ...data } = input;
     const postService = getPostService();
     const result = await postService.updatePost(id, data);
-    return new PostTransformer().transformItem(result!);
+    if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+    return new PostTransformer().transformItem(result);
   });
 
 export const publish = authedProcedure
   .use(requirePermission(Permissions.POSTS_UPDATE))
+  .use(requirePostPolicy("canUpdate"))
   .use(auditLog({ module: "posts", action: "PUBLISH", entityType: "Post" }))
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const postService = getPostService();
     const result = await postService.publishPost(input.id);
-    return new PostTransformer().transformItem(result!);
+    if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+    return new PostTransformer().transformItem(result);
   });
 
 export const archive = authedProcedure
   .use(requirePermission(Permissions.POSTS_UPDATE))
+  .use(requirePostPolicy("canUpdate"))
   .use(auditLog({ module: "posts", action: "ARCHIVE", entityType: "Post" }))
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const postService = getPostService();
     const result = await postService.archivePost(input.id);
-    return new PostTransformer().transformItem(result!);
+    if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+    return new PostTransformer().transformItem(result);
   });
 
 export const remove = authedProcedure
   .use(requirePermission(Permissions.POSTS_DELETE))
+  .use(requirePostPolicy("canDelete"))
   .use(auditLog({ module: "posts", action: "DELETE", entityType: "Post" }))
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const postService = getPostService();
     const result = await postService.deletePost(input.id);
-    return new PostTransformer().transformItem(result!);
+    if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+    return new PostTransformer().transformItem(result);
   });
 
 export const restore = authedProcedure
   .use(requirePermission(Permissions.POSTS_DELETE))
+  .use(requirePostPolicy("canDelete"))
   .use(auditLog({ module: "posts", action: "RESTORE", entityType: "Post" }))
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
     const postService = getPostService();
     const result = await postService.restorePost(input.id);
-    return new PostTransformer().transformItem(result!);
+    if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+    return new PostTransformer().transformItem(result);
   });
 
 export const permanentlyDelete = authedProcedure
   .use(requirePermission(Permissions.POSTS_DELETE))
+  .use(requirePostPolicy("canDelete"))
   .use(auditLog({ module: "posts", action: "PERMANENT_DELETE", entityType: "Post" }))
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
@@ -217,5 +233,6 @@ export const clone = authedProcedure
   .mutation(async ({ ctx, input }) => {
     const postService = getPostService();
     const result = await postService.clonePost(input.id, ctx.user.id);
-    return new PostTransformer().transformItem(result!);
+    if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+    return new PostTransformer().transformItem(result);
   });
