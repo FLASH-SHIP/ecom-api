@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { JobQueue } from "@ecom/features/queue/JobQueue";
+import { queueCleanupJob, registerCleanupWorker } from "@ecom/features/queue/workers/cleanupWorker";
 import { registerEmailWorker } from "@ecom/features/queue/workers/emailWorker";
 import { gracefulShutdown } from "@ecom/features/shutdown/GracefulShutdown";
 import { ValidationPipe, VersioningType } from "@nestjs/common";
@@ -9,13 +10,17 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { I18nValidationException } from "./common/exceptions/i18n-validation.exception";
+import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { ErrorWithCodeExceptionFilter } from "./common/filters/error-with-code-exception.filter";
 import { I18nHttpExceptionFilter } from "./common/filters/i18n-http-exception.filter";
 import { I18nValidationExceptionFilter } from "./common/filters/i18n-validation-exception.filter";
 import { TimeoutInterceptor } from "./common/interceptors/timeout.interceptor";
+import { NestLogger } from "./common/logger/nest-logger.service";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new NestLogger(),
+  });
 
   app.use(helmet());
 
@@ -40,6 +45,7 @@ async function bootstrap() {
     new I18nHttpExceptionFilter(),
     new I18nValidationExceptionFilter(),
     new ErrorWithCodeExceptionFilter(),
+    new AllExceptionsFilter(),
   );
 
   const configService = app.get(ConfigService);
@@ -89,6 +95,14 @@ async function bootstrap() {
   registerEmailWorker();
   JobQueue.startWorker("email");
   console.log("✉️  Email queue worker started");
+
+  // Start background database cleanup worker
+  registerCleanupWorker();
+  JobQueue.startWorker("cleanup");
+  queueCleanupJob().catch((err) => {
+    console.warn("⚠️ Failed to schedule background database cleanup job:", err);
+  });
+  console.log("🧹 Database cleanup worker started");
 }
 
 bootstrap();

@@ -2,6 +2,7 @@ import { type MiddlewareConsumer, Module, type NestModule } from "@nestjs/common
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { TraceLoggerMiddleware } from "./common/middleware/trace-logger.middleware";
 import { validate } from "./env";
 import { AuthModule } from "./modules/auth/auth.module";
 import { BlogModule } from "./modules/blog/blog.module";
@@ -44,7 +45,7 @@ import { UsersModule } from "./modules/users/users.module";
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Log all routes — middleware itself filters to status >= 400 only
-    consumer.apply(RequestLoggerMiddleware).forRoutes("*");
+    // Apply TraceLoggerMiddleware first to wrap AsyncLocalStorage, then persist requests
+    consumer.apply(TraceLoggerMiddleware, RequestLoggerMiddleware).forRoutes("*");
   }
 }

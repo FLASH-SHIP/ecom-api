@@ -1,5 +1,11 @@
 import { translate } from "@ecom/i18n";
-import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException } from "@nestjs/common";
+import {
+  type ArgumentsHost,
+  Catch,
+  type ExceptionFilter,
+  HttpException,
+  Logger,
+} from "@nestjs/common";
 import type { Request, Response } from "express";
 import { I18nValidationException } from "../exceptions/i18n-validation.exception";
 import { getLocale } from "../utils/locale";
@@ -10,6 +16,8 @@ import { getLocale } from "../utils/locale";
  */
 @Catch(HttpException)
 export class I18nHttpExceptionFilter implements ExceptionFilter<HttpException> {
+  private readonly logger = new Logger(I18nHttpExceptionFilter.name);
+
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -22,6 +30,13 @@ export class I18nHttpExceptionFilter implements ExceptionFilter<HttpException> {
     const locale = getLocale(request);
     const status = exception.getStatus();
     const { rawMessage, rawError } = this.extractErrorAndMessage(exception);
+
+    // Log the HTTP exception via unified Logger
+    if (status >= 500) {
+      this.logger.error(`${exception.message} (${rawError || status})`, exception.stack);
+    } else {
+      this.logger.warn(`${exception.message} (${rawError || status})`);
+    }
 
     const isKey = rawMessage.includes(".") && !rawMessage.includes(" ");
     let translatedMessage = isKey ? translate(rawMessage, locale) : rawMessage;

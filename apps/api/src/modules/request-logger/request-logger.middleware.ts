@@ -1,4 +1,4 @@
-import { createLogger } from "@ecom/lib/logger";
+import { createLogger, loggerContext } from "@ecom/lib/logger";
 import { prisma } from "@ecom/prisma";
 import type { NestMiddleware } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
@@ -36,6 +36,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
 
       const userId = req.apiUser?.id;
       const duration = Date.now() - startedAt;
+      const traceId = loggerContext.getStore()?.traceId;
 
       prisma.requestLog
         .create({
@@ -48,6 +49,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
             userAgent: req.headers["user-agent"],
             referer: req.headers.referer,
             userId: typeof userId === "number" ? userId : undefined,
+            metadata: traceId ? { traceId } : undefined,
           },
           select: { id: true },
         })
