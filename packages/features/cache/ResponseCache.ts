@@ -13,12 +13,28 @@ interface CacheEntry<T> {
  * Inspired by Laravel's Cache facade with TTL support.
  * Suitable for: settings, categories, tags, feature flags, templates.
  *
- * For production at scale, swap to Redis cache via @ecom/lib/redis.
+ * ⚠️  PERF-02: SINGLE-INSTANCE LIMITATION
+ * This cache is process-local (JavaScript Map). In multi-instance deployments:
+ * - Each instance maintains its own cache → data inconsistency
+ * - Invalidation only clears the local instance → stale data on others
+ * - Memory usage is duplicated across instances
+ *
+ * For multi-instance production deployments, use RedisCache from @ecom/lib/redis
+ * instead for any data that requires cross-instance consistency.
+ *
+ * Current deployment: single-instance (acceptable).
+ * TODO: Migrate to RedisCache when scaling to multiple instances.
  */
 class ResponseCache {
   private cache = new Map<string, CacheEntry<unknown>>();
   private hitCount = 0;
   private missCount = 0;
+  private readonly maxSize: number;
+  private pruneCounter = 0;
+
+  constructor(maxSize = 1000) {
+    this.maxSize = maxSize;
+  }
 
   /**
    * Get a cached value or compute it if missing/expired.
@@ -38,6 +54,22 @@ class ResponseCache {
     this.missCount++;
     const value = await factory();
     this.cache.set(key, { value, expiresAt: Date.now() + ttlMs });
+
+    // Auto-prune expired entries every 100 writes
+    this.pruneCounter++;
+    if (this.pruneCounter >= 100) {
+      this.pruneCounter = 0;
+      this.prune();
+    }
+
+    // Evict oldest entries if cache exceeds maxSize
+    if (this.cache.size > this.maxSize) {
+      const keysToDelete = Array.from(this.cache.keys()).slice(0, this.cache.size - this.maxSize);
+      for (const k of keysToDelete) {
+        this.cache.delete(k);
+      }
+    }
+
     return value;
   }
 

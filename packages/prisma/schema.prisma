@@ -885,7 +885,7 @@ model Webhook {
   id        Int      @id @default(autoincrement())
   name      String
   url       String
-  secret    String?
+  secret    String?  // SEC-10: TODO — hash like API keys when scaling to external webhook consumers
   events    String[] // e.g. ["post.published", "customer.registered"]
   isActive  Boolean  @default(true)
   retries   Int      @default(3)
@@ -1124,6 +1124,7 @@ model OutboxEvent {
   processedAt DateTime?
 
   @@index([status])
+  @@index([status, createdAt]) // PERF-07: Composite index for worker query (WHERE status ORDER BY createdAt)
   @@map("outbox_events")
 }
 

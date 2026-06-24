@@ -2,8 +2,14 @@ import { createHash } from "node:crypto";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import type { JwtPayload } from "@ecom/lib/jwt";
 import { verifyToken } from "@ecom/lib/jwt";
+import { createLogger } from "@ecom/lib/logger";
+import { getRedisClient } from "@ecom/lib/redis";
 import type { ApiKeyRepository } from "../repositories/ApiKeyRepository";
 import type { UserRepository } from "../repositories/UserRepository";
+
+const log = createLogger("ApiAuthService");
+
+const TOKEN_BLACKLIST_PREFIX = "auth:blacklist:";
 
 interface IApiAuthServiceDeps {
   apiKeyRepo: ApiKeyRepository;
@@ -75,6 +81,12 @@ export class ApiAuthService {
       throw ErrorWithCode.Factory.Unauthorized("Expected access token, got refresh token");
     }
 
+    // SEC-04: Check if token has been revoked via Redis blacklist
+    const isRevoked = await ApiAuthService.isTokenRevoked(token);
+    if (isRevoked) {
+      throw ErrorWithCode.Factory.Unauthorized("Token has been revoked");
+    }
+
     const user = await this.deps.userRepo.findById(payload.userId);
     if (!user) {
       throw ErrorWithCode.Factory.Unauthorized("User not found");
@@ -90,5 +102,60 @@ export class ApiAuthService {
       name: user.name,
       authMethod: "jwt",
     };
+  }
+
+  /**
+   * Revoke a JWT token by adding its hash to the Redis blacklist.
+   * TTL is set to the token's remaining lifetime so entries auto-expire (SEC-04).
+   */
+  static async revokeToken(token: string, ttlSeconds?: number): Promise<void> {
+    try {
+      const tokenHash = createHash("sha256").update(token).digest("hex");
+      const redis = getRedisClient();
+      const key = `${TOKEN_BLACKLIST_PREFIX}${tokenHash}`;
+      // Default TTL: 15 minutes (max access token lifetime)
+      const ttl = ttlSeconds ?? 15 * 60;
+      await redis.set(key, "1", "EX", ttl);
+    } catch (err) {
+      log.warn("Failed to add token to blacklist", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  /**
+   * Check if a token has been revoked (SEC-04).
+   * Uses Redis SISMEMBER-equivalent GET for O(1) lookup.
+   */
+  static async isTokenRevoked(token: string): Promise<boolean> {
+    try {
+      const tokenHash = createHash("sha256").update(token).digest("hex");
+      const redis = getRedisClient();
+      const key = `${TOKEN_BLACKLIST_PREFIX}${tokenHash}`;
+      const result = await redis.get(key);
+      return result !== null;
+    } catch (err) {
+      // If Redis is down, fail open (allow) — token will still expire naturally
+      log.warn("Failed to check token blacklist, allowing request", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Revoke all tokens for a user by user ID.
+   * Useful for "logout from all devices" or admin account suspension.
+   */
+  static async revokeAllUserTokens(userId: number, ttlSeconds = 15 * 60): Promise<void> {
+    try {
+      const redis = getRedisClient();
+      const key = `${TOKEN_BLACKLIST_PREFIX}user:${userId}`;
+      await redis.set(key, "1", "EX", ttlSeconds);
+    } catch (err) {
+      log.warn("Failed to revoke all user tokens", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import type { ThrottlerRequest } from "@nestjs/throttler/dist/throttler.guard.interface";
@@ -7,14 +8,18 @@ import type { Request } from "express";
 export class AuthContextThrottlerGuard extends ThrottlerGuard {
   /**
    * Tracker key is built based on authentication context.
-   * Tracks by IP for anonymous visitors, and token/key for authenticated actors.
+   * Tracks by IP for anonymous visitors, and hashed token for authenticated actors.
+   * SEC-07: Hash token to create stable key (JWT rotates every 15m).
    */
   // biome-ignore lint/suspicious/noExplicitAny: base class override requires Record<string, any>
   protected override async getTracker(req: Record<string, any>): Promise<string> {
     const expressReq = req as unknown as Request;
     const authHeader = expressReq.headers.authorization;
     if (authHeader?.startsWith("Bearer ")) {
-      return authHeader;
+      const token = authHeader.slice(7);
+      // Hash the token for a stable, fixed-length tracker key
+      const tokenHash = createHash("sha256").update(token).digest("hex").slice(0, 16);
+      return `bearer:${tokenHash}`;
     }
 
     const rawIp =

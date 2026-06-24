@@ -37,7 +37,8 @@ describe("AuthContextThrottlerGuard", () => {
       ip: "127.0.0.1",
     };
     const jwtTracker = await testableGuard.getTracker(jwtReq);
-    expect(jwtTracker).toBe("Bearer my-jwt-token-xyz");
+    // SEC-07: tracker key is now hashed for stability (not raw token)
+    expect(jwtTracker).toMatch(/^bearer:[a-f0-9]{16}$/);
 
     // 3. Proxy Request - cf-connecting-ip
     const cfReq = {

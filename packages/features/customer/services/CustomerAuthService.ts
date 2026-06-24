@@ -142,6 +142,8 @@ export class CustomerAuthService {
 
     const token = jwt.sign({ sub: customerId, type: "email-verify" }, jwtSecret, {
       expiresIn: "24h",
+      issuer: "ecom",
+      audience: "ecom-customer",
     });
 
     const verifyUrl = `${CUSTOMER_APP_URL}/auth/verify-email?token=${token}`;
@@ -159,7 +161,10 @@ export class CustomerAuthService {
   async verifyEmailByToken(token: string) {
     const jwtSecret = this.jwtSecret;
     try {
-      const payload = jwt.verify(token, jwtSecret) as unknown as { sub: number; type: string };
+      const payload = jwt.verify(token, jwtSecret, {
+        issuer: "ecom",
+        audience: "ecom-customer",
+      }) as unknown as { sub: number; type: string };
       if (payload.type !== "email-verify") {
         throw ErrorWithCode.Factory.BadRequest("Invalid token type");
       }
@@ -184,6 +189,8 @@ export class CustomerAuthService {
 
     const token = jwt.sign({ sub: customer.id, type: "password-reset" }, jwtSecret, {
       expiresIn: "1h",
+      issuer: "ecom",
+      audience: "ecom-customer",
     });
 
     const resetUrl = `${CUSTOMER_APP_URL}/auth/reset-password?token=${token}`;
@@ -212,7 +219,10 @@ export class CustomerAuthService {
   async resetPassword(token: string, newPassword: string) {
     const jwtSecret = this.jwtSecret;
     try {
-      const payload = jwt.verify(token, jwtSecret) as unknown as { sub: number; type: string };
+      const payload = jwt.verify(token, jwtSecret, {
+        issuer: "ecom",
+        audience: "ecom-customer",
+      }) as unknown as { sub: number; type: string };
       if (payload.type !== "password-reset") {
         throw ErrorWithCode.Factory.BadRequest("Invalid token type");
       }

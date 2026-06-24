@@ -40,6 +40,22 @@ export async function disconnectRedis(): Promise<void> {
 }
 
 /**
+ * Non-blocking key deletion using cursor-based SCAN.
+ * Unlike KEYS which blocks the Redis single-thread, SCAN iterates
+ * incrementally and is safe for production use (PERF-01).
+ */
+async function scanAndDelete(redis: Redis, pattern: string): Promise<void> {
+  let cursor = "0";
+  do {
+    const [nextCursor, keys] = await redis.scan(cursor, "MATCH", pattern, "COUNT", 100);
+    cursor = nextCursor;
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  } while (cursor !== "0");
+}
+
+/**
  * Redis-backed cache with TTL — drop-in replacement for MemoryCache on hot paths.
  *
  * Serializes values to JSON. For complex types, ensure they are JSON-serializable.
@@ -80,22 +96,23 @@ export class RedisCache<T> {
     await redis.del(this.key(key));
   }
 
+  /**
+   * Invalidate all keys matching a prefix using cursor-based SCAN.
+   * SCAN is non-blocking unlike KEYS which does a full O(N) scan (PERF-01).
+   */
   async invalidatePrefix(prefix: string): Promise<void> {
     const redis = getRedisClient();
     const pattern = `cache:${this.prefix}:${prefix}*`;
-    const keys = await redis.keys(pattern);
-    if (keys.length > 0) {
-      await redis.del(...keys);
-    }
+    await scanAndDelete(redis, pattern);
   }
 
+  /**
+   * Clear all keys for this cache namespace using cursor-based SCAN (PERF-01).
+   */
   async clear(): Promise<void> {
     const redis = getRedisClient();
     const pattern = `cache:${this.prefix}:*`;
-    const keys = await redis.keys(pattern);
-    if (keys.length > 0) {
-      await redis.del(...keys);
-    }
+    await scanAndDelete(redis, pattern);
   }
 }
 
@@ -123,6 +140,11 @@ export class RedisRateLimiter {
     return `ratelimit:${this.prefix}:${identifier}`;
   }
 
+  /**
+   * Check rate limit for an identifier.
+   * Optimized: checks count BEFORE adding entry to avoid
+   * unnecessary add+remove for rejected requests (PERF-05).
+   */
   async check(identifier: string): Promise<{
     allowed: boolean;
     remaining: number;
@@ -134,21 +156,23 @@ export class RedisRateLimiter {
     const now = Date.now();
     const windowStart = now - this.windowSeconds * 1000;
 
-    const pipeline = redis.pipeline();
-
-    // Remove expired entries
-    pipeline.zremrangebyscore(key, 0, windowStart);
-    // Count remaining entries in window
-    pipeline.zcard(key);
-    // Add current request
-    pipeline.zadd(key, now, `${now}:${Math.random().toString(36).slice(2, 8)}`);
-    // Set expiry on the key
-    pipeline.expire(key, this.windowSeconds);
-
-    const results = await pipeline.exec();
+    // Step 1: Clean expired + count current entries
+    const cleanPipeline = redis.pipeline();
+    cleanPipeline.zremrangebyscore(key, 0, windowStart);
+    cleanPipeline.zcard(key);
+    const results = await cleanPipeline.exec();
 
     const currentCount = (results?.[1]?.[1] as number) ?? 0;
     const allowed = currentCount < this.maxRequests;
+
+    // Step 2: Only add the entry if the request is allowed
+    if (allowed) {
+      const addPipeline = redis.pipeline();
+      addPipeline.zadd(key, now, `${now}:${Math.random().toString(36).slice(2, 8)}`);
+      addPipeline.expire(key, this.windowSeconds);
+      await addPipeline.exec();
+    }
+
     const remaining = Math.max(0, this.maxRequests - currentCount - (allowed ? 1 : 0));
 
     // Calculate reset time from oldest entry
@@ -158,15 +182,6 @@ export class RedisRateLimiter {
       if (oldest.length >= 2) {
         const oldestTime = Number.parseInt(oldest[1] ?? "0", 10);
         resetIn = Math.max(0, Math.ceil((oldestTime + this.windowSeconds * 1000 - now) / 1000));
-      }
-    }
-
-    if (!allowed) {
-      // Remove the entry we just added since request is rejected
-      const members = await redis.zrangebyscore(key, now, now);
-      if (members.length > 0) {
-        const lastMember = members[members.length - 1];
-        if (lastMember) await redis.zrem(key, lastMember);
       }
     }
 

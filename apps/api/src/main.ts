@@ -56,8 +56,24 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
+  // SEC-05: CORS multi-origin support — whitelist both Admin and Customer apps
+  const allowedOrigins = [
+    configService.get<string>("WEB_URL"),
+    configService.get<string>("CUSTOMER_APP_URL"),
+  ].filter(Boolean) as string[];
+
   app.enableCors({
-    origin: configService.get<string>("WEB_URL") ?? "http://localhost:3000",
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // Allow requests with no origin (mobile apps, server-to-server, curl)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     credentials: true,
   });
 

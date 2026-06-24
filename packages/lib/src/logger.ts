@@ -15,6 +15,9 @@ const currentLevel: LogLevel =
   (process.env.LOG_LEVEL as LogLevel | undefined) ??
   (process.env.NODE_ENV === "production" ? "info" : "debug");
 
+// PERF-08: Cache NODE_ENV at module init (doesn't change at runtime)
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
 function shouldLog(level: LogLevel): boolean {
   return LOG_LEVELS[level] >= LOG_LEVELS[currentLevel];
 }
@@ -88,7 +91,7 @@ function formatMessage(
   const store = loggerContext.getStore();
   const traceId = store?.traceId;
   const userId = store?.userId;
-  const isDev = process.env.NODE_ENV !== "production";
+  const isDev = !IS_PRODUCTION;
 
   if (isDev) {
     const color = COLORS[level];
@@ -124,7 +127,7 @@ export function createLogger(module: string) {
     debug: (message: string, data?: Record<string, unknown>) => {
       if (shouldLog("debug")) {
         const maskedData = data ? (maskSensitiveData(data) as Record<string, unknown>) : undefined;
-        const isDev = process.env.NODE_ENV !== "production";
+        const isDev = !IS_PRODUCTION;
         if (isDev) {
           console.debug(formatMessage("debug", module, message), maskedData ?? "");
         } else {
@@ -135,7 +138,7 @@ export function createLogger(module: string) {
     info: (message: string, data?: Record<string, unknown>) => {
       if (shouldLog("info")) {
         const maskedData = data ? (maskSensitiveData(data) as Record<string, unknown>) : undefined;
-        const isDev = process.env.NODE_ENV !== "production";
+        const isDev = !IS_PRODUCTION;
         if (isDev) {
           console.info(formatMessage("info", module, message), maskedData ?? "");
         } else {
@@ -146,7 +149,7 @@ export function createLogger(module: string) {
     warn: (message: string, data?: Record<string, unknown>) => {
       if (shouldLog("warn")) {
         const maskedData = data ? (maskSensitiveData(data) as Record<string, unknown>) : undefined;
-        const isDev = process.env.NODE_ENV !== "production";
+        const isDev = !IS_PRODUCTION;
         if (isDev) {
           console.warn(formatMessage("warn", module, message), maskedData ?? "");
         } else {
@@ -157,7 +160,7 @@ export function createLogger(module: string) {
     error: (message: string, data?: Record<string, unknown>) => {
       if (shouldLog("error")) {
         const maskedData = data ? (maskSensitiveData(data) as Record<string, unknown>) : undefined;
-        const isDev = process.env.NODE_ENV !== "production";
+        const isDev = !IS_PRODUCTION;
         if (isDev) {
           console.error(formatMessage("error", module, message), maskedData ?? "");
         } else {

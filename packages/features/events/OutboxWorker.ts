@@ -5,33 +5,57 @@ import { eventBus } from "./EventBus";
 
 const log = createLogger("OutboxWorker");
 
+/**
+ * Outbox Worker with adaptive polling (PERF-04).
+ *
+ * Instead of polling at a fixed 5s interval (~17K queries/day even when idle),
+ * uses exponential backoff:
+ * - When events are found: polls every 1s (fast processing)
+ * - When idle: doubles interval up to 30s (saves DB resources)
+ * - Resets to fast polling as soon as events appear
+ */
 export class OutboxWorker {
   private timer: NodeJS.Timeout | null = null;
   private isProcessing = false;
-  private intervalMs: number;
   private maxAttempts = 5;
 
-  constructor(intervalMs = 5000) {
-    this.intervalMs = intervalMs;
+  private readonly baseIntervalMs: number;
+  private readonly maxIntervalMs: number;
+  private currentIntervalMs: number;
+
+  constructor(baseIntervalMs = 1000, maxIntervalMs = 30000) {
+    this.baseIntervalMs = baseIntervalMs;
+    this.maxIntervalMs = maxIntervalMs;
+    this.currentIntervalMs = baseIntervalMs;
   }
 
   start() {
     if (this.timer) return;
-    log.info("Starting Outbox worker...");
-    this.timer = setInterval(() => {
-      // Catch exceptions inside setInterval to prevent crashing
-      this.process().catch((err) => {
-        log.error("Unhandled error in outbox worker setInterval loop", { error: err.message });
-      });
-    }, this.intervalMs);
+    log.info("Starting Outbox worker (adaptive polling)...");
+    this.scheduleNext();
   }
 
   stop() {
     if (this.timer) {
-      clearInterval(this.timer);
+      clearTimeout(this.timer);
       this.timer = null;
       log.info("Stopped Outbox worker.");
     }
+  }
+
+  private scheduleNext() {
+    this.timer = setTimeout(() => {
+      this.process()
+        .catch((err) => {
+          log.error("Unhandled error in outbox worker loop", { error: err.message });
+        })
+        .finally(() => {
+          // Schedule next poll (only if not stopped)
+          if (this.timer !== null) {
+            this.scheduleNext();
+          }
+        });
+    }, this.currentIntervalMs);
   }
 
   async process() {
@@ -59,8 +83,13 @@ export class OutboxWorker {
       });
 
       if (events.length === 0) {
+        // Backoff: double interval when idle (up to maxIntervalMs)
+        this.currentIntervalMs = Math.min(this.currentIntervalMs * 2, this.maxIntervalMs);
         return;
       }
+
+      // Reset to fast polling when events are found
+      this.currentIntervalMs = this.baseIntervalMs;
 
       log.info(`Found ${events.length} pending outbox events to process`);
 
