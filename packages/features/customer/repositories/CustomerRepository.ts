@@ -83,6 +83,7 @@ export class CustomerRepository {
         id: true,
         email: true,
         username: true,
+        name: true,
         status: true,
       },
     });

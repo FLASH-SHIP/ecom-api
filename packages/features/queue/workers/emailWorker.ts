@@ -19,12 +19,15 @@ export function registerEmailWorker() {
     EMAIL_QUEUE,
     async (payload) => {
       const data = payload as unknown as EmailJobPayload;
-      await sendEmail({
+      const success = await sendEmail({
         to: data.to,
         subject: data.subject,
         html: data.html,
         text: data.text,
       });
+      if (!success) {
+        throw new Error(`Failed to send email to ${data.to}`);
+      }
     },
     3, // 3 retries
   );

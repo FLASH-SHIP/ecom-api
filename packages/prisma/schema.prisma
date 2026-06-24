@@ -91,9 +91,29 @@ model Session {
   userId       Int
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expires      DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([userId])
   @@map("sessions")
+}
+
+// NextAuth.js sessions (Customer — cookie-based)
+model CustomerSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  customerId   Int
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  expires      DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([customerId])
+  @@map("customer_sessions")
 }
 
 // NextAuth.js accounts (social login future-proof)
@@ -827,6 +847,7 @@ model Customer {
   socialAccounts CustomerSocialAccount[]
   activityLogs   CustomerActivityLog[]
   comments       Comment[]
+  sessions       CustomerSession[]
 
   @@index([status])
   @@index([email])

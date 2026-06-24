@@ -1,5 +1,5 @@
+import crypto from "node:crypto";
 import { env } from "@admin/env";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { prisma } from "@ecom/prisma";
 import type { User as AppUser } from "@ecom/shared/@auth/user";
@@ -7,10 +7,96 @@ import type { NextAuthResult } from "next-auth";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
+export const AUTH_KEYS = {
+  accessToken: "accessToken",
+  refreshToken: "refreshToken",
+} as const;
+
+const adminAdapter = {
+  async createSession(session: { sessionToken: string; userId: string; expires: Date }) {
+    let ipAddress: string | null = null;
+    let userAgent: string | null = null;
+    try {
+      const { headers } = await import("next/headers");
+      const reqHeaders = await headers();
+      ipAddress =
+        reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        reqHeaders.get("x-real-ip") ||
+        null;
+      userAgent = reqHeaders.get("user-agent") || null;
+    } catch {
+      // Ignore
+    }
+
+    const created = await prisma.session.create({
+      data: {
+        sessionToken: session.sessionToken,
+        userId: Number(session.userId),
+        expires: session.expires,
+        ipAddress,
+        userAgent,
+      },
+    });
+    return {
+      id: created.id,
+      sessionToken: created.sessionToken,
+      userId: String(created.userId),
+      expires: created.expires,
+    };
+  },
+  async getSessionAndUser(sessionToken: string) {
+    const dbSession = await prisma.session.findUnique({
+      where: { sessionToken },
+      include: { user: true },
+    });
+    if (!dbSession || dbSession.expires < new Date()) {
+      if (dbSession) {
+        await prisma.session.delete({ where: { sessionToken } }).catch(() => {});
+      }
+      return null;
+    }
+    return {
+      session: {
+        id: dbSession.id,
+        sessionToken: dbSession.sessionToken,
+        userId: String(dbSession.userId),
+        expires: dbSession.expires,
+      },
+      user: {
+        id: String(dbSession.user.id),
+        email: dbSession.user.email,
+        name: dbSession.user.name,
+        emailVerified: dbSession.user.emailVerified,
+      },
+    };
+  },
+  async updateSession(session: { sessionToken: string; expires?: Date; userId?: string }) {
+    const updated = await prisma.session.update({
+      where: { sessionToken: session.sessionToken },
+      data: {
+        expires: session.expires,
+      },
+    });
+    return {
+      id: updated.id,
+      sessionToken: updated.sessionToken,
+      userId: String(updated.userId),
+      expires: updated.expires,
+    };
+  },
+  async deleteSession(sessionToken: string) {
+    await prisma.session
+      .delete({
+        where: { sessionToken },
+      })
+      .catch(() => {});
+  },
+};
+
 const nextAuth: NextAuthResult = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: adminAdapter,
   secret: env.AUTH_SECRET,
-  session: { strategy: "jwt" },
+  session: { strategy: "database" },
   pages: {
     signIn: "/login",
   },
@@ -43,19 +129,47 @@ const nextAuth: NextAuthResult = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
+    async jwt({ token, user, account }) {
+      if (account?.provider === "credentials" && user) {
+        const sessionToken = crypto.randomUUID();
+        const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+        let ipAddress: string | null = null;
+        let userAgent: string | null = null;
+        try {
+          const { headers } = await import("next/headers");
+          const reqHeaders = await headers();
+          ipAddress =
+            reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+            reqHeaders.get("x-real-ip") ||
+            null;
+          userAgent = reqHeaders.get("user-agent") || null;
+        } catch {
+          // Ignore
+        }
+
+        await prisma.session.create({
+          data: {
+            sessionToken,
+            userId: Number(user.id),
+            expires,
+            ipAddress,
+            userAgent,
+          },
+        });
+
+        token.sessionId = sessionToken;
         token.id = Number(user.id);
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token?.id) {
-        session.user.id = String(token.id);
+    async session({ session, user }) {
+      if (user?.id) {
+        session.user.id = user.id;
 
         // Populate session.db for the app's useUser hook
         const dbUser = await prisma.user.findUnique({
-          where: { id: Number(token.id) },
+          where: { id: Number(user.id) },
           select: {
             id: true,
             name: true,
@@ -84,9 +198,21 @@ const nextAuth: NextAuthResult = NextAuth({
       return session;
     },
   },
+  jwt: {
+    async encode(params) {
+      if (params.token?.sessionId) {
+        return params.token.sessionId as string;
+      }
+      return "";
+    },
+    async decode() {
+      return null;
+    },
+  },
 });
 
 export const handlers = nextAuth.handlers;
 export const auth = nextAuth.auth;
 export const signIn = nextAuth.signIn;
 export const signOut = nextAuth.signOut;
+export default nextAuth;

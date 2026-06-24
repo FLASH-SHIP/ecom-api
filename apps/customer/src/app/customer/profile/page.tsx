@@ -1,16 +1,16 @@
 "use client";
 
-import { getAccessToken } from "@customer/lib/auth";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@customer/lib/i18n";
 import { trpc } from "@customer/lib/trpc";
 import { AlertCircle, AtSign, CheckCircle } from "lucide-react";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 export default function CustomerProfilePage() {
   const pathname = usePathname();
-  const [token] = useState<string | null>(() => getAccessToken());
+  const { status } = useSession();
 
   const currentLocale =
     SUPPORTED_LOCALES.find((l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`) ??
@@ -20,10 +20,12 @@ export default function CustomerProfilePage() {
     return `/${currentLocale}${href === "/" ? "" : href}`;
   };
 
-  const { data: profile, isLoading } = trpc.customer.auth.me.useQuery(
-    { accessToken: token ?? "" },
-    { enabled: !!token },
-  );
+  const { data: profile, isLoading: isLoadingProfile } = trpc.customer.auth.me.useQuery(undefined, {
+    enabled: status === "authenticated",
+  });
+
+  const isLoading = status === "loading" || isLoadingProfile;
+
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -58,7 +60,7 @@ export default function CustomerProfilePage() {
     );
   }
 
-  if (!profile) {
+  if (status === "unauthenticated" || !profile) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 text-center">
         <h1 className="text-2xl font-bold">Chưa đăng nhập</h1>
@@ -90,7 +92,6 @@ export default function CustomerProfilePage() {
         onSubmit={(e) => {
           e.preventDefault();
           updateMutation.mutate({
-            accessToken: token ?? "",
             username: username !== profile.username ? username : undefined,
             name: name || undefined,
             phone: phone || undefined,

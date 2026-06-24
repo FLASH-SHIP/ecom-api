@@ -1,0 +1,27 @@
+{
+  "extends": "@ecom/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "paths": {
+      "@web/*": ["./src/*"],
+      "@ecom/lib/*": ["../../packages/lib/src/*"],
+      "@ecom/config": ["../../packages/config/src/index.ts"],
+      "@ecom/types": ["../../packages/types/src/index.ts"],
+      "@ecom/trpc/*": ["../../packages/trpc/*"],
+      "@ecom/features/*": ["../../packages/features/*"],
+      "@ecom/ui/*": ["../../packages/ui/*"],
+      "@ecom/shared/*": ["../../packages/shared/src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts",
+    "../../packages/shared/src/@auth/next-auth.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}

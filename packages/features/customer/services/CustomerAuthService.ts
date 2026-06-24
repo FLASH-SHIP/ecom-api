@@ -1,5 +1,7 @@
+import { buildCustomerPasswordResetEmail, buildEmailVerificationEmail } from "@ecom/emails";
 import { USERNAME_REGEX, USERNAME_VALIDATION_MESSAGE } from "@ecom/features/customer/constants";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
+import { queueEmail } from "@ecom/features/queue/workers/emailWorker";
 import { hashPassword, verifyPassword } from "@ecom/lib/crypto";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { createLogger } from "@ecom/lib/logger";
@@ -139,11 +141,12 @@ export class CustomerAuthService {
     const displayName = customer.name ?? customer.email;
 
     log.info("Verification email prepared", { customerId, email: customer.email, verifyUrl });
-    log.warn("Email sending not yet implemented — verification URL logged above", { displayName });
-
-    // TODO: Implement email sending once @ecom/emails package provides:
-    // - buildEmailVerificationEmail({ name, verifyUrl })
-    // - sendEmail(payload)
+    const payload = buildEmailVerificationEmail({
+      name: displayName,
+      verifyUrl,
+    });
+    payload.to = customer.email;
+    await queueEmail(payload);
   }
 
   async verifyEmailByToken(token: string) {
@@ -179,11 +182,24 @@ export class CustomerAuthService {
     const resetUrl = `${CUSTOMER_APP_URL}/auth/reset-password?token=${token}`;
 
     log.info("Password reset URL prepared", { customerId: customer.id, email, resetUrl });
-    log.warn("Email sending not yet implemented — reset URL logged above");
-
-    // TODO: Implement email sending once @ecom/emails package provides:
-    // - buildCustomerPasswordResetEmail({ name, resetUrl })
-    // - sendEmail(payload)
+    const displayName = customer.name ?? customer.email;
+    const payload = buildCustomerPasswordResetEmail({
+      name: displayName,
+      resetUrl,
+    });
+    payload.to = email;
+    try {
+      await queueEmail(payload);
+    } catch (error) {
+      log.error("Failed to queue password reset email", {
+        customerId: customer.id,
+        email,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw ErrorWithCode.Factory.Internal(
+        "Failed to send password reset email. Please try again later.",
+      );
+    }
   }
 
   async resetPassword(token: string, newPassword: string) {

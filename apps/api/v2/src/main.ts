@@ -1,12 +1,17 @@
 import "reflect-metadata";
+import { JobQueue } from "@ecom/features/queue/JobQueue";
+import { registerEmailWorker } from "@ecom/features/queue/workers/emailWorker";
+import { gracefulShutdown } from "@ecom/features/shutdown/GracefulShutdown";
+import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { NestFactory } from "@nestjs/core";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
+import { I18nValidationException } from "./common/exceptions/i18n-validation.exception";
+import { I18nHttpExceptionFilter } from "./common/filters/i18n-http-exception.filter";
+import { I18nValidationExceptionFilter } from "./common/filters/i18n-validation-exception.filter";
 
 async function bootstrap() {
-  const { NestFactory } = await import("@nestjs/core");
-  const { ValidationPipe } = await import("@nestjs/common");
-  const { DocumentBuilder, SwaggerModule } = await import("@nestjs/swagger");
-
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix("api/v2");
@@ -16,33 +21,16 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: (errors) => new I18nValidationException(errors),
     }),
   );
 
+  app.useGlobalFilters(new I18nHttpExceptionFilter(), new I18nValidationExceptionFilter());
+
   const configService = app.get(ConfigService);
 
-  const nodeEnv = configService.get<string>("NODE_ENV") ?? "development";
-  const webUrl = configService.get<string>("WEB_URL") ?? "http://localhost:3000";
-
   app.enableCors({
-    origin: (
-      origin: string | undefined,
-      callback: (err: Error | null, allow?: boolean) => void,
-    ) => {
-      if (!origin) {
-        callback(null, true);
-        return;
-      }
-      const isAllowed =
-        origin === webUrl ||
-        (nodeEnv !== "production" &&
-          (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")));
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
-      }
-    },
+    origin: configService.get<string>("WEB_URL") ?? "http://localhost:3000",
     credentials: true,
   });
 
@@ -60,6 +48,27 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`🚀 API v2 running on http://localhost:${port}/api/v2`);
   console.log(`📚 Swagger docs: http://localhost:${port}/api/v2/docs`);
+
+  // Enable NestJS native shutdown hooks
+  app.enableShutdownHooks();
+
+  // Register graceful shutdown cleanup handlers
+  gracefulShutdown.register("Prisma", async () => {
+    const { prisma } = await import("@ecom/prisma");
+    await prisma.$disconnect();
+  });
+
+  gracefulShutdown.register("Redis", async () => {
+    const { disconnectRedis } = await import("@ecom/lib/redis");
+    await disconnectRedis();
+  });
+
+  gracefulShutdown.enable();
+
+  // Start background email queue worker
+  registerEmailWorker();
+  JobQueue.startWorker("email");
+  console.log("✉️  Email queue worker started");
 }
 
 bootstrap();

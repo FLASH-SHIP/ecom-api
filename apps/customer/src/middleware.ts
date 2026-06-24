@@ -40,6 +40,39 @@ export function middleware(request: NextRequest) {
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
   );
 
+  const resolvedLocale = pathnameLocale ?? DEFAULT_LOCALE;
+  const cleanPathname = pathnameLocale
+    ? pathname === `/${pathnameLocale}`
+      ? "/"
+      : pathname.slice(pathnameLocale.length + 1)
+    : pathname;
+
+  const normalizedPath = cleanPathname.startsWith("/") ? cleanPathname.slice(1) : cleanPathname;
+
+  // Session token cookie check (Edge compatible)
+  const sessionToken =
+    request.cookies.get("authjs.session-token")?.value ||
+    request.cookies.get("__Secure-authjs.session-token")?.value;
+  const isLoggedIn = !!sessionToken;
+
+  // Auth route protection
+  if (normalizedPath.startsWith("customer/") || normalizedPath === "customer") {
+    if (!isLoggedIn) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = `/${resolvedLocale}/auth/login`;
+      // Preserve search params (e.g. callbackUrl) if any
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  if (normalizedPath.startsWith("auth/") || normalizedPath === "auth") {
+    if (isLoggedIn) {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = `/${resolvedLocale}/customer/dashboard`;
+      return NextResponse.redirect(dashboardUrl);
+    }
+  }
+
   if (pathnameLocale) {
     // Locale already present — set X-Locale header and rewrite path to match folder structure without prefix
     const requestHeaders = new Headers(request.headers);

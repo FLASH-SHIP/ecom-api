@@ -1,87 +1,133 @@
 "use client";
 
-import { Mail } from "lucide-react";
+import { Button } from "@ecom/ui/components/button";
+import { Input } from "@ecom/ui/components/input";
+import { Label } from "@ecom/ui/components/label";
+import { Lock } from "lucide-react";
 import NextLink from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { AuthCard } from "../../../components/auth/AuthCard";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from "../../../lib/i18n";
 import { trpc } from "../../../lib/trpc";
 
+const translations = {
+  vi: {
+    title: "Đặt lại mật khẩu",
+    desc: "Chúng tôi sẽ gửi liên kết đặt lại mật khẩu đến email đã đăng ký của bạn.",
+    emailLabel: "Email",
+    emailPlaceholder: "Nhập email của bạn",
+    buttonLabel: "Đặt lại mật khẩu",
+    buttonLoading: "Đang gửi...",
+    backToLogin: "Quay lại đăng nhập",
+    checkEmailTitle: "Kiểm tra email",
+    checkEmailDesc:
+      "Nếu email của bạn tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu.",
+  },
+  en: {
+    title: "Reset your password",
+    desc: "We will send the OTP link to your email registered with us.",
+    emailLabel: "Email",
+    emailPlaceholder: "Enter your email",
+    buttonLabel: "Reset password",
+    buttonLoading: "Sending...",
+    backToLogin: "Back to sign in",
+    checkEmailTitle: "Check your email",
+    checkEmailDesc: "If your email exists in the system, we have sent a reset password link.",
+  },
+};
+
 export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  // Detect current locale from path
+  const currentLocale: SupportedLocale = pathname
+    ? ((SUPPORTED_LOCALES.find(
+        (l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`,
+      ) as SupportedLocale) ?? DEFAULT_LOCALE)
+    : DEFAULT_LOCALE;
+
+  const text = translations[currentLocale];
 
   const forgotMutation = trpc.customer.auth.forgotPassword.useMutation({
     onSuccess: () => setSubmitted(true),
   });
 
+  const handleClose = () => router.push(`/${currentLocale}/auth/login`);
+
   if (submitted) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <div className="rounded-2xl border border-border p-8">
-          <Mail className="mx-auto mb-4 h-12 w-12 text-primary" />
-          <h1 className="mb-2 text-xl font-bold">Kiểm tra email</h1>
-          <p className="mb-6 text-sm text-muted-foreground">
-            Nếu email của bạn tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu.
+      <AuthCard icon={<Lock className="w-4.5 h-4.5" />} onClose={handleClose} showSupport>
+        <div className="text-center flex flex-col items-center gap-3 select-none">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+            {text.checkEmailTitle}
+          </h1>
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 max-w-[280px] leading-relaxed">
+            {text.checkEmailDesc}
           </p>
-          <NextLink href="/auth/login" className="text-sm text-primary hover:underline">
-            ← Quay lại đăng nhập
-          </NextLink>
         </div>
-      </div>
+
+        <NextLink
+          href={`/${currentLocale}/auth/login`}
+          className="flex w-full items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 h-11 text-sm font-semibold shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 text-center mt-3"
+        >
+          {text.backToLogin}
+        </NextLink>
+      </AuthCard>
     );
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-16">
-      <div className="rounded-2xl border border-border p-8">
-        <div className="mb-8 text-center">
-          <Mail className="mx-auto mb-4 h-12 w-12 text-primary" />
-          <h1 className="mb-1 text-2xl font-extrabold">Quên mật khẩu</h1>
-          <p className="text-sm text-muted-foreground">Nhập email để nhận link đặt lại mật khẩu</p>
+    <AuthCard
+      title={text.title}
+      description={text.desc}
+      icon={<Lock className="w-4.5 h-4.5" />}
+      onClose={handleClose}
+      showSupport
+    >
+      {/* Error banner */}
+      {forgotMutation.error && (
+        <div className="rounded-xl border border-rose-100 dark:border-rose-950/50 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 text-xs font-semibold text-rose-600 dark:text-rose-400">
+          {forgotMutation.error.message}
+        </div>
+      )}
+
+      {/* Email form */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          forgotMutation.mutate({ email });
+        }}
+        className="flex flex-col gap-4"
+      >
+        <div className="flex flex-col gap-1.5">
+          <Label
+            htmlFor="forgot-email"
+            className="text-xs font-bold text-slate-600 dark:text-slate-300"
+          >
+            {text.emailLabel}
+          </Label>
+          <Input
+            id="forgot-email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={text.emailPlaceholder}
+            className="w-full bg-background/50 dark:bg-slate-900/30"
+          />
         </div>
 
-        {forgotMutation.error && (
-          <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {forgotMutation.error.message}
-          </div>
-        )}
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            forgotMutation.mutate({ email });
-          }}
-          className="flex flex-col gap-5"
-        >
-          <div>
-            <label htmlFor="forgot-email" className="mb-1.5 block text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="forgot-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={forgotMutation.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-          >
-            {forgotMutation.isPending ? "Đang gửi..." : "Gửi link đặt lại"}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          <NextLink href="/auth/login" className="text-primary hover:underline">
-            ← Quay lại đăng nhập
-          </NextLink>
-        </p>
-      </div>
-    </div>
+        <Button type="submit" disabled={forgotMutation.isPending} className="w-full mt-2" size="lg">
+          {forgotMutation.isPending && (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+          )}
+          {forgotMutation.isPending ? text.buttonLoading : text.buttonLabel}
+        </Button>
+      </form>
+    </AuthCard>
   );
 }

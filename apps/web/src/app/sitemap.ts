@@ -1,4 +1,4 @@
-import { env } from "@customer/env";
+import { env } from "@web/env";
 import type { MetadataRoute } from "next";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../lib/i18n";
 

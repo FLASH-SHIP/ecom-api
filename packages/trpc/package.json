@@ -17,6 +17,7 @@
   "dependencies": {
     "@ecom/config": "workspace:*",
     "@ecom/features": "workspace:*",
+    "@ecom/i18n": "workspace:*",
     "@ecom/lib": "workspace:*",
     "@ecom/prisma": "workspace:*",
     "@ecom/types": "workspace:*",

@@ -28,7 +28,7 @@ export const changePasswordSelf = authedProcedure
         confirmPassword: z.string(),
       })
       .refine((d) => d.newPassword === d.confirmPassword, {
-        message: "Mật khẩu xác nhận không khớp",
+        message: "users.profile.passwordMismatch",
         path: ["confirmPassword"],
       }),
   )
@@ -37,11 +37,14 @@ export const changePasswordSelf = authedProcedure
     const isAdmin = ctx.user.permissions.includes(Permissions.USERS_UPDATE);
 
     if (!isSelf && !isAdmin) {
-      throw new TRPCError({ code: "FORBIDDEN", message: "Không có quyền thực hiện hành động này" });
+      throw new TRPCError({ code: "FORBIDDEN", message: "users.profile.forbidden" });
     }
 
     if (isSelf && !input.currentPassword) {
-      throw new TRPCError({ code: "BAD_REQUEST", message: "Vui lòng nhập mật khẩu hiện tại" });
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "users.profile.currentPasswordRequired",
+      });
     }
 
     const authService = getAuthService();

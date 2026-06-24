@@ -809,5 +809,17 @@
       "backToDashboard": "Back to Dashboard",
       "tryAgain": "Try Again"
     }
+  },
+  "validation": {
+    "isNotEmpty": "This field is required",
+    "isEmail": "Invalid email address",
+    "minLength": "Must be at least {limit} characters",
+    "maxLength": "Must be at most {limit} characters",
+    "isNumber": "Must be a number",
+    "isString": "Must be a string",
+    "isBoolean": "Must be a boolean",
+    "invalid_url": "Invalid URL",
+    "invalid_format": "Invalid format",
+    "invalid_type": "Invalid data type"
   }
 }

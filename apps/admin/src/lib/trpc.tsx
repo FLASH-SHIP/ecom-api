@@ -65,7 +65,8 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             const headers: Record<string, string> = {};
             if (typeof window !== "undefined") {
               const params = new URLSearchParams(window.location.search);
-              const refLang = params.get("ref_lang");
+              const refLang =
+                params.get("ref_lang") || document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1];
               if (refLang) {
                 headers["x-locale"] = refLang;
               }
