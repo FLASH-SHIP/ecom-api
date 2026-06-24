@@ -6,6 +6,10 @@ function getJwtSecret(): string {
   return process.env.JWT_SECRET || "dev-jwt-secret";
 }
 
+function getJwtAdminSecret(): string {
+  return process.env.JWT_ADMIN_SECRET || process.env.JWT_SECRET || "dev-jwt-secret";
+}
+
 /** Parse a duration string (e.g. "15m", "30d") into seconds. */
 function parseDurationToSeconds(duration: string): number {
   const match = duration.match(/^(\d+)([smhd])$/);
@@ -109,7 +113,7 @@ export function signQueueDashboardToken(
   payload: Omit<QueueDashboardJwtPayload, "type" | "jti">,
 ): string {
   const options: SignOptions = { expiresIn: 60, jwtid: randomUUID() }; // 60 seconds
-  return jwt.sign({ ...payload, type: "queue-dashboard-sso" }, getJwtSecret(), options);
+  return jwt.sign({ ...payload, type: "queue-dashboard-sso" }, getJwtAdminSecret(), options);
 }
 
 /**
@@ -117,12 +121,12 @@ export function signQueueDashboardToken(
  */
 export function signQueueDashboardSession(payload: Omit<QueueDashboardJwtPayload, "type">): string {
   const options: SignOptions = { expiresIn: "2h" };
-  return jwt.sign({ ...payload, type: "queue-dashboard-session" }, getJwtSecret(), options);
+  return jwt.sign({ ...payload, type: "queue-dashboard-session" }, getJwtAdminSecret(), options);
 }
 
 /**
  * Verify queue dashboard JWT.
  */
 export function verifyQueueDashboardToken(token: string): QueueDashboardJwtPayload {
-  return jwt.verify(token, getJwtSecret()) as QueueDashboardJwtPayload;
+  return jwt.verify(token, getJwtAdminSecret()) as QueueDashboardJwtPayload;
 }
