@@ -5,6 +5,7 @@ import { OutboxStore } from "@ecom/features/events/OutboxStore";
 import { Cacheable, CacheEvict } from "@ecom/features/shared/decorators/caching.decorators";
 import { lockManager } from "@ecom/lib/lock";
 import { loggerContext } from "@ecom/lib/logger";
+import type { ExtendedPrismaClient } from "@ecom/prisma";
 import { prisma, txStorage } from "@ecom/prisma";
 import { PostFactory } from "@ecom/prisma/src/factories/PostFactory";
 import { UserFactory } from "@ecom/prisma/src/factories/UserFactory";
@@ -195,6 +196,9 @@ describe("Architectural Patterns Integration Tests", () => {
         },
       ];
 
+      const mockPrimary = vi
+        .spyOn(prisma as unknown as ExtendedPrismaClient, "$primary")
+        .mockReturnValue(prisma as unknown as Omit<ExtendedPrismaClient, "$primary" | "$replica">);
       const mockFindMany = vi.spyOn(prisma.outboxEvent, "findMany").mockResolvedValue(mockEvents);
       const mockUpdate = vi.spyOn(prisma.outboxEvent, "update").mockResolvedValue({
         id: "event-123",
@@ -223,6 +227,7 @@ describe("Architectural Patterns Integration Tests", () => {
         }),
       );
 
+      mockPrimary.mockRestore();
       mockFindMany.mockRestore();
       mockUpdate.mockRestore();
       mockEmit.mockRestore();

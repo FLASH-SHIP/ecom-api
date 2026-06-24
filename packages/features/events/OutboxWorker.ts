@@ -1,5 +1,6 @@
 import { lockManager } from "@ecom/lib/lock";
 import { createLogger } from "@ecom/lib/logger";
+import type { ExtendedPrismaClient } from "@ecom/prisma";
 import { prisma } from "@ecom/prisma";
 import { eventBus } from "./EventBus";
 
@@ -72,15 +73,17 @@ export class OutboxWorker {
 
     try {
       // Find pending outbox events (limit to 20 at a time to prevent memory issues)
-      const events = await prisma.outboxEvent.findMany({
-        where: {
-          status: "PENDING",
-        },
-        take: 20,
-        orderBy: {
-          createdAt: "asc",
-        },
-      });
+      const events = await (prisma as unknown as ExtendedPrismaClient)
+        .$primary()
+        .outboxEvent.findMany({
+          where: {
+            status: "PENDING",
+          },
+          take: 20,
+          orderBy: {
+            createdAt: "asc",
+          },
+        });
 
       if (events.length === 0) {
         // Backoff: double interval when idle (up to maxIntervalMs)

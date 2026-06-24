@@ -3,6 +3,14 @@ import { z } from "zod";
 export const apiEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid connection URL"),
+  DATABASE_REPLICA_URL: z
+    .string()
+    .url("DATABASE_REPLICA_URL must be a valid connection URL")
+    .optional(),
+  DATABASE_REPLICA_URLS: z
+    .string()
+    .optional()
+    .describe("Comma-separated list of database replica URLs"),
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
   REDIS_URL: z.string().url("REDIS_URL must be a valid connection URL"),
   API_PORT: z.coerce.number().int().positive().default(4000),
