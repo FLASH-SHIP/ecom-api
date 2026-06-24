@@ -1,8 +1,10 @@
 import { auth } from "@admin/lib/auth";
+import { defaultLocale } from "@ecom/i18n";
 import { prisma } from "@ecom/prisma";
 import { appRouter, createContext } from "@ecom/trpc/server";
 import type { AuthUser } from "@ecom/types";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+import { cookies } from "next/headers";
 
 const handler = async (req: Request) => {
   const session = await auth();
@@ -57,7 +59,13 @@ const handler = async (req: Request) => {
   const userAgent = req.headers.get("user-agent");
 
   const url = new URL(req.url);
-  const locale = url.searchParams.get("ref_lang") ?? req.headers.get("x-locale") ?? null;
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get("NEXT_LOCALE")?.value ?? null;
+  const locale =
+    url.searchParams.get("ref_lang") ??
+    req.headers.get("x-locale") ??
+    cookieLocale ??
+    defaultLocale;
 
   return fetchRequestHandler({
     endpoint: "/api/trpc",

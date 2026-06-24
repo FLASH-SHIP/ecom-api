@@ -1,16 +1,16 @@
 import {
+  Body,
   Controller,
   Get,
+  Inject,
   Post,
   Query,
-  Body,
+  Req,
   UploadedFile,
   UseInterceptors,
-  Req,
-  Inject,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { MediaService, MediaAction } from "./media.service";
+import { type MediaAction, MediaService } from "./media.service";
 
 @Controller("media")
 export class MediaController {
@@ -31,7 +31,7 @@ export class MediaController {
     @Query("sort_by") sortBy = "name-asc",
     @Query("filter") filter = "everything",
     @Query("search") search = "",
-    @Req() req: any
+    @Req() req: any,
   ) {
     const baseUrl = this.getBaseUrl(req);
     return this.mediaService.getMediaList(
@@ -42,7 +42,7 @@ export class MediaController {
       sortBy,
       filter,
       search,
-      baseUrl
+      baseUrl,
     );
   }
 
@@ -50,7 +50,7 @@ export class MediaController {
   async createFolder(
     @Body("name") name: string,
     @Body("parent_id") parentIdStr: string | number,
-    @Body("color") color?: string
+    @Body("color") color?: string,
   ) {
     return this.mediaService.createFolder(name, parentIdStr, color);
   }
@@ -61,7 +61,7 @@ export class MediaController {
     @UploadedFile() file: any,
     @Body("folder_id") folderIdStr?: string | number,
     @Body("visibility") visibility?: string,
-    @Body("access_mode") accessMode?: string
+    @Body("access_mode") accessMode?: string,
   ) {
     return this.mediaService.uploadFile(file, folderIdStr, visibility, accessMode);
   }
@@ -71,7 +71,7 @@ export class MediaController {
     @Body("url") url: string,
     @Body("folder_id") folderIdStr?: string | number,
     @Body("visibility") visibility?: string,
-    @Body("access_mode") accessMode?: string
+    @Body("access_mode") accessMode?: string,
   ) {
     return this.mediaService.downloadUrl(url, folderIdStr, visibility, accessMode);
   }
@@ -84,7 +84,7 @@ export class MediaController {
     @Body("color") color?: string,
     @Body("skip_trash") skipTrash?: boolean,
     @Body("imageId") imageId?: string,
-    @Body("cropData") cropData?: any
+    @Body("cropData") cropData?: any,
   ) {
     return this.mediaService.performAction(
       action,
@@ -93,7 +93,7 @@ export class MediaController {
       color,
       skipTrash,
       imageId,
-      cropData
+      cropData,
     );
   }
 

@@ -1,84 +1,84 @@
-'use client';
+"use client";
 
-import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  X,
   ChevronLeft,
   ChevronRight,
-  Maximize2,
-  Minimize2,
   Download,
   FileText,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  RotateCw,
   FlipHorizontal,
   FlipVertical,
+  Maximize2,
+  Minimize2,
   RefreshCw,
-} from 'lucide-react';
+  RotateCcw,
+  RotateCw,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // ── Types (from model) ──────────────────────────────────────
 
 import {
+  type FileCategory,
   OFFICE_EXTENSIONS,
   OFFICE_MIME_TYPES,
-  type PreviewItem,
   type PreviewDialogProps,
-  type FileCategory,
-} from './PreviewDialog/model/preview.model';
+  type PreviewItem,
+} from "./PreviewDialog/model/preview.model";
 
-export type { PreviewItem, PreviewDialogProps } from './PreviewDialog/model/preview.model';
+export type { PreviewDialogProps, PreviewItem } from "./PreviewDialog/model/preview.model";
 
 /** Extract file extension from name, downloadUrl, or url (in that priority order for last resort) */
 function getExtension(item: PreviewItem): string {
   // Try name first (must be alphanumeric, max 5 chars — avoids "MS - EXCEL NEW" from "3. MS - EXCEL NEW")
-  const nameExt = item.name.split('.').pop()?.toLowerCase().trim() ?? '';
+  const nameExt = item.name.split(".").pop()?.toLowerCase().trim() ?? "";
   if (nameExt !== item.name.toLowerCase() && /^[a-z\d]{1,5}$/.test(nameExt)) return nameExt;
 
   // Try downloadUrl
   if (item.downloadUrl) {
-    const urlPath = new URL(item.downloadUrl, 'https://x').pathname;
-    const urlExt = urlPath.split('.').pop()?.toLowerCase() ?? '';
+    const urlPath = new URL(item.downloadUrl, "https://x").pathname;
+    const urlExt = urlPath.split(".").pop()?.toLowerCase() ?? "";
     if (urlExt.length > 0 && urlExt.length <= 5) return urlExt;
   }
 
   // Try url
   try {
-    const urlPath = new URL(item.url, 'https://x').pathname;
-    const urlExt = urlPath.split('.').pop()?.toLowerCase() ?? '';
+    const urlPath = new URL(item.url, "https://x").pathname;
+    const urlExt = urlPath.split(".").pop()?.toLowerCase() ?? "";
     if (urlExt.length > 0 && urlExt.length <= 5) return urlExt;
   } catch {
     /* ignore */
   }
 
-  return '';
+  return "";
 }
 
 function getFileCategory(item: PreviewItem): FileCategory {
   const ext = getExtension(item);
-  const mime = item.mimeType?.toLowerCase() ?? '';
+  const mime = item.mimeType?.toLowerCase() ?? "";
 
   // 1. Office — check BOTH extension and MIME first (highest priority)
-  if (OFFICE_EXTENSIONS.includes(ext)) return 'office';
-  if (OFFICE_MIME_TYPES.includes(mime)) return 'office';
+  if (OFFICE_EXTENSIONS.includes(ext)) return "office";
+  if (OFFICE_MIME_TYPES.includes(mime)) return "office";
 
   // 2. PDF
-  if (ext === 'pdf' || mime === 'application/pdf') return 'pdf';
+  if (ext === "pdf" || mime === "application/pdf") return "pdf";
 
   // 3. Image
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) return 'image';
-  if (mime.startsWith('image/')) return 'image';
+  if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico"].includes(ext)) return "image";
+  if (mime.startsWith("image/")) return "image";
 
   // 4. Video
-  if (['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(ext)) return 'video';
-  if (mime.startsWith('video/')) return 'video';
+  if (["mp4", "webm", "ogg", "mov", "avi"].includes(ext)) return "video";
+  if (mime.startsWith("video/")) return "video";
 
   // 5. Audio
-  if (['mp3', 'wav', 'flac', 'aac', 'm4a'].includes(ext)) return 'audio';
-  if (mime.startsWith('audio/')) return 'audio';
+  if (["mp3", "wav", "flac", "aac", "m4a"].includes(ext)) return "audio";
+  if (mime.startsWith("audio/")) return "audio";
 
-  return 'other';
+  return "other";
 }
 
 // ── Renderers ──────────────────────────────────────────────
@@ -140,8 +140,8 @@ function ImagePreview({ item }: { item: PreviewItem }): ReactNode {
         });
       }
     };
-    el.addEventListener('wheel', handler, { passive: false });
-    return () => el.removeEventListener('wheel', handler);
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
   }, []);
 
   // Drag handlers
@@ -171,42 +171,42 @@ function ImagePreview({ item }: { item: PreviewItem }): ReactNode {
     `translate(${pos.x}px, ${pos.y}px)`,
     `scale(${flipX ? -scale : scale}, ${flipY ? -scale : scale})`,
     `rotate(${rotate}deg)`,
-  ].join(' ');
+  ].join(" ");
 
   const toolbarBtns: { icon: ReactNode; label: string; onClick: () => void }[] = [
     {
       icon: <FlipHorizontal className="h-4 w-4" />,
-      label: 'Flip horizontal',
+      label: "Flip horizontal",
       onClick: () => setFlipX((v) => !v),
     },
     {
       icon: <FlipVertical className="h-4 w-4" />,
-      label: 'Flip vertical',
+      label: "Flip vertical",
       onClick: () => setFlipY((v) => !v),
     },
     {
       icon: <RotateCcw className="h-4 w-4" />,
-      label: 'Rotate left',
+      label: "Rotate left",
       onClick: () => setRotate((r) => r - 90),
     },
     {
       icon: <RotateCw className="h-4 w-4" />,
-      label: 'Rotate right',
+      label: "Rotate right",
       onClick: () => setRotate((r) => r + 90),
     },
     {
       icon: <ZoomOut className="h-4 w-4" />,
-      label: 'Zoom out',
+      label: "Zoom out",
       onClick: handleZoomOut,
     },
     {
       icon: <ZoomIn className="h-4 w-4" />,
-      label: 'Zoom in',
+      label: "Zoom in",
       onClick: handleZoomIn,
     },
     {
       icon: <RefreshCw className="h-4 w-4" />,
-      label: 'Reset',
+      label: "Reset",
       onClick: handleReset,
     },
   ];
@@ -218,9 +218,9 @@ function ImagePreview({ item }: { item: PreviewItem }): ReactNode {
         ref={containerRef}
         className="relative overflow-hidden"
         style={{
-          maxWidth: '90vw',
-          maxHeight: '75vh',
-          cursor: isZoomed ? (dragging.current ? 'grabbing' : 'grab') : 'default',
+          maxWidth: "90vw",
+          maxHeight: "75vh",
+          cursor: isZoomed ? (dragging.current ? "grabbing" : "grab") : "default",
         }}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
@@ -234,11 +234,11 @@ function ImagePreview({ item }: { item: PreviewItem }): ReactNode {
           draggable={false}
           style={{
             transform,
-            transition: dragging.current ? 'none' : 'transform 0.3s ease',
-            transformOrigin: 'center center',
-            maxHeight: '75vh',
-            maxWidth: '90vw',
-            objectFit: 'contain',
+            transition: dragging.current ? "none" : "transform 0.3s ease",
+            transformOrigin: "center center",
+            maxHeight: "75vh",
+            maxWidth: "90vw",
+            objectFit: "contain",
           }}
         />
       </div>
@@ -247,8 +247,8 @@ function ImagePreview({ item }: { item: PreviewItem }): ReactNode {
       <div
         className="flex items-center gap-1 rounded-full px-3 py-2"
         style={{
-          background: 'rgba(0,0,0,0.45)',
-          backdropFilter: 'blur(0.5rem)',
+          background: "rgba(0,0,0,0.45)",
+          backdropFilter: "blur(0.5rem)",
         }}
       >
         {toolbarBtns.map((btn, i) => (
@@ -281,7 +281,7 @@ function VideoPreview({ item }: { item: PreviewItem }): ReactNode {
       controls
       autoPlay
       className="max-h-[85vh] max-w-[90vw] rounded"
-      style={{ outline: 'none' }}
+      style={{ outline: "none" }}
     >
       <track kind="captions" />
     </video>
@@ -326,7 +326,7 @@ interface CellData {
 }
 
 function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
-  const [html, setHtml] = useState<string>('');
+  const [html, setHtml] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // Excel-specific state
@@ -334,9 +334,9 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
   const [activeSheet, setActiveSheet] = useState(0);
 
   const ext = getExtension(item);
-  const isDocx = ['doc', 'docx'].includes(ext);
-  const isXlsx = ['xls', 'xlsx'].includes(ext);
-  const isPptx = ['ppt', 'pptx'].includes(ext);
+  const isDocx = ["doc", "docx"].includes(ext);
+  const isXlsx = ["xls", "xlsx"].includes(ext);
+  const isPptx = ["ppt", "pptx"].includes(ext);
 
   // PPTX-specific state
   const [pptxSlides, setPptxSlides] = useState<{ slideNumber: number; texts: string[] }[]>([]);
@@ -356,16 +356,16 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
 
         if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
 
-        if (data.type === 'docx' && !cancelled) {
+        if (data.type === "docx" && !cancelled) {
           setHtml(data.html);
-        } else if (data.type === 'xlsx' && !cancelled) {
+        } else if (data.type === "xlsx" && !cancelled) {
           setSheets(data.sheets);
-        } else if (data.type === 'pptx' && !cancelled) {
+        } else if (data.type === "pptx" && !cancelled) {
           setPptxSlides(data.slides);
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load document');
+          setError(err instanceof Error ? err.message : "Failed to load document");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -421,37 +421,37 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
               {/* Slide header */}
               <div
                 style={{
-                  background: 'linear-gradient(135deg, #D35230 0%, #B7472A 100%)',
-                  padding: '0.625rem 1rem',
-                  display: 'flex',
-                  alignItems: 'center',
+                  background: "linear-gradient(135deg, #D35230 0%, #B7472A 100%)",
+                  padding: "0.625rem 1rem",
+                  display: "flex",
+                  alignItems: "center",
                   gap: 8,
                 }}
               >
                 <span
                   style={{
-                    background: 'rgba(255,255,255,0.2)',
+                    background: "rgba(255,255,255,0.2)",
                     borderRadius: 4,
-                    padding: '0.125rem 0.5rem',
+                    padding: "0.125rem 0.5rem",
                     fontSize: 12,
                     fontWeight: 700,
-                    color: '#fff',
+                    color: "#fff",
                   }}
                 >
                   Slide {slide.slideNumber}
                 </span>
               </div>
               {/* Slide content */}
-              <div style={{ padding: '1.5rem 2rem', minHeight: '7.5rem' }}>
+              <div style={{ padding: "1.5rem 2rem", minHeight: "7.5rem" }}>
                 {slide.texts.length > 0 ? (
                   slide.texts.map((text, ti) => (
                     <p
                       key={ti}
                       style={{
-                        margin: '0.5rem 0',
+                        margin: "0.5rem 0",
                         fontSize: ti === 0 ? 18 : 14,
                         fontWeight: ti === 0 ? 600 : 400,
-                        color: ti === 0 ? '#1a1a1a' : '#444',
+                        color: ti === 0 ? "#1a1a1a" : "#444",
                         lineHeight: 1.6,
                       }}
                     >
@@ -459,7 +459,7 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
                     </p>
                   ))
                 ) : (
-                  <p style={{ color: '#999', fontStyle: 'italic', fontSize: 14 }}>
+                  <p style={{ color: "#999", fontStyle: "italic", fontSize: 14 }}>
                     (No text content on this slide)
                   </p>
                 )}
@@ -476,7 +476,7 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
     const sheet = sheets[activeSheet];
     const maxCols = sheet?.data.reduce((max, row) => Math.max(max, row.length), 0) ?? 0;
     const colLetter = (i: number) => {
-      let s = '';
+      let s = "";
       let n = i;
       while (n >= 0) {
         s = String.fromCharCode((n % 26) + 65) + s;
@@ -491,24 +491,24 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
         <div className="flex-1 overflow-auto">
           <table
             style={{
-              borderCollapse: 'collapse',
-              width: '100%',
-              fontSize: '0.8125rem',
-              fontFamily: 'Calibri, Arial, sans-serif',
+              borderCollapse: "collapse",
+              width: "100%",
+              fontSize: "0.8125rem",
+              fontFamily: "Calibri, Arial, sans-serif",
             }}
           >
             {/* Column headers A, B, C... */}
             <thead>
-              <tr style={{ position: 'sticky', top: 0, zIndex: 2 }}>
+              <tr style={{ position: "sticky", top: 0, zIndex: 2 }}>
                 <th
                   style={{
                     minWidth: 40,
-                    background: '#f0f0f0',
-                    border: '0.0625rem solid #d4d4d4',
-                    padding: '0.25rem 0.375rem',
+                    background: "#f0f0f0",
+                    border: "0.0625rem solid #d4d4d4",
+                    padding: "0.25rem 0.375rem",
                     fontWeight: 600,
-                    color: '#555',
-                    position: 'sticky',
+                    color: "#555",
+                    position: "sticky",
                     left: 0,
                     zIndex: 3,
                   }}
@@ -518,13 +518,13 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
                     key={i}
                     style={{
                       minWidth: 80,
-                      background: '#f0f0f0',
-                      border: '0.0625rem solid #d4d4d4',
-                      padding: '0.25rem 0.5rem',
+                      background: "#f0f0f0",
+                      border: "0.0625rem solid #d4d4d4",
+                      padding: "0.25rem 0.5rem",
                       fontWeight: 600,
-                      color: '#555',
-                      textAlign: 'center',
-                      whiteSpace: 'nowrap',
+                      color: "#555",
+                      textAlign: "center",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {colLetter(i)}
@@ -539,13 +539,13 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
                   <td
                     style={{
                       minWidth: 40,
-                      background: '#f0f0f0',
-                      border: '0.0625rem solid #d4d4d4',
-                      padding: '0.25rem 0.375rem',
+                      background: "#f0f0f0",
+                      border: "0.0625rem solid #d4d4d4",
+                      padding: "0.25rem 0.375rem",
                       fontWeight: 600,
-                      color: '#555',
-                      textAlign: 'center',
-                      position: 'sticky',
+                      color: "#555",
+                      textAlign: "center",
+                      position: "sticky",
                       left: 0,
                       zIndex: 1,
                     }}
@@ -553,21 +553,21 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
                     {rIdx + 1}
                   </td>
                   {Array.from({ length: maxCols }, (_, cIdx) => {
-                    const cell = row[cIdx] ?? { v: '' };
+                    const cell = row[cIdx] ?? { v: "" };
                     return (
                       <td
                         key={cIdx}
                         style={{
-                          border: '0.0625rem solid #e0e0e0',
-                          padding: '0.25rem 0.5rem',
-                          whiteSpace: 'nowrap',
+                          border: "0.0625rem solid #e0e0e0",
+                          padding: "0.25rem 0.5rem",
+                          whiteSpace: "nowrap",
                           maxWidth: 300,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          backgroundColor: cell.bg || (rIdx % 2 === 0 ? '#fff' : '#f8f9fa'),
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          backgroundColor: cell.bg || (rIdx % 2 === 0 ? "#fff" : "#f8f9fa"),
                           color: cell.fg || undefined,
                           fontWeight: cell.bold ? 700 : undefined,
-                          fontStyle: cell.italic ? 'italic' : undefined,
+                          fontStyle: cell.italic ? "italic" : undefined,
                         }}
                       >
                         {cell.v}
@@ -584,10 +584,10 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
         {sheets.length > 1 && (
           <div
             style={{
-              display: 'flex',
-              borderTop: '0.0625rem solid #d4d4d4',
-              background: '#f0f0f0',
-              overflowX: 'auto',
+              display: "flex",
+              borderTop: "0.0625rem solid #d4d4d4",
+              background: "#f0f0f0",
+              overflowX: "auto",
             }}
           >
             {sheets.map((s, idx) => (
@@ -595,17 +595,17 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
                 key={idx}
                 onClick={() => setActiveSheet(idx)}
                 style={{
-                  padding: '0.5rem 1rem',
-                  fontSize: '0.75rem',
+                  padding: "0.5rem 1rem",
+                  fontSize: "0.75rem",
                   fontWeight: idx === activeSheet ? 600 : 400,
-                  background: idx === activeSheet ? '#fff' : 'transparent',
-                  border: 'none',
-                  borderRight: '0.0625rem solid #d4d4d4',
+                  background: idx === activeSheet ? "#fff" : "transparent",
+                  border: "none",
+                  borderRight: "0.0625rem solid #d4d4d4",
                   borderTop:
-                    idx === activeSheet ? '0.125rem solid #217346' : '0.125rem solid transparent',
-                  color: idx === activeSheet ? '#217346' : '#555',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
+                    idx === activeSheet ? "0.125rem solid #217346" : "0.125rem solid transparent",
+                  color: idx === activeSheet ? "#217346" : "#555",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {s.name}
@@ -622,7 +622,7 @@ function OfficePreview({ item }: { item: PreviewItem }): ReactNode {
     <div
       className="h-[85vh] w-[90vw] max-w-[75rem] overflow-auto rounded bg-white p-8"
       dangerouslySetInnerHTML={{ __html: html }}
-      style={{ fontSize: '0.875rem', lineHeight: '1.6' }}
+      style={{ fontSize: "0.875rem", lineHeight: "1.6" }}
     />
   );
 }
@@ -651,15 +651,15 @@ function FallbackPreview({ item }: { item: PreviewItem }): ReactNode {
 function PreviewContent({ item }: { item: PreviewItem }): ReactNode {
   const cat = getFileCategory(item);
   switch (cat) {
-    case 'image':
+    case "image":
       return <ImagePreview item={item} />;
-    case 'video':
+    case "video":
       return <VideoPreview item={item} />;
-    case 'audio':
+    case "audio":
       return <AudioPreview item={item} />;
-    case 'pdf':
+    case "pdf":
       return <PdfPreview item={item} />;
-    case 'office':
+    case "office":
       return <OfficePreview item={item} />;
     default:
       return <FallbackPreview item={item} />;
@@ -716,19 +716,19 @@ export default function PreviewDialog({
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft' && hasMultiple) {
+      if (e.key === "ArrowLeft" && hasMultiple) {
         e.preventDefault();
         goPrev();
-      } else if (e.key === 'ArrowRight' && hasMultiple) {
+      } else if (e.key === "ArrowRight" && hasMultiple) {
         e.preventDefault();
         goNext();
-      } else if (e.key === 'Escape') {
+      } else if (e.key === "Escape") {
         e.preventDefault();
         close();
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [open, hasMultiple, goPrev, goNext, close]);
 
   // Clean up fullscreen on unmount/close
@@ -747,7 +747,7 @@ export default function PreviewDialog({
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
         {/* Counter */}
         <div className="text-white/80 text-sm font-medium select-none">
-          {hasMultiple ? `${currentIndex + 1} / ${count}` : ''}
+          {hasMultiple ? `${currentIndex + 1} / ${count}` : ""}
         </div>
 
         {/* Actions */}
@@ -755,7 +755,7 @@ export default function PreviewDialog({
           <button
             onClick={toggleFullscreen}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 cursor-pointer"
-            aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
           >
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </button>

@@ -1,4 +1,8 @@
 import { getTagService } from "@ecom/features/di/containers/BlogService";
+import {
+  getLanguageRepository,
+  getLanguageService,
+} from "@ecom/features/di/containers/LanguageService";
 import { getTranslationService } from "@ecom/features/di/containers/TranslationService";
 import type { FilterFieldConfigMap } from "@ecom/features/shared/utils/buildPrismaWhere";
 import { buildPrismaWhere } from "@ecom/features/shared/utils/buildPrismaWhere";
@@ -66,8 +70,15 @@ export const create = authedProcedure
     });
 
     if (ctx.locale) {
+      const languageRepo = getLanguageRepository();
+      const dbLang = await languageRepo.findByLocale(ctx.locale);
+      const langCode = dbLang?.code ?? ctx.locale;
+
+      const languageService = getLanguageService();
+      await languageService.saveContentLanguage(tag.id, "tag", langCode);
+
       const translationService = getTranslationService();
-      await translationService.saveTranslation("tag", tag.id, ctx.locale, {
+      await translationService.saveTranslation("tag", tag.id, langCode, {
         name: input.name,
         description: input.description,
       });
@@ -93,14 +104,27 @@ export const update = authedProcedure
     const tagService = getTagService();
     const tag = await tagService.updateTag(id, data);
 
-    if (ctx.locale && (data.name !== undefined || data.description !== undefined)) {
-      const translationService = getTranslationService();
-      const currentTag = await tagService.getTag(id);
-      await translationService.saveTranslation("tag", id, ctx.locale, {
-        name: data.name ?? currentTag.name,
-        description:
-          data.description !== undefined ? data.description : (currentTag.description ?? undefined),
-      });
+    if (ctx.locale) {
+      const languageRepo = getLanguageRepository();
+      const dbLang = await languageRepo.findByLocale(ctx.locale);
+      const langCode = dbLang?.code ?? ctx.locale;
+
+      const defaultLang = await languageRepo.findDefault();
+
+      if (langCode === defaultLang?.code) {
+        const languageService = getLanguageService();
+        await languageService.saveContentLanguage(id, "tag", langCode);
+      } else if (data.name !== undefined || data.description !== undefined) {
+        const translationService = getTranslationService();
+        const currentTag = await tagService.getTag(id);
+        await translationService.saveTranslation("tag", id, langCode, {
+          name: data.name ?? currentTag.name,
+          description:
+            data.description !== undefined
+              ? data.description
+              : (currentTag.description ?? undefined),
+        });
+      }
     }
 
     return tag;

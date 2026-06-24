@@ -1,12 +1,12 @@
-import type { LucideIcon } from 'lucide-react';
-import type { MouseEvent } from 'react';
+import type { LucideIcon } from "lucide-react";
+import type { MouseEvent } from "react";
 
 // ── Item Types ──────────────────────────────────────────────
 export enum MediaItemType {
-  FOLDER = 'folder',
-  IMAGE = 'image',
-  VIDEO = 'video',
-  DOCUMENT = 'document',
+  FOLDER = "folder",
+  IMAGE = "image",
+  VIDEO = "video",
+  DOCUMENT = "document",
 }
 
 /**
@@ -15,17 +15,17 @@ export enum MediaItemType {
  */
 export enum MediaPickerFilter {
   /** Show all files (no filtering) */
-  ALL = 'all',
+  ALL = "all",
   /** Only image files (image/*) */
-  IMAGE = 'image',
+  IMAGE = "image",
   /** Only video files (video/*) */
-  VIDEO = 'video',
+  VIDEO = "video",
   /** Only audio files (audio/*) */
-  AUDIO = 'audio',
+  AUDIO = "audio",
   /** Only document files (pdf, doc, docx, txt) */
-  DOCUMENT = 'document',
+  DOCUMENT = "document",
   /** Only spreadsheet files (csv, xls, xlsx) */
-  SPREADSHEET = 'spreadsheet',
+  SPREADSHEET = "spreadsheet",
 }
 
 /**
@@ -34,19 +34,19 @@ export enum MediaPickerFilter {
  */
 export const MEDIA_PICKER_MIME_MAP: Record<MediaPickerFilter, string[]> = {
   [MediaPickerFilter.ALL]: [],
-  [MediaPickerFilter.IMAGE]: ['image/'],
-  [MediaPickerFilter.VIDEO]: ['video/'],
-  [MediaPickerFilter.AUDIO]: ['audio/'],
+  [MediaPickerFilter.IMAGE]: ["image/"],
+  [MediaPickerFilter.VIDEO]: ["video/"],
+  [MediaPickerFilter.AUDIO]: ["audio/"],
   [MediaPickerFilter.DOCUMENT]: [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain',
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
   ],
   [MediaPickerFilter.SPREADSHEET]: [
-    'text/csv',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    "text/csv",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ],
 };
 
@@ -82,8 +82,8 @@ export interface MediaItem {
 
 // ── View Mode ───────────────────────────────────────────────
 export enum ViewMode {
-  GRID = 'grid',
-  LIST = 'list',
+  GRID = "grid",
+  LIST = "list",
 }
 
 // ── Sort ────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ export interface MediaUploadResponse {
 /** Query params for GET /v1/media/list */
 export interface ParamsGetMediaList {
   folder_id?: number | string;
-  view_in?: 'all_media' | 'trash' | 'recent' | 'favorites';
+  view_in?: "all_media" | "trash" | "recent" | "favorites";
   page?: number;
   per_page?: number;
   sort_by?: string;
@@ -283,7 +283,7 @@ export interface MediaToolbarProps {
   onDeletePermanentlyRequest?: (items: MediaItem[]) => void;
   onOpenFolder?: (item: MediaItem) => void;
   /** Current view filter */
-  viewIn?: 'all_media' | 'trash' | 'recent' | 'favorites';
+  viewIn?: "all_media" | "trash" | "recent" | "favorites";
   /** Whether the detail sidebar is visible */
   showSidebar?: boolean;
   /** Toggle detail sidebar visibility */
@@ -354,7 +354,7 @@ export interface MediaContextMenuProps {
   position: ContextMenuPosition;
   onClose: () => void;
   /** Current view filter — determines which actions are shown */
-  viewIn?: 'all_media' | 'trash' | 'recent' | 'favorites';
+  viewIn?: "all_media" | "trash" | "recent" | "favorites";
   /** Callback khi user chọn "Preview" */
   onPreviewRequest?: (item: MediaItem, allItems?: MediaItem[]) => void;
   /** Callback khi user chọn "Move to trash" — parent sẽ show confirm modal */
@@ -402,10 +402,10 @@ export interface MediaDetailSidebarProps {
 
 // ── Upload Progress Panel ───────────────────────────────────
 export enum UploadFileStatus {
-  PENDING = 'pending',
-  UPLOADING = 'uploading',
-  SUCCESS = 'success',
-  ERROR = 'error',
+  PENDING = "pending",
+  UPLOADING = "uploading",
+  SUCCESS = "success",
+  ERROR = "error",
 }
 
 export interface UploadFileItem {
@@ -421,10 +421,10 @@ export interface UploadProgressPanelHandle {
 
 // ── Download URL Dialog ─────────────────────────────────────
 export enum DownloadUrlStatus {
-  PENDING = 'pending',
-  DOWNLOADING = 'downloading',
-  SUCCESS = 'success',
-  ERROR = 'error',
+  PENDING = "pending",
+  DOWNLOADING = "downloading",
+  SUCCESS = "success",
+  ERROR = "error",
 }
 
 export interface DownloadUrlItem {
@@ -443,19 +443,19 @@ export interface DownloadUrlDialogProps {
 
 /** All available actions for context menu */
 export enum MediaAction {
-  TRASH = 'trash',
-  RESTORE = 'restore',
-  MOVE = 'move',
-  MAKE_COPY = 'make_copy',
-  DELETE = 'delete',
-  FAVORITE = 'favorite',
-  REMOVE_FAVORITE = 'remove_favorite',
-  ADD_RECENT = 'add_recent',
-  CROP = 'crop',
-  RENAME = 'rename',
-  ALT_TEXT = 'alt_text',
-  EMPTY_TRASH = 'empty_trash',
-  PROPERTIES = 'properties',
+  TRASH = "trash",
+  RESTORE = "restore",
+  MOVE = "move",
+  MAKE_COPY = "make_copy",
+  DELETE = "delete",
+  FAVORITE = "favorite",
+  REMOVE_FAVORITE = "remove_favorite",
+  ADD_RECENT = "add_recent",
+  CROP = "crop",
+  RENAME = "rename",
+  ALT_TEXT = "alt_text",
+  EMPTY_TRASH = "empty_trash",
+  PROPERTIES = "properties",
 }
 
 /** Crop data for image cropping */
@@ -511,10 +511,10 @@ export interface MediaActionResponse {
 
 // ── Share Dialog ────────────────────────────────────────────
 export enum ShareType {
-  URL = 'url',
-  INDIRECT_URL = 'indirect_url',
-  HTML = 'html',
-  MARKDOWN = 'markdown',
+  URL = "url",
+  INDIRECT_URL = "indirect_url",
+  HTML = "html",
+  MARKDOWN = "markdown",
 }
 
 export interface ShareDialogProps {
@@ -563,7 +563,7 @@ export interface MediaOptionsResponse {
 export interface MediaContentProps {
   currentFolderId: number | string;
   onFolderChange: (folderId: number | string) => void;
-  viewIn: 'all_media' | 'trash' | 'recent' | 'favorites';
+  viewIn: "all_media" | "trash" | "recent" | "favorites";
   filter: string;
   search: string;
   /** Optional callback to track selected items (used by MediaPickerDialog) */

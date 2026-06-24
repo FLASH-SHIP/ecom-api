@@ -19,7 +19,7 @@ export const LanguagesSeeder: Seeder = {
       {
         name: "English",
         locale: "en",
-        code: "en_US",
+        code: "en",
         flag: "us",
         isDefault: false,
         isActive: true,

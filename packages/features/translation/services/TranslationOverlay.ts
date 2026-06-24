@@ -1,5 +1,23 @@
 import { prisma } from "@ecom/prisma";
 
+async function resolveLangCode(localeOrCode: string | null): Promise<string | null> {
+  if (!localeOrCode) return null;
+  const lang = await prisma.language.findFirst({
+    where: {
+      OR: [
+        { locale: localeOrCode },
+        { code: localeOrCode },
+        { locale: localeOrCode.replace("-", "_") },
+        { code: localeOrCode.replace("-", "_") },
+        { locale: localeOrCode.split(/[-_]/)[0] },
+        { code: localeOrCode.split(/[-_]/)[0] },
+      ],
+    },
+    select: { code: true },
+  });
+  return lang?.code ?? localeOrCode;
+}
+
 /**
  * Translation overlay utilities for public API responses.
  *
@@ -41,8 +59,11 @@ export async function overlayPostTranslation<T extends PostLike>(
 ): Promise<T & { _translatedFrom?: string }> {
   if (!locale) return post;
 
+  const langCode = await resolveLangCode(locale);
+  if (!langCode) return post;
+
   const translation = await prisma.postTranslation.findUnique({
-    where: { postId_langCode: { postId: post.id, langCode: locale } },
+    where: { postId_langCode: { postId: post.id, langCode } },
     select: { title: true, slug: true, excerpt: true, content: true },
   });
 
@@ -68,9 +89,12 @@ export async function overlayPostTranslations<T extends PostLike>(
 ): Promise<(T & { _translatedFrom?: string })[]> {
   if (!locale || posts.length === 0) return posts;
 
+  const langCode = await resolveLangCode(locale);
+  if (!langCode) return posts;
+
   const postIds = posts.map((p) => p.id);
   const translations = await prisma.postTranslation.findMany({
-    where: { postId: { in: postIds }, langCode: locale },
+    where: { postId: { in: postIds }, langCode },
     select: { postId: true, title: true, slug: true, excerpt: true, content: true },
   });
 
@@ -99,8 +123,11 @@ export async function overlayCategoryTranslation<T extends CategoryLike>(
 ): Promise<T & { _translatedFrom?: string }> {
   if (!locale) return category;
 
+  const langCode = await resolveLangCode(locale);
+  if (!langCode) return category;
+
   const translation = await prisma.categoryTranslation.findUnique({
-    where: { categoryId_langCode: { categoryId: category.id, langCode: locale } },
+    where: { categoryId_langCode: { categoryId: category.id, langCode } },
     select: { name: true, description: true },
   });
 
@@ -124,9 +151,12 @@ export async function overlayCategoryTranslations<T extends CategoryLike>(
 ): Promise<T[]> {
   if (!locale || categories.length === 0) return categories;
 
+  const langCode = await resolveLangCode(locale);
+  if (!langCode) return categories;
+
   const allIds = collectCategoryIds(categories);
   const translations = await prisma.categoryTranslation.findMany({
-    where: { categoryId: { in: allIds }, langCode: locale },
+    where: { categoryId: { in: allIds }, langCode },
     select: { categoryId: true, name: true, description: true },
   });
 
@@ -185,9 +215,12 @@ export async function overlayTagTranslations<T extends TagLike>(
 ): Promise<(T & { _translatedFrom?: string })[]> {
   if (!locale || tags.length === 0) return tags;
 
+  const langCode = await resolveLangCode(locale);
+  if (!langCode) return tags;
+
   const tagIds = tags.map((t) => t.id);
   const translations = await prisma.tagTranslation.findMany({
-    where: { tagId: { in: tagIds }, langCode: locale },
+    where: { tagId: { in: tagIds }, langCode },
     select: { tagId: true, name: true, description: true },
   });
 
@@ -223,8 +256,11 @@ export async function overlayPageTranslation<T extends PageLike>(
 ): Promise<T & { _translatedFrom?: string }> {
   if (!locale) return page;
 
+  const langCode = await resolveLangCode(locale);
+  if (!langCode) return page;
+
   const translation = await prisma.pageTranslation.findUnique({
-    where: { pageId_langCode: { pageId: page.id, langCode: locale } },
+    where: { pageId_langCode: { pageId: page.id, langCode } },
     select: { title: true, slug: true, content: true },
   });
 
@@ -249,9 +285,12 @@ export async function overlayPageTranslations<T extends PageLike>(
 ): Promise<(T & { _translatedFrom?: string })[]> {
   if (!locale || pages.length === 0) return pages;
 
+  const langCode = await resolveLangCode(locale);
+  if (!langCode) return pages;
+
   const pageIds = pages.map((p) => p.id);
   const translations = await prisma.pageTranslation.findMany({
-    where: { pageId: { in: pageIds }, langCode: locale },
+    where: { pageId: { in: pageIds }, langCode },
     select: { pageId: true, title: true, slug: true, content: true },
   });
 
@@ -279,9 +318,12 @@ export async function overlayMenuItemTranslations<
 >(items: T[], locale: string | null): Promise<(T & { _translatedFrom?: string })[]> {
   if (!locale || items.length === 0) return items;
 
+  const langCode = await resolveLangCode(locale);
+  if (!langCode) return items;
+
   const itemIds = items.map((i) => i.id);
   const translations = await prisma.menuItemTranslation.findMany({
-    where: { menuItemId: { in: itemIds }, langCode: locale },
+    where: { menuItemId: { in: itemIds }, langCode },
     select: { menuItemId: true, label: true },
   });
 
@@ -306,11 +348,12 @@ export async function findPostByTranslatedSlug(
   slug: string,
   locale: string | null,
 ): Promise<{ postId: number; resolvedLocale: string } | null> {
-  if (locale) {
+  const langCode = await resolveLangCode(locale);
+  if (langCode) {
     const slugTranslation = await prisma.slugTranslation.findFirst({
       where: {
         key: slug,
-        langCode: locale,
+        langCode,
         slug: { referenceType: "Post" },
       },
       select: {
@@ -319,7 +362,7 @@ export async function findPostByTranslatedSlug(
     });
 
     if (slugTranslation) {
-      return { postId: slugTranslation.slug.referenceId, resolvedLocale: locale };
+      return { postId: slugTranslation.slug.referenceId, resolvedLocale: locale as string };
     }
   }
 

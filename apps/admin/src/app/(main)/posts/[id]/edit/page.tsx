@@ -4,6 +4,7 @@ import { PostForm } from "@admin/components/blog/post-form";
 import { useLanguageSwitcher } from "@admin/hooks/useLanguageSwitcher";
 import { trpc } from "@admin/lib/trpc";
 import { LanguageSwitcher } from "@ecom/ui/components/language-switcher";
+import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: handles both default and translation mode data loading
@@ -17,20 +18,20 @@ export default function EditPostPage() {
     error,
   } = trpc.viewer.posts.get.useQuery({ id: postId }, { enabled: !Number.isNaN(postId) });
 
-  const { languageTabs, activeCode, isDefaultLanguage, onLanguageChange } = useLanguageSwitcher(
-    "post",
-    postId,
-  );
+  const { languageTabs, activeCode, isDefaultLanguage, onLanguageChange, isSwitcherLoading } =
+    useLanguageSwitcher("post", postId);
 
   const { data: translation } = trpc.viewer.translations.get.useQuery(
     { entityType: "post", entityId: postId, langCode: activeCode ?? "" },
     { enabled: !isDefaultLanguage && !!activeCode },
   );
 
-  if (isLoading) {
+  const hasTranslationLoaded = isDefaultLanguage || translation !== undefined;
+
+  if (isLoading || isSwitcherLoading || !hasTranslationLoaded) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="text-sm text-slate-500 dark:text-slate-400">Loading post...</div>
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -87,6 +88,7 @@ export default function EditPostPage() {
       />
 
       <PostForm
+        key={activeCode ?? "default"}
         mode="edit"
         postId={postId}
         initialData={formInitialData}

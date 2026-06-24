@@ -14,14 +14,14 @@ export interface AspectPreset {
 }
 
 export const ASPECT_PRESETS: AspectPreset[] = [
-  { label: 'Free', value: undefined },
-  { label: '1:1', value: 1 },
-  { label: '4:3', value: 4 / 3 },
-  { label: '3:2', value: 3 / 2 },
-  { label: '16:9', value: 16 / 9 },
-  { label: '21:9', value: 21 / 9 },
-  { label: '2:3', value: 2 / 3 },
-  { label: '9:16', value: 9 / 16 },
+  { label: "Free", value: undefined },
+  { label: "1:1", value: 1 },
+  { label: "4:3", value: 4 / 3 },
+  { label: "3:2", value: 3 / 2 },
+  { label: "16:9", value: 16 / 9 },
+  { label: "21:9", value: 21 / 9 },
+  { label: "2:3", value: 2 / 3 },
+  { label: "9:16", value: 9 / 16 },
 ];
 
 // ── Dialog Props ────────────────────────────────────────────

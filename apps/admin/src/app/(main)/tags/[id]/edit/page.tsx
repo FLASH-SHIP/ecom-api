@@ -18,14 +18,19 @@ export default function EditTagPage() {
     error,
   } = trpc.viewer.tags.get.useQuery({ id: tagId }, { enabled: !Number.isNaN(tagId) });
 
-  const { activeCode, isDefaultLanguage } = useLanguageSwitcher("tag", tagId);
+  const { activeCode, isDefaultLanguage, originLangCode, isSwitcherLoading } = useLanguageSwitcher(
+    "tag",
+    tagId,
+  );
 
   const { data: translation } = trpc.viewer.translations.get.useQuery(
     { entityType: "tag", entityId: tagId, langCode: activeCode ?? "" },
     { enabled: !isDefaultLanguage && !!activeCode },
   );
 
-  if (isLoading) {
+  const hasTranslationLoaded = isDefaultLanguage || translation !== undefined;
+
+  if (isLoading || isSwitcherLoading || !hasTranslationLoaded) {
     return (
       <div className="flex items-center justify-center py-24">
         <Loader2 className="size-8 animate-spin text-muted-foreground" />
@@ -70,6 +75,7 @@ export default function EditTagPage() {
         tagId={tagId}
         initialData={formInitialData}
         translationMode={!isDefaultLanguage ? activeCode : undefined}
+        originLangCode={originLangCode ?? undefined}
       />
     </div>
   );

@@ -1,33 +1,33 @@
 import {
+  type UseMutationResult,
+  type UseQueryResult,
   useMutation,
   useQuery,
   useQueryClient,
-  UseMutationResult,
-  UseQueryResult,
-} from '@tanstack/react-query';
-import {
-  uploadMediaFile,
-  downloadMediaFileFromRemote,
-  getMediaList,
-  createMediaFolder,
-  performMediaAction,
-  getMediaFolderTree,
-  getMediaOptions,
-  MediaDataKeys,
-} from './queries';
+} from "@tanstack/react-query";
 import type {
-  ParamsUploadMediaFile,
-  ParamsDownloadMediaFromRemote,
-  ParamsGetMediaList,
-  ParamsCreateMediaFolder,
-  ParamsMediaAction,
-  MediaUploadResponse,
-  MediaListResponse,
   CreateMediaFolderResponse,
   MediaActionResponse,
   MediaFolderTreeResponse,
+  MediaListResponse,
   MediaOptionsResponse,
-} from '../model/media.model';
+  MediaUploadResponse,
+  ParamsCreateMediaFolder,
+  ParamsDownloadMediaFromRemote,
+  ParamsGetMediaList,
+  ParamsMediaAction,
+  ParamsUploadMediaFile,
+} from "../model/media.model";
+import {
+  createMediaFolder,
+  downloadMediaFileFromRemote,
+  getMediaFolderTree,
+  getMediaList,
+  getMediaOptions,
+  MediaDataKeys,
+  performMediaAction,
+  uploadMediaFile,
+} from "./queries";
 
 // ── List media files / folders ──────────────────────────────
 export const useMediaList = (
@@ -38,7 +38,7 @@ export const useMediaList = (
     queryFn: () => getMediaList(params),
     staleTime: 0,
     gcTime: 0,
-    refetchOnMount: 'always',
+    refetchOnMount: "always",
   });
 };
 
@@ -91,7 +91,7 @@ export const useMutationCreateMediaFolder = (
       // Built-in invalidation always runs
       queryClient.invalidateQueries({ queryKey: MediaDataKeys.all });
       // Then caller's onSuccess if provided
-      if (typeof callerOnSuccess === 'function') {
+      if (typeof callerOnSuccess === "function") {
         (callerOnSuccess as (...a: unknown[]) => void)(...args);
       }
     },
@@ -111,7 +111,7 @@ export const useMutationMediaAction = (
       // Built-in invalidation always runs
       queryClient.invalidateQueries({ queryKey: MediaDataKeys.all });
       // Then caller's onSuccess if provided
-      if (typeof callerOnSuccess === 'function') {
+      if (typeof callerOnSuccess === "function") {
         (callerOnSuccess as (...a: unknown[]) => void)(...args);
       }
     },

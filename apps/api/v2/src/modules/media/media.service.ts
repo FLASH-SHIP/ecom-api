@@ -1,24 +1,24 @@
-import { Injectable } from "@nestjs/common";
-import { prisma } from "@ecom/prisma";
-import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
-import { join, extname } from "node:path";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import * as http from "node:http";
 import * as https from "node:https";
+import { extname, join } from "node:path";
+import { prisma } from "@ecom/prisma";
+import { Injectable } from "@nestjs/common";
 
 export enum MediaAction {
-  TRASH = 'trash',
-  RESTORE = 'restore',
-  MOVE = 'move',
-  MAKE_COPY = 'make_copy',
-  DELETE = 'delete',
-  FAVORITE = 'favorite',
-  REMOVE_FAVORITE = 'remove_favorite',
-  ADD_RECENT = 'add_recent',
-  CROP = 'crop',
-  RENAME = 'rename',
-  ALT_TEXT = 'alt_text',
-  EMPTY_TRASH = 'empty_trash',
-  PROPERTIES = 'properties',
+  TRASH = "trash",
+  RESTORE = "restore",
+  MOVE = "move",
+  MAKE_COPY = "make_copy",
+  DELETE = "delete",
+  FAVORITE = "favorite",
+  REMOVE_FAVORITE = "remove_favorite",
+  ADD_RECENT = "add_recent",
+  CROP = "crop",
+  RENAME = "rename",
+  ALT_TEXT = "alt_text",
+  EMPTY_TRASH = "empty_trash",
+  PROPERTIES = "properties",
 }
 
 @Injectable()
@@ -33,7 +33,7 @@ export class MediaService {
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+    return parseFloat((bytes / k ** i).toFixed(dm)) + " " + sizes[i];
   }
 
   private getFileType(mimeType: string): string {
@@ -89,11 +89,10 @@ export class MediaService {
     sortBy = "name-asc",
     filter = "everything",
     search = "",
-    baseUrl = "http://localhost:4000"
+    baseUrl = "http://localhost:4000",
   ) {
-    const folderId = folderIdStr && folderIdStr !== "0" && folderIdStr !== 0
-      ? Number(folderIdStr)
-      : null;
+    const folderId =
+      folderIdStr && folderIdStr !== "0" && folderIdStr !== 0 ? Number(folderIdStr) : null;
 
     // ─── Order By ───────────────────────────────────────
     let orderBy: any = { createdAt: "desc" };
@@ -235,10 +234,12 @@ export class MediaService {
   }
 
   async createFolder(name: string, parentIdStr: string | number, color?: string) {
-    const parentId = parentIdStr && parentIdStr !== "0" && parentIdStr !== 0
-      ? Number(parentIdStr)
-      : null;
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Math.random().toString(36).substring(2, 6);
+    const parentId =
+      parentIdStr && parentIdStr !== "0" && parentIdStr !== 0 ? Number(parentIdStr) : null;
+    const slug =
+      name.toLowerCase().replace(/[^a-z0-9]+/g, "-") +
+      "-" +
+      Math.random().toString(36).substring(2, 6);
     const folder = await prisma.mediaFolder.create({
       data: { name, slug, parentId, color },
     });
@@ -249,11 +250,10 @@ export class MediaService {
     file: any,
     folderIdStr?: string | number,
     visibility = "public",
-    accessMode?: string
+    accessMode?: string,
   ) {
-    const folderId = folderIdStr && folderIdStr !== "0" && folderIdStr !== 0
-      ? Number(folderIdStr)
-      : null;
+    const folderId =
+      folderIdStr && folderIdStr !== "0" && folderIdStr !== 0 ? Number(folderIdStr) : null;
 
     const uploadsDir = this.getUploadsDir();
     const now = new Date();
@@ -288,39 +288,43 @@ export class MediaService {
     return { data: this.mapFileToItem(created, "http://localhost:4000") };
   }
 
-  private downloadRemoteBuffer(url: string): Promise<{ buffer: Buffer; mimeType: string; filename: string }> {
+  private downloadRemoteBuffer(
+    url: string,
+  ): Promise<{ buffer: Buffer; mimeType: string; filename: string }> {
     return new Promise((resolve, reject) => {
       const protocol = url.startsWith("https") ? https : http;
-      protocol.get(url, (res) => {
-        if (res.statusCode !== 200) {
-          reject(new Error(`Failed to download: status ${res.statusCode}`));
-          return;
-        }
+      protocol
+        .get(url, (res) => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`Failed to download: status ${res.statusCode}`));
+            return;
+          }
 
-        const mimeType = res.headers["content-type"] || "application/octet-stream";
-        const contentDisposition = res.headers["content-disposition"] || "";
-        let filename = "downloaded-file";
+          const mimeType = res.headers["content-type"] || "application/octet-stream";
+          const contentDisposition = res.headers["content-disposition"] || "";
+          let filename = "downloaded-file";
 
-        const match = contentDisposition.match(/filename="?([^";]+)"?/);
-        if (match && match[1]) {
-          filename = match[1];
-        } else {
-          const u = new URL(url);
-          const parts = u.pathname.split("/");
-          const lastPart = parts.pop();
-          if (lastPart) filename = lastPart;
-        }
+          const match = contentDisposition.match(/filename="?([^";]+)"?/);
+          if (match && match[1]) {
+            filename = match[1];
+          } else {
+            const u = new URL(url);
+            const parts = u.pathname.split("/");
+            const lastPart = parts.pop();
+            if (lastPart) filename = lastPart;
+          }
 
-        const chunks: Buffer[] = [];
-        res.on("data", (chunk) => chunks.push(chunk));
-        res.on("end", () => {
-          resolve({
-            buffer: Buffer.concat(chunks),
-            mimeType,
-            filename,
+          const chunks: Buffer[] = [];
+          res.on("data", (chunk) => chunks.push(chunk));
+          res.on("end", () => {
+            resolve({
+              buffer: Buffer.concat(chunks),
+              mimeType,
+              filename,
+            });
           });
-        });
-      }).on("error", reject);
+        })
+        .on("error", reject);
     });
   }
 
@@ -328,11 +332,10 @@ export class MediaService {
     url: string,
     folderIdStr?: string | number,
     visibility = "public",
-    accessMode?: string
+    accessMode?: string,
   ) {
-    const folderId = folderIdStr && folderIdStr !== "0" && folderIdStr !== 0
-      ? Number(folderIdStr)
-      : null;
+    const folderId =
+      folderIdStr && folderIdStr !== "0" && folderIdStr !== 0 ? Number(folderIdStr) : null;
 
     const { buffer, mimeType, filename } = await this.downloadRemoteBuffer(url);
 
@@ -376,7 +379,7 @@ export class MediaService {
     color?: string,
     skipTrash?: boolean,
     imageId?: string,
-    cropData?: any
+    cropData?: any,
   ) {
     const ids = selected.map((s) => Number(s.id));
     const folderIds = selected.filter((s) => s.is_folder).map((s) => Number(s.id));
@@ -413,10 +416,9 @@ export class MediaService {
         }
         break;
 
-      case MediaAction.MOVE:
-        const destId = destination && destination !== "0" && destination !== 0
-          ? Number(destination)
-          : null;
+      case MediaAction.MOVE: {
+        const destId =
+          destination && destination !== "0" && destination !== 0 ? Number(destination) : null;
         if (folderIds.length > 0) {
           await prisma.mediaFolder.updateMany({
             where: { id: { in: folderIds } },
@@ -430,6 +432,7 @@ export class MediaService {
           });
         }
         break;
+      }
 
       case MediaAction.FAVORITE:
         if (folderIds.length > 0) {
@@ -565,7 +568,7 @@ export class MediaService {
         }
         break;
 
-      case MediaAction.EMPTY_TRASH:
+      case MediaAction.EMPTY_TRASH: {
         const trashedFiles = await prisma.mediaFile.findMany({
           where: { deletedAt: { not: null } },
         });
@@ -586,6 +589,7 @@ export class MediaService {
           where: { deletedAt: { not: null } },
         });
         break;
+      }
 
       case MediaAction.CROP:
         if (imageId && cropData) {
@@ -662,14 +666,7 @@ export class MediaService {
   async getOptions() {
     return {
       data: {
-        folder_colors: [
-          "#4b6bfb",
-          "#10b981",
-          "#f59e0b",
-          "#ef4444",
-          "#ec4899",
-          "#8b5cf6",
-        ],
+        folder_colors: ["#4b6bfb", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6"],
       },
     };
   }

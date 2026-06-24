@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@ecom/ui/components/card";
-import { Separator } from "@ecom/ui/components/separator";
+import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
 import { Button } from "@ecom/ui/components/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@ecom/ui/components/card";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
-import { Textarea } from "@ecom/ui/components/textarea";
 import {
   Select,
   SelectContent,
@@ -14,9 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
+import { Separator } from "@ecom/ui/components/separator";
+import { Textarea } from "@ecom/ui/components/textarea";
 import { ImageIcon, X } from "lucide-react";
 import Image from "next/image";
-import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
+import { useEffect, useState } from "react";
 
 interface SearchEngineOptimizeProps {
   seoTitle: string;
@@ -84,7 +84,8 @@ export function SearchEngineOptimize({
     : `${origin}/tag/...`;
 
   const previewDescription =
-    seoDescription.trim() || "Setup meta title & description to make your site easy to discovered on search engines such as Google";
+    seoDescription.trim() ||
+    "Setup meta title & description to make your site easy to discovered on search engines such as Google";
 
   const hasInputData = seoTitle.trim() || seoDescription.trim() || seoImage.trim();
 
@@ -108,9 +109,7 @@ export function SearchEngineOptimize({
           <span className="text-[1.125rem] font-medium text-[#1a0dab] line-clamp-1 hover:underline cursor-pointer">
             {previewTitle}
           </span>
-          <span className="text-[0.875rem] text-[#006621] line-clamp-1">
-            {previewUrl}
-          </span>
+          <span className="text-[0.875rem] text-[#006621] line-clamp-1">{previewUrl}</span>
           <span className="text-[0.875rem] text-[#545454] line-clamp-2">
             {formattedDate ? `${formattedDate} - ` : ""}
             {previewDescription}
@@ -122,7 +121,9 @@ export function SearchEngineOptimize({
             {/* SEO Title */}
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="seo-meta-title" className="text-sm font-medium">SEO Title</Label>
+                <Label htmlFor="seo-meta-title" className="text-sm font-medium">
+                  SEO Title
+                </Label>
                 <span className="text-xs text-muted-foreground">{seoTitle.length}/60</span>
               </div>
               <Input
@@ -140,7 +141,9 @@ export function SearchEngineOptimize({
             {/* SEO Description */}
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="seo-meta-description" className="text-sm font-medium">SEO Description</Label>
+                <Label htmlFor="seo-meta-description" className="text-sm font-medium">
+                  SEO Description
+                </Label>
                 <span className="text-xs text-muted-foreground">{seoDescription.length}/160</span>
               </div>
               <Textarea
@@ -204,7 +207,9 @@ export function SearchEngineOptimize({
 
             {/* Index Mode */}
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="seo-index-mode" className="text-sm font-medium">Index Mode</Label>
+              <Label htmlFor="seo-index-mode" className="text-sm font-medium">
+                Index Mode
+              </Label>
               <Select value={indexMode} onValueChange={onChangeIndexMode}>
                 <SelectTrigger id="seo-index-mode" className="w-full">
                   <SelectValue />

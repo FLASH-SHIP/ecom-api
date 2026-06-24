@@ -4,6 +4,7 @@ import { CategoryForm } from "@admin/components/blog/category-form";
 import { useLanguageSwitcher } from "@admin/hooks/useLanguageSwitcher";
 import { trpc } from "@admin/lib/trpc";
 import { LanguageSwitcher } from "@ecom/ui/components/language-switcher";
+import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 
 export default function EditCategoryPage() {
@@ -19,20 +20,20 @@ export default function EditCategoryPage() {
     { enabled: !Number.isNaN(categoryId) },
   );
 
-  const { languageTabs, activeCode, isDefaultLanguage, onLanguageChange } = useLanguageSwitcher(
-    "category",
-    categoryId,
-  );
+  const { languageTabs, activeCode, isDefaultLanguage, onLanguageChange, isSwitcherLoading } =
+    useLanguageSwitcher("category", categoryId);
 
   const { data: translation } = trpc.viewer.translations.get.useQuery(
     { entityType: "category", entityId: categoryId, langCode: activeCode ?? "" },
     { enabled: !isDefaultLanguage && !!activeCode },
   );
 
-  if (isLoading) {
+  const hasTranslationLoaded = isDefaultLanguage || translation !== undefined;
+
+  if (isLoading || isSwitcherLoading || !hasTranslationLoaded) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="text-sm text-slate-500 dark:text-slate-400">Loading category...</div>
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -84,7 +85,12 @@ export default function EditCategoryPage() {
         onLanguageChange={onLanguageChange}
       />
 
-      <CategoryForm mode="edit" categoryId={categoryId} initialData={formInitialData} />
+      <CategoryForm
+        key={activeCode ?? "default"}
+        mode="edit"
+        categoryId={categoryId}
+        initialData={formInitialData}
+      />
     </div>
   );
 }

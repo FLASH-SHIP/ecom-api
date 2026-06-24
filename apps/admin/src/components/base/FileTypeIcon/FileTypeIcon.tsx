@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ const FileIconBase = ({ size, bgColor, foldColor, label, children }: FileIconBas
         y="34"
         textAnchor="middle"
         fill="white"
-        fontSize={label.length > 3 ? '8' : label.length > 2 ? '9' : '10'}
+        fontSize={label.length > 3 ? "8" : label.length > 2 ? "9" : "10"}
         fontWeight="bold"
         fontFamily="sans-serif"
       >
@@ -96,37 +96,37 @@ export const getFileTypeIcon = (mimeType?: string, size = 48): ReactNode => {
   const m = mimeType.toLowerCase();
 
   // Video
-  if (m.startsWith('video/')) return <VideoIcon size={size} />;
+  if (m.startsWith("video/")) return <VideoIcon size={size} />;
   // Audio
-  if (m.startsWith('audio/')) return <AudioIcon size={size} />;
+  if (m.startsWith("audio/")) return <AudioIcon size={size} />;
   // PDF
-  if (m === 'application/pdf') return <PdfIcon size={size} />;
+  if (m === "application/pdf") return <PdfIcon size={size} />;
   // Word
   if (
-    m === 'application/msword' ||
-    m === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    m === "application/msword" ||
+    m === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   )
     return <WordIcon size={size} />;
   // Excel
   if (
-    m === 'application/vnd.ms-excel' ||
-    m === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    m === "application/vnd.ms-excel" ||
+    m === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   )
     return <ExcelIcon size={size} />;
   // CSV
-  if (m === 'text/csv') return <CsvIcon size={size} />;
+  if (m === "text/csv") return <CsvIcon size={size} />;
   // PowerPoint
   if (
-    m === 'application/vnd.ms-powerpoint' ||
-    m === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    m === "application/vnd.ms-powerpoint" ||
+    m === "application/vnd.openxmlformats-officedocument.presentationml.presentation"
   )
     return <PptIcon size={size} />;
   // Archive
-  if (m === 'application/zip' || m === 'application/x-rar-compressed' || m === 'application/x-rar')
+  if (m === "application/zip" || m === "application/x-rar-compressed" || m === "application/x-rar")
     return <ArchiveIcon size={size} />;
   // Text
-  if (m === 'text/plain') return <TextIcon size={size} />;
-  if (m.startsWith('text/')) return <TextIcon size={size} />;
+  if (m === "text/plain") return <TextIcon size={size} />;
+  if (m.startsWith("text/")) return <TextIcon size={size} />;
 
   return <GenericFileIcon size={size} />;
 };

@@ -69,7 +69,7 @@ export const downloadFile = async (url: string, fileName?: string): Promise<void
 
 export const downloadFolderAsZip = async (
   files: { name: string; full_url: string }[],
-  folderName: string
+  folderName: string,
 ): Promise<void> => {
   const JSZip = (await import("jszip")).default;
   const zip = new JSZip();
@@ -104,7 +104,7 @@ export const downloadMultipleItemsAsZip = async (
     full_url?: string;
   }[],
   fetchFolderFiles: (folderId: string) => Promise<{ name: string; full_url: string }[]>,
-  zipName = "download"
+  zipName = "download",
 ): Promise<void> => {
   const JSZip = (await import("jszip")).default;
   const zip = new JSZip();

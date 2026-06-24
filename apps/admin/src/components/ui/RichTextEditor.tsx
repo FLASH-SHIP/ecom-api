@@ -18,6 +18,7 @@ import Superscript from "@tiptap/extension-superscript";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
+import type { Editor } from "@tiptap/react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
@@ -44,8 +45,7 @@ import {
   Underline as UnderlineIcon,
   Undo,
 } from "lucide-react";
-import { useCallback, useEffect, useState, forwardRef, useImperativeHandle } from "react";
-import type { Editor } from "@tiptap/react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface RichTextEditorProps {
@@ -140,263 +140,263 @@ export const RichTextEditor = forwardRef<Editor | null, RichTextEditorProps>(
 
     useImperativeHandle(ref, () => editor, [editor]);
 
-  useEffect(() => {
-    if (
-      editor &&
-      value !== editor.getHTML() &&
-      value !== (editor.getHTML() === "<p></p>" ? "" : editor.getHTML())
-    ) {
-      editor.commands.setContent(value || "");
-    }
-  }, [value, editor]);
-
-  const handleSetLink = useCallback(() => {
-    if (!editor) return;
-    const previousUrl = editor.getAttributes("link").href;
-    const url = window.prompt("URL", previousUrl);
-    if (url === null) return;
-    if (url === "") {
-      editor.chain().focus().extendMarkRange("link").unsetLink().run();
-      return;
-    }
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
-  }, [editor]);
-
-  const handleAddImage = useCallback(() => {
-    if (!editor) return;
-    const url = window.prompt("Image URL");
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
-    }
-  }, [editor]);
-
-  const handleHeadingChange = useCallback(
-    (val: string) => {
-      if (!editor) return;
-      if (val === "paragraph") {
-        editor.chain().focus().setParagraph().run();
-      } else {
-        const level = Number.parseInt(val, 10) as 1 | 2 | 3 | 4 | 5 | 6;
-        editor.chain().focus().toggleHeading({ level }).run();
+    useEffect(() => {
+      if (
+        editor &&
+        value !== editor.getHTML() &&
+        value !== (editor.getHTML() === "<p></p>" ? "" : editor.getHTML())
+      ) {
+        editor.commands.setContent(value || "");
       }
-    },
-    [editor],
-  );
+    }, [value, editor]);
 
-  function getCurrentHeading(): string {
-    if (!editor) return "paragraph";
-    for (let i = 1; i <= 6; i++) {
-      if (editor.isActive("heading", { level: i })) return String(i);
+    const handleSetLink = useCallback(() => {
+      if (!editor) return;
+      const previousUrl = editor.getAttributes("link").href;
+      const url = window.prompt("URL", previousUrl);
+      if (url === null) return;
+      if (url === "") {
+        editor.chain().focus().extendMarkRange("link").unsetLink().run();
+        return;
+      }
+      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    }, [editor]);
+
+    const handleAddImage = useCallback(() => {
+      if (!editor) return;
+      const url = window.prompt("Image URL");
+      if (url) {
+        editor.chain().focus().setImage({ src: url }).run();
+      }
+    }, [editor]);
+
+    const handleHeadingChange = useCallback(
+      (val: string) => {
+        if (!editor) return;
+        if (val === "paragraph") {
+          editor.chain().focus().setParagraph().run();
+        } else {
+          const level = Number.parseInt(val, 10) as 1 | 2 | 3 | 4 | 5 | 6;
+          editor.chain().focus().toggleHeading({ level }).run();
+        }
+      },
+      [editor],
+    );
+
+    function getCurrentHeading(): string {
+      if (!editor) return "paragraph";
+      for (let i = 1; i <= 6; i++) {
+        if (editor.isActive("heading", { level: i })) return String(i);
+      }
+      return "paragraph";
     }
-    return "paragraph";
-  }
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
-  useEffect(() => {
-    if (!isFullscreen) return;
-    function handleEsc(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsFullscreen(false);
-    }
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [isFullscreen]);
+    useEffect(() => {
+      if (!isFullscreen) return;
+      function handleEsc(e: KeyboardEvent) {
+        if (e.key === "Escape") setIsFullscreen(false);
+      }
+      document.addEventListener("keydown", handleEsc);
+      return () => document.removeEventListener("keydown", handleEsc);
+    }, [isFullscreen]);
 
-  if (!editor) return null;
+    if (!editor) return null;
 
-  const editorContent = (
-    <div
-      className={cn(
-        "overflow-hidden border border-border",
-        isFullscreen
-          ? "flex flex-1 flex-col rounded-none"
-          : "rounded-md focus-within:border-primary focus-within:ring-1 focus-within:ring-primary",
-      )}
-    >
-      {/* ── Toolbar ── */}
-      <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-muted/30 px-2 py-1">
-        {/* Undo / Redo */}
-        <ToolbarButton
-          tooltip="Undo"
-          icon={<Undo className={iconSize} strokeWidth={1.8} />}
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editor.can().undo()}
-        />
-        <ToolbarButton
-          tooltip="Redo"
-          icon={<Redo className={iconSize} strokeWidth={1.8} />}
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editor.can().redo()}
-        />
+    const editorContent = (
+      <div
+        className={cn(
+          "overflow-hidden border border-border",
+          isFullscreen
+            ? "flex flex-1 flex-col rounded-none"
+            : "rounded-md focus-within:border-primary focus-within:ring-1 focus-within:ring-primary",
+        )}
+      >
+        {/* ── Toolbar ── */}
+        <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-muted/30 px-2 py-1">
+          {/* Undo / Redo */}
+          <ToolbarButton
+            tooltip="Undo"
+            icon={<Undo className={iconSize} strokeWidth={1.8} />}
+            onClick={() => editor.chain().focus().undo().run()}
+            disabled={!editor.can().undo()}
+          />
+          <ToolbarButton
+            tooltip="Redo"
+            icon={<Redo className={iconSize} strokeWidth={1.8} />}
+            onClick={() => editor.chain().focus().redo().run()}
+            disabled={!editor.can().redo()}
+          />
 
-        <ToolbarSeparator />
+          <ToolbarSeparator />
 
-        {/* Heading dropdown */}
-        <select
-          value={getCurrentHeading()}
-          onChange={(e) => handleHeadingChange(e.target.value)}
-          className="h-8 min-w-[120px] rounded border-none bg-transparent px-2 text-[0.8125rem] outline-none focus:ring-1 focus:ring-primary"
-        >
-          {HEADING_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          {/* Heading dropdown */}
+          <select
+            value={getCurrentHeading()}
+            onChange={(e) => handleHeadingChange(e.target.value)}
+            className="h-8 min-w-[120px] rounded border-none bg-transparent px-2 text-[0.8125rem] outline-none focus:ring-1 focus:ring-primary"
+          >
+            {HEADING_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
 
-        {/* Lists, Blockquote, Code Block */}
-        <ToolbarButton
-          tooltip="Bullet List"
-          icon={<List className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("bulletList")}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-        />
-        <ToolbarButton
-          tooltip="Ordered List"
-          icon={<ListOrdered className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("orderedList")}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        />
-        <ToolbarButton
-          tooltip="Blockquote"
-          icon={<Quote className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("blockquote")}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        />
-        <ToolbarButton
-          tooltip="Code Block"
-          icon={<Code className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("codeBlock")}
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-        />
+          {/* Lists, Blockquote, Code Block */}
+          <ToolbarButton
+            tooltip="Bullet List"
+            icon={<List className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("bulletList")}
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+          />
+          <ToolbarButton
+            tooltip="Ordered List"
+            icon={<ListOrdered className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("orderedList")}
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          />
+          <ToolbarButton
+            tooltip="Blockquote"
+            icon={<Quote className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("blockquote")}
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          />
+          <ToolbarButton
+            tooltip="Code Block"
+            icon={<Code className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("codeBlock")}
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          />
 
-        <ToolbarSeparator />
+          <ToolbarSeparator />
 
-        {/* Text formatting */}
-        <ToolbarButton
-          tooltip="Bold"
-          icon={<Bold className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("bold")}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-        />
-        <ToolbarButton
-          tooltip="Italic"
-          icon={<Italic className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("italic")}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-        />
-        <ToolbarButton
-          tooltip="Strikethrough"
-          icon={<Strikethrough className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("strike")}
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-        />
-        <ToolbarButton
-          tooltip="Inline Code"
-          icon={<Code className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("code")}
-          onClick={() => editor.chain().focus().toggleCode().run()}
-        />
-        <ToolbarButton
-          tooltip="Underline"
-          icon={<UnderlineIcon className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("underline")}
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-        />
-        <ToolbarButton
-          tooltip="Highlight"
-          icon={<Highlighter className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("highlight")}
-          onClick={() => editor.chain().focus().toggleHighlight().run()}
-        />
-        <ToolbarButton
-          tooltip="Link"
-          icon={<LinkIcon className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("link")}
-          onClick={handleSetLink}
-        />
+          {/* Text formatting */}
+          <ToolbarButton
+            tooltip="Bold"
+            icon={<Bold className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("bold")}
+            onClick={() => editor.chain().focus().toggleBold().run()}
+          />
+          <ToolbarButton
+            tooltip="Italic"
+            icon={<Italic className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("italic")}
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+          />
+          <ToolbarButton
+            tooltip="Strikethrough"
+            icon={<Strikethrough className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("strike")}
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+          />
+          <ToolbarButton
+            tooltip="Inline Code"
+            icon={<Code className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("code")}
+            onClick={() => editor.chain().focus().toggleCode().run()}
+          />
+          <ToolbarButton
+            tooltip="Underline"
+            icon={<UnderlineIcon className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("underline")}
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+          />
+          <ToolbarButton
+            tooltip="Highlight"
+            icon={<Highlighter className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("highlight")}
+            onClick={() => editor.chain().focus().toggleHighlight().run()}
+          />
+          <ToolbarButton
+            tooltip="Link"
+            icon={<LinkIcon className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("link")}
+            onClick={handleSetLink}
+          />
 
-        <ToolbarSeparator />
+          <ToolbarSeparator />
 
-        {/* Superscript, Subscript */}
-        <ToolbarButton
-          tooltip="Superscript"
-          icon={<SuperscriptIcon className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("superscript")}
-          onClick={() => editor.chain().focus().toggleSuperscript().run()}
-        />
-        <ToolbarButton
-          tooltip="Subscript"
-          icon={<SubscriptIcon className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive("subscript")}
-          onClick={() => editor.chain().focus().toggleSubscript().run()}
-        />
+          {/* Superscript, Subscript */}
+          <ToolbarButton
+            tooltip="Superscript"
+            icon={<SuperscriptIcon className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("superscript")}
+            onClick={() => editor.chain().focus().toggleSuperscript().run()}
+          />
+          <ToolbarButton
+            tooltip="Subscript"
+            icon={<SubscriptIcon className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive("subscript")}
+            onClick={() => editor.chain().focus().toggleSubscript().run()}
+          />
 
-        <ToolbarSeparator />
+          <ToolbarSeparator />
 
-        {/* Alignment */}
-        <ToolbarButton
-          tooltip="Align Left"
-          icon={<AlignLeft className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive({ textAlign: "left" })}
-          onClick={() => editor.chain().focus().setTextAlign("left").run()}
-        />
-        <ToolbarButton
-          tooltip="Align Center"
-          icon={<AlignCenter className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive({ textAlign: "center" })}
-          onClick={() => editor.chain().focus().setTextAlign("center").run()}
-        />
-        <ToolbarButton
-          tooltip="Align Right"
-          icon={<AlignRight className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive({ textAlign: "right" })}
-          onClick={() => editor.chain().focus().setTextAlign("right").run()}
-        />
-        <ToolbarButton
-          tooltip="Align Justify"
-          icon={<AlignJustify className={iconSize} strokeWidth={1.8} />}
-          active={editor.isActive({ textAlign: "justify" })}
-          onClick={() => editor.chain().focus().setTextAlign("justify").run()}
-        />
+          {/* Alignment */}
+          <ToolbarButton
+            tooltip="Align Left"
+            icon={<AlignLeft className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive({ textAlign: "left" })}
+            onClick={() => editor.chain().focus().setTextAlign("left").run()}
+          />
+          <ToolbarButton
+            tooltip="Align Center"
+            icon={<AlignCenter className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive({ textAlign: "center" })}
+            onClick={() => editor.chain().focus().setTextAlign("center").run()}
+          />
+          <ToolbarButton
+            tooltip="Align Right"
+            icon={<AlignRight className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive({ textAlign: "right" })}
+            onClick={() => editor.chain().focus().setTextAlign("right").run()}
+          />
+          <ToolbarButton
+            tooltip="Align Justify"
+            icon={<AlignJustify className={iconSize} strokeWidth={1.8} />}
+            active={editor.isActive({ textAlign: "justify" })}
+            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+          />
 
-        <ToolbarSeparator />
+          <ToolbarSeparator />
 
-        {/* Image & Horizontal Rule */}
-        <ToolbarButton
-          tooltip="Add Image"
-          icon={<ImageIcon className={iconSize} strokeWidth={1.8} />}
-          onClick={handleAddImage}
-        />
-        <ToolbarButton
-          tooltip="Horizontal Rule"
-          icon={<Minus className={iconSize} strokeWidth={1.8} />}
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-        />
+          {/* Image & Horizontal Rule */}
+          <ToolbarButton
+            tooltip="Add Image"
+            icon={<ImageIcon className={iconSize} strokeWidth={1.8} />}
+            onClick={handleAddImage}
+          />
+          <ToolbarButton
+            tooltip="Horizontal Rule"
+            icon={<Minus className={iconSize} strokeWidth={1.8} />}
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          />
 
-        <div className="flex-1" />
+          <div className="flex-1" />
 
-        {/* Fullscreen */}
-        <ToolbarButton
-          tooltip={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-          icon={
-            isFullscreen ? (
-              <Minimize className={iconSize} strokeWidth={1.8} />
-            ) : (
-              <Maximize className={iconSize} strokeWidth={1.8} />
-            )
-          }
-          onClick={() => setIsFullscreen((prev) => !prev)}
-        />
-      </div>
+          {/* Fullscreen */}
+          <ToolbarButton
+            tooltip={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+            icon={
+              isFullscreen ? (
+                <Minimize className={iconSize} strokeWidth={1.8} />
+              ) : (
+                <Maximize className={iconSize} strokeWidth={1.8} />
+              )
+            }
+            onClick={() => setIsFullscreen((prev) => !prev)}
+          />
+        </div>
 
-      {/* ── Editor Content ── */}
-      <div className={cn(isFullscreen && "flex-1 overflow-auto", "rte-content")}>
-        <EditorContent editor={editor} />
-      </div>
+        {/* ── Editor Content ── */}
+        <div className={cn(isFullscreen && "flex-1 overflow-auto", "rte-content")}>
+          <EditorContent editor={editor} />
+        </div>
 
-      {/* Scoped TipTap styles */}
-      <style>{`
+        {/* Scoped TipTap styles */}
+        <style>{`
         .rte-content .tiptap {
           min-height: ${isFullscreen ? "100%" : `${minHeight}px`};
           padding: 12px 16px;
@@ -440,30 +440,30 @@ export const RichTextEditor = forwardRef<Editor | null, RichTextEditorProps>(
         .rte-content .tiptap sup { font-size: 0.75em; }
         .rte-content .tiptap sub { font-size: 0.75em; }
       `}</style>
-    </div>
-  );
-
-  if (isFullscreen) {
-    return (
-      <>
-        <div id={id} />
-        {createPortal(
-          <div className="fixed inset-0 z-fullscreen flex flex-col bg-background">
-            {editorContent}
-          </div>,
-          document.body,
-        )}
-      </>
+      </div>
     );
-  }
 
-  return (
-    <div id={id}>
-      {editorContent}
-      {helperText && <p className="ml-3 mt-1 text-sm text-muted-foreground">{helperText}</p>}
-    </div>
-  );
-}
+    if (isFullscreen) {
+      return (
+        <>
+          <div id={id} />
+          {createPortal(
+            <div className="fixed inset-0 z-fullscreen flex flex-col bg-background">
+              {editorContent}
+            </div>,
+            document.body,
+          )}
+        </>
+      );
+    }
+
+    return (
+      <div id={id}>
+        {editorContent}
+        {helperText && <p className="ml-3 mt-1 text-sm text-muted-foreground">{helperText}</p>}
+      </div>
+    );
+  },
 );
 
 RichTextEditor.displayName = "RichTextEditor";

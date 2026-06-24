@@ -50,8 +50,26 @@ export class LanguageRepository {
   }
 
   async findByLocale(locale: string) {
-    return this.prisma.language.findUnique({
+    const direct = await this.prisma.language.findUnique({
       where: { locale },
+      select: languageSelect,
+    });
+    if (direct) return direct;
+
+    const normalized = locale.replace("-", "_");
+    const normalizedMatch = await this.prisma.language.findFirst({
+      where: {
+        OR: [{ locale: normalized }, { code: normalized }],
+      },
+      select: languageSelect,
+    });
+    if (normalizedMatch) return normalizedMatch;
+
+    const langPart = locale.split(/[-_]/)[0];
+    return this.prisma.language.findFirst({
+      where: {
+        OR: [{ locale: langPart }, { code: langPart }],
+      },
       select: languageSelect,
     });
   }

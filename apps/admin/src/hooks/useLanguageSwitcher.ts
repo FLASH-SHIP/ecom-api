@@ -3,6 +3,7 @@
 import { trpc } from "@admin/lib/trpc";
 import type { LanguageTab } from "@ecom/ui/components/language-switcher";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useLocale } from "next-intl";
 import { useCallback, useMemo } from "react";
 
 /**
@@ -20,27 +21,47 @@ export function useLanguageSwitcher(entityType: EntityType, entityId?: number) {
   const searchParams = useSearchParams();
   const refLang = searchParams.get("ref_lang");
 
-  const { data: activeLanguages } = trpc.viewer.languages.getActive.useQuery();
-  const { data: translationStatus } = trpc.viewer.translations.translationStatus.useQuery(
-    { entityType, entityId: entityId ?? 0 },
-    { enabled: !!entityId },
-  );
+  const locale = useLocale();
+
+  const { data: activeLanguages, isLoading: isLanguagesLoading } =
+    trpc.viewer.languages.getActive.useQuery();
+  const { data: translationStatus, isLoading: isStatusLoading } =
+    trpc.viewer.translations.translationStatus.useQuery(
+      { entityType, entityId: entityId ?? 0 },
+      { enabled: !!entityId },
+    );
 
   const defaultLanguage = useMemo(
     () => activeLanguages?.find((l) => l.isDefault),
     [activeLanguages],
   );
 
-  const activeCode = refLang ?? defaultLanguage?.code ?? null;
+  const currentUiLanguage = useMemo(
+    () => activeLanguages?.find((l) => l.locale === locale),
+    [activeLanguages, locale],
+  );
+
+  const activeCode = refLang ?? currentUiLanguage?.code ?? defaultLanguage?.code ?? null;
+
+  const originLangCode = useMemo(() => {
+    if (!translationStatus) return defaultLanguage?.code ?? null;
+    if (Array.isArray(translationStatus)) {
+      return defaultLanguage?.code ?? null;
+    }
+    return translationStatus.originLangCode ?? defaultLanguage?.code ?? null;
+  }, [translationStatus, defaultLanguage]);
 
   const isDefaultLanguage = useMemo(() => {
-    if (!activeCode || !defaultLanguage) return true;
-    return activeCode === defaultLanguage.code;
-  }, [activeCode, defaultLanguage]);
+    if (!activeCode || !originLangCode) return true;
+    return activeCode === originLangCode;
+  }, [activeCode, originLangCode]);
 
   const translatedCodes = useMemo(() => {
     if (!translationStatus) return new Set<string>();
-    return new Set(translationStatus.map((t) => t.langCode));
+    const list = Array.isArray(translationStatus)
+      ? (translationStatus as unknown as { langCode: string }[])
+      : (translationStatus.translations ?? []);
+    return new Set(list.map((t) => t.langCode));
   }, [translationStatus]);
 
   const languageTabs: LanguageTab[] = useMemo(() => {
@@ -51,14 +72,15 @@ export function useLanguageSwitcher(entityType: EntityType, entityId?: number) {
       name: lang.name,
       flag: lang.flag,
       isDefault: lang.isDefault,
-      hasTranslation: lang.isDefault ? true : translatedCodes.has(lang.code),
+      hasTranslation: translatedCodes.has(lang.code),
     }));
   }, [activeLanguages, translatedCodes]);
 
   const onLanguageChange = useCallback(
     (code: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (defaultLanguage && code === defaultLanguage.code) {
+      const uiLangCode = currentUiLanguage?.code;
+      if (uiLangCode && code === uiLangCode) {
         params.delete("ref_lang");
       } else {
         params.set("ref_lang", code);
@@ -66,7 +88,7 @@ export function useLanguageSwitcher(entityType: EntityType, entityId?: number) {
       const qs = params.toString();
       router.push(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
     },
-    [router, pathname, searchParams, defaultLanguage],
+    [router, pathname, searchParams, currentUiLanguage],
   );
 
   return {
@@ -77,5 +99,7 @@ export function useLanguageSwitcher(entityType: EntityType, entityId?: number) {
     onLanguageChange,
     refLang,
     activeLanguages,
+    originLangCode,
+    isSwitcherLoading: isLanguagesLoading || (!!entityId && isStatusLoading),
   };
 }

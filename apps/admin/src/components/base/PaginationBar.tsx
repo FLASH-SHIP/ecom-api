@@ -1,9 +1,9 @@
 "use client";
 
-import * as React from "react";
-import { type ReactNode, useMemo } from "react";
 import { Button } from "@ecom/ui/components/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import * as React from "react";
+import { type ReactNode, useMemo } from "react";
 
 export interface PaginationData {
   current_page: number;
@@ -33,7 +33,7 @@ const PaginationBar = ({
   const to = Math.min(current_page * per_page, total);
 
   const pageNumbers = useMemo(() => {
-    const pages: (number | "...")[ ] = [];
+    const pages: (number | "...")[] = [];
     const maxVisible = 5;
 
     if (last_page <= maxVisible + 2) {
@@ -88,13 +88,15 @@ const PaginationBar = ({
               variant={p === current_page ? "default" : "ghost"}
               size="icon"
               className={`size-8 text-sm cursor-pointer ${
-                p === current_page ? "pointer-events-none shadow-none bg-primary text-primary-foreground" : ""
+                p === current_page
+                  ? "pointer-events-none shadow-none bg-primary text-primary-foreground"
+                  : ""
               }`}
               onClick={() => onPageChange(p)}
             >
               {p}
             </Button>
-          )
+          ),
         )}
 
         <Button

@@ -252,100 +252,168 @@ export class TranslationRepository {
 
   // ─── Translation Status ─────────────────────────
   async getTranslationStatus(entityType: string, entityId: number) {
+    let rawRows: { langCode: string }[] = [];
     switch (entityType) {
       case "post":
-        return this.prisma.postTranslation.findMany({
+        rawRows = await this.prisma.postTranslation.findMany({
           where: { postId: entityId },
           select: { langCode: true },
         });
+        break;
       case "category":
-        return this.prisma.categoryTranslation.findMany({
+        rawRows = await this.prisma.categoryTranslation.findMany({
           where: { categoryId: entityId },
           select: { langCode: true },
         });
+        break;
       case "page":
-        return this.prisma.pageTranslation.findMany({
+        rawRows = await this.prisma.pageTranslation.findMany({
           where: { pageId: entityId },
           select: { langCode: true },
         });
+        break;
       case "tag":
-        return this.prisma.tagTranslation.findMany({
+        rawRows = await this.prisma.tagTranslation.findMany({
           where: { tagId: entityId },
           select: { langCode: true },
         });
+        break;
       case "menuItem":
-        return this.prisma.menuItemTranslation.findMany({
+        rawRows = await this.prisma.menuItemTranslation.findMany({
           where: { menuItemId: entityId },
           select: { langCode: true },
         });
+        break;
+    }
+
+    const meta = await this.prisma.languageMeta.findUnique({
+      where: { referenceId_referenceType: { referenceId: entityId, referenceType: entityType } },
+      select: { langCode: true },
+    });
+
+    const codes = rawRows.map((r) => r.langCode);
+    let originLangCode = "";
+
+    if (meta) {
+      originLangCode = meta.langCode;
+      if (!codes.includes(meta.langCode)) {
+        codes.push(meta.langCode);
+      }
+    } else {
+      const defaultLang = await this.prisma.language.findFirst({
+        where: { isDefault: true },
+        select: { code: true },
+      });
+      originLangCode = defaultLang?.code ?? "vi";
+      if (!codes.includes(originLangCode)) {
+        codes.push(originLangCode);
+      }
+    }
+
+    return {
+      translations: codes.map((c) => ({ langCode: c })),
+      originLangCode,
+    };
+  }
+
+  /**
+   * Batch translation status — single query for multiple entity IDs.
+   * Returns a map of entityId → langCode[] including the original language from LanguageMeta.
+   */
+  private async getRawTranslationRows(
+    entityType: string,
+    entityIds: number[],
+  ): Promise<{ entityId: number; langCode: string }[]> {
+    switch (entityType) {
+      case "post":
+        return (
+          await this.prisma.postTranslation.findMany({
+            where: { postId: { in: entityIds } },
+            select: { postId: true, langCode: true },
+          })
+        ).map((r) => ({ entityId: r.postId, langCode: r.langCode }));
+      case "category":
+        return (
+          await this.prisma.categoryTranslation.findMany({
+            where: { categoryId: { in: entityIds } },
+            select: { categoryId: true, langCode: true },
+          })
+        ).map((r) => ({ entityId: r.categoryId, langCode: r.langCode }));
+      case "page":
+        return (
+          await this.prisma.pageTranslation.findMany({
+            where: { pageId: { in: entityIds } },
+            select: { pageId: true, langCode: true },
+          })
+        ).map((r) => ({ entityId: r.pageId, langCode: r.langCode }));
+      case "tag":
+        return (
+          await this.prisma.tagTranslation.findMany({
+            where: { tagId: { in: entityIds } },
+            select: { tagId: true, langCode: true },
+          })
+        ).map((r) => ({ entityId: r.tagId, langCode: r.langCode }));
+      case "menuItem":
+        return (
+          await this.prisma.menuItemTranslation.findMany({
+            where: { menuItemId: { in: entityIds } },
+            select: { menuItemId: true, langCode: true },
+          })
+        ).map((r) => ({ entityId: r.menuItemId, langCode: r.langCode }));
       default:
         return [];
     }
   }
 
-  /**
-   * Batch translation status — single query for multiple entity IDs.
-   * Returns a map of entityId → langCode[].
-   */
   async getBatchTranslationStatus(
     entityType: string,
     entityIds: number[],
   ): Promise<Record<number, string[]>> {
     if (entityIds.length === 0) return {};
 
-    type Row = { langCode: string; entityId: number };
-    let rows: Row[] = [];
+    const rows = await this.getRawTranslationRows(entityType, entityIds);
 
-    switch (entityType) {
-      case "post":
-        rows = (
-          await this.prisma.postTranslation.findMany({
-            where: { postId: { in: entityIds } },
-            select: { postId: true, langCode: true },
-          })
-        ).map((r) => ({ entityId: r.postId, langCode: r.langCode }));
-        break;
-      case "category":
-        rows = (
-          await this.prisma.categoryTranslation.findMany({
-            where: { categoryId: { in: entityIds } },
-            select: { categoryId: true, langCode: true },
-          })
-        ).map((r) => ({ entityId: r.categoryId, langCode: r.langCode }));
-        break;
-      case "page":
-        rows = (
-          await this.prisma.pageTranslation.findMany({
-            where: { pageId: { in: entityIds } },
-            select: { pageId: true, langCode: true },
-          })
-        ).map((r) => ({ entityId: r.pageId, langCode: r.langCode }));
-        break;
-      case "tag":
-        rows = (
-          await this.prisma.tagTranslation.findMany({
-            where: { tagId: { in: entityIds } },
-            select: { tagId: true, langCode: true },
-          })
-        ).map((r) => ({ entityId: r.tagId, langCode: r.langCode }));
-        break;
-      case "menuItem":
-        rows = (
-          await this.prisma.menuItemTranslation.findMany({
-            where: { menuItemId: { in: entityIds } },
-            select: { menuItemId: true, langCode: true },
-          })
-        ).map((r) => ({ entityId: r.menuItemId, langCode: r.langCode }));
-        break;
-    }
+    const metas = await this.prisma.languageMeta.findMany({
+      where: {
+        referenceId: { in: entityIds },
+        referenceType: entityType,
+      },
+      select: { referenceId: true, langCode: true },
+    });
+
+    const defaultLang = await this.prisma.language.findFirst({
+      where: { isDefault: true },
+      select: { code: true },
+    });
+    const defaultLangCode = defaultLang?.code ?? "vi";
 
     const result: Record<number, string[]> = {};
     for (const id of entityIds) {
       result[id] = [];
     }
+
     for (const row of rows) {
-      result[row.entityId]?.push(row.langCode);
+      const arr = result[row.entityId];
+      if (arr && !arr.includes(row.langCode)) {
+        arr.push(row.langCode);
+      }
     }
+
+    for (const meta of metas) {
+      const arr = result[meta.referenceId];
+      if (arr && !arr.includes(meta.langCode)) {
+        arr.push(meta.langCode);
+      }
+    }
+
+    for (const id of entityIds) {
+      const hasMeta = metas.some((m) => m.referenceId === id);
+      const arr = result[id];
+      if (arr && !hasMeta && !arr.includes(defaultLangCode)) {
+        arr.push(defaultLangCode);
+      }
+    }
+
     return result;
   }
 }

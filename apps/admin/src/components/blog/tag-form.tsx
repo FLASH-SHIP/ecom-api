@@ -42,6 +42,7 @@ interface TagFormProps {
   tagId?: number;
   initialData?: Partial<TagFormData> & { createdAt?: string | Date | null };
   translationMode?: string | null;
+  originLangCode?: string;
 }
 
 const STATUS_OPTIONS: { value: TagStatus; labelKey: string }[] = [
@@ -60,7 +61,13 @@ function getFlagEmoji(countryCode: string): string {
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: form with create/edit modes, validation, slug preview, translation mode, and conditional sidebar
-export function TagForm({ mode, tagId, initialData, translationMode }: TagFormProps) {
+export function TagForm({
+  mode,
+  tagId,
+  initialData,
+  translationMode,
+  originLangCode,
+}: TagFormProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const { toast } = useToast();
@@ -69,7 +76,9 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
   const locale = useLocale();
   const bannerLangCode =
     translationMode ||
-    (mode === "create" ? locale : activeLanguages?.find((l) => l.isDefault)?.code || locale);
+    (mode === "create"
+      ? activeLanguages?.find((l) => l.locale === locale)?.code || locale
+      : originLangCode || activeLanguages?.find((l) => l.isDefault)?.code || locale);
 
   const [formData, setFormData] = useState<TagFormData>({
     name: initialData?.name ?? "",
@@ -486,10 +495,10 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
               </CardHeader>
               <CardContent className="p-4 flex flex-col gap-3">
                 {activeLanguages?.map((lang) => {
-                  const isDefault = lang.isDefault;
-                  const link = isDefault
-                    ? `/tags/${tagId}/edit`
-                    : `/tags/${tagId}/edit?ref_lang=${lang.code}`;
+                  const link =
+                    lang.locale === locale
+                      ? `/tags/${tagId}/edit`
+                      : `/tags/${tagId}/edit?ref_lang=${lang.code}`;
                   return (
                     <div key={lang.id} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2 font-medium">
@@ -499,12 +508,8 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
                           </span>
                         )}
                         <span>{lang.name}</span>
-                        {lang.code === translationMode && (
-                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            editing
-                          </span>
-                        )}
-                        {lang.isDefault && !translationMode && (
+                        {((translationMode && lang.code === translationMode) ||
+                          (!translationMode && lang.code === originLangCode)) && (
                           <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                             editing
                           </span>

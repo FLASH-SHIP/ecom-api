@@ -46,7 +46,12 @@ export function TranslationStatusIndicator({
   const translatedCodes = batchMap
     ? new Set(batchMap[entityId] ?? [])
     : singleStatus
-      ? new Set(singleStatus.map((t) => t.langCode))
+      ? new Set(
+          (Array.isArray(singleStatus)
+            ? (singleStatus as unknown as { langCode: string }[])
+            : (singleStatus.translations ?? [])
+          ).map((t) => t.langCode),
+        )
       : null;
 
   if (!translatedCodes) return null;
@@ -56,8 +61,7 @@ export function TranslationStatusIndicator({
       <div className="flex items-center gap-0.5">
         <Globe className="mr-1 size-3 text-muted-foreground" />
         {activeLanguages.map((lang) => {
-          const isDefault = lang.isDefault;
-          const hasTranslation = isDefault || translatedCodes.has(lang.code);
+          const hasTranslation = translatedCodes.has(lang.code);
           return (
             <Tooltip key={lang.id}>
               <TooltipTrigger asChild>

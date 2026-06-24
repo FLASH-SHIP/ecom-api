@@ -1,26 +1,26 @@
-'use client';
+"use client";
 
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import ReactCrop, { type Crop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
-import { Dialog, DialogClose, DialogContent, DialogTitle } from '@ecom/ui/components/dialog';
-import { Separator } from '@ecom/ui/components/separator';
-import { ButtonField, InputField } from '@admin/app/(main)/media/components/Compat';
-import { Loader2, X } from 'lucide-react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ReactCrop, { type Crop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
+import { ButtonField, InputField } from "@admin/app/(main)/media/components/Compat";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@ecom/ui/components/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ecom/ui/components/select';
+} from "@ecom/ui/components/select";
+import { Separator } from "@ecom/ui/components/separator";
+import { Loader2, X } from "lucide-react";
 
 // ── Types (from model) ────────────────────────────────────────
 
-import { ASPECT_PRESETS, type CropData, type CropDialogProps } from './model/crop.model';
+import { ASPECT_PRESETS, type CropData, type CropDialogProps } from "./model/crop.model";
 
-export type { CropData, CropDialogProps } from './model/crop.model';
-export { ASPECT_PRESETS } from './model/crop.model';
+export type { CropData, CropDialogProps } from "./model/crop.model";
+export { ASPECT_PRESETS } from "./model/crop.model";
 
 // ── Component ─────────────────────────────────────────────────
 
@@ -28,16 +28,16 @@ export const CropDialog = ({
   open,
   onOpenChange,
   imageUrl,
-  imageAlt = 'Crop preview',
+  imageAlt = "Crop preview",
   onSubmit,
   loading = false,
-  title = 'Crop',
-  submitLabel = 'Crop',
+  title = "Crop",
+  submitLabel = "Crop",
 }: CropDialogProps): ReactNode => {
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const [crop, setCrop] = useState<Crop>({
-    unit: '%',
+    unit: "%",
     x: 0,
     y: 0,
     width: 100,
@@ -47,17 +47,17 @@ export const CropDialog = ({
   // Actual pixel values (from rendered image)
   const [pixelCrop, setPixelCrop] = useState<CropData>({ x: 0, y: 0, width: 0, height: 0 });
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
-  const [selectedAspect, setSelectedAspect] = useState('free');
+  const [selectedAspect, setSelectedAspect] = useState("free");
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // Width/Height inputs
-  const [inputWidth, setInputWidth] = useState('');
-  const [inputHeight, setInputHeight] = useState('');
+  const [inputWidth, setInputWidth] = useState("");
+  const [inputHeight, setInputHeight] = useState("");
 
   // Computed aspect value from selected preset
   const aspectValue = useMemo(() => {
-    if (selectedAspect === 'free') return undefined;
-    if (selectedAspect === 'original' && naturalSize.width > 0 && naturalSize.height > 0) {
+    if (selectedAspect === "free") return undefined;
+    if (selectedAspect === "original" && naturalSize.width > 0 && naturalSize.height > 0) {
       return naturalSize.width / naturalSize.height;
     }
     const preset = ASPECT_PRESETS.find((p) => p.label === selectedAspect);
@@ -73,7 +73,7 @@ export const CropDialog = ({
       const d = gcd(naturalSize.width, naturalSize.height);
       const rw = naturalSize.width / d;
       const rh = naturalSize.height / d;
-      opts.splice(1, 0, { key: 'original', label: `Original (${rw}:${rh})` });
+      opts.splice(1, 0, { key: "original", label: `Original (${rw}:${rh})` });
     }
     return opts;
   }, [naturalSize]);
@@ -82,11 +82,11 @@ export const CropDialog = ({
   const handleAspectChange = useCallback(
     (value: string) => {
       setSelectedAspect(value);
-      if (value === 'free') return;
+      if (value === "free") return;
 
       // Compute the ratio
       let ratio: number;
-      if (value === 'original' && naturalSize.width > 0 && naturalSize.height > 0) {
+      if (value === "original" && naturalSize.width > 0 && naturalSize.height > 0) {
         ratio = naturalSize.width / naturalSize.height;
       } else {
         const preset = ASPECT_PRESETS.find((p) => p.label === value);
@@ -108,7 +108,7 @@ export const CropDialog = ({
       setInputWidth(String(cropW));
       setInputHeight(String(cropH));
       setCrop({
-        unit: '%',
+        unit: "%",
         x: (cropX / naturalSize.width) * 100,
         y: (cropY / naturalSize.height) * 100,
         width: (cropW / naturalSize.width) * 100,
@@ -121,11 +121,11 @@ export const CropDialog = ({
   // Reset crop when dialog opens with a new image
   useEffect(() => {
     if (open && imageUrl) {
-      setCrop({ unit: '%', x: 0, y: 0, width: 100, height: 100 });
-      setSelectedAspect('free');
+      setCrop({ unit: "%", x: 0, y: 0, width: 100, height: 100 });
+      setSelectedAspect("free");
       setImageLoaded(false);
-      setInputWidth('');
-      setInputHeight('');
+      setInputWidth("");
+      setInputHeight("");
     }
   }, [open, imageUrl]);
 
@@ -177,7 +177,7 @@ export const CropDialog = ({
       setPixelCrop({ x: newX, y: newY, width: clampedW, height: clampedH });
       setInputHeight(String(clampedH));
       setCrop({
-        unit: '%',
+        unit: "%",
         x: (newX / naturalSize.width) * 100,
         y: (newY / naturalSize.height) * 100,
         width: (clampedW / naturalSize.width) * 100,
@@ -204,7 +204,7 @@ export const CropDialog = ({
       setPixelCrop({ x: newX, y: newY, width: clampedW, height: clampedH });
       setInputWidth(String(clampedW));
       setCrop({
-        unit: '%',
+        unit: "%",
         x: (newX / naturalSize.width) * 100,
         y: (newY / naturalSize.height) * 100,
         width: (clampedW / naturalSize.width) * 100,
@@ -263,7 +263,7 @@ export const CropDialog = ({
                   src={imageUrl}
                   alt={imageAlt}
                   onLoad={onImageLoad}
-                  style={{ maxHeight: '31.25rem', width: 'auto', height: 'auto', display: 'block' }}
+                  style={{ maxHeight: "31.25rem", width: "auto", height: "auto", display: "block" }}
                 />
               </ReactCrop>
             ) : null}

@@ -19,16 +19,16 @@ export interface PreviewDialogProps {
 }
 
 // ── File Category ───────────────────────────────────────────
-export type FileCategory = 'image' | 'video' | 'audio' | 'pdf' | 'office' | 'other';
+export type FileCategory = "image" | "video" | "audio" | "pdf" | "office" | "other";
 
 // ── Office Constants ────────────────────────────────────────
-export const OFFICE_EXTENSIONS = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+export const OFFICE_EXTENSIONS = ["doc", "docx", "xls", "xlsx", "ppt", "pptx"];
 
 export const OFFICE_MIME_TYPES = [
-  'application/msword',
-  'application/vnd.ms-excel',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ];

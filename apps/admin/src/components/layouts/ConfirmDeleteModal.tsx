@@ -50,9 +50,7 @@ export default function ConfirmDeleteModal({
           <div className="w-full flex justify-center items-center">
             <AlertTriangle className="size-16 text-destructive animate-pulse" />
           </div>
-          <div className="mt-4 text-[1.375rem] font-semibold text-foreground">
-            {_title}
-          </div>
+          <div className="mt-4 text-[1.375rem] font-semibold text-foreground">{_title}</div>
           <div className="mt-2 text-[1rem] text-muted-foreground">{_description}</div>
         </div>
         <div className="border-t border-border px-8 py-6 bg-muted/20">
