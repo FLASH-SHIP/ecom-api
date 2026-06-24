@@ -2,7 +2,9 @@ import { randomUUID } from "node:crypto";
 import type { SignOptions } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-jwt-secret";
+function getJwtSecret(): string {
+  return process.env.JWT_SECRET || "dev-jwt-secret";
+}
 
 /** Parse a duration string (e.g. "15m", "30d") into seconds. */
 function parseDurationToSeconds(duration: string): number {
@@ -17,8 +19,13 @@ function parseDurationToSeconds(duration: string): number {
   return value * multiplier;
 }
 
-const ACCESS_TOKEN_TTL = parseDurationToSeconds(process.env.JWT_ACCESS_TOKEN_EXPIRES_IN || "15m");
-const REFRESH_TOKEN_TTL = parseDurationToSeconds(process.env.JWT_REFRESH_TOKEN_EXPIRES_IN || "30d");
+function getAccessTokenTtl(): number {
+  return parseDurationToSeconds(process.env.JWT_ACCESS_TOKEN_EXPIRES_IN || "15m");
+}
+
+function getRefreshTokenTtl(): number {
+  return parseDurationToSeconds(process.env.JWT_REFRESH_TOKEN_EXPIRES_IN || "30d");
+}
 
 export interface JwtPayload {
   userId: number;
@@ -30,16 +37,16 @@ export interface JwtPayload {
  * Sign a JWT access token (short-lived: 15 minutes default).
  */
 export function signAccessToken(payload: Omit<JwtPayload, "type">): string {
-  const options: SignOptions = { expiresIn: ACCESS_TOKEN_TTL };
-  return jwt.sign({ ...payload, type: "access" }, JWT_SECRET, options);
+  const options: SignOptions = { expiresIn: getAccessTokenTtl() };
+  return jwt.sign({ ...payload, type: "access" }, getJwtSecret(), options);
 }
 
 /**
  * Sign a JWT refresh token (long-lived: 30 days default).
  */
 export function signRefreshToken(payload: Omit<JwtPayload, "type">): string {
-  const options: SignOptions = { expiresIn: REFRESH_TOKEN_TTL };
-  return jwt.sign({ ...payload, type: "refresh" }, JWT_SECRET, options);
+  const options: SignOptions = { expiresIn: getRefreshTokenTtl() };
+  return jwt.sign({ ...payload, type: "refresh" }, getJwtSecret(), options);
 }
 
 /**
@@ -47,7 +54,7 @@ export function signRefreshToken(payload: Omit<JwtPayload, "type">): string {
  * Throws if the token is invalid or expired.
  */
 export function verifyToken(token: string): JwtPayload {
-  return jwt.verify(token, JWT_SECRET) as JwtPayload;
+  return jwt.verify(token, getJwtSecret()) as JwtPayload;
 }
 
 /**
@@ -102,7 +109,7 @@ export function signQueueDashboardToken(
   payload: Omit<QueueDashboardJwtPayload, "type" | "jti">,
 ): string {
   const options: SignOptions = { expiresIn: 60, jwtid: randomUUID() }; // 60 seconds
-  return jwt.sign({ ...payload, type: "queue-dashboard-sso" }, JWT_SECRET, options);
+  return jwt.sign({ ...payload, type: "queue-dashboard-sso" }, getJwtSecret(), options);
 }
 
 /**
@@ -110,12 +117,12 @@ export function signQueueDashboardToken(
  */
 export function signQueueDashboardSession(payload: Omit<QueueDashboardJwtPayload, "type">): string {
   const options: SignOptions = { expiresIn: "2h" };
-  return jwt.sign({ ...payload, type: "queue-dashboard-session" }, JWT_SECRET, options);
+  return jwt.sign({ ...payload, type: "queue-dashboard-session" }, getJwtSecret(), options);
 }
 
 /**
  * Verify queue dashboard JWT.
  */
 export function verifyQueueDashboardToken(token: string): QueueDashboardJwtPayload {
-  return jwt.verify(token, JWT_SECRET) as QueueDashboardJwtPayload;
+  return jwt.verify(token, getJwtSecret()) as QueueDashboardJwtPayload;
 }
