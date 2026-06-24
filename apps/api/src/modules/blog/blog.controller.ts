@@ -2,11 +2,15 @@ import { CategoryTransformer } from "@ecom/features/blog/transformers/CategoryTr
 import { PostTransformer } from "@ecom/features/blog/transformers/PostTransformer";
 import { getCategoryService, getPostService } from "@ecom/features/di/containers/BlogService";
 import { Controller, Get, NotFoundException, Param, Query } from "@nestjs/common";
-import type { ListPostsQueryDto } from "./dto/list-posts-query.dto";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
+// biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
+import { ListPostsQueryDto } from "./dto/list-posts-query.dto";
 
+@ApiTags("Blog")
 @Controller("blog")
 export class BlogController {
   @Get("posts")
+  @ApiOperation({ summary: "List published blog posts" })
   async listPosts(@Query() query: ListPostsQueryDto) {
     const result = await getPostService().listPosts({
       status: "PUBLISHED",
@@ -22,6 +26,7 @@ export class BlogController {
   }
 
   @Get("posts/:slug")
+  @ApiOperation({ summary: "Get a published blog post by slug" })
   async getPostBySlug(@Param("slug") slug: string) {
     try {
       const post = await getPostService().getPostBySlug(slug);
@@ -40,6 +45,7 @@ export class BlogController {
   }
 
   @Get("categories")
+  @ApiOperation({ summary: "List active categories" })
   async listCategories() {
     const result = await getCategoryService().listCategories({ status: "PUBLISHED" });
     return {

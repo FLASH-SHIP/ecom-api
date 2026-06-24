@@ -6,7 +6,7 @@ export const apiEnvSchema = z.object({
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
   REDIS_URL: z.string().url("REDIS_URL must be a valid connection URL"),
   API_PORT: z.coerce.number().int().positive().default(4000),
-  API_PREFIX: z.string().default("/api/v2"),
+  API_PREFIX: z.string().default("/api/v1"),
   WEB_URL: z.string().url("WEB_URL must be a valid URL").default("http://localhost:3000"),
   CUSTOMER_APP_URL: z
     .string()

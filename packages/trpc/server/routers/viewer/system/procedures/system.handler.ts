@@ -305,6 +305,6 @@ export const getQueueDashboardUrl = authedProcedure
     });
     const apiUrl = process.env.API_URL ?? "http://localhost:4000";
     return {
-      url: `${apiUrl}/api/v2/queues/sso?token=${ssoToken}`,
+      url: `${apiUrl}/api/v1/queues/sso?token=${ssoToken}`,
     };
   });

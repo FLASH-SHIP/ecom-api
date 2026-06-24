@@ -677,9 +677,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ecom/api@workspace:apps/api/v2":
+"@ecom/api@workspace:apps/api":
   version: 0.0.0-use.local
-  resolution: "@ecom/api@workspace:apps/api/v2"
+  resolution: "@ecom/api@workspace:apps/api"
   dependencies:
     "@bull-board/api": "npm:^6.7.9"
     "@bull-board/express": "npm:^6.7.9"

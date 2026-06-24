@@ -1,11 +1,14 @@
 import { signQueueDashboardSession, verifyQueueDashboardToken } from "@ecom/lib/jwt";
 import { getRedisClient } from "@ecom/lib/redis";
 import { Controller, Get, Query, Res, UnauthorizedException } from "@nestjs/common";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 
+@ApiTags("Queues")
 @Controller("queues")
 export class QueuesController {
   @Get("sso")
+  @ApiOperation({ summary: "Handle Single Sign-On (SSO) for the queue dashboard" })
   async handleSSO(@Query("token") token: string, @Res() res: Response) {
     if (!token) {
       throw new UnauthorizedException("Missing SSO token");
@@ -35,18 +38,18 @@ export class QueuesController {
         email: payload.email,
       });
 
-      // Set the HTTP-only cookie scoped strictly to /api/v2/queues
+      // Set the HTTP-only cookie scoped strictly to /api/v1/queues
       const isProd = process.env.NODE_ENV === "production";
       res.cookie("ecom_queue_session", sessionToken, {
         httpOnly: true,
         secure: isProd,
         sameSite: "lax",
-        path: "/api/v2/queues",
+        path: "/api/v1/queues",
         maxAge: 2 * 60 * 60 * 1000, // 2 hours
       });
 
       // Redirect to dashboard (with trailing slash)
-      return res.redirect("/api/v2/queues/dashboard/");
+      return res.redirect("/api/v1/queues/dashboard/");
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error;
       throw new UnauthorizedException("Invalid or expired SSO token");

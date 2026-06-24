@@ -56,7 +56,7 @@ yarn prisma:seed
 
 ## 4. Deploying the NestJS API Backend (`@ecom/api`)
 
-The backend is located in [apps/api/v2](../../apps/api/v2). It compiles TypeScript into raw JavaScript.
+The backend is located in [apps/api](../../apps/api). It compiles TypeScript into raw JavaScript.
 
 ### Approach A: Bare-Metal / PM2 (Recommended for VPS)
 If deploying directly to a Virtual Private Server (VPS) without Docker, you can build and run all applications (NestJS API, Next.js Admin, and Next.js Customer) using Yarn and PM2:
@@ -88,7 +88,7 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
        // 1. NestJS Backend API
        {
          name: "ecom-api",
-         script: "apps/api/v2/dist/main.js",
+         script: "apps/api/dist/main.js",
          instances: "max",
          exec_mode: "cluster",
          env: {
@@ -146,7 +146,7 @@ COPY packages/features/package.json packages/features/
 COPY packages/types/package.json packages/types/
 COPY packages/config/package.json packages/config/
 COPY packages/tsconfig/package.json packages/tsconfig/
-COPY apps/api/v2/package.json apps/api/v2/
+COPY apps/api/package.json apps/api/
 RUN yarn install --immutable
 
 # --- Stage 2: Builder ---
@@ -168,13 +168,13 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/apps/api/v2/dist ./apps/api/v2/dist
-COPY --from=builder /app/apps/api/v2/package.json ./apps/api/v2/
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/
 
 USER nestjs
 EXPOSE 4000
 ENV PORT=4000
-CMD ["node", "apps/api/v2/dist/main.js"]
+CMD ["node", "apps/api/dist/main.js"]
 ```
 
 Build and run:

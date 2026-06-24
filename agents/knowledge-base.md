@@ -60,7 +60,7 @@ Slugs are auto-generated from titles using `slugify()` with Vietnamese character
 
 ### Monorepo Structure
 
-The whole repository is a Turborepo monorepo. The main admin web app is in `apps/web`. The REST API for mobile/extension is in `apps/api/v2`.
+The whole repository is a Turborepo monorepo. The main admin web app is in `apps/web`. The REST API for mobile/extension is in `apps/api`.
 
 ### Package Scope
 

@@ -12,7 +12,7 @@ import { QueueAuthMiddleware } from "./queues.middleware";
 export class QueuesModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     const serverAdapter = new ExpressAdapter();
-    serverAdapter.setBasePath("/api/v2/queues/dashboard");
+    serverAdapter.setBasePath("/api/v1/queues/dashboard");
 
     const queues = JobQueue.getQueues();
     createBullBoard({
@@ -22,6 +22,6 @@ export class QueuesModule implements NestModule {
 
     consumer
       .apply(QueueAuthMiddleware, serverAdapter.getRouter())
-      .forRoutes({ path: "queues/dashboard*", method: RequestMethod.ALL });
+      .forRoutes({ path: "queues/dashboard*path", method: RequestMethod.ALL });
   }
 }

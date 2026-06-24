@@ -6,136 +6,34 @@ import {
 } from "@ecom/features/di/containers/CustomerService";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-  MinLength,
-} from "class-validator";
+import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { CustomerJwtGuard } from "./customer-jwt.guard";
+// biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginDto,
+  RefreshTokenDto,
+  RegisterDto,
+  ResetPasswordDto,
+  UpdateProfileDto,
+} from "./dto";
 
-class RegisterDto {
-  @IsEmail()
-  email!: string;
-
-  @IsString()
-  @MinLength(8)
-  @MaxLength(100)
-  password!: string;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^[a-z0-9_.]{3,30}$/, {
-    message:
-      "Username must be 3-30 characters, only lowercase letters, numbers, dots and underscores",
-  })
-  username?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  name?: string;
-}
-
-class LoginDto {
-  @IsString()
-  @IsNotEmpty()
-  identifier!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  password!: string;
-}
-
-class RefreshTokenDto {
-  @IsString()
-  @IsNotEmpty()
-  refreshToken!: string;
-}
-
-class ForgotPasswordDto {
-  @IsEmail()
-  email!: string;
-}
-
-class ResetPasswordDto {
-  @IsString()
-  @IsNotEmpty()
-  token!: string;
-
-  @IsString()
-  @MinLength(8)
-  @MaxLength(100)
-  password!: string;
-}
-
-class UpdateProfileDto {
-  @IsString()
-  @IsNotEmpty()
-  accessToken!: string;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^[a-z0-9_.]{3,30}$/, {
-    message:
-      "Username must be 3-30 characters, only lowercase letters, numbers, dots and underscores",
-  })
-  username?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  phone?: string;
-
-  @IsOptional()
-  @IsString()
-  dob?: string | null;
-
-  @IsOptional()
-  @IsString()
-  gender?: "male" | "female" | "other" | null;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(1000)
-  description?: string | null;
-}
-
-class ChangePasswordDto {
-  @IsString()
-  @IsNotEmpty()
-  accessToken!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  oldPassword!: string;
-
-  @IsString()
-  @MinLength(8)
-  @MaxLength(100)
-  newPassword!: string;
-}
-
+@ApiTags("Customer Auth")
 @Controller("customer/auth")
 export class CustomerAuthController {
   // ─── Profile ──────────────────────────────────────────────────────────────
 
   /**
-   * GET /v2/customer/auth/me
+   * GET /customer/auth/me
    * Returns the authenticated customer's profile.
    * Requires: Authorization: Bearer <accessToken>
    */
   @Get("me")
   @UseGuards(CustomerJwtGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get current customer profile" })
   async getMe(@Req() req: Request) {
     const payload = req.customerPayload as CustomerTokenPayload;
     const customer = await getCustomerService().getCustomer(payload.sub);
@@ -150,6 +48,7 @@ export class CustomerAuthController {
 
   // ─── Auth ──────────────────────────────────────────────────────────────────
   @Post("register")
+  @ApiOperation({ summary: "Register a new customer account" })
   async register(@Body() body: RegisterDto) {
     const authService = getCustomerAuthService();
     const tokenService = getCustomerTokenService();
@@ -167,6 +66,7 @@ export class CustomerAuthController {
   }
 
   @Post("login")
+  @ApiOperation({ summary: "Authenticate and log in customer" })
   async login(@Body() body: LoginDto) {
     const authService = getCustomerAuthService();
     const tokenService = getCustomerTokenService();
@@ -179,6 +79,7 @@ export class CustomerAuthController {
   }
 
   @Post("refresh")
+  @ApiOperation({ summary: "Refresh access and refresh token pair" })
   async refreshToken(@Body() body: RefreshTokenDto) {
     const tokenService = getCustomerTokenService();
 
@@ -196,6 +97,7 @@ export class CustomerAuthController {
   }
 
   @Post("update-profile")
+  @ApiOperation({ summary: "Update customer profile information" })
   async updateProfile(@Body() body: UpdateProfileDto) {
     const tokenService = getCustomerTokenService();
     const customerService = getCustomerService();
@@ -221,6 +123,7 @@ export class CustomerAuthController {
   }
 
   @Post("forgot-password")
+  @ApiOperation({ summary: "Request a password reset email" })
   async forgotPassword(@Body() body: ForgotPasswordDto) {
     const authService = getCustomerAuthService();
     // Intentionally does not reveal whether the email exists (security best practice)
@@ -231,6 +134,7 @@ export class CustomerAuthController {
   }
 
   @Post("reset-password")
+  @ApiOperation({ summary: "Reset password using verification token" })
   async resetPassword(@Body() body: ResetPasswordDto) {
     const authService = getCustomerAuthService();
     const result = await authService.resetPassword(body.token, body.password);
@@ -240,6 +144,7 @@ export class CustomerAuthController {
   }
 
   @Post("change-password")
+  @ApiOperation({ summary: "Change customer password" })
   async changePassword(@Body() body: ChangePasswordDto) {
     const tokenService = getCustomerTokenService();
     const authService = getCustomerAuthService();
@@ -252,6 +157,7 @@ export class CustomerAuthController {
   }
 
   @Post("logout")
+  @ApiOperation({ summary: "Log out customer (blacklist refresh token)" })
   async logout(@Body() body: RefreshTokenDto) {
     const tokenService = getCustomerTokenService();
     try {

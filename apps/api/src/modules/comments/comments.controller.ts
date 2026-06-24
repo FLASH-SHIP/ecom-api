@@ -1,11 +1,16 @@
 import { getCommentService } from "@ecom/features/di/containers/CommentService";
 import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
-import type { CreateCommentDto } from "./dto/create-comment.dto";
-import type { ListCommentsQueryDto } from "./dto/list-comments-query.dto";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
+// biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
+import { CreateCommentDto } from "./dto/create-comment.dto";
+// biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
+import { ListCommentsQueryDto } from "./dto/list-comments-query.dto";
 
+@ApiTags("Comments")
 @Controller("comments")
 export class CommentsController {
   @Get()
+  @ApiOperation({ summary: "List comments" })
   async listComments(@Query() query: ListCommentsQueryDto) {
     const result = await getCommentService().listComments({
       postId: query.postId,
@@ -26,6 +31,7 @@ export class CommentsController {
   }
 
   @Get(":id")
+  @ApiOperation({ summary: "Get a comment by ID" })
   async getComment(@Param("id") id: string) {
     const comment = await getCommentService().getComment(Number(id));
     return {
@@ -34,6 +40,7 @@ export class CommentsController {
   }
 
   @Post()
+  @ApiOperation({ summary: "Create a new comment" })
   async createComment(@Body() body: CreateCommentDto) {
     const comment = await getCommentService().createComment({
       content: body.content,

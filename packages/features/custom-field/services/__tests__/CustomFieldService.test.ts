@@ -44,10 +44,10 @@ describe("CustomFieldService", () => {
   describe("Groups CRUD", () => {
     it("should list groups", async () => {
       const { service, groupRepo } = createService();
-      groupRepo.findMany.mockResolvedValue([{ id: 1, title: "Basic Info" }]);
+      groupRepo.findMany.mockResolvedValue({ rows: [{ id: 1, title: "Basic Info" }], total: 1 });
 
       const result = await service.listGroups();
-      expect(result).toHaveLength(1);
+      expect(result.rows).toHaveLength(1);
     });
 
     it("should get a group by id", async () => {
@@ -86,10 +86,13 @@ describe("CustomFieldService", () => {
   describe("Rules Engine", () => {
     it("should return all groups when no rules are set", async () => {
       const { service, groupRepo } = createService();
-      groupRepo.findMany.mockResolvedValue([
-        { id: 1, title: "No rules", rules: null },
-        { id: 2, title: "Empty rules", rules: {} },
-      ]);
+      groupRepo.findMany.mockResolvedValue({
+        rows: [
+          { id: 1, title: "No rules", rules: null },
+          { id: 2, title: "Empty rules", rules: {} },
+        ],
+        total: 2,
+      });
 
       const result = await service.getFieldsForContext({ modelName: "Post" });
       expect(result).toHaveLength(2);
@@ -97,18 +100,21 @@ describe("CustomFieldService", () => {
 
     it("should filter by model name", async () => {
       const { service, groupRepo } = createService();
-      groupRepo.findMany.mockResolvedValue([
-        {
-          id: 1,
-          title: "Post Fields",
-          rules: { conditions: [{ type: "model_name", value: "Post" }] },
-        },
-        {
-          id: 2,
-          title: "Page Fields",
-          rules: { conditions: [{ type: "model_name", value: "Page" }] },
-        },
-      ]);
+      groupRepo.findMany.mockResolvedValue({
+        rows: [
+          {
+            id: 1,
+            title: "Post Fields",
+            rules: [[{ name: "model_name", type: "==", value: "Post" }]],
+          },
+          {
+            id: 2,
+            title: "Page Fields",
+            rules: [[{ name: "model_name", type: "==", value: "Page" }]],
+          },
+        ],
+        total: 2,
+      });
 
       const result = await service.getFieldsForContext({ modelName: "Post" });
       expect(result).toHaveLength(1);
@@ -117,13 +123,19 @@ describe("CustomFieldService", () => {
 
     it("should filter by category", async () => {
       const { service, groupRepo } = createService();
-      groupRepo.findMany.mockResolvedValue([
-        {
-          id: 1,
-          title: "Tech Fields",
-          rules: { conditions: [{ type: "category", value: ["1", "2"] }] },
-        },
-      ]);
+      groupRepo.findMany.mockResolvedValue({
+        rows: [
+          {
+            id: 1,
+            title: "Tech Fields",
+            rules: [
+              [{ name: "category", type: "==", value: "1" }],
+              [{ name: "category", type: "==", value: "2" }],
+            ],
+          },
+        ],
+        total: 1,
+      });
 
       const result = await service.getFieldsForContext({ categoryId: 1 });
       expect(result).toHaveLength(1);
@@ -134,13 +146,16 @@ describe("CustomFieldService", () => {
 
     it("should filter by page template", async () => {
       const { service, groupRepo } = createService();
-      groupRepo.findMany.mockResolvedValue([
-        {
-          id: 1,
-          title: "Landing Fields",
-          rules: { conditions: [{ type: "page_template", value: "landing" }] },
-        },
-      ]);
+      groupRepo.findMany.mockResolvedValue({
+        rows: [
+          {
+            id: 1,
+            title: "Landing Fields",
+            rules: [[{ name: "page_template", type: "==", value: "landing" }]],
+          },
+        ],
+        total: 1,
+      });
 
       const result = await service.getFieldsForContext({ pageTemplate: "landing" });
       expect(result).toHaveLength(1);
@@ -151,18 +166,21 @@ describe("CustomFieldService", () => {
 
     it("should require all conditions to match (AND logic)", async () => {
       const { service, groupRepo } = createService();
-      groupRepo.findMany.mockResolvedValue([
-        {
-          id: 1,
-          title: "Specific",
-          rules: {
-            conditions: [
-              { type: "model_name", value: "Post" },
-              { type: "post_format", value: "video" },
+      groupRepo.findMany.mockResolvedValue({
+        rows: [
+          {
+            id: 1,
+            title: "Specific",
+            rules: [
+              [
+                { name: "model_name", type: "==", value: "Post" },
+                { name: "post_format", type: "==", value: "video" },
+              ],
             ],
           },
-        },
-      ]);
+        ],
+        total: 1,
+      });
 
       // Both match
       const result1 = await service.getFieldsForContext({

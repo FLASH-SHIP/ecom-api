@@ -192,11 +192,11 @@ To coordinate requested languages:
 
 ## 9. NestJS REST API Validation Localization (Mobile & Extension)
 
-For REST API clients (Mobile App, Browser Extension, Public REST endpoints) that consume endpoints inside `apps/api/v2`, the validations are localized dynamically on the server-side before returning responses:
+For REST API clients (Mobile App, Browser Extension, Public REST endpoints) that consume endpoints inside `apps/api`, the validations are localized dynamically on the server-side before returning responses:
 
 ### 1. Custom Validation Pipe & Filter
 * **Validation Pipe**: Standard NestJS validation uses `class-validator` decorators on DTOs. We configure the global validation pipe to throw a custom `I18nValidationException(errors)` containing the list of validation errors.
-* **Exception Filter**: A global `I18nValidationExceptionFilter` catches this exception and resolves the locale via a shared negotiator [locale.ts](../../apps/api/v2/src/common/utils/locale.ts):
+* **Exception Filter**: A global `I18nValidationExceptionFilter` catches this exception and resolves the locale via a shared negotiator [locale.ts](../../apps/api/src/common/utils/locale.ts):
   - First, it checks the custom `x-locale` request header.
   - Second, it falls back to the standard `accept-language` header (e.g. mapping `vi-VN,vi;q=0.9` correctly to `vi`, and defaulting to `en`).
   - It dynamically validates against the array of supported `locales` exported from the `@ecom/i18n` package, ensuring full forward compatibility for any new language without logic updates.

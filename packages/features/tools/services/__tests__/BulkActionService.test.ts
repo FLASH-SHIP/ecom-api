@@ -8,7 +8,7 @@ function createMockPrisma() {
     category: { update: vi.fn() },
     tag: { delete: vi.fn() },
     page: { update: vi.fn() },
-    member: { update: vi.fn() },
+    customer: { update: vi.fn() },
   };
 }
 
@@ -110,16 +110,16 @@ describe("BulkActionService", () => {
     });
   });
 
-  describe("bulkStatusMembers", () => {
-    it("should update member status", async () => {
+  describe("bulkStatusCustomers", () => {
+    it("should update customer status", async () => {
       const prisma = createMockPrisma();
-      prisma.member.update.mockResolvedValue({ id: 1 });
+      prisma.customer.update.mockResolvedValue({ id: 1 });
 
       const service = new BulkActionService(prisma as never);
-      const result = await service.bulkStatusMembers([1, 2], "BANNED");
+      const result = await service.bulkStatusCustomers([1, 2], "BANNED");
 
       expect(result.success).toBe(2);
-      expect(prisma.member.update).toHaveBeenCalledWith(
+      expect(prisma.customer.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: "BANNED" } }),
       );
     });

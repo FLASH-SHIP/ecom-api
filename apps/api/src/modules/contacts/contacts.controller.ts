@@ -1,40 +1,16 @@
 import { getContactService } from "@ecom/features/di/containers/ContactService";
 import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
-import { IsEmail, IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
-import type { ListSubmissionsQueryDto } from "./dto/list-submissions-query.dto";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
+// biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
+import { CreateSubmissionDto } from "./dto/create-submission.dto";
+// biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
+import { ListSubmissionsQueryDto } from "./dto/list-submissions-query.dto";
 
-class CreateSubmissionDto {
-  @IsString()
-  @IsNotEmpty()
-  name!: string;
-
-  @IsEmail()
-  email!: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @IsOptional()
-  @IsString()
-  subject?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  message!: string;
-
-  @IsOptional()
-  @IsString()
-  formSlug?: string;
-
-  @IsOptional()
-  @IsObject()
-  metadata?: Record<string, unknown>;
-}
-
+@ApiTags("Contacts")
 @Controller("contacts")
 export class ContactsController {
   @Get()
+  @ApiOperation({ summary: "List contact form submissions" })
   async listSubmissions(@Query() query: ListSubmissionsQueryDto) {
     const result = await getContactService().listSubmissions({
       formSlug: query.formSlug,
@@ -55,6 +31,7 @@ export class ContactsController {
   }
 
   @Get(":id")
+  @ApiOperation({ summary: "Get a contact form submission by ID" })
   async getSubmission(@Param("id") id: string) {
     const submission = await getContactService().getSubmission(Number(id));
     return {
@@ -63,6 +40,7 @@ export class ContactsController {
   }
 
   @Post()
+  @ApiOperation({ summary: "Create a new contact form submission" })
   async createSubmission(@Body() body: CreateSubmissionDto) {
     const submission = await getContactService().createSubmission({
       name: body.name,

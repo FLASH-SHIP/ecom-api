@@ -13,9 +13,9 @@ tags: reference, files, locations
 - `apps/web/app/(dashboard)/` — Dashboard pages
 - `apps/web/app/api/auth/` — NextAuth.js route handler
 - `apps/web/app/api/trpc/` — tRPC route handler
-- `apps/api/v2/` — NestJS REST API
-- `apps/api/v2/src/modules/` — NestJS feature modules
-- `apps/api/v2/src/modules/auth/` — Auth module (guards, strategies)
+- `apps/api/` — NestJS REST API
+- `apps/api/src/modules/` — NestJS feature modules
+- `apps/api/src/modules/auth/` — Auth module (guards, strategies)
 
 ### Packages
 - `packages/prisma/schema.prisma` — Database schema

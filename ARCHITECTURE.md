@@ -48,7 +48,7 @@ apps/web ──────────► packages/trpc ──────► p
     │                                   PostgreSQL
     └───────────► packages/lib
                        ▲
-apps/api/v2 ──────────┘
+apps/api ─────────────┘
     │
     └───────────► packages/features
 ```

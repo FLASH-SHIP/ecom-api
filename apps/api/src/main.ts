@@ -22,7 +22,7 @@ async function bootstrap() {
   app.setGlobalPrefix("api");
   app.enableVersioning({
     type: VersioningType.URI,
-    defaultVersion: "2",
+    defaultVersion: "1",
   });
 
   app.useGlobalPipes(
@@ -57,12 +57,12 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup("api/v2/docs", app, document);
+  SwaggerModule.setup("api/v1/docs", app, document);
 
   const port = configService.get<number>("API_PORT") ?? 4000;
   await app.listen(port);
-  console.log(`🚀 API v2 running on http://localhost:${port}/api/v2`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/api/v2/docs`);
+  console.log(`🚀 API v1 running on http://localhost:${port}/api/v1`);
+  console.log(`📚 Swagger docs: http://localhost:${port}/api/v1/docs`);
 
   // Enable NestJS native shutdown hooks
   app.enableShutdownHooks();
