@@ -31,6 +31,6 @@ export class QueuesModule implements NestModule {
         }
         router(req, res, next);
       })
-      .forRoutes({ path: "queues/dashboard*path", method: RequestMethod.ALL });
+      .forRoutes({ path: "v1/queues/dashboard*path", method: RequestMethod.ALL });
   }
 }
