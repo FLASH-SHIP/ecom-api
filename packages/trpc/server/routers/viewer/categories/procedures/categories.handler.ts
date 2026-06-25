@@ -39,7 +39,13 @@ export const list = authedProcedure
   )
   .query(async ({ input }) => {
     const categoryService = getCategoryService();
-    const result = await categoryService.listCategories(input ?? undefined);
+    const { pageSize, filters = [], ...rest } = input ?? {};
+    const prismaWhere = buildPrismaWhere(filters, CATEGORY_FILTER_FIELDS);
+    const result = await categoryService.listCategories({
+      ...rest,
+      where: prismaWhere,
+      perPage: pageSize,
+    });
     return {
       items: new CategoryTransformer().transformCollection(result.items),
       total: result.total,

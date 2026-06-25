@@ -24,8 +24,8 @@ export interface CategoryInput {
   slug?: string;
   description?: string | null;
   icon?: string | null;
-  isFeatured?: boolean;
-  isDefault?: boolean;
+  isFeatured?: number;
+  isDefault?: number;
   status?: string;
   parentId?: number | null;
   order?: number;

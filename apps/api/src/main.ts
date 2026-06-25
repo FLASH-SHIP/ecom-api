@@ -1,3 +1,4 @@
+import "./load-env";
 import "reflect-metadata";
 import { registerEventListeners } from "@ecom/features/events/listeners";
 import { JobQueue } from "@ecom/features/queue/JobQueue";
@@ -56,10 +57,11 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  // SEC-05: CORS multi-origin support — whitelist both Admin and Customer apps
+  // SEC-05: CORS multi-origin support — whitelist Admin, Web, and Customer apps
   const allowedOrigins = [
     configService.get<string>("WEB_URL"),
     configService.get<string>("CUSTOMER_APP_URL"),
+    configService.get<string>("ADMIN_URL"),
   ].filter(Boolean) as string[];
 
   app.enableCors({

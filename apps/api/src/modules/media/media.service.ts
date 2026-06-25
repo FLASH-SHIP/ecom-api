@@ -24,7 +24,7 @@ export enum MediaAction {
 @Injectable()
 export class MediaService {
   private getUploadsDir() {
-    return join(process.cwd(), "../../admin/uploads");
+    return join(__dirname, "../../../../admin/uploads");
   }
 
   private formatBytes(bytes: number, decimals = 2) {

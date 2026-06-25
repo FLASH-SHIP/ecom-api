@@ -100,7 +100,7 @@ export default function CategoriesContent() {
     { enabled: viewMode === "tree" },
   );
 
-  const rows = (data?.rows ?? []) as CategoryRow[];
+  const rows = (data?.items ?? []) as CategoryRow[];
   const categoryIds = rows.map((c) => c.id);
 
   const { data: translationBatchMap } = trpc.viewer.translations.batchTranslationStatus.useQuery(

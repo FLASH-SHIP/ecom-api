@@ -1,6 +1,7 @@
 import {
   type CallHandler,
   type ExecutionContext,
+  Inject,
   Injectable,
   type NestInterceptor,
   RequestTimeoutException,
@@ -16,8 +17,8 @@ import { TIMEOUT_KEY } from "../decorators/timeout.decorator";
 @Injectable()
 export class TimeoutInterceptor implements NestInterceptor {
   constructor(
-    private readonly reflector: Reflector,
-    private readonly configService: ConfigService,
+    @Inject(Reflector) private readonly reflector: Reflector,
+    @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {

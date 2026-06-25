@@ -21,6 +21,7 @@ export const apiEnvSchema = z.object({
     .string()
     .url("CUSTOMER_APP_URL must be a valid URL")
     .default("http://localhost:3001"),
+  ADMIN_URL: z.string().url("ADMIN_URL must be a valid URL").default("http://localhost:4001"),
   JWT_SECRET: z.string().min(8, "JWT_SECRET must be at least 8 characters long"),
   JWT_ADMIN_SECRET: z.string().min(8, "JWT_ADMIN_SECRET must be at least 8 characters long"),
   JWT_REFRESH_SECRET: z
