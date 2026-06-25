@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "nest build",
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main",
     "start:prod": "node dist/main",

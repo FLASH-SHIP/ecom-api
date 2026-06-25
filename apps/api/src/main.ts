@@ -48,11 +48,11 @@ async function bootstrap() {
 
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(
-    new I18nHttpExceptionFilter(),
-    new I18nValidationExceptionFilter(),
-    new ErrorWithCodeExceptionFilter(),
-    new PrismaClientExceptionFilter(httpAdapter),
     new AllExceptionsFilter(),
+    new PrismaClientExceptionFilter(httpAdapter),
+    new ErrorWithCodeExceptionFilter(),
+    new I18nValidationExceptionFilter(),
+    new I18nHttpExceptionFilter(),
   );
 
   const configService = app.get(ConfigService);

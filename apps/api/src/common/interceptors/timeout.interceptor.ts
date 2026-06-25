@@ -1,13 +1,12 @@
 import {
   type CallHandler,
   type ExecutionContext,
+  Inject,
   Injectable,
   type NestInterceptor,
   RequestTimeoutException,
 } from "@nestjs/common";
-// biome-ignore lint/style/useImportType: need value-level import for NestJS DI metadata
 import { ConfigService } from "@nestjs/config";
-// biome-ignore lint/style/useImportType: need value-level import for NestJS DI metadata
 import { Reflector } from "@nestjs/core";
 import { type Observable, TimeoutError, throwError } from "rxjs";
 import { catchError, timeout } from "rxjs/operators";
@@ -16,8 +15,8 @@ import { TIMEOUT_KEY } from "../decorators/timeout.decorator";
 @Injectable()
 export class TimeoutInterceptor implements NestInterceptor {
   constructor(
-    private readonly reflector: Reflector,
-    private readonly configService: ConfigService,
+    @Inject(Reflector) private readonly reflector: Reflector,
+    @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {

@@ -2,10 +2,11 @@ import { getAuditService } from "@ecom/features/di/containers/AuditService";
 import {
   type CallHandler,
   type ExecutionContext,
+  Inject,
   Injectable,
   type NestInterceptor,
 } from "@nestjs/common";
-import type { Reflector } from "@nestjs/core";
+import { Reflector } from "@nestjs/core";
 import type { Request } from "express";
 import type { Observable } from "rxjs";
 import { tap } from "rxjs/operators";
@@ -24,7 +25,7 @@ function extractEntityId(response: unknown): string | undefined {
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(@Inject(Reflector) private readonly reflector: Reflector) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<Request>();

@@ -1,11 +1,10 @@
-import { type CanActivate, type ExecutionContext, Injectable } from "@nestjs/common";
-// biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
+import { type CanActivate, type ExecutionContext, Inject, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { VALIDATION_GROUPS_KEY } from "../decorators/validation-groups.decorator";
 
 @Injectable()
 export class ValidationGroupsGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(@Inject(Reflector) private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
