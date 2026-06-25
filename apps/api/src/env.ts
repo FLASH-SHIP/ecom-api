@@ -3,10 +3,19 @@ import { z } from "zod";
 export const apiEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid connection URL"),
+  DATABASE_REPLICA_URL: z
+    .string()
+    .url("DATABASE_REPLICA_URL must be a valid connection URL")
+    .optional(),
+  DATABASE_REPLICA_URLS: z
+    .string()
+    .optional()
+    .describe("Comma-separated list of database replica URLs"),
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
   REDIS_URL: z.string().url("REDIS_URL must be a valid connection URL"),
   API_PORT: z.coerce.number().int().positive().default(4000),
   API_PREFIX: z.string().default("/api/v1"),
+  API_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
   WEB_URL: z.string().url("WEB_URL must be a valid URL").default("http://localhost:3000"),
   CUSTOMER_APP_URL: z
     .string()
@@ -14,6 +23,10 @@ export const apiEnvSchema = z.object({
     .default("http://localhost:3001"),
   JWT_SECRET: z.string().min(8, "JWT_SECRET must be at least 8 characters long"),
   JWT_ADMIN_SECRET: z.string().min(8, "JWT_ADMIN_SECRET must be at least 8 characters long"),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .min(8, "JWT_REFRESH_SECRET must be at least 8 characters long")
+    .optional(),
   JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_TOKEN_EXPIRES_IN: z.string().default("30d"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("debug"),

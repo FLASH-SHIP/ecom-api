@@ -62,6 +62,16 @@
 
 - [patterns-dependency-injection](rules/patterns-dependency-injection.md) - DI patterns
 - [patterns-factory-pattern](rules/patterns-factory-pattern.md) - Factory pattern
+- [patterns-environment-variables](rules/patterns-environment-variables.md) - Centrally validated env variables
+- [patterns-event-bus](rules/patterns-event-bus.md) - Event-Driven Architecture (EventBus) for decoupling
+- [patterns-transactions](rules/patterns-transactions.md) - Proxy-based declarative transactions via AsyncLocalStorage
+- [patterns-policies](rules/patterns-policies.md) - Policy-Based Fine-Grained Authorization
+- [patterns-testing-factories](rules/patterns-testing-factories.md) - Model Factories for automated testing
+- [patterns-cqrs](rules/patterns-cqrs.md) - Command Query Responsibility Segregation (CQRS)
+- [patterns-outbox](rules/patterns-outbox.md) - Transactional Outbox Pattern for reliable events persistence
+- [patterns-distributed-locks](rules/patterns-distributed-locks.md) - Redis-backed Distributed Locks for concurrency safety
+- [patterns-auditing](rules/patterns-auditing.md) - Global Automatic Auditing Logs via Prisma extensions
+- [patterns-query-builder](rules/patterns-query-builder.md) - Standard dynamic filtering & query specification builder
 
 ### Culture
 

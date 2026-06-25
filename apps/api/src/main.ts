@@ -1,28 +1,39 @@
 import "reflect-metadata";
+import { registerEventListeners } from "@ecom/features/events/listeners";
 import { JobQueue } from "@ecom/features/queue/JobQueue";
 import { queueCleanupJob, registerCleanupWorker } from "@ecom/features/queue/workers/cleanupWorker";
 import { registerEmailWorker } from "@ecom/features/queue/workers/emailWorker";
 import { gracefulShutdown } from "@ecom/features/shutdown/GracefulShutdown";
-import { ValidationPipe, VersioningType } from "@nestjs/common";
+import { ClassSerializerInterceptor, VersioningType } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { NestFactory } from "@nestjs/core";
+import { HttpAdapterHost, NestFactory, Reflector } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { useContainer } from "class-validator";
+import compression from "compression";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
-import { I18nValidationException } from "./common/exceptions/i18n-validation.exception";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { ErrorWithCodeExceptionFilter } from "./common/filters/error-with-code-exception.filter";
 import { I18nHttpExceptionFilter } from "./common/filters/i18n-http-exception.filter";
 import { I18nValidationExceptionFilter } from "./common/filters/i18n-validation-exception.filter";
-import { TimeoutInterceptor } from "./common/interceptors/timeout.interceptor";
+import { PrismaClientExceptionFilter } from "./common/filters/prisma-client-exception.filter";
 import { NestLogger } from "./common/logger/nest-logger.service";
 
 async function bootstrap() {
+  // Initialize domain event listeners
+  registerEventListeners();
+
+  // Start background Outbox worker
+  const { outboxWorker } = await import("@ecom/features/events/OutboxWorker");
+  outboxWorker.start();
+  console.log("📦 Transactional Outbox worker started");
+
   const app = await NestFactory.create(AppModule, {
     logger: new NestLogger(),
   });
 
   app.use(helmet());
+  app.use(compression());
 
   app.setGlobalPrefix("api");
   app.enableVersioning({
@@ -30,28 +41,39 @@ async function bootstrap() {
     defaultVersion: "1",
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      exceptionFactory: (errors) => new I18nValidationException(errors),
-    }),
-  );
+  useContainer(app.select(AppModule), { fallbackOnErrors: true });
 
-  app.useGlobalInterceptors(new TimeoutInterceptor());
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
+  const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(
     new I18nHttpExceptionFilter(),
     new I18nValidationExceptionFilter(),
     new ErrorWithCodeExceptionFilter(),
+    new PrismaClientExceptionFilter(httpAdapter),
     new AllExceptionsFilter(),
   );
 
   const configService = app.get(ConfigService);
 
+  // SEC-05: CORS multi-origin support — whitelist both Admin and Customer apps
+  const allowedOrigins = [
+    configService.get<string>("WEB_URL"),
+    configService.get<string>("CUSTOMER_APP_URL"),
+  ].filter(Boolean) as string[];
+
   app.enableCors({
-    origin: configService.get<string>("WEB_URL") ?? "http://localhost:3000",
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // Allow requests with no origin (mobile apps, server-to-server, curl)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
+      }
+    },
     credentials: true,
   });
 
@@ -87,6 +109,11 @@ async function bootstrap() {
   gracefulShutdown.register("Redis", async () => {
     const { disconnectRedis } = await import("@ecom/lib/redis");
     await disconnectRedis();
+  });
+
+  gracefulShutdown.register("OutboxWorker", async () => {
+    const { outboxWorker } = await import("@ecom/features/events/OutboxWorker");
+    outboxWorker.stop();
   });
 
   gracefulShutdown.enable();

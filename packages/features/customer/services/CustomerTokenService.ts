@@ -15,14 +15,17 @@ export interface CustomerTokenPayload {
 }
 
 export class CustomerTokenService {
-  private jwtSecret: string;
+  private accessSecret: string;
+  private refreshSecret: string;
 
   constructor() {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
       throw new Error("JWT_SECRET environment variable is required");
     }
-    this.jwtSecret = secret;
+    this.accessSecret = secret;
+    // Use separate refresh secret if available, fall back to JWT_SECRET
+    this.refreshSecret = process.env.JWT_REFRESH_SECRET ?? secret;
   }
 
   generateTokens(customer: { id: number; email: string }) {
@@ -36,8 +39,8 @@ export class CustomerTokenService {
         type: "access",
         jti: accessJti,
       } satisfies CustomerTokenPayload,
-      this.jwtSecret,
-      { expiresIn: ACCESS_TOKEN_TTL },
+      this.accessSecret,
+      { expiresIn: ACCESS_TOKEN_TTL, issuer: "ecom", audience: "ecom-customer" },
     );
 
     const refreshToken = jwt.sign(
@@ -47,8 +50,8 @@ export class CustomerTokenService {
         type: "refresh",
         jti: refreshJti,
       } satisfies CustomerTokenPayload,
-      this.jwtSecret,
-      { expiresIn: REFRESH_TOKEN_TTL },
+      this.refreshSecret,
+      { expiresIn: REFRESH_TOKEN_TTL, issuer: "ecom", audience: "ecom-customer" },
     );
 
     return { accessToken, refreshToken };
@@ -58,7 +61,10 @@ export class CustomerTokenService {
     token: string,
   ): Promise<CustomerTokenPayload & { iat: number; exp: number }> {
     try {
-      const payload = jwt.verify(token, this.jwtSecret) as unknown as CustomerTokenPayload & {
+      const payload = jwt.verify(token, this.accessSecret, {
+        issuer: "ecom",
+        audience: "ecom-customer",
+      }) as unknown as CustomerTokenPayload & {
         iat: number;
         exp: number;
       };
@@ -89,7 +95,10 @@ export class CustomerTokenService {
     token: string,
   ): Promise<CustomerTokenPayload & { iat: number; exp: number }> {
     try {
-      const payload = jwt.verify(token, this.jwtSecret) as unknown as CustomerTokenPayload & {
+      const payload = jwt.verify(token, this.refreshSecret, {
+        issuer: "ecom",
+        audience: "ecom-customer",
+      }) as unknown as CustomerTokenPayload & {
         iat: number;
         exp: number;
       };

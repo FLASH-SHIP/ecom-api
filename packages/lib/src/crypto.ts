@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 const API_KEY_PREFIX = "ecom_";
 const API_KEY_LENGTH = 32;
@@ -23,9 +23,15 @@ export function generateApiKey(): { rawKey: string; hashedKey: string } {
 
 /**
  * Verify an API key by comparing its hash against the stored hash.
+ * Uses timing-safe comparison to prevent timing side-channel attacks (SEC-02).
  */
 export function verifyApiKey(rawKey: string, storedHash: string): boolean {
-  return sha256(rawKey) === storedHash;
+  const computedHash = sha256(rawKey);
+  try {
+    return timingSafeEqual(Buffer.from(computedHash, "hex"), Buffer.from(storedHash, "hex"));
+  } catch {
+    return false;
+  }
 }
 
 /**

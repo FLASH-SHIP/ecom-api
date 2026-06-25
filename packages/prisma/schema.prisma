@@ -896,7 +896,7 @@ model Webhook {
   id        Int      @id @default(autoincrement())
   name      String
   url       String
-  secret    String?
+  secret    String?  // SEC-10: TODO — hash like API keys when scaling to external webhook consumers
   events    String[] // e.g. ["post.published", "customer.registered"]
   isActive  Boolean  @default(true)
   retries   Int      @default(3)
@@ -1123,3 +1123,19 @@ model FormSubmission {
   @@index([createdAt])
   @@map("form_submissions")
 }
+
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  event       String
+  payload     Json
+  status      String    @default("PENDING") // PENDING, SENT, FAILED
+  attempts    Int       @default(0)
+  error       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([status])
+  @@index([status, createdAt]) // PERF-07: Composite index for worker query (WHERE status ORDER BY createdAt)
+  @@map("outbox_events")
+}
+

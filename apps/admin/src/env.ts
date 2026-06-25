@@ -4,6 +4,14 @@ import { z } from "zod";
 const serverSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid connection URL").optional(),
+  DATABASE_REPLICA_URL: z
+    .string()
+    .url("DATABASE_REPLICA_URL must be a valid connection URL")
+    .optional(),
+  DATABASE_REPLICA_URLS: z
+    .string()
+    .optional()
+    .describe("Comma-separated list of database replica URLs"),
   REDIS_URL: z.string().url("REDIS_URL must be a valid connection URL").optional(),
   AUTH_SECRET: z.string().min(8, "AUTH_SECRET must be at least 8 characters long"),
   NEXTAUTH_SECRET: z.string().min(8).optional(),
@@ -25,6 +33,8 @@ type Env = z.infer<typeof serverSchema> & z.infer<typeof clientSchema>;
 const processEnv = {
   NODE_ENV: process.env.NODE_ENV,
   DATABASE_URL: process.env.DATABASE_URL,
+  DATABASE_REPLICA_URL: process.env.DATABASE_REPLICA_URL,
+  DATABASE_REPLICA_URLS: process.env.DATABASE_REPLICA_URLS,
   REDIS_URL: process.env.REDIS_URL,
   AUTH_SECRET: process.env.AUTH_SECRET,
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,

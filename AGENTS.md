@@ -18,7 +18,16 @@ You are a senior Ecom engineer working in a Yarn/Turbo monorepo. You prioritize 
 - Use `ast-grep` for searching if available; otherwise use `rg` (ripgrep), then fall back to `grep`
 - Use Biome for formatting and linting
 - Only add code comments that explain **why**, not **what** — see [code comment guidelines](agents/rules/quality-code-comments.md)
-
+- Always declare new environment variables in the app's central `env.ts` (using Zod) and retrieve them via NestJS `ConfigService` or Next.js validated config helper (see [environment variables guidelines](agents/rules/patterns-environment-variables.md))
+- Decouple domain logic and background actions using Domain Events and EventBus — see [event bus guidelines](agents/rules/patterns-event-bus.md)
+- Wrap database mutators in transactions via proxy-based `runInTransaction()` — see [transaction guidelines](agents/rules/patterns-transactions.md)
+- Enforce fine-grained resource security via Policies and tRPC `requirePolicy` middleware — see [policy guidelines](agents/rules/patterns-policies.md)
+- Build automated tests with type-safe model mock builders using Factories — see [testing factories guidelines](agents/rules/patterns-testing-factories.md)
+- Segregate read-only queries from transaction mutator commands in complex features using CQRS — see [CQRS guidelines](agents/rules/patterns-cqrs.md)
+- Persist domain events inside transactions reliably using Transactional Outbox Pattern — see [outbox guidelines](agents/rules/patterns-outbox.md)
+- Secure concurrent updates on critical resources using Distributed Redis Locks — see [distributed locks guidelines](agents/rules/patterns-distributed-locks.md)
+- Capture all database write events automatically via Prisma client extensions — see [auditing guidelines](agents/rules/patterns-auditing.md)
+- Map API search/filter parameters to type-safe Prisma criteria using Query Builders — see [query builder guidelines](agents/rules/patterns-query-builder.md)
 
 ## Don't
 
@@ -31,6 +40,7 @@ You are a senior Ecom engineer working in a Yarn/Turbo monorepo. You prioritize 
 - Never create large PRs (>500 lines or >10 files) - split them instead
 - Never add comments that simply restate what the code does (e.g., `// Get the user` above a `getUser()` call)
 - Never import Prisma directly in Services - use Repositories via DI
+- Never access `process.env` directly outside configuration bootstrapping files
 
 ## PR Size Guidelines
 
@@ -56,12 +66,14 @@ When a task requires extensive changes, break it into multiple PRs:
 ### Examples of Good PR Splits
 
 **Instead of one large "Add blog notifications" PR:**
+
 - PR 1: Add notification preferences schema and migration
 - PR 2: Add notification service and API endpoints
 - PR 3: Add notification UI components
 - PR 4: Integrate notifications into blog publish flow
 
 **Instead of one large "Add media management" PR:**
+
 - PR 1: Add media schema and storage adapter interface
 - PR 2: Add upload service and tRPC router
 - PR 3: Add media manager UI component
@@ -89,10 +101,10 @@ yarn prisma migrate dev      # Run migrations in development
 yarn docker:up               # Start PostgreSQL + Redis via Docker
 ```
 
-
 ## Boundaries
 
 ### Always do
+
 - Run type check on changed files before committing
 - Run relevant tests before pushing
 - Use `select` in Prisma queries
@@ -100,6 +112,7 @@ yarn docker:up               # Start PostgreSQL + Redis via Docker
 - Run Biome before pushing
 
 ### Ask first
+
 - Adding new dependencies
 - Schema changes to `packages/prisma/schema.prisma`
 - Changes affecting multiple packages
@@ -107,6 +120,7 @@ yarn docker:up               # Start PostgreSQL + Redis via Docker
 - Running full build or E2E suites
 
 ### Never do
+
 - Commit secrets, API keys, or `.env` files
 - Expose sensitive fields (`password`, `hashedKey`, `tokenHash`) in any query
 - Use `as any` type casting
@@ -115,7 +129,7 @@ yarn docker:up               # Start PostgreSQL + Redis via Docker
 
 ## Project Structure
 
-```
+```text
 apps/web/                    # Next.js 16 Admin CMS (App Router)
 apps/api/                    # NestJS REST API (Mobile, Extension, Public)
 packages/prisma/             # Database schema (schema.prisma) and migrations
@@ -131,6 +145,7 @@ packages/tsconfig/           # Shared TS configs
 ```
 
 ### Key files
+
 - Routes: `apps/web/app/` (App Router)
 - Database schema: `packages/prisma/schema.prisma`
 - tRPC routers: `packages/trpc/server/routers/`
@@ -165,14 +180,15 @@ packages/tsconfig/           # Shared TS configs
 Ecom supports multiple client types with different auth methods:
 
 | Auth Method | Client | Transport |
-|------------|--------|-----------|
+| :--- | :--- | :--- |
 | **NextAuth Session** (cookie) | Admin Web | HTTP Cookie (httpOnly) |
 | **API Key** (`Bearer ecom_xxx`) | Scripts, CI/CD | `Authorization` header |
 | **JWT Access Token** | Mobile, Extension | `Authorization` header |
 | **JWT Refresh Token** | Mobile, Extension | Request body |
 
 Auth flow in NestJS `ApiAuthStrategy`:
-```
+
+```text
 Request → Has Bearer token?
 ├── Token starts with "ecom_"? → API Key strategy
 ├── Else? → JWT Access Token strategy

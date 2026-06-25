@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import { promisify } from "node:util";
-import { loggerContext } from "@ecom/lib/logger";
+import { loggerContext, maskSensitiveData } from "@ecom/lib/logger";
 import type { PrismaClient } from "@ecom/prisma";
 import type { AuditLogFilters, AuditLogRepository } from "../repositories/AuditLogRepository";
 import type { RequestLogFilters, RequestLogRepository } from "../repositories/RequestLogRepository";
@@ -40,15 +40,21 @@ export class AuditService {
 
     if (traceId) {
       if (finalMetadata && typeof finalMetadata === "object") {
-        finalMetadata = { ...finalMetadata, traceId };
+        finalMetadata = { ...(finalMetadata as Record<string, unknown>), traceId };
       } else {
         finalMetadata = { traceId };
       }
     }
 
+    const maskedOldValues = data.oldValues ? maskSensitiveData(data.oldValues) : undefined;
+    const maskedNewValues = data.newValues ? maskSensitiveData(data.newValues) : undefined;
+    const maskedMetadata = finalMetadata ? maskSensitiveData(finalMetadata) : undefined;
+
     return this.deps.auditLogRepo.create({
       ...data,
-      metadata: finalMetadata,
+      oldValues: maskedOldValues ?? undefined,
+      newValues: maskedNewValues ?? undefined,
+      metadata: maskedMetadata ?? undefined,
     });
   }
 

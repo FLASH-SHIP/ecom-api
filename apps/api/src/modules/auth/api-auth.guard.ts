@@ -1,5 +1,6 @@
 import type { AuthenticatedUser } from "@ecom/features/auth/services/ApiAuthService";
 import { getApiAuthService } from "@ecom/features/di/containers/AuthService";
+import { loggerContext } from "@ecom/lib/logger";
 import {
   type CanActivate,
   type ExecutionContext,
@@ -43,6 +44,12 @@ export class ApiAuthGuard implements CanActivate {
     try {
       const apiAuthService = getApiAuthService();
       request.apiUser = await apiAuthService.authenticateBearer(token);
+
+      const store = loggerContext.getStore();
+      if (store) {
+        store.userId = request.apiUser.id;
+      }
+
       return true;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Authentication failed";

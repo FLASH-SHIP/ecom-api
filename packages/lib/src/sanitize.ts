@@ -32,18 +32,26 @@ export function escapeHtml(input: string): string {
 }
 
 /**
- * Remove potentially dangerous attributes from HTML.
- * Strips: onclick, onerror, onload, javascript:, data: URIs in href/src.
+ * Remove potentially dangerous attributes from HTML (SEC-08: hardened).
+ * Strips: event handlers, javascript:/vbscript: protocols, data: URIs,
+ * expression() in styles, null bytes, and dangerous tags.
+ *
+ * For rich-text editor content that must preserve safe HTML formatting,
+ * prefer `sanitizeRichHtml()` which uses a whitelist approach.
  */
 export function sanitizeHtml(input: string): string {
   return (
     input
-      // Remove event handlers
-      .replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, "")
-      // Remove javascript: protocol
-      .replace(/javascript\s*:/gi, "")
+      // Remove null bytes (used to bypass regex filters)
+      .replace(/\0/g, "")
+      // Remove event handlers (comprehensive: on* attributes)
+      .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, "")
+      // Remove javascript: and vbscript: protocols
+      .replace(/(?:javascript|vbscript)\s*:/gi, "")
       // Remove data: URIs in href/src (except data:image for inline images)
       .replace(/(href|src)\s*=\s*["']data:(?!image\/)[^"']*["']/gi, "")
+      // Remove CSS expression() (IE XSS vector)
+      .replace(/expression\s*\(/gi, "blocked(")
       // Remove <script> tags entirely
       .replace(/<script[\s>][\s\S]*?<\/script>/gi, "")
       // Remove <style> tags entirely
@@ -53,7 +61,70 @@ export function sanitizeHtml(input: string): string {
       // Remove <object> and <embed> tags
       .replace(/<object[\s>][\s\S]*?<\/object>/gi, "")
       .replace(/<embed[^>]*\/?>/gi, "")
+      // Remove <form> tags (prevent phishing)
+      .replace(/<form[\s>][\s\S]*?<\/form>/gi, "")
+      // Remove <base> tags (prevent URL hijacking)
+      .replace(/<base[^>]*\/?>/gi, "")
   );
+}
+
+/**
+ * Whitelist-based HTML sanitizer for rich-text editor content.
+ * Only allows safe HTML tags and attributes, stripping everything else.
+ *
+ * For maximum security with rich HTML, consider adding the `isomorphic-dompurify`
+ * package and using: `DOMPurify.sanitize(input)` instead of this function.
+ */
+export function sanitizeRichHtml(input: string): string {
+  const allowedTags = new Set([
+    "p",
+    "br",
+    "b",
+    "i",
+    "u",
+    "em",
+    "strong",
+    "a",
+    "ul",
+    "ol",
+    "li",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "blockquote",
+    "pre",
+    "code",
+    "table",
+    "thead",
+    "tbody",
+    "tr",
+    "th",
+    "td",
+    "img",
+    "figure",
+    "figcaption",
+    "hr",
+    "sub",
+    "sup",
+    "s",
+    "del",
+    "mark",
+    "span",
+    "div",
+  ]);
+
+  // First apply the standard sanitization
+  let cleaned = sanitizeHtml(input);
+
+  // Then strip any remaining tags not in whitelist
+  cleaned = cleaned.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*\/?>/g, (match, tagName: string) => {
+    return allowedTags.has(tagName.toLowerCase()) ? match : "";
+  });
+
+  return cleaned;
 }
 
 /**

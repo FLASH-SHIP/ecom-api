@@ -21,20 +21,36 @@ const SECURITY_HEADERS: Record<string, string> = {
 };
 
 /**
- * Content-Security-Policy for admin panel.
- * Allows inline styles (Tailwind) and self-hosted scripts only.
+ * Content-Security-Policy for admin panel (SEC-06: tightened).
+ *
+ * Changes from original:
+ * - Removed 'unsafe-eval' from script-src (prevents eval()-based XSS)
+ * - Kept 'unsafe-inline' in style-src only (required by Tailwind CSS runtime)
+ * - Restricted connect-src to specific API origins instead of wildcard https:
+ * - Added upgrade-insecure-requests for HTTPS enforcement
+ *
+ * Note: If using a rich text editor that requires eval (e.g. Monaco),
+ * consider nonce-based CSP or moving eval to a sandboxed iframe.
  */
-const CSP_DIRECTIVES = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: blob: https:",
-  "connect-src 'self' https:",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join("; ");
+function buildCspDirectives(): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+  const directives = [
+    "default-src 'self'",
+    "script-src 'self'",
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https:",
+    `connect-src 'self' ${apiUrl} ${appUrl}`,
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "upgrade-insecure-requests",
+  ];
+
+  return directives.join("; ");
+}
 
 /**
  * Apply security headers to a Next.js response.
@@ -44,7 +60,7 @@ export function applySecurityHeaders(response: NextResponse): NextResponse {
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(key, value);
   }
-  response.headers.set("Content-Security-Policy", CSP_DIRECTIVES);
+  response.headers.set("Content-Security-Policy", buildCspDirectives());
   return response;
 }
 
@@ -70,6 +86,6 @@ export function securityMiddleware(_request: NextRequest): NextResponse {
 export function getSecurityHeaders(): Record<string, string> {
   return {
     ...SECURITY_HEADERS,
-    "Content-Security-Policy": CSP_DIRECTIVES,
+    "Content-Security-Policy": buildCspDirectives(),
   };
 }

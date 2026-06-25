@@ -1,6 +1,8 @@
 import { getContactService } from "@ecom/features/di/containers/ContactService";
-import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, UseInterceptors } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { Audit } from "../../common/decorators/audit.decorator";
+import { AuditInterceptor } from "../../common/interceptors/audit.interceptor";
 // biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
 import { CreateSubmissionDto } from "./dto/create-submission.dto";
 // biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
@@ -41,6 +43,8 @@ export class ContactsController {
 
   @Post()
   @ApiOperation({ summary: "Create a new contact form submission" })
+  @UseInterceptors(AuditInterceptor)
+  @Audit("CREATE_CONTACT_SUBMISSION", "ContactSubmission")
   async createSubmission(@Body() body: CreateSubmissionDto) {
     const submission = await getContactService().createSubmission({
       name: body.name,
