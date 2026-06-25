@@ -1,4 +1,5 @@
 import { translate } from "@ecom/i18n";
+import { ErrorWithCode } from "@ecom/lib/errors";
 import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
@@ -140,7 +141,8 @@ const t = initTRPC.context<Context>().create({
       // It's a standard TRPCError/ErrorWithCode.
       // If the message is a translation key, translate it.
       // Otherwise, translate will fall back to returning it as-is.
-      translatedMessage = translate(error.message, locale);
+      const meta = error.cause instanceof ErrorWithCode ? error.cause.meta : undefined;
+      translatedMessage = translate(error.message, locale, meta);
     }
 
     return {

@@ -115,6 +115,26 @@ export function getCronJobs(): CronJobDefinition[] {
         log.info("Expired admin sessions cleanup completed", { deletedCount: result.count });
       },
     },
+    {
+      name: "verification.codes.cleanup",
+      cron: "0 4 * * SUN",
+      description: "Purge expired customer verification codes older than 30 days",
+      enabled: true,
+      handler: async () => {
+        const { prisma } = await import("@ecom/prisma");
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const result = await prisma.customerVerificationCode.deleteMany({
+          where: {
+            createdAt: {
+              lt: thirtyDaysAgo,
+            },
+          },
+        });
+        log.info("Expired customer verification codes cleanup completed", {
+          deletedCount: result.count,
+        });
+      },
+    },
   ];
 }
 

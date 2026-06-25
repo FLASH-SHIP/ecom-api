@@ -29,7 +29,7 @@ export class ErrorWithCodeExceptionFilter implements ExceptionFilter<ErrorWithCo
 
     // Check if translation exists for the specific error code
     const messageKey = `errors.${exception.code}`;
-    const translatedMessage = translate(messageKey, locale);
+    const translatedMessage = translate(messageKey, locale, exception.meta);
     const displayMessage = translatedMessage !== messageKey ? translatedMessage : exception.message;
 
     response.status(status).json({

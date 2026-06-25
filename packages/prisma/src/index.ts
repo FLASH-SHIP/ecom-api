@@ -10,6 +10,7 @@ import {
   Prisma,
   PrismaClient,
   UserStatus,
+  VerificationCodeStatus,
 } from "./generated/prisma/client";
 
 const adapter = new PrismaPg({
@@ -264,4 +265,5 @@ export {
   PrismaClient,
   UserFactory,
   UserStatus,
+  VerificationCodeStatus,
 };

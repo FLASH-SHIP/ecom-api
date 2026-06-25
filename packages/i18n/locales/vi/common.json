@@ -92,6 +92,7 @@
     "media": "Thư viện",
     "engagement": "Tương tác",
     "customers": "Khách hàng",
+    "verificationCodes": "Lịch sử gửi mã",
     "comments": "Bình luận",
     "contacts": "Liên hệ",
     "utilities": "Tiện ích",
@@ -182,6 +183,11 @@
     "CONFLICT": "Xảy ra xung đột tài nguyên.",
     "INTERNAL_ERROR": "Đã xảy ra lỗi máy chủ nội bộ.",
     "VALIDATION_ERROR": "Kiểm tra dữ liệu yêu cầu thất bại.",
+    "VERIFICATION_CODE_INVALID": "Mã xác minh không chính xác.",
+    "VERIFICATION_CODE_EXPIRED": "Mã xác minh đã hết hạn.",
+    "VERIFICATION_CODE_LOCKED": "Mã xác minh đã bị khóa do nhập sai quá nhiều lần.",
+    "VERIFICATION_CODE_RATE_LIMITED": "Vui lòng đợi {seconds} giây trước khi yêu cầu mã xác minh mới.",
+    "VERIFICATION_CODE_ATTEMPTS": "Mã xác minh không chính xác. Bạn còn {count} lần nhập.",
     "401": {
       "title": "Truy cập trái phép",
       "subtitle": "Bạn không có quyền xem trang này.",
@@ -215,78 +221,5 @@
     "invalid_url": "Đường dẫn URL không hợp lệ",
     "invalid_format": "Định dạng không hợp lệ",
     "invalid_type": "Kiểu dữ liệu không hợp lệ"
-  },
-  "customerAuth": {
-    "login": {
-      "emailUsername": "Email/ Username",
-      "emailUsernamePlaceholder": "email@example.com hoặc username",
-      "password": "Mật khẩu",
-      "passwordPlaceholder": "••••••••",
-      "forgotPassword": "Quên mật khẩu?",
-      "signIn": "Đăng nhập",
-      "signInLoading": "Đang đăng nhập...",
-      "dontHaveAccount": "Chưa có tài khoản?",
-      "signUp": "Đăng ký ngay",
-      "invalidCredentials": "Tên đăng nhập hoặc mật khẩu không chính xác.",
-      "unexpectedError": "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
-      "emailUsernameRequired": "Vui lòng nhập email hoặc tên đăng nhập"
-    },
-    "register": {
-      "title": "Đăng ký",
-      "nameLabel": "Họ và tên",
-      "namePlaceholder": "Nguyễn Văn An",
-      "emailLabel": "Email",
-      "emailPlaceholder": "your@email.com",
-      "passwordLabel": "Mật khẩu",
-      "passwordPlaceholder": "Tối thiểu 8 ký tự",
-      "confirmPasswordLabel": "Xác nhận mật khẩu",
-      "confirmPasswordPlaceholder": "Nhập lại mật khẩu",
-      "signUp": "Đăng ký",
-      "signUpLoading": "Đang đăng ký...",
-      "alreadyHaveAccount": "Đã có tài khoản?",
-      "signIn": "Đăng nhập ngay",
-      "passwordMismatch": "Mật khẩu xác nhận không khớp",
-      "passwordMin": "Mật khẩu phải có ít nhất 8 ký tự",
-      "nameRequired": "Vui lòng nhập họ và tên",
-      "emailRequired": "Vui lòng nhập email",
-      "emailInvalid": "Email không hợp lệ"
-    },
-    "forgotPassword": {
-      "title": "Đặt lại mật khẩu",
-      "desc": "Chúng tôi sẽ gửi liên kết đặt lại mật khẩu đến email đã đăng ký của bạn.",
-      "emailLabel": "Email",
-      "emailPlaceholder": "Nhập email của bạn",
-      "buttonLabel": "Đặt lại mật khẩu",
-      "buttonLoading": "Đang gửi...",
-      "backToLogin": "Quay lại đăng nhập",
-      "checkEmailTitle": "Kiểm tra email",
-      "checkEmailDesc": "Nếu email của bạn tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu."
-    },
-    "resetPassword": {
-      "title": "Đặt lại mật khẩu",
-      "desc": "Nhập mật khẩu mới cho tài khoản của bạn.",
-      "newPasswordLabel": "Mật khẩu mới",
-      "newPasswordPlaceholder": "Tối thiểu 8 ký tự",
-      "confirmPasswordLabel": "Xác nhận mật khẩu",
-      "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới",
-      "buttonLabel": "Đặt lại mật khẩu",
-      "buttonLoading": "Đang xử lý...",
-      "invalidToken": "Token không hợp lệ hoặc đã hết hạn.",
-      "requestNewLink": "Yêu cầu link mới",
-      "successTitle": "Đặt lại thành công",
-      "successDesc": "Mật khẩu của bạn đã được thay đổi. Bạn có thể đăng nhập bằng mật khẩu mới.",
-      "signIn": "Đăng nhập ngay"
-    },
-    "verifyEmail": {
-      "invalidTokenTitle": "Token không hợp lệ",
-      "invalidTokenDesc": "Vui lòng kiểm tra lại link xác minh trong email.",
-      "backToLogin": "Quay lại đăng nhập",
-      "verifyingTitle": "Đang xác minh email...",
-      "verifyingDesc": "Vui lòng đợi giây lát.",
-      "errorTitle": "Xác minh thất bại",
-      "successTitle": "Email đã được xác minh!",
-      "successDesc": "Tài khoản của bạn đã được xác minh thành công.",
-      "goToDashboard": "Đi đến Dashboard"
-    }
   }
 }

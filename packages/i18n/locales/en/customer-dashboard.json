@@ -1,0 +1,17 @@
+{
+  "welcome": "Hello, {name}!",
+  "customerFallback": "Customer",
+  "verified": "Verified",
+  "unverified": "Unverified",
+  "status": "Status",
+  "statusActive": "Active",
+  "joinedDate": "Joined Date",
+  "quickLinks": "Quick Access",
+  "profileTitle": "Personal Profile",
+  "profileDesc": "Update your information",
+  "blogTitle": "Blog",
+  "blogDesc": "Read the latest posts",
+  "notLoggedIn": "Not logged in",
+  "pleaseLogin": "Please sign in to view this page.",
+  "login": "Sign In"
+}

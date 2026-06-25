@@ -220,3 +220,23 @@ export function buildCustomerPasswordResetEmail(data: CustomerPasswordResetData)
     text: `Đặt lại mật khẩu: ${data.resetUrl}`,
   };
 }
+
+export interface VerificationCodeEmailData {
+  code: string;
+}
+
+export function buildVerificationCodeEmail(data: VerificationCodeEmailData): EmailPayload {
+  return {
+    to: "",
+    subject: `Mã xác minh đăng ký — ${BRAND}`,
+    html: wrap(`
+      <h2 style="color:#1e293b;">Xin chào,</h2>
+      <p>Mã xác minh của bạn để đăng ký tài khoản là:</p>
+      <div style="font-size:24px;font-weight:bold;color:#2563eb;letter-spacing:4px;margin:20px 0;padding:12px;background:#f8fafc;border-radius:8px;text-align:center;">
+        ${data.code}
+      </div>
+      <p style="margin-top:16px;color:#64748b;">Mã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+    `),
+    text: `Mã xác minh đăng ký của bạn là: ${data.code}`,
+  };
+}

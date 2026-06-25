@@ -9,14 +9,14 @@ import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { CustomerJwtGuard } from "./customer-jwt.guard";
-// biome-ignore lint/style/useImportType: NestJS requires runtime class reference for decorator metadata reflection
-import {
+import type {
   ChangePasswordDto,
   ForgotPasswordDto,
   LoginDto,
   RefreshTokenDto,
   RegisterDto,
   ResetPasswordDto,
+  SendCodeDto,
   UpdateProfileDto,
 } from "./dto";
 
@@ -47,6 +47,16 @@ export class CustomerAuthController {
   }
 
   // ─── Auth ──────────────────────────────────────────────────────────────────
+  @Post("send-code")
+  @ApiOperation({ summary: "Send registration verification code email" })
+  async sendCode(@Body() body: SendCodeDto) {
+    const authService = getCustomerAuthService();
+    await authService.sendVerificationCode(body.email);
+    return {
+      data: { success: true },
+    };
+  }
+
   @Post("register")
   @ApiOperation({ summary: "Register a new customer account" })
   async register(@Body() body: RegisterDto) {
@@ -56,8 +66,7 @@ export class CustomerAuthController {
     const customer = await authService.register({
       email: body.email,
       password: body.password,
-      username: body.username,
-      name: body.name,
+      code: body.code,
     });
     const tokens = tokenService.generateTokens(customer);
     return {
@@ -86,7 +95,7 @@ export class CustomerAuthController {
     const payload = await tokenService.verifyRefreshToken(body.refreshToken);
 
     const customer = await getCustomerService().getCustomer(payload.sub);
-    if (!customer || customer.status !== "ACTIVE") {
+    if (customer?.status !== "ACTIVE") {
       throw ErrorWithCode.Factory.Forbidden("Account is not active");
     }
 
@@ -104,7 +113,7 @@ export class CustomerAuthController {
 
     const payload = await tokenService.verifyAccessToken(body.accessToken);
     const customer = await customerService.getCustomer(payload.sub);
-    if (!customer || customer.status !== "ACTIVE") {
+    if (customer?.status !== "ACTIVE") {
       throw ErrorWithCode.Factory.Forbidden("Account is not active");
     }
 

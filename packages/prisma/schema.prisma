@@ -146,6 +146,28 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+enum VerificationCodeStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+}
+
+model CustomerVerificationCode {
+  id        Int                    @id @default(autoincrement())
+  email     String
+  code      String
+  attempts  Int                    @default(0)
+  status    VerificationCodeStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@map("customer_verification_codes")
+}
+
+
 // API Keys — long-lived, for scripts/CLI/integrations
 model ApiKey {
   id         String    @id @default(cuid())
