@@ -187,6 +187,50 @@ export function DataTable<T extends Record<string, unknown>>({
   });
   const [density, setDensity] = useState<"compact" | "normal" | "spacious">("normal");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [stage, setStage] = useState<"idle" | "loading" | "completing" | "fading">("idle");
+  const timersRef = useRef<{ t1?: NodeJS.Timeout; t2?: NodeJS.Timeout }>({});
+
+  const startLoading = useCallback(() => {
+    if (timersRef.current.t1) clearTimeout(timersRef.current.t1);
+    if (timersRef.current.t2) clearTimeout(timersRef.current.t2);
+    setStage("loading");
+    setProgress(0);
+    timersRef.current.t1 = setTimeout(() => {
+      setProgress(70);
+    }, 20);
+  }, []);
+
+  const completeLoading = useCallback(() => {
+    setStage("completing");
+    setProgress(100);
+
+    if (timersRef.current.t1) clearTimeout(timersRef.current.t1);
+    timersRef.current.t1 = setTimeout(() => {
+      setStage("fading");
+
+      if (timersRef.current.t2) clearTimeout(timersRef.current.t2);
+      timersRef.current.t2 = setTimeout(() => {
+        setStage("idle");
+        setProgress(0);
+      }, 200);
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    if (isFetching && stage !== "loading") {
+      startLoading();
+    } else if (!isFetching && stage === "loading") {
+      completeLoading();
+    }
+  }, [isFetching, stage, startLoading, completeLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (timersRef.current.t1) clearTimeout(timersRef.current.t1);
+      if (timersRef.current.t2) clearTimeout(timersRef.current.t2);
+    };
+  }, []);
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pinning logic checks selection, meta pins, and action columns
   const initialColumnPinning = useMemo<ColumnPinningState>(() => {
     const isMobile =
@@ -828,11 +872,23 @@ export function DataTable<T extends Record<string, unknown>>({
         </div>
 
         {/* Progress bar for refetch */}
-        {isFetching && !isLoading && (
-          <div className="h-0.5 w-full overflow-hidden bg-muted">
-            <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
-          </div>
-        )}
+        <div
+          className={cn(
+            "relative w-full overflow-hidden bg-primary/15 transition-all ease-in-out",
+            stage !== "idle" ? "h-1" : "h-0",
+            stage === "fading" || stage === "idle"
+              ? "opacity-0 duration-200"
+              : "opacity-100 duration-0",
+          )}
+        >
+          <div
+            className={cn(
+              "h-full bg-primary transition-all ease-out",
+              stage === "loading" ? "duration-[5000ms]" : "duration-300",
+            )}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
         {/* Selection info bar (Admin-style) */}
         {hasSelection && (
           <div

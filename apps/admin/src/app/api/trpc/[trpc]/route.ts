@@ -1,8 +1,59 @@
 import { auth } from "@admin/lib/auth";
+import { ALL_PERMISSIONS } from "@ecom/lib/permissions";
+import { RedisCache } from "@ecom/lib/redis";
 import { prisma } from "@ecom/prisma";
 import { appRouter, createContext } from "@ecom/trpc/server";
 import type { AuthUser } from "@ecom/types";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+
+const permissionsCache = new RedisCache<string[]>("user-permissions", 3600); // 1 hour TTL
+
+async function resolveUserPermissions(userId: number): Promise<string[]> {
+  const cacheKey = `user:${userId}`;
+  const cachedPermissions = await permissionsCache.get(cacheKey);
+
+  if (cachedPermissions) {
+    return cachedPermissions;
+  }
+
+  const roleData = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      roles: {
+        select: {
+          role: {
+            select: {
+              name: true,
+              permissions: {
+                select: {
+                  permission: {
+                    select: { name: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!roleData) {
+    return [];
+  }
+
+  const isSuperAdmin = roleData.roles.some((r) => r.role.name === "admin");
+  let permissions: string[];
+  if (isSuperAdmin) {
+    permissions = ALL_PERMISSIONS.map((p) => p.name);
+  } else {
+    permissions = roleData.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.name));
+  }
+
+  const uniquePermissions = [...new Set(permissions)];
+  await permissionsCache.set(cacheKey, uniquePermissions);
+  return uniquePermissions;
+}
 
 const handler = async (req: Request) => {
   const session = await auth();
@@ -19,35 +70,18 @@ const handler = async (req: Request) => {
         name: true,
         username: true,
         locale: true,
-        roles: {
-          select: {
-            role: {
-              select: {
-                permissions: {
-                  select: {
-                    permission: {
-                      select: { name: true },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
       },
     });
 
     if (dbUser) {
-      const permissions = dbUser.roles.flatMap((r) =>
-        r.role.permissions.map((p) => p.permission.name),
-      );
+      const cachedPermissions = await resolveUserPermissions(userId);
       user = {
         id: dbUser.id,
         email: dbUser.email,
         name: dbUser.name,
         username: dbUser.username,
         locale: dbUser.locale,
-        permissions: [...new Set(permissions)],
+        permissions: cachedPermissions,
       };
     }
   }

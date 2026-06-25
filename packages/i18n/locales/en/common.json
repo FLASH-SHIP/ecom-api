@@ -9,6 +9,7 @@
     "delete": "Delete",
     "deleting": "Deleting...",
     "edit": "Edit",
+    "detail": "Detail",
     "create": "Create",
     "creating": "Creating...",
     "update": "Update",
@@ -58,7 +59,8 @@
     "customFields": "Custom Fields",
     "optional": "optional",
     "socialAccounts": "Social Accounts",
-    "recentActivity": "Recent Activity"
+    "recentActivity": "Recent Activity",
+    "publish": "Publish"
   },
   "auth": {
     "login": "Sign in",

@@ -18,12 +18,15 @@ export function requirePermission(...permissions: string[]) {
       throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
     }
 
-    for (const perm of permissions) {
-      if (!user.permissions.includes(perm)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: `Missing permission: ${perm}`,
-        });
+    const hasWildcard = user.permissions.includes("*");
+    if (!hasWildcard) {
+      for (const perm of permissions) {
+        if (!user.permissions.includes(perm)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `Missing permission: ${perm}`,
+          });
+        }
       }
     }
 

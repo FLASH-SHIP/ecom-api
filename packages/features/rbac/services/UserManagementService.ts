@@ -1,7 +1,10 @@
 import type { UserRepository } from "@ecom/features/rbac/repositories/UserRepository";
 import { hashPassword } from "@ecom/lib/crypto";
 import { ErrorWithCode } from "@ecom/lib/errors";
+import { RedisCache } from "@ecom/lib/redis";
 import type { UserStatus } from "@ecom/prisma";
+
+const permissionsCache = new RedisCache<string[]>("user-permissions");
 
 export interface IUserManagementServiceDeps {
   userRepo: UserRepository;
@@ -88,6 +91,7 @@ export class UserManagementService {
       throw ErrorWithCode.Factory.NotFound("User not found");
     }
     await this.deps.userRepo.syncRoles(userId, roleIds);
+    await permissionsCache.invalidate(`user:${userId}`).catch(() => {});
     return this.deps.userRepo.findById(userId);
   }
 
@@ -101,6 +105,8 @@ export class UserManagementService {
       throw ErrorWithCode.Factory.NotFound("User not found");
     }
 
-    return this.deps.userRepo.delete(userId);
+    const result = await this.deps.userRepo.delete(userId);
+    await permissionsCache.invalidate(`user:${userId}`).catch(() => {});
+    return result;
   }
 }

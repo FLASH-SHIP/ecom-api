@@ -9,6 +9,7 @@
     "delete": "Xóa",
     "deleting": "Đang xóa...",
     "edit": "Sửa",
+    "detail": "Chi tiết",
     "create": "Tạo mới",
     "creating": "Đang tạo...",
     "update": "Cập nhật",
@@ -58,7 +59,8 @@
     "customFields": "Trường tùy chỉnh",
     "optional": "tùy chọn",
     "socialAccounts": "Tài khoản mạng xã hội",
-    "recentActivity": "Hoạt động gần đây"
+    "recentActivity": "Hoạt động gần đây",
+    "publish": "Xuất bản"
   },
   "auth": {
     "login": "Đăng nhập",
