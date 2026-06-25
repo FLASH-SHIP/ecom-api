@@ -290,7 +290,20 @@ export class CategoryRepository {
     return this.prisma.category.update({
       where: { id },
       data: { deletedAt: new Date() },
-      select: { id: true, deletedAt: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        icon: true,
+        isFeatured: true,
+        isDefault: true,
+        status: true,
+        parentId: true,
+        order: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -298,7 +311,20 @@ export class CategoryRepository {
     return this.prisma.category.update({
       where: { id },
       data: { deletedAt: null },
-      select: { id: true, deletedAt: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        icon: true,
+        isFeatured: true,
+        isDefault: true,
+        status: true,
+        parentId: true,
+        order: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 

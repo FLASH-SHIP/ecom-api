@@ -200,6 +200,8 @@ export function CategoryForm({
           utils.viewer.categories.list.invalidate();
           utils.viewer.categories.tree.invalidate();
           utils.viewer.categories.get.invalidate({ id: categoryId });
+          utils.viewer.translations.translationStatus.invalidate();
+          utils.viewer.translations.batchTranslationStatus.invalidate();
         });
       }
     },
@@ -214,6 +216,8 @@ export function CategoryForm({
           utils.viewer.categories.list.invalidate();
           utils.viewer.categories.tree.invalidate();
           utils.viewer.categories.get.invalidate({ id: categoryId });
+          utils.viewer.translations.translationStatus.invalidate();
+          utils.viewer.translations.batchTranslationStatus.invalidate();
           router.push("/categories");
         });
       }
@@ -226,6 +230,7 @@ export function CategoryForm({
       toast(tCat("updateSuccess"), "success");
       utils.viewer.translations.list.invalidate();
       utils.viewer.translations.translationStatus.invalidate();
+      utils.viewer.translations.batchTranslationStatus.invalidate();
     },
     onError: (err) => toast(err.message, "error"),
   });
@@ -235,6 +240,7 @@ export function CategoryForm({
       toast(tCat("updateSuccess"), "success");
       utils.viewer.translations.list.invalidate();
       utils.viewer.translations.translationStatus.invalidate();
+      utils.viewer.translations.batchTranslationStatus.invalidate();
       router.push("/categories");
     },
     onError: (err) => toast(err.message, "error"),

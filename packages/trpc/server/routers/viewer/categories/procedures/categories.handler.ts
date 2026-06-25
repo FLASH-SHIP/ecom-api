@@ -93,6 +93,22 @@ export const create = authedProcedure
       ...input,
       authorId: ctx.user.id,
     });
+
+    if (ctx.locale && result) {
+      const languageRepo = getLanguageRepository();
+      const dbLang = await languageRepo.findByLocale(ctx.locale);
+      const langCode = dbLang?.code ?? ctx.locale;
+
+      const languageService = getLanguageService();
+      await languageService.saveContentLanguage(result.id, "category", langCode);
+
+      const translationService = getTranslationService();
+      await translationService.saveTranslation("category", result.id, langCode, {
+        name: input.name,
+        description: input.description,
+      });
+    }
+
     return new CategoryTransformer().transformItem(result!);
   });
 
@@ -113,10 +129,34 @@ export const update = authedProcedure
       order: z.number().int().min(0).optional(),
     }),
   )
-  .mutation(async ({ input }) => {
+  .mutation(async ({ ctx, input }) => {
     const { id, ...data } = input;
     const categoryService = getCategoryService();
     const result = await categoryService.updateCategory(id, data);
+
+    if (ctx.locale && result) {
+      const languageRepo = getLanguageRepository();
+      const dbLang = await languageRepo.findByLocale(ctx.locale);
+      const langCode = dbLang?.code ?? ctx.locale;
+
+      const defaultLang = await languageRepo.findDefault();
+
+      if (langCode === defaultLang?.code) {
+        const languageService = getLanguageService();
+        await languageService.saveContentLanguage(id, "category", langCode);
+      } else if (data.name !== undefined || data.description !== undefined) {
+        const translationService = getTranslationService();
+        const currentCategory = await categoryService.getCategory(id);
+        await translationService.saveTranslation("category", id, langCode, {
+          name: data.name ?? currentCategory?.name,
+          description:
+            data.description !== undefined
+              ? (data.description ?? undefined)
+              : (currentCategory?.description ?? undefined),
+        });
+      }
+    }
+
     return new CategoryTransformer().transformItem(result!);
   });
 

@@ -347,9 +347,11 @@ model Tag {
   posts        PostTag[]
   translations TagTranslation[]
   seoMeta      SeoMeta?         @relation("TagSeo")
+  deletedAt    DateTime?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
+  @@index([deletedAt])
   @@map("tags")
 }
 

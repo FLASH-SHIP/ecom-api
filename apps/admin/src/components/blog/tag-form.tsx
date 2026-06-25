@@ -173,6 +173,8 @@ export function TagForm({
           toast(t("updateSuccess"), "success");
           utils.viewer.tags.list.invalidate();
           utils.viewer.tags.get.invalidate({ id: tagId });
+          utils.viewer.translations.translationStatus.invalidate();
+          utils.viewer.translations.batchTranslationStatus.invalidate();
         });
       }
     },
@@ -186,6 +188,8 @@ export function TagForm({
           toast(t("updateSuccess"), "success");
           utils.viewer.tags.list.invalidate();
           utils.viewer.tags.get.invalidate({ id: tagId });
+          utils.viewer.translations.translationStatus.invalidate();
+          utils.viewer.translations.batchTranslationStatus.invalidate();
           router.push("/tags");
         });
       }
@@ -198,6 +202,7 @@ export function TagForm({
       toast(t("updateSuccess"), "success");
       utils.viewer.translations.list.invalidate();
       utils.viewer.translations.translationStatus.invalidate();
+      utils.viewer.translations.batchTranslationStatus.invalidate();
     },
     onError: (err) => toast(err.message, "error"),
   });
@@ -207,6 +212,7 @@ export function TagForm({
       toast(t("updateSuccess"), "success");
       utils.viewer.translations.list.invalidate();
       utils.viewer.translations.translationStatus.invalidate();
+      utils.viewer.translations.batchTranslationStatus.invalidate();
       router.push("/tags");
     },
     onError: (err) => toast(err.message, "error"),

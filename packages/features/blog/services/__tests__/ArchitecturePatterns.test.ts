@@ -3,6 +3,7 @@ import { eventBus } from "@ecom/features/events/EventBus";
 import { registerEventListeners } from "@ecom/features/events/listeners";
 import { OutboxStore } from "@ecom/features/events/OutboxStore";
 import { Cacheable, CacheEvict } from "@ecom/features/shared/decorators/caching.decorators";
+import { PrismaQueryBuilder } from "@ecom/features/shared/PrismaQueryBuilder";
 import { lockManager } from "@ecom/lib/lock";
 import { loggerContext } from "@ecom/lib/logger";
 import type { ExtendedPrismaClient } from "@ecom/prisma";
@@ -305,7 +306,6 @@ describe("Architectural Patterns Integration Tests", () => {
         status: options.status,
       };
 
-      const { PrismaQueryBuilder } = require("@ecom/features/shared/PrismaQueryBuilder");
       const args = PrismaQueryBuilder.build({
         page: options.page,
         limit: options.perPage,

@@ -138,3 +138,21 @@ export const remove = authedProcedure
     const tagService = getTagService();
     return tagService.deleteTag(input.id);
   });
+
+export const restore = authedProcedure
+  .use(requirePermission(Permissions.TAGS_DELETE))
+  .use(auditLog({ module: "tags", action: "RESTORE", entityType: "Tag" }))
+  .input(z.object({ id: z.number().int().positive() }))
+  .mutation(async ({ input }) => {
+    const tagService = getTagService();
+    return tagService.restoreTag(input.id);
+  });
+
+export const permanentlyDelete = authedProcedure
+  .use(requirePermission(Permissions.TAGS_DELETE))
+  .use(auditLog({ module: "tags", action: "PERMANENT_DELETE", entityType: "Tag" }))
+  .input(z.object({ id: z.number().int().positive() }))
+  .mutation(async ({ input }) => {
+    const tagService = getTagService();
+    return tagService.permanentlyDeleteTag(input.id);
+  });

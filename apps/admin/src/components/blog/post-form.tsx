@@ -109,6 +109,7 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
       toast(t("successUpdated"), "success");
       utils.viewer.translations.list.invalidate();
       utils.viewer.translations.translationStatus.invalidate();
+      utils.viewer.translations.batchTranslationStatus.invalidate();
     },
     onError: (err) => toast(err.message, "error"),
   });

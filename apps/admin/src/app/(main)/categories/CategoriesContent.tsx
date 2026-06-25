@@ -33,6 +33,7 @@ type CategoryRow = {
   status: string;
   order: number;
   createdAt: string;
+  isDefault: boolean;
   _count: { posts: number; children: number };
 };
 
@@ -288,6 +289,7 @@ export default function CategoriesContent() {
         tooltip: t("actions.delete"),
         icon: <Trash2 size={16} />,
         color: "error",
+        disabled: (row) => !!row.isDefault,
         onClick: (row) => {
           askConfirm({
             message: t("deleteCategoryConfirm", { name: row.name }),
