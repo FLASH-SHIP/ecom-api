@@ -37,9 +37,10 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           headers() {
             const headers: Record<string, string> = {};
             if (typeof window !== "undefined") {
-              const pathLocale = window.location.pathname.split("/")[1];
-              if (pathLocale && /^[a-z]{2}$/.test(pathLocale)) {
-                headers["x-locale"] = pathLocale;
+              const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
+              const cookieLocale = match?.[1];
+              if (cookieLocale && /^[a-z]{2}$/.test(cookieLocale)) {
+                headers["x-locale"] = cookieLocale;
               }
             }
             return headers;

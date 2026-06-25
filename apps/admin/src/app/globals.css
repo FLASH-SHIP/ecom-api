@@ -300,12 +300,23 @@ a, button, input, select, textarea {
  * touch-action: manipulation (Web Interface Guidelines)
  * Eliminates the 300ms double-tap zoom delay on mobile for all
  * interactive elements — improves perceived responsiveness on touch devices.
+ * cursor: pointer ensures all clickable actions show a hand pointer.
  */
 button,
 a,
 [role="button"],
+input[type="submit"],
+input[type="button"],
 label {
+  cursor: pointer;
   touch-action: manipulation;
+}
+
+button:disabled,
+input:disabled,
+[aria-disabled="true"],
+[disabled] {
+  cursor: not-allowed !important;
 }
 
 /*

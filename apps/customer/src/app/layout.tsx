@@ -1,9 +1,11 @@
+import { I18nProvider } from "@ecom/shared/@i18n";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import { SessionProvider } from "next-auth/react";
 import { CustomerLayout } from "../components/CustomerLayout";
-import { HrefLangTags } from "../components/HrefLangTags";
 import { CustomerThemeProvider } from "../lib/CustomerThemeProvider";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../lib/i18n";
 import { TRPCProvider } from "../lib/trpc";
 import "./globals.css";
 
@@ -26,26 +28,25 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-  params,
 }: Readonly<{
   children: React.ReactNode;
-  params: Promise<{ locale?: string }>;
 }>) {
-  const { locale } = await params;
-  const lang = locale ?? "vi";
+  const cookieStore = await cookies();
+  const locale = cookieStore.get("NEXT_LOCALE")?.value;
+  const lang =
+    locale && (SUPPORTED_LOCALES as readonly string[]).includes(locale) ? locale : DEFAULT_LOCALE;
 
   return (
     <html lang={lang} className={inter.variable}>
-      <head>
-        <HrefLangTags />
-      </head>
       <body>
         <CustomerThemeProvider>
           <SessionProvider>
             <TRPCProvider>
-              <div className="flex min-h-screen flex-col">
-                <CustomerLayout>{children}</CustomerLayout>
-              </div>
+              <I18nProvider initialLocale={lang}>
+                <div className="flex min-h-screen flex-col">
+                  <CustomerLayout>{children}</CustomerLayout>
+                </div>
+              </I18nProvider>
             </TRPCProvider>
           </SessionProvider>
         </CustomerThemeProvider>

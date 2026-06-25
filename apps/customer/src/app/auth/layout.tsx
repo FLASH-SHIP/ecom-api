@@ -1,5 +1,5 @@
+import { ThemeToggle } from "@ecom/shared/components/ThemeToggle";
 import type { Metadata } from "next";
-import { ThemeToggle } from "../../components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: "Auth",

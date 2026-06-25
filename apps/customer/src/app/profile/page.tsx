@@ -1,24 +1,20 @@
 "use client";
 
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@customer/lib/i18n";
 import { trpc } from "@customer/lib/trpc";
 import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
+import { Breadcrumb } from "@ecom/ui/components/breadcrumb";
 import { AlertCircle, AtSign, CheckCircle } from "lucide-react";
 import NextLink from "next/link";
-import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 export default function CustomerProfilePage() {
-  const pathname = usePathname();
   const { status } = useSession();
-
-  const currentLocale =
-    SUPPORTED_LOCALES.find((l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`) ??
-    DEFAULT_LOCALE;
+  const { languageId: currentLocale } = useI18n();
 
   const getLocalizedHref = (href: string) => {
-    return `/${currentLocale}${href === "/" ? "" : href}`;
+    return href;
   };
 
   const { data: profile, isLoading: isLoadingProfile } = trpc.customer.auth.me.useQuery(undefined, {
@@ -87,15 +83,24 @@ export default function CustomerProfilePage() {
   const canChangeUsername = (profile.usernameChangeCount ?? 0) < 1;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{translate("customerProfile.title", currentLocale)}</h1>
-        <NextLink
-          href={getLocalizedHref("/customer/dashboard")}
-          className="text-sm text-primary hover:underline"
-        >
-          {translate("customerProfile.backToDashboard", currentLocale)}
-        </NextLink>
+    <div className="flex flex-col gap-6 max-w-2xl">
+      {/* Page Header */}
+      <div>
+        <Breadcrumb
+          items={[
+            {
+              label: currentLocale === "vi" ? "Bảng điều khiển" : "Dashboard",
+              href: "/dashboard",
+            },
+            {
+              label: translate("customerProfile.title", currentLocale),
+            },
+          ]}
+          className="w-fit rounded-sm border border-border px-2 py-0.5 mb-3 text-xs"
+        />
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {translate("customerProfile.title", currentLocale)}
+        </h1>
       </div>
 
       <form
@@ -105,17 +110,17 @@ export default function CustomerProfilePage() {
           setValidationError(null);
 
           if (!name.trim()) {
-            setValidationError(translate("profileModal.nameRequired", currentLocale));
+            setValidationError(translate("customerAuth.profileModal.nameRequired", currentLocale));
             return;
           }
           if (!phone.trim()) {
-            setValidationError(translate("profileModal.phoneRequired", currentLocale));
+            setValidationError(translate("customerAuth.profileModal.phoneRequired", currentLocale));
             return;
           }
 
           const phoneClean = phone.replace(/[\s-+()]/g, "");
           if (phoneClean.length < 8 || !/^\d+$/.test(phoneClean)) {
-            setValidationError(translate("profileModal.phoneInvalid", currentLocale));
+            setValidationError(translate("customerAuth.profileModal.phoneInvalid", currentLocale));
             return;
           }
 
@@ -132,7 +137,10 @@ export default function CustomerProfilePage() {
       >
         {/* Email (read-only) */}
         <div>
-          <label htmlFor="profile-email" className="mb-1 block text-sm font-medium">
+          <label
+            htmlFor="profile-email"
+            className="mb-1.5 block text-sm font-medium text-foreground"
+          >
             {translate("customerProfile.emailLabel", currentLocale)}
           </label>
           <input
@@ -140,9 +148,9 @@ export default function CustomerProfilePage() {
             type="email"
             disabled
             value={profile.email}
-            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground"
+            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground focus-visible:outline-none"
           />
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             {translate("customerProfile.emailLockedDesc", currentLocale)}
           </p>
         </div>
@@ -151,9 +159,9 @@ export default function CustomerProfilePage() {
         <div>
           <label
             htmlFor="profile-username"
-            className="mb-1 flex items-center gap-2 text-sm font-medium"
+            className="mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground"
           >
-            <AtSign className="h-4 w-4" />
+            <AtSign className="h-4 w-4 text-muted-foreground" />
             {translate("customerProfile.usernameLabel", currentLocale)}
           </label>
           <input
@@ -162,16 +170,16 @@ export default function CustomerProfilePage() {
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase())}
             disabled={!canChangeUsername}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm disabled:bg-muted disabled:text-muted-foreground"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:bg-muted disabled:text-muted-foreground transition-all"
             placeholder={translate("customerProfile.usernamePlaceholder", currentLocale)}
           />
           {canChangeUsername ? (
-            <p className="mt-1 flex items-center gap-1 text-xs text-amber-600">
-              <AlertCircle className="h-3 w-3" />
+            <p className="mt-1.5 flex items-center gap-1 text-xs text-amber-600">
+              <AlertCircle className="h-3.5 w-3.5" />
               {translate("customerProfile.usernameChangeLimitAlert", currentLocale)}
             </p>
           ) : (
-            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+            <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
               {translate("customerProfile.usernameChangeLockedAlert", currentLocale)}
             </p>
           )}
@@ -179,7 +187,10 @@ export default function CustomerProfilePage() {
 
         {/* Full Name */}
         <div>
-          <label htmlFor="profile-name" className="mb-1 block text-sm font-medium">
+          <label
+            htmlFor="profile-name"
+            className="mb-1.5 block text-sm font-medium text-foreground"
+          >
             {translate("customerProfile.nameLabel", currentLocale)}
           </label>
           <input
@@ -187,14 +198,17 @@ export default function CustomerProfilePage() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
             placeholder={translate("customerProfile.namePlaceholder", currentLocale)}
           />
         </div>
 
         {/* Phone */}
         <div>
-          <label htmlFor="profile-phone" className="mb-1 block text-sm font-medium">
+          <label
+            htmlFor="profile-phone"
+            className="mb-1.5 block text-sm font-medium text-foreground"
+          >
             {translate("customerProfile.phoneLabel", currentLocale)}
           </label>
           <input
@@ -202,7 +216,7 @@ export default function CustomerProfilePage() {
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
             placeholder={translate("customerProfile.phonePlaceholder", currentLocale)}
           />
         </div>
@@ -210,7 +224,10 @@ export default function CustomerProfilePage() {
         {/* DOB + Gender */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="profile-dob" className="mb-1 block text-sm font-medium">
+            <label
+              htmlFor="profile-dob"
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
               {translate("customerProfile.dobLabel", currentLocale)}
             </label>
             <input
@@ -218,18 +235,21 @@ export default function CustomerProfilePage() {
               type="date"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
             />
           </div>
           <div>
-            <label htmlFor="profile-gender" className="mb-1 block text-sm font-medium">
+            <label
+              htmlFor="profile-gender"
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
               {translate("customerProfile.genderLabel", currentLocale)}
             </label>
             <select
               id="profile-gender"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
             >
               <option value="">{translate("customerProfile.genderSelect", currentLocale)}</option>
               <option value="male">{translate("customerProfile.genderMale", currentLocale)}</option>
@@ -245,7 +265,10 @@ export default function CustomerProfilePage() {
 
         {/* Description */}
         <div>
-          <label htmlFor="profile-description" className="mb-1 block text-sm font-medium">
+          <label
+            htmlFor="profile-description"
+            className="mb-1.5 block text-sm font-medium text-foreground"
+          >
             {translate("customerProfile.descriptionLabel", currentLocale)}
           </label>
           <textarea
@@ -254,19 +277,19 @@ export default function CustomerProfilePage() {
             onChange={(e) => setDescription(e.target.value)}
             maxLength={1000}
             rows={3}
-            className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
             placeholder={translate("customerProfile.descriptionPlaceholder", currentLocale)}
           />
         </div>
 
         {(validationError || updateMutation.error) && (
-          <p className="text-sm text-destructive">
+          <p className="text-sm text-destructive font-medium">
             {validationError || updateMutation.error?.message}
           </p>
         )}
 
         {saved && (
-          <p className="flex items-center gap-1 text-sm font-medium text-emerald-600">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
             <CheckCircle className="h-4 w-4" />
             {translate("customerProfile.saveSuccess", currentLocale)}
           </p>

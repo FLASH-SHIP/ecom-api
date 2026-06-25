@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 const translations = {
@@ -21,8 +20,11 @@ const translations = {
 
 type Locale = keyof typeof translations;
 
-function detectLocale(pathname: string): Locale {
-  if (pathname.startsWith("/en/") || pathname === "/en") return "en";
+function detectLocale(): Locale {
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
+    if (match?.[1] === "en") return "en";
+  }
   return "vi";
 }
 
@@ -33,8 +35,7 @@ export default function GlobalErrorPage({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const pathname = usePathname();
-  const t = translations[detectLocale(pathname)];
+  const t = translations[detectLocale()];
 
   useEffect(() => {
     console.error("[CustomerApp] Error:", pageError);

@@ -5,6 +5,10 @@ const serverSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required on server"),
   CUSTOMER_SESSION_CACHE_TTL_SEC: z.coerce.number().int().nonnegative().default(30),
+  CUSTOMER_SESSION_MAX_AGE_DAYS: z.coerce.number().int().positive().default(30),
+  CUSTOMER_SESSION_ABSOLUTE_TIMEOUT_DAYS: z.coerce.number().int().positive().default(90),
+  CUSTOMER_SESSION_IDLE_TIMEOUT_DAYS: z.coerce.number().int().positive().default(7),
+  CUSTOMER_MAX_SESSIONS_PER_USER: z.coerce.number().int().positive().default(10),
   JWT_SECRET: z.string().min(8, "JWT_SECRET must be at least 8 characters long"),
 });
 
@@ -23,6 +27,10 @@ const processEnv = {
   NODE_ENV: process.env.NODE_ENV,
   AUTH_SECRET: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   CUSTOMER_SESSION_CACHE_TTL_SEC: process.env.CUSTOMER_SESSION_CACHE_TTL_SEC,
+  CUSTOMER_SESSION_MAX_AGE_DAYS: process.env.CUSTOMER_SESSION_MAX_AGE_DAYS,
+  CUSTOMER_SESSION_ABSOLUTE_TIMEOUT_DAYS: process.env.CUSTOMER_SESSION_ABSOLUTE_TIMEOUT_DAYS,
+  CUSTOMER_SESSION_IDLE_TIMEOUT_DAYS: process.env.CUSTOMER_SESSION_IDLE_TIMEOUT_DAYS,
+  CUSTOMER_MAX_SESSIONS_PER_USER: process.env.CUSTOMER_MAX_SESSIONS_PER_USER,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_CUSTOMER_URL || process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,

@@ -15,8 +15,8 @@ export function AuthLogo() {
       </div>
       {/* Brand Name */}
       <span className="text-lg font-black tracking-wider flex items-center">
-        <span className="text-slate-900 dark:text-white">ECOM</span>
-        <span className="text-cyan-500 ml-1.5">EXPRESS</span>
+        <span className="text-foreground">ECOM</span>
+        <span className="text-primary ml-1.5">EXPRESS</span>
       </span>
     </div>
   );

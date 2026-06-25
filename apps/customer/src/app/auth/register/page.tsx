@@ -1,47 +1,46 @@
 "use client";
 
 import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
-import { zodResolver } from "@hookform/resolvers/zod";
 import NextLink from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { AuthCard } from "../../../components/auth/AuthCard";
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from "../../../lib/i18n";
 import { trpc } from "../../../lib/trpc";
+import { zodResolver } from "../../../lib/zodResolver";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const pathname = usePathname();
+  const { languageId: currentLocale } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [codeCountdown, setCodeCountdown] = useState(0);
 
-  // Detect current locale from path
-  const currentLocale: SupportedLocale = pathname
-    ? ((SUPPORTED_LOCALES.find(
-        (l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`,
-      ) as SupportedLocale) ?? DEFAULT_LOCALE)
-    : DEFAULT_LOCALE;
-
-  const schema = z.object({
-    email: z
-      .string()
-      .min(1, translate("customerAuth.register.emailRequired", currentLocale))
-      .email(translate("customerAuth.register.emailInvalid", currentLocale)),
-    code: z
-      .string()
-      .min(1, translate("customerAuth.register.codeRequired", currentLocale))
-      .length(6, translate("customerAuth.register.codeInvalid", currentLocale)),
-    password: z.string().min(8, translate("customerAuth.register.passwordMin", currentLocale)),
-  });
+  const schema = useMemo(
+    () =>
+      z.object({
+        email: z
+          .string()
+          .min(1, translate("customerAuth.register.emailRequired", currentLocale))
+          .email(translate("customerAuth.register.emailInvalid", currentLocale)),
+        code: z
+          .string()
+          .min(1, translate("customerAuth.register.codeRequired", currentLocale))
+          .length(6, translate("customerAuth.register.codeInvalid", currentLocale)),
+        password: z.string().min(8, translate("customerAuth.register.passwordMin", currentLocale)),
+      }),
+    [currentLocale],
+  );
 
   type FormValues = z.infer<typeof schema>;
+
+  const resolver = useMemo(() => zodResolver(schema), [schema]);
 
   const { control, handleSubmit, watch } = useForm<FormValues>({
     mode: "onChange",
@@ -50,7 +49,7 @@ export default function RegisterPage() {
       code: "",
       password: "",
     },
-    resolver: zodResolver(schema),
+    resolver,
   });
 
   const emailValue = watch("email");
@@ -109,10 +108,10 @@ export default function RegisterPage() {
           identifier: variables.email,
           password: variables.password,
         });
-        router.push(`/${currentLocale}/customer/dashboard`);
+        router.push("/dashboard");
       } catch (err) {
         console.error("Auto sign in failed:", err);
-        router.push(`/${currentLocale}/auth/login`);
+        router.push("/auth/login");
       }
     },
     onError: (err) => {
@@ -134,7 +133,7 @@ export default function RegisterPage() {
   return (
     <AuthCard showLogo showLanguageSelector showSocials showSupport>
       {/* Title */}
-      <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-1 select-none">
+      <h1 className="text-xl font-bold text-foreground mb-1 select-none">
         {translate("customerAuth.register.title", currentLocale)}
       </h1>
 
@@ -160,10 +159,7 @@ export default function RegisterPage() {
           control={control}
           render={({ field, fieldState }) => (
             <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="register-email"
-                className="text-xs font-bold text-slate-600 dark:text-slate-300"
-              >
+              <Label htmlFor="register-email" className="text-xs font-bold text-muted-foreground">
                 {translate("customerAuth.register.emailLabel", currentLocale)}
               </Label>
               <div className="flex gap-2">
@@ -173,7 +169,7 @@ export default function RegisterPage() {
                   type="email"
                   autoComplete="email"
                   placeholder={translate("customerAuth.register.emailPlaceholder", currentLocale)}
-                  className="flex-1 bg-background/50 dark:bg-slate-900/30"
+                  className="flex-1 bg-background/50"
                   aria-invalid={!!fieldState.error}
                 />
                 <Button
@@ -185,7 +181,7 @@ export default function RegisterPage() {
                       sendCodeMutation.mutate({ email: emailValue });
                     }
                   }}
-                  className="shrink-0 h-10 select-none font-semibold text-xs border border-cyan-500/30 hover:border-cyan-500 text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 dark:hover:text-cyan-300 dark:border-cyan-500/20"
+                  className="shrink-0 h-10 select-none font-semibold text-xs border border-primary/30 hover:border-primary text-primary hover:text-primary/80"
                 >
                   {sendCodeMutation.isPending && (
                     <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent mr-1.5" />
@@ -210,10 +206,7 @@ export default function RegisterPage() {
           control={control}
           render={({ field, fieldState }) => (
             <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="register-code"
-                className="text-xs font-bold text-slate-600 dark:text-slate-300"
-              >
+              <Label htmlFor="register-code" className="text-xs font-bold text-muted-foreground">
                 {translate("customerAuth.register.codeLabel", currentLocale)}
               </Label>
               <Input
@@ -222,7 +215,7 @@ export default function RegisterPage() {
                 type="text"
                 maxLength={6}
                 placeholder={translate("customerAuth.register.codePlaceholder", currentLocale)}
-                className="w-full bg-background/50 dark:bg-slate-900/30"
+                className="w-full bg-background/50"
                 aria-invalid={!!fieldState.error}
               />
               {fieldState.error && (
@@ -240,7 +233,7 @@ export default function RegisterPage() {
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="register-password"
-                className="text-xs font-bold text-slate-600 dark:text-slate-300"
+                className="text-xs font-bold text-muted-foreground"
               >
                 {translate("customerAuth.register.passwordLabel", currentLocale)}
               </Label>
@@ -250,7 +243,7 @@ export default function RegisterPage() {
                 type="password"
                 autoComplete="new-password"
                 placeholder={translate("customerAuth.register.passwordPlaceholder", currentLocale)}
-                className="w-full bg-background/50 dark:bg-slate-900/30"
+                className="w-full bg-background/50"
                 showPasswordLabel={translate("auth.showPassword", currentLocale)}
                 hidePasswordLabel={translate("auth.hidePassword", currentLocale)}
                 aria-invalid={!!fieldState.error}
@@ -274,11 +267,11 @@ export default function RegisterPage() {
       </form>
 
       {/* Footer Info */}
-      <p className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+      <p className="text-center text-xs font-semibold text-muted-foreground">
         {translate("customerAuth.register.alreadyHaveAccount", currentLocale)}{" "}
         <NextLink
-          href={`/${currentLocale}/auth/login`}
-          className="font-bold text-cyan-500 hover:underline transition-colors"
+          href="/auth/login"
+          className="font-bold text-primary hover:underline transition-colors"
         >
           {translate("customerAuth.register.signIn", currentLocale)}
         </NextLink>

@@ -1,85 +1,16 @@
 "use client";
 
+import { LanguageSwitcher } from "@ecom/shared/components/LanguageSwitcher";
+import { ThemeToggle } from "@ecom/shared/components/ThemeToggle";
 import useNavigationItems from "@ecom/shared/components/theme-layouts/components/navigation/hooks/useNavigationItems";
 import { PerfectScroll } from "@ecom/ui/components/perfect-scroll";
 import { Popover, PopoverContent, PopoverTrigger } from "@ecom/ui/components/popover";
 import { cn } from "@ecom/ui/lib/utils";
-import type { LanguageType } from "@i18n/I18nContext";
-import useI18n from "@i18n/useI18n";
-import { ALargeSmall, Maximize, Minimize, Moon, PanelLeft, Search, Star, Sun } from "lucide-react";
-import Image from "next/image";
+import { ALargeSmall, Maximize, Minimize, PanelLeft, Search, Star } from "lucide-react";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAdminSidebar } from "./AdminSidebarContext";
 import { getNavIcon } from "./nav-icons";
-
-// ─── LanguageSwitcher ─────────────────────────────────────────────────────────
-
-function LanguageSwitcherInline() {
-  const { language, languages, changeLanguage } = useI18n();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  if (!mounted || !language) return null;
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-      >
-        <Image
-          className="h-4 w-5"
-          src={`/assets/images/flags/${language.flag}.svg`}
-          alt={language.title}
-          width={20}
-          height={16}
-        />
-        <span className="uppercase">{language.id}</span>
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] rounded-lg border border-border bg-popover p-1 shadow-lg">
-          {languages.map((lng: LanguageType) => (
-            <button
-              key={lng.id}
-              type="button"
-              onClick={() => {
-                changeLanguage(lng.id);
-                setOpen(false);
-              }}
-              className={cn(
-                "flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent",
-                lng.id === language.id && "bg-accent font-medium",
-              )}
-            >
-              <Image
-                className="h-4 w-5"
-                src={`/assets/images/flags/${lng.flag}.svg`}
-                alt={lng.title}
-                width={20}
-                height={16}
-              />
-              {lng.title}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── AdjustFontSize ───────────────────────────────────────────────────────────
 
@@ -277,62 +208,6 @@ function FullScreenToggleButton() {
         <Minimize className="h-[18px] w-[18px]" strokeWidth={1.8} />
       ) : (
         <Maximize className="h-[18px] w-[18px]" strokeWidth={1.8} />
-      )}
-    </button>
-  );
-}
-
-// ─── ThemeToggle (Fix #3: dark mode persistence) ──────────────────────────────
-
-function ThemeToggleButton() {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    // Restore saved theme preference from localStorage
-    try {
-      const saved = localStorage.getItem("theme");
-      if (saved === "dark") {
-        document.documentElement.classList.add("dark");
-        setIsDark(true);
-      } else if (saved === "light") {
-        document.documentElement.classList.remove("dark");
-        setIsDark(false);
-      } else {
-        // No saved preference — read current DOM state
-        setIsDark(document.documentElement.classList.contains("dark"));
-      }
-    } catch {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    }
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    const html = document.documentElement;
-    const nextDark = !html.classList.contains("dark");
-    if (nextDark) {
-      html.classList.add("dark");
-    } else {
-      html.classList.remove("dark");
-    }
-    setIsDark(nextDark);
-    try {
-      localStorage.setItem("theme", nextDark ? "dark" : "light");
-    } catch {
-      // Ignore storage errors
-    }
-  }, []);
-
-  return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      className="flex cursor-pointer size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-      title={isDark ? "Light mode" : "Dark mode"}
-    >
-      {isDark ? (
-        <Sun className="h-[18px] w-[18px]" strokeWidth={1.8} />
-      ) : (
-        <Moon className="h-[18px] w-[18px]" strokeWidth={1.8} />
       )}
     </button>
   );
@@ -674,10 +549,10 @@ function AdminToolbar() {
 
       {/* Right section */}
       <div className="flex items-center gap-0.5">
-        <LanguageSwitcherInline />
+        <LanguageSwitcher />
         <AdjustFontSizeButton />
         <FullScreenToggleButton />
-        <ThemeToggleButton />
+        <ThemeToggle />
         <SearchButton />
       </div>
     </header>

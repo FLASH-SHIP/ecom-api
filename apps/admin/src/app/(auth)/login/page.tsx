@@ -4,7 +4,6 @@ import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent } from "@ecom/ui/components/card";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
-import { Switch } from "@ecom/ui/components/switch";
 import { cn } from "@ecom/ui/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -19,13 +18,11 @@ import { z } from "zod";
 type FormType = {
   email: string;
   password: string;
-  remember?: boolean;
 };
 
 const defaultValues: FormType = {
   email: "",
   password: "",
-  remember: false,
 };
 
 export default function LoginPage() {
@@ -36,7 +33,6 @@ export default function LoginPage() {
   const schema = z.object({
     email: z.string().email(t("emailInvalid")).min(1, t("emailRequired")),
     password: z.string().min(1, t("passwordRequired")),
-    remember: z.boolean().optional(),
   });
 
   const { control, handleSubmit, formState } = useForm<FormType>({
@@ -140,24 +136,7 @@ export default function LoginPage() {
                 )}
               />
 
-              <div className="flex items-center justify-between">
-                <Controller
-                  name="remember"
-                  control={control}
-                  render={({ field }) => (
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="remember"
-                        checked={field.value ?? false}
-                        onCheckedChange={field.onChange}
-                      />
-                      <Label htmlFor="remember" className="cursor-pointer text-sm">
-                        {t("rememberMe")}
-                      </Label>
-                    </div>
-                  )}
-                />
-
+              <div className="flex justify-end">
                 <a href="/forgot-password" className="text-sm font-medium hover:underline">
                   {t("forgotPassword")}
                 </a>

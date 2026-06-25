@@ -47,12 +47,12 @@ function Header({ isLoggedIn: loggedIn }: { isLoggedIn: boolean }) {
   };
 
   const getCustomerHref = (href: string) => {
-    return `${env.NEXT_PUBLIC_CUSTOMER_URL}/${currentLocale}${href === "/" ? "" : href}`;
+    return `${env.NEXT_PUBLIC_CUSTOMER_URL}${href === "/" ? "" : href}`;
   };
 
   function handleLogout() {
     setAvatarOpen(false);
-    window.location.href = `${env.NEXT_PUBLIC_CUSTOMER_URL}/${currentLocale}/auth/logout`;
+    window.location.href = `${env.NEXT_PUBLIC_CUSTOMER_URL}/auth/logout`;
   }
 
   // Close avatar menu on outside click
@@ -131,13 +131,13 @@ function Header({ isLoggedIn: loggedIn }: { isLoggedIn: boolean }) {
                     className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-border bg-background py-1 shadow-xl"
                   >
                     <a
-                      href={getCustomerHref("/customer/dashboard")}
+                      href={getCustomerHref("/dashboard")}
                       className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                     >
                       <LayoutDashboard className="h-4 w-4" /> Dashboard
                     </a>
                     <a
-                      href={getCustomerHref("/customer/profile")}
+                      href={getCustomerHref("/profile")}
                       className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
                     >
                       <User className="h-4 w-4" /> Hồ sơ
@@ -234,7 +234,7 @@ function Header({ isLoggedIn: loggedIn }: { isLoggedIn: boolean }) {
               {loggedIn ? (
                 <>
                   <a
-                    href={getCustomerHref("/customer/dashboard")}
+                    href={getCustomerHref("/dashboard")}
                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
                   >
                     <LayoutDashboard className="h-4 w-4" /> Dashboard
@@ -327,7 +327,7 @@ function Footer() {
               Đăng ký
             </a>
             <a
-              href={getCustomerHref("/customer/dashboard")}
+              href={getCustomerHref("/dashboard")}
               className="mb-1.5 block text-sm text-muted-foreground hover:text-foreground"
             >
               Dashboard

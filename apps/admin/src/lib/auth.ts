@@ -1,7 +1,11 @@
 import crypto from "node:crypto";
 import { env } from "@admin/env";
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
-import { getRedisClient } from "@ecom/lib/redis";
+import {
+  getCachedSession,
+  invalidateCachedSession,
+  setCachedSession,
+} from "@ecom/lib/session-cache";
 import { prisma } from "@ecom/prisma";
 import type { User as AppUser } from "@ecom/shared/@auth/user";
 import type { NextAuthResult } from "next-auth";
@@ -12,6 +16,12 @@ export const AUTH_KEYS = {
   accessToken: "accessToken",
   refreshToken: "refreshToken",
 } as const;
+
+/** Delete an expired/invalid admin session from DB and cache */
+async function deleteAdminSession(sessionId: string, cacheKey: string) {
+  await prisma.session.delete({ where: { id: sessionId } }).catch(() => {});
+  await invalidateCachedSession(cacheKey);
+}
 
 const adminAdapter = {
   async createSession(session: { sessionToken: string; userId: string; expires: Date }) {
@@ -48,7 +58,20 @@ const adminAdapter = {
   async getSessionAndUser(sessionToken: string) {
     const dbSession = await prisma.session.findUnique({
       where: { sessionToken },
-      include: { user: true },
+      select: {
+        id: true,
+        sessionToken: true,
+        userId: true,
+        expires: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            emailVerified: true,
+          },
+        },
+      },
     });
     if (!dbSession || dbSession.expires < new Date()) {
       if (dbSession) {
@@ -92,12 +115,7 @@ const adminAdapter = {
       })
       .catch(() => {});
 
-    try {
-      const redis = getRedisClient();
-      await redis.del(`admin_session:${sessionToken}`);
-    } catch (_err) {
-      // Ignore cache invalidation failures
-    }
+    await invalidateCachedSession(`admin_session:${sessionToken}`);
   },
 };
 
@@ -108,7 +126,7 @@ const nextAuth: NextAuthResult = NextAuth({
   pages: {
     signIn: "/login",
   },
-  debug: true,
+  debug: env.NODE_ENV === "development",
   providers: [
     Credentials({
       name: "credentials",
@@ -140,7 +158,10 @@ const nextAuth: NextAuthResult = NextAuth({
     async jwt({ token, user, account }) {
       if (account?.provider === "credentials" && user) {
         const sessionToken = crypto.randomUUID();
-        const expires = new Date(Date.now() + env.ADMIN_SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000);
+        const now = new Date();
+        const expires = new Date(
+          now.getTime() + env.ADMIN_SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,
+        );
 
         let ipAddress: string | null = null;
         let userAgent: string | null = null;
@@ -161,49 +182,52 @@ const nextAuth: NextAuthResult = NextAuth({
             sessionToken,
             userId: Number(user.id),
             expires,
+            loginAt: now,
+            lastActiveAt: now,
             ipAddress,
             userAgent,
           },
         });
+
+        // Enforce max sessions per user — evict oldest sessions
+        const maxSessions = env.ADMIN_MAX_SESSIONS_PER_USER;
+        const existingSessions = await prisma.session.findMany({
+          where: { userId: Number(user.id) },
+          orderBy: { lastActiveAt: "asc" },
+          select: { id: true },
+        });
+
+        if (existingSessions.length > maxSessions) {
+          const sessionsToDelete = existingSessions.slice(0, existingSessions.length - maxSessions);
+          await prisma.session
+            .deleteMany({
+              where: { id: { in: sessionsToDelete.map((s) => s.id) } },
+            })
+            .catch(() => {});
+        }
 
         token.sessionId = sessionToken;
         token.id = Number(user.id);
       }
       return token;
     },
-    async session({ session, token, user }) {
-      const userId = user?.id || (token?.id ? String(token.id) : null);
-      if (userId) {
-        session.user.id = userId;
+    async session({ session, token }) {
+      const id = token?.id ? String(token.id) : null;
+      if (!id) return session;
 
-        // Populate session.db for the app's useUser hook
-        const dbUser = await prisma.user.findUnique({
-          where: { id: Number(userId) },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
-            roles: {
-              select: {
-                role: { select: { name: true } },
-              },
-            },
-          },
-        });
+      session.user.id = id;
 
-        if (dbUser) {
-          const appUser: AppUser = {
-            id: String(dbUser.id),
-            displayName: dbUser.name ?? dbUser.email ?? "User",
-            email: dbUser.email ?? undefined,
-            photoURL: dbUser.avatarUrl ?? undefined,
-            role: dbUser.roles.map((r) => r.role.name),
-            loginRedirectUrl: "/",
-          };
-          session.db = appUser;
-        }
-      }
+      // Use cached user data from decode() payload — no extra DB query
+      const appUser: AppUser = {
+        id,
+        displayName: (token.name as string) ?? (token.email as string) ?? "User",
+        email: (token.email as string) ?? undefined,
+        photoURL: (token.avatarUrl as string) ?? undefined,
+        role: (token.roles as string[]) ?? [],
+        loginRedirectUrl: "/",
+      };
+      session.db = appUser;
+
       return session;
     },
   },
@@ -222,26 +246,55 @@ const nextAuth: NextAuthResult = NextAuth({
       const cacheTtl = env.ADMIN_SESSION_CACHE_TTL_SEC;
 
       if (cacheTtl > 0) {
-        try {
-          const redis = getRedisClient();
-          const cached = await redis.get(cacheKey);
-          if (cached) {
-            return JSON.parse(cached);
-          }
-        } catch (_err) {
-          // Fallback to DB query on Redis failure
-        }
+        const cached = await getCachedSession(cacheKey);
+        if (cached) return cached;
       }
 
       const dbSession = await prisma.session.findUnique({
         where: { sessionToken },
-        include: { user: true },
+        select: {
+          id: true,
+          sessionToken: true,
+          userId: true,
+          expires: true,
+          loginAt: true,
+          lastActiveAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              avatarUrl: true,
+              roles: {
+                select: {
+                  role: { select: { name: true } },
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!dbSession || dbSession.expires < new Date()) {
         if (dbSession) {
-          await prisma.session.delete({ where: { id: dbSession.id } }).catch(() => {});
+          await deleteAdminSession(dbSession.id, cacheKey);
         }
+        return {};
+      }
+
+      const now = Date.now();
+
+      // 1️⃣ Absolute Timeout — hard stop after configured hours from login
+      const absoluteMaxMs = env.ADMIN_SESSION_ABSOLUTE_TIMEOUT_HOURS * 60 * 60 * 1000;
+      if (now - dbSession.loginAt.getTime() > absoluteMaxMs) {
+        await deleteAdminSession(dbSession.id, cacheKey);
+        return {};
+      }
+
+      // 2️⃣ Idle Timeout — no activity within configured hours
+      const idleMaxMs = env.ADMIN_SESSION_IDLE_TIMEOUT_HOURS * 60 * 60 * 1000;
+      if (now - dbSession.lastActiveAt.getTime() > idleMaxMs) {
+        await deleteAdminSession(dbSession.id, cacheKey);
         return {};
       }
 
@@ -250,16 +303,37 @@ const nextAuth: NextAuthResult = NextAuth({
         id: dbSession.user.id,
         email: dbSession.user.email,
         name: dbSession.user.name,
+        avatarUrl: dbSession.user.avatarUrl,
+        roles: dbSession.user.roles.map((r) => r.role.name),
       };
 
+      // 3️⃣ Sliding Window + Batched lastActiveAt update (every 5 min)
+      const sessionMaxAgeMs = env.ADMIN_SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+      const threshold = sessionMaxAgeMs * 0.25;
+      const timeRemaining = dbSession.expires.getTime() - now;
+      const ACTIVITY_BATCH_MS = 5 * 60 * 1000;
+      const needsActivityUpdate = now - dbSession.lastActiveAt.getTime() > ACTIVITY_BATCH_MS;
+
+      if (timeRemaining < threshold) {
+        const newExpires = new Date(now + sessionMaxAgeMs);
+        await prisma.session
+          .update({
+            where: { id: dbSession.id },
+            data: { expires: newExpires, lastActiveAt: new Date() },
+          })
+          .catch(() => {});
+        await invalidateCachedSession(cacheKey);
+      } else if (needsActivityUpdate) {
+        await prisma.session
+          .update({
+            where: { id: dbSession.id },
+            data: { lastActiveAt: new Date() },
+          })
+          .catch(() => {});
+      }
+
       if (cacheTtl > 0) {
-        try {
-          const redis = getRedisClient();
-          // Cache session lookup
-          await redis.set(cacheKey, JSON.stringify(payload), "EX", cacheTtl);
-        } catch (_err) {
-          // Ignore cache save failures
-        }
+        await setCachedSession(cacheKey, payload, cacheTtl);
       }
 
       return payload;
@@ -277,12 +351,7 @@ const nextAuth: NextAuthResult = NextAuth({
           })
           .catch(() => {});
 
-        try {
-          const redis = getRedisClient();
-          await redis.del(`admin_session:${sessionToken}`);
-        } catch (_err) {
-          // Ignore
-        }
+        await invalidateCachedSession(`admin_session:${sessionToken}`);
       }
     },
   },
