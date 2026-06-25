@@ -3,7 +3,7 @@ import {
   USERNAME_REGEX,
 } from "@ecom/features/customer/constants";
 import { ErrorWithCode } from "@ecom/lib/errors";
-import type { CustomerStatus, PrismaClient } from "@ecom/prisma";
+import type { CustomerStatus, Prisma, PrismaClient } from "@ecom/prisma";
 
 export interface CustomerFilters {
   status?: CustomerStatus;
@@ -327,6 +327,77 @@ export class CustomerRepository {
     await this.prisma.customerSession.deleteMany({
       where: { customerId },
     });
+  }
+
+  async invalidatePreviousVerificationCodes(email: string): Promise<void> {
+    await this.prisma.customerVerificationCode.updateMany({
+      where: { email, status: "PENDING" },
+      data: { status: "EXPIRED" },
+    });
+  }
+
+  async createVerificationCode(email: string, code: string, expiresAt: Date) {
+    return this.prisma.customerVerificationCode.create({
+      data: {
+        email,
+        code,
+        status: "PENDING",
+        expiresAt,
+      },
+    });
+  }
+
+  async findLatestPendingVerificationCode(email: string) {
+    return this.prisma.customerVerificationCode.findFirst({
+      where: { email, status: "PENDING" },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async markVerificationCodeVerified(id: number): Promise<void> {
+    await this.prisma.customerVerificationCode.update({
+      where: { id },
+      data: { status: "VERIFIED" },
+    });
+  }
+
+  async markVerificationCodeExpired(id: number): Promise<void> {
+    await this.prisma.customerVerificationCode.update({
+      where: { id },
+      data: { status: "EXPIRED" },
+    });
+  }
+
+  async incrementVerificationCodeAttempts(id: number): Promise<number> {
+    const updated = await this.prisma.customerVerificationCode.update({
+      where: { id },
+      data: {
+        attempts: {
+          increment: 1,
+        },
+      },
+      select: {
+        attempts: true,
+      },
+    });
+    return updated.attempts;
+  }
+
+  async findVerificationCodes(search?: string, page = 1, perPage = 25) {
+    const where: Prisma.CustomerVerificationCodeWhereInput = {};
+    if (search) {
+      where.email = { contains: search, mode: "insensitive" };
+    }
+    const [items, total] = await Promise.all([
+      this.prisma.customerVerificationCode.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * perPage,
+        take: perPage,
+      }),
+      this.prisma.customerVerificationCode.count({ where }),
+    ]);
+    return { items, total, page, perPage, totalPages: Math.ceil(total / perPage) };
   }
 
   private buildWhere(filters: CustomerFilters) {

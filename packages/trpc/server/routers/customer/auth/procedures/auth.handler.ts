@@ -7,17 +7,26 @@ import { publicProcedure } from "@ecom/trpc/server/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+export const sendVerificationCode = publicProcedure
+  .use(rateLimiters.auth)
+  .input(
+    z.object({
+      email: z.string().email().max(255),
+    }),
+  )
+  .mutation(async ({ input }) => {
+    const authService = getCustomerAuthService();
+    await authService.sendVerificationCode(input.email);
+    return { success: true };
+  });
+
 export const register = publicProcedure
   .use(rateLimiters.register)
   .input(
     z.object({
       email: z.string().email().max(255),
       password: z.string().min(8).max(100),
-      username: z
-        .string()
-        .regex(/^[a-z0-9_.]{3,30}$/)
-        .optional(),
-      name: z.string().min(1).max(200).optional(),
+      code: z.string().length(6),
     }),
   )
   .mutation(async ({ input }) => {

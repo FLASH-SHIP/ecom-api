@@ -1,10 +1,15 @@
-import { buildCustomerPasswordResetEmail, buildEmailVerificationEmail } from "@ecom/emails";
-import { USERNAME_REGEX, USERNAME_VALIDATION_MESSAGE } from "@ecom/features/customer/constants";
+import {
+  buildCustomerPasswordResetEmail,
+  buildEmailVerificationEmail,
+  buildVerificationCodeEmail,
+} from "@ecom/emails";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
 import { queueEmail } from "@ecom/features/queue/workers/emailWorker";
 import { hashPassword, verifyPassword } from "@ecom/lib/crypto";
+import { ErrorCode } from "@ecom/lib/errorCodes";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { createLogger } from "@ecom/lib/logger";
+import { runInTransaction } from "@ecom/prisma";
 import jwt from "jsonwebtoken";
 import { CustomerTokenService } from "./CustomerTokenService";
 
@@ -29,48 +34,120 @@ export class CustomerAuthService {
     this.jwtSecret = secret;
   }
 
-  async register(data: { email: string; password: string; username?: string; name?: string }) {
+  async sendVerificationCode(email: string) {
+    const existing = await this.deps.customerRepo.findByEmail(email);
+    if (existing) {
+      log.warn("Send OTP code failed: email already registered", { email });
+      throw new ErrorWithCode(ErrorCode.EmailAlreadyExists, "errors.EMAIL_ALREADY_EXISTS", 409);
+    }
+
+    const latestCode = await this.deps.customerRepo.findLatestPendingVerificationCode(email);
+    if (latestCode) {
+      const timeSinceCreation = Date.now() - latestCode.createdAt.getTime();
+      if (timeSinceCreation < 120 * 1000) {
+        const remainingSeconds = Math.ceil((120 * 1000 - timeSinceCreation) / 1000);
+        throw new ErrorWithCode(
+          ErrorCode.VerificationCodeRateLimited,
+          "errors.VERIFICATION_CODE_RATE_LIMITED",
+          400,
+          { seconds: remainingSeconds },
+        );
+      }
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await this.deps.customerRepo.invalidatePreviousVerificationCodes(email);
+
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await this.deps.customerRepo.createVerificationCode(email, code, expiresAt);
+
+    const payload = buildVerificationCodeEmail({ code });
+    payload.to = email;
+
+    log.info("Sending registration verification code email", { email });
+    await queueEmail(payload);
+  }
+
+  async register(data: { email: string; password: string; code: string }) {
+    const pendingCode = await this.deps.customerRepo.findLatestPendingVerificationCode(data.email);
+
+    if (!pendingCode) {
+      throw new ErrorWithCode(
+        ErrorCode.VerificationCodeInvalid,
+        "errors.VERIFICATION_CODE_INVALID",
+        400,
+      );
+    }
+
+    if (pendingCode.expiresAt.getTime() < Date.now()) {
+      await this.deps.customerRepo.markVerificationCodeExpired(pendingCode.id);
+      throw new ErrorWithCode(
+        ErrorCode.VerificationCodeExpired,
+        "errors.VERIFICATION_CODE_EXPIRED",
+        400,
+      );
+    }
+
+    if (pendingCode.attempts >= 5) {
+      await this.deps.customerRepo.markVerificationCodeExpired(pendingCode.id);
+      throw new ErrorWithCode(
+        ErrorCode.VerificationCodeLocked,
+        "errors.VERIFICATION_CODE_LOCKED",
+        400,
+      );
+    }
+
+    if (pendingCode.code !== data.code) {
+      const attempts = await this.deps.customerRepo.incrementVerificationCodeAttempts(
+        pendingCode.id,
+      );
+      if (attempts >= 5) {
+        await this.deps.customerRepo.markVerificationCodeExpired(pendingCode.id);
+        throw new ErrorWithCode(
+          ErrorCode.VerificationCodeLocked,
+          "errors.VERIFICATION_CODE_LOCKED",
+          400,
+        );
+      }
+      const remaining = 5 - attempts;
+      throw new ErrorWithCode(
+        ErrorCode.VerificationCodeAttempts,
+        "errors.VERIFICATION_CODE_ATTEMPTS",
+        400,
+        { count: remaining },
+      );
+    }
+
     const existing = await this.deps.customerRepo.findByEmail(data.email);
     if (existing) {
       log.warn("Registration attempt with existing email", { email: data.email });
-      throw ErrorWithCode.Factory.Conflict("Email already registered");
+      throw new ErrorWithCode(ErrorCode.EmailAlreadyExists, "errors.EMAIL_ALREADY_EXISTS", 409);
     }
 
-    if (data.username) {
-      if (!USERNAME_REGEX.test(data.username)) {
-        throw ErrorWithCode.Factory.BadRequest(USERNAME_VALIDATION_MESSAGE);
-      }
-      const available = await this.deps.customerRepo.isUsernameAvailable(data.username);
-      if (!available) {
-        throw ErrorWithCode.Factory.Conflict("Username is already taken");
-      }
-    }
+    const result = await runInTransaction(async () => {
+      await this.deps.customerRepo.markVerificationCodeVerified(pendingCode.id);
 
-    const username =
-      data.username ?? (await this.deps.customerRepo.generateUniqueUsername(data.email));
+      const username = await this.deps.customerRepo.generateUniqueUsername(data.email);
 
-    const hashedPwd = await hashPassword(data.password);
+      const hashedPwd = await hashPassword(data.password);
 
-    const result = await this.deps.customerRepo.createWithPassword({
-      email: data.email,
-      username,
-      name: data.name,
-      hashedPassword: hashedPwd,
+      const created = await this.deps.customerRepo.createWithPassword({
+        email: data.email,
+        username,
+        hashedPassword: hashedPwd,
+      });
+
+      await this.deps.customerRepo.verifyEmail(created.id);
+
+      return created;
     });
 
-    log.info("New customer registered", { customerId: result.id, email: data.email, username });
-
-    try {
-      await this.sendVerificationEmail(result.id);
-    } catch (error) {
-      log.warn(
-        "Failed to send verification email during registration — email service may not be configured",
-        {
-          customerId: result.id,
-          error: error instanceof Error ? error.message : String(error),
-        },
-      );
-    }
+    log.info("New customer registered via code", {
+      customerId: result.id,
+      email: data.email,
+      username: result.username,
+    });
 
     return result;
   }

@@ -9,6 +9,7 @@ import {
   setPassword,
   stats,
   update,
+  verificationCodesList,
   verifyEmail,
 } from "./procedures/customers.handler";
 
@@ -23,4 +24,5 @@ export const customersRouter = router({
   verifyEmail,
   setPassword,
   auditHistory,
+  verificationCodesList,
 });

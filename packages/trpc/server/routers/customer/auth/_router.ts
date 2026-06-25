@@ -9,11 +9,13 @@ import {
   refreshToken,
   register,
   resetPassword,
+  sendVerificationCode,
   updateProfile,
   verifyEmail,
 } from "./procedures/auth.handler";
 
 export const customerAuthRouter = router({
+  sendVerificationCode,
   register,
   login,
   refreshToken,

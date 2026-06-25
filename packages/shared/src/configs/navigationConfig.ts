@@ -97,6 +97,14 @@ const navigationConfig: NavItemType[] = [
         url: "/customers",
       },
       {
+        id: "verification-codes",
+        title: "Lịch sử gửi mã",
+        translate: "nav.verificationCodes",
+        type: "item",
+        icon: "lucide:clipboard-list",
+        url: "/customers/verification-codes",
+      },
+      {
         id: "comments",
         title: "Bình luận",
         translate: "nav.comments",

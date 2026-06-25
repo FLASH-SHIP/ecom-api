@@ -13,6 +13,11 @@ export const ErrorCode = {
   RefreshTokenInvalid: "REFRESH_TOKEN_INVALID",
   ApiKeyInvalid: "API_KEY_INVALID",
   ApiKeyExpired: "API_KEY_EXPIRED",
+  VerificationCodeInvalid: "VERIFICATION_CODE_INVALID",
+  VerificationCodeExpired: "VERIFICATION_CODE_EXPIRED",
+  VerificationCodeLocked: "VERIFICATION_CODE_LOCKED",
+  VerificationCodeRateLimited: "VERIFICATION_CODE_RATE_LIMITED",
+  VerificationCodeAttempts: "VERIFICATION_CODE_ATTEMPTS",
 
   // Authorization
   Forbidden: "FORBIDDEN",

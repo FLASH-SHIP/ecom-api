@@ -147,4 +147,8 @@ export class CustomerService {
     const hashedPwd = await hashPassword(password);
     return this.deps.customerRepo.updatePassword(id, hashedPwd);
   }
+
+  async listVerificationCodes(search?: string, page?: number, perPage?: number) {
+    return this.deps.customerRepo.findVerificationCodes(search, page, perPage);
+  }
 }

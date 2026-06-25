@@ -8,12 +8,19 @@ import { ErrorCode } from "./errorCodes";
 export class ErrorWithCode extends Error {
   public readonly code: ErrorCodeType;
   public readonly statusCode: number;
+  public readonly meta?: Record<string, unknown>;
 
-  constructor(code: ErrorCodeType, message: string, statusCode = 500) {
+  constructor(
+    code: ErrorCodeType,
+    message: string,
+    statusCode = 500,
+    meta?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = "ErrorWithCode";
     this.code = code;
     this.statusCode = statusCode;
+    this.meta = meta;
   }
 
   /**

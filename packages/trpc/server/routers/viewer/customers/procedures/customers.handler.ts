@@ -145,3 +145,17 @@ export const auditHistory = authedProcedure
       },
     });
   });
+
+export const verificationCodesList = authedProcedure
+  .use(requirePermission(Permissions.CUSTOMERS_READ))
+  .input(
+    z.object({
+      search: z.string().optional(),
+      page: z.number().int().min(1).default(1),
+      perPage: z.number().int().min(1).max(500).default(25),
+    }),
+  )
+  .query(async ({ input }) => {
+    const service = getCustomerService();
+    return service.listVerificationCodes(input.search, input.page, input.perPage);
+  });

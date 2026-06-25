@@ -10,6 +10,7 @@ import {
   Prisma,
   PrismaClient,
   UserStatus,
+  VerificationCodeStatus,
 } from "./generated/prisma/client";
 
 console.log("DATABASE_URL in prisma package index.ts:", process.env.DATABASE_URL);
@@ -265,4 +266,5 @@ export {
   PrismaClient,
   UserFactory,
   UserStatus,
+  VerificationCodeStatus,
 };
