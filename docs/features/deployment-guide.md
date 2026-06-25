@@ -30,8 +30,16 @@ The Ecom system is built as a Yarn workspaces monorepo containing:
 
 The project utilizes Prisma ORM to manage schema migrations.
 
-### Step 1: Database Provisioning
-Ensure a PostgreSQL database is created and the user has permissions to create tables and execute DDL operations.
+### Step 1: Database Provisioning & Timezone Setup
+1. **Database Creation**: Ensure a PostgreSQL database is created and the user has permissions to create tables and execute DDL operations.
+2. **Timezone Configuration (Critical)**: The database **must** be configured to use the **UTC** timezone to avoid runtime logic issues (such as session eviction bugs caused by local timezone shifts).
+   - **AWS RDS/Cloud SQL**: Ensure the database instance timezone parameter is set to `UTC` (this is the default on AWS RDS).
+   - **Bare-Metal/Self-Hosted**: Set `timezone = 'UTC'` in your `postgresql.conf` or alter the target database timezone explicitly:
+     ```sql
+     ALTER DATABASE name_of_db SET timezone TO 'UTC';
+     ```
+     *(Note: Reconnect to verify the changes with `SHOW timezone;`)*
+   - **Docker Containers**: Include environment variables `TZ=UTC` and `PGTZ=UTC` on the PostgreSQL service.
 
 ### Step 2: Apply Migrations (CI/CD Pipeline)
 During deployment, run the following command to apply schema migrations to the database. This command should run **before** starting the backend API or frontends.

@@ -75,146 +75,158 @@ const getEntityId = (result: unknown): string | null => {
 };
 
 // Create base extended prisma client
-const extendedPrisma = basePrisma
-  .$extends(
-    readReplicas({
-      replicas: replicaClients,
-    }),
-  )
-  .$extends({
-    query: {
-      $allModels: {
-        async create({ model, args, query }) {
-          if (AUDIT_EXEMPT_MODELS.includes(model)) {
-            return query(args);
-          }
-
-          const result = await query(args);
-
-          try {
-            const store = loggerContext.getStore();
-            const userId = store?.userId || null;
-            const entityId = getEntityId(result);
-
-            await basePrisma.auditLog.create({
-              data: {
-                userId,
-                action: "CREATE",
-                module: `${model.toLowerCase()}s`,
-                entityId,
-                entityType: model,
-                newValues: result ? JSON.parse(JSON.stringify(result)) : null,
-                metadata: { source: "prisma-extension" },
-              },
-            });
-          } catch (err) {
-            console.error("Failed to write create audit log in prisma extension", err);
-          }
-
-          return result;
+const hasReplicas = !!(process.env.DATABASE_REPLICA_URLS || process.env.DATABASE_REPLICA_URL);
+const prismaWithReplicas = hasReplicas
+  ? basePrisma.$extends(
+      readReplicas({
+        replicas: replicaClients,
+      }),
+    )
+  : basePrisma.$extends({
+      client: {
+        $primary<T>(this: T): T {
+          return this;
         },
-        async update({ model, args, query }) {
-          if (AUDIT_EXEMPT_MODELS.includes(model)) {
-            return query(args);
-          }
-
-          let oldRecord: unknown = null;
-          try {
-            const delegateName = getPrismaDelegateName(model);
-            if (args.where) {
-              const delegate = (
-                basePrisma as unknown as Record<
-                  string,
-                  { findUnique?: (args: unknown) => Promise<unknown> }
-                >
-              )[delegateName];
-              if (delegate && typeof delegate.findUnique === "function") {
-                oldRecord = await delegate.findUnique({
-                  where: args.where,
-                });
-              }
-            }
-          } catch {
-            // ignore
-          }
-
-          const result = await query(args);
-
-          try {
-            const store = loggerContext.getStore();
-            const userId = store?.userId || null;
-            const entityId = getEntityId(result);
-
-            await basePrisma.auditLog.create({
-              data: {
-                userId,
-                action: "UPDATE",
-                module: `${model.toLowerCase()}s`,
-                entityId,
-                entityType: model,
-                oldValues: oldRecord ? JSON.parse(JSON.stringify(oldRecord)) : null,
-                newValues: result ? JSON.parse(JSON.stringify(result)) : null,
-                metadata: { source: "prisma-extension" },
-              },
-            });
-          } catch (err) {
-            console.error("Failed to write update audit log in prisma extension", err);
-          }
-
-          return result;
-        },
-        async delete({ model, args, query }) {
-          if (AUDIT_EXEMPT_MODELS.includes(model)) {
-            return query(args);
-          }
-
-          let oldRecord: unknown = null;
-          try {
-            const delegateName = getPrismaDelegateName(model);
-            if (args.where) {
-              const delegate = (
-                basePrisma as unknown as Record<
-                  string,
-                  { findUnique?: (args: unknown) => Promise<unknown> }
-                >
-              )[delegateName];
-              if (delegate && typeof delegate.findUnique === "function") {
-                oldRecord = await delegate.findUnique({
-                  where: args.where,
-                });
-              }
-            }
-          } catch {
-            // ignore
-          }
-
-          const result = await query(args);
-
-          try {
-            const store = loggerContext.getStore();
-            const userId = store?.userId || null;
-            const entityId = getEntityId(result);
-
-            await basePrisma.auditLog.create({
-              data: {
-                userId,
-                action: "DELETE",
-                module: `${model.toLowerCase()}s`,
-                entityId,
-                entityType: model,
-                oldValues: oldRecord ? JSON.parse(JSON.stringify(oldRecord)) : null,
-                metadata: { source: "prisma-extension" },
-              },
-            });
-          } catch (err) {
-            console.error("Failed to write delete audit log in prisma extension", err);
-          }
-
-          return result;
+        $replica<T>(this: T): T {
+          return this;
         },
       },
+    });
+
+const extendedPrisma = prismaWithReplicas.$extends({
+  query: {
+    $allModels: {
+      async create({ model, args, query }) {
+        if (AUDIT_EXEMPT_MODELS.includes(model)) {
+          return query(args);
+        }
+
+        const result = await query(args);
+
+        try {
+          const store = loggerContext.getStore();
+          const userId = store?.userId || null;
+          const entityId = getEntityId(result);
+
+          await basePrisma.auditLog.create({
+            data: {
+              userId,
+              action: "CREATE",
+              module: `${model.toLowerCase()}s`,
+              entityId,
+              entityType: model,
+              newValues: result ? JSON.parse(JSON.stringify(result)) : null,
+              metadata: { source: "prisma-extension" },
+            },
+          });
+        } catch (err) {
+          console.error("Failed to write create audit log in prisma extension", err);
+        }
+
+        return result;
+      },
+      async update({ model, args, query }) {
+        if (AUDIT_EXEMPT_MODELS.includes(model)) {
+          return query(args);
+        }
+
+        let oldRecord: unknown = null;
+        try {
+          const delegateName = getPrismaDelegateName(model);
+          if (args.where) {
+            const delegate = (
+              basePrisma as unknown as Record<
+                string,
+                { findUnique?: (args: unknown) => Promise<unknown> }
+              >
+            )[delegateName];
+            if (delegate && typeof delegate.findUnique === "function") {
+              oldRecord = await delegate.findUnique({
+                where: args.where,
+              });
+            }
+          }
+        } catch {
+          // ignore
+        }
+
+        const result = await query(args);
+
+        try {
+          const store = loggerContext.getStore();
+          const userId = store?.userId || null;
+          const entityId = getEntityId(result);
+
+          await basePrisma.auditLog.create({
+            data: {
+              userId,
+              action: "UPDATE",
+              module: `${model.toLowerCase()}s`,
+              entityId,
+              entityType: model,
+              oldValues: oldRecord ? JSON.parse(JSON.stringify(oldRecord)) : null,
+              newValues: result ? JSON.parse(JSON.stringify(result)) : null,
+              metadata: { source: "prisma-extension" },
+            },
+          });
+        } catch (err) {
+          console.error("Failed to write update audit log in prisma extension", err);
+        }
+
+        return result;
+      },
+      async delete({ model, args, query }) {
+        if (AUDIT_EXEMPT_MODELS.includes(model)) {
+          return query(args);
+        }
+
+        let oldRecord: unknown = null;
+        try {
+          const delegateName = getPrismaDelegateName(model);
+          if (args.where) {
+            const delegate = (
+              basePrisma as unknown as Record<
+                string,
+                { findUnique?: (args: unknown) => Promise<unknown> }
+              >
+            )[delegateName];
+            if (delegate && typeof delegate.findUnique === "function") {
+              oldRecord = await delegate.findUnique({
+                where: args.where,
+              });
+            }
+          }
+        } catch {
+          // ignore
+        }
+
+        const result = await query(args);
+
+        try {
+          const store = loggerContext.getStore();
+          const userId = store?.userId || null;
+          const entityId = getEntityId(result);
+
+          await basePrisma.auditLog.create({
+            data: {
+              userId,
+              action: "DELETE",
+              module: `${model.toLowerCase()}s`,
+              entityId,
+              entityType: model,
+              oldValues: oldRecord ? JSON.parse(JSON.stringify(oldRecord)) : null,
+              metadata: { source: "prisma-extension" },
+            },
+          });
+        } catch (err) {
+          console.error("Failed to write delete audit log in prisma extension", err);
+        }
+
+        return result;
+      },
     },
-  });
+  },
+});
 
 export type ExtendedPrismaClient = typeof extendedPrisma;
 

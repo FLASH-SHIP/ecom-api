@@ -227,21 +227,26 @@ const nextAuth: NextAuthResult = NextAuth({
           },
         });
 
-        // Enforce max sessions per user — evict oldest sessions
+        // Enforce max sessions per user — evict oldest sessions (excluding the current session)
         const maxSessions = env.CUSTOMER_MAX_SESSIONS_PER_USER;
         const existingSessions = await prisma.customerSession.findMany({
           where: { customerId: Number(user.id) },
           orderBy: { lastActiveAt: "asc" },
-          select: { id: true },
+          select: { id: true, sessionToken: true },
         });
 
         if (existingSessions.length > maxSessions) {
-          const sessionsToDelete = existingSessions.slice(0, existingSessions.length - maxSessions);
-          await prisma.customerSession
-            .deleteMany({
-              where: { id: { in: sessionsToDelete.map((s) => s.id) } },
-            })
-            .catch(() => {});
+          const sessionsToDelete = existingSessions
+            .filter((s) => s.sessionToken !== sessionToken)
+            .slice(0, existingSessions.length - maxSessions);
+
+          if (sessionsToDelete.length > 0) {
+            await prisma.customerSession
+              .deleteMany({
+                where: { id: { in: sessionsToDelete.map((s) => s.id) } },
+              })
+              .catch(() => {});
+          }
         }
 
         token.sessionId = sessionToken;

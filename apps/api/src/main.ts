@@ -1,3 +1,4 @@
+import "./bootstrap-env";
 import "reflect-metadata";
 import { registerEventListeners } from "@ecom/features/events/listeners";
 import { JobQueue } from "@ecom/features/queue/JobQueue";
