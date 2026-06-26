@@ -28,6 +28,8 @@ export class PostCommands {
     isFeatured?: boolean;
     allowComments?: boolean;
     formatType?: string;
+    externalSource?: string;
+    sponsoredBy?: string;
     status?: ContentStatus;
     authorId: number;
     categoryIds?: number[];
@@ -85,9 +87,12 @@ export class PostCommands {
       isFeatured?: boolean;
       allowComments?: boolean;
       formatType?: string | null;
+      externalSource?: string | null;
+      sponsoredBy?: string | null;
       status?: ContentStatus;
       categoryIds?: number[];
       tagIds?: number[];
+      authorId?: number;
     },
   ) {
     // Acquire a distributed lock to prevent race conditions during concurrent updates

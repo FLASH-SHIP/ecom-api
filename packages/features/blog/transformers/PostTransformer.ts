@@ -11,6 +11,8 @@ export interface PostResponseDto {
   isFeatured: boolean;
   allowComments: boolean;
   formatType: string | null;
+  externalSource: string | null;
+  sponsoredBy: string | null;
   views: number;
   status: string;
   authorId: number;
@@ -49,6 +51,8 @@ export interface PostInput {
   isFeatured?: boolean;
   allowComments?: boolean;
   formatType?: string | null;
+  externalSource?: string | null;
+  sponsoredBy?: string | null;
   views?: number;
   status?: string;
   authorId?: number;
@@ -89,6 +93,8 @@ export class PostTransformer extends BaseTransformer<PostInput, PostResponseDto>
       isFeatured: !!post.isFeatured,
       allowComments: !!post.allowComments,
       formatType: post.formatType ?? null,
+      externalSource: post.externalSource ?? null,
+      sponsoredBy: post.sponsoredBy ?? null,
       views: post.views ?? 0,
       status: post.status ?? "DRAFT",
       authorId: post.authorId ?? 0,

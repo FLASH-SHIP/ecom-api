@@ -1,8 +1,8 @@
 {
   "title": "Bài viết",
   "subtitle": "Quản lý bài viết blog",
-  "newPost": "Bài viết mới",
-  "editPost": "Sửa bài viết",
+  "newPost": "Tạo mới",
+  "editPost": "Sửa",
   "noPostsTitle": "Không tìm thấy bài viết",
   "noPostsDescription": "Bắt đầu bằng cách tạo bài viết blog đầu tiên.",
   "createPost": "Tạo bài viết",

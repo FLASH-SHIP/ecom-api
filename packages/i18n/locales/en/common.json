@@ -4,6 +4,7 @@
     "loading": "Loading...",
     "error": "An error occurred",
     "save": "Save",
+    "saveAndEdit": "Save & Edit",
     "saving": "Saving...",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -196,7 +197,12 @@
       "restore": "Restore",
       "permanentlyDelete": "Permanently Delete",
       "delete": "Delete",
-      "deleteConfirm": "Are you sure you want to delete this post?"
+      "deleteConfirm": "Are you sure you want to delete this post?",
+      "bulkDeleteConfirm": "Delete {count} selected post(s)?",
+      "bulkDeleteSuccess": "Deleted {count} post(s) successfully",
+      "bulkDeleteError": "Failed to delete some posts",
+      "bulkChangeSuccess": "Updated {count} post(s) successfully",
+      "bulkChangeError": "Failed to update some posts"
     }
   },
   "categories": {

@@ -276,6 +276,8 @@ model Post {
   isFeatured    Boolean        @default(false)
   allowComments Boolean        @default(true)
   formatType    String?
+  externalSource String?
+  sponsoredBy    String?
   views         Int            @default(0)
   status        ContentStatus  @default(DRAFT)
   authorId      Int
@@ -306,9 +308,9 @@ model Post {
 
 model PostTranslation {
   id          Int    @id @default(autoincrement())
-  postId      Int
+  postId      Int    @map("post_id")
   post        Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  langCode    String
+  langCode    String @map("lang_code")
   title       String
   slug        String?
   excerpt     String? @db.Text
@@ -348,9 +350,9 @@ model Category {
 
 model CategoryTranslation {
   id          Int      @id @default(autoincrement())
-  categoryId  Int
+  categoryId  Int      @map("category_id")
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  langCode    String
+  langCode    String   @map("lang_code")
   name        String
   description String?  @db.Text
 
@@ -379,9 +381,9 @@ model Tag {
 
 model TagTranslation {
   id          Int     @id @default(autoincrement())
-  tagId       Int
+  tagId       Int     @map("tag_id")
   tag         Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  langCode    String
+  langCode    String  @map("lang_code")
   name        String
   description String? @db.Text
 
@@ -390,22 +392,24 @@ model TagTranslation {
 }
 
 model PostCategory {
+  id         Int      @id @default(autoincrement())
   post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId     Int
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId Int
 
-  @@id([postId, categoryId])
+  @@unique([postId, categoryId])
   @@map("post_categories")
 }
 
 model PostTag {
+  id     Int  @id @default(autoincrement())
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId Int
+  postId Int  @map("post_id")
   tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  tagId  Int
+  tagId  Int  @map("tag_id")
 
-  @@id([postId, tagId])
+  @@unique([postId, tagId])
   @@map("post_tags")
 }
 

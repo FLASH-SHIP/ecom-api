@@ -46,6 +46,7 @@ interface CustomFieldsPanelProps {
   context?: FieldBoxContext;
   /** Collapse groups into accordions (useful inside inline-edit rows) */
   collapsible?: boolean;
+  onGroupsLoad?: (count: number) => void;
 }
 
 // ── Field input renderer ───────────────────────────────────────────────────
@@ -261,6 +262,7 @@ export function CustomFieldsPanel({
   modelId,
   context,
   collapsible = false,
+  onGroupsLoad,
 }: CustomFieldsPanelProps) {
   const t = useTranslations("customFields.panel");
   const [localValues, setLocalValues] = useState<Record<number, string>>({});
@@ -285,18 +287,29 @@ export function CustomFieldsPanel({
     { enabled },
   );
 
+  const visibleBoxes = useMemo(() => {
+    if (!fieldBoxes) return [];
+    return fieldBoxes.filter((b) => b.groupTitle !== "Post Additional Information");
+  }, [fieldBoxes]);
+
+  useEffect(() => {
+    if (fieldBoxes) {
+      onGroupsLoad?.(visibleBoxes.length);
+    }
+  }, [fieldBoxes, visibleBoxes.length, onGroupsLoad]);
+
   // Seed local values from server — only once on initial load, never overwrite user edits
   useEffect(() => {
-    if (!fieldBoxes || seededRef.current) return;
+    if (visibleBoxes.length === 0 || seededRef.current) return;
     seededRef.current = true;
     const initial: Record<number, string> = {};
-    for (const box of fieldBoxes) {
+    for (const box of visibleBoxes) {
       for (const item of box.items) {
         initial[item.id ?? 0] = item.value ?? "";
       }
     }
     setLocalValues(initial);
-  }, [fieldBoxes]);
+  }, [visibleBoxes]);
 
   const saveModelFields = trpc.viewer.customFields.saveModelFields.useMutation({
     onSuccess: () => {
@@ -313,8 +326,8 @@ export function CustomFieldsPanel({
   }, []);
 
   const allItemIds = useMemo(
-    () => fieldBoxes?.flatMap((b) => b.items.map((i) => i.id)) ?? [],
-    [fieldBoxes],
+    () => visibleBoxes.flatMap((b) => b.items.map((i) => i.id)) ?? [],
+    [visibleBoxes],
   );
 
   function handleSave() {
@@ -357,20 +370,13 @@ export function CustomFieldsPanel({
     );
   }
 
-  if (!fieldBoxes?.length) {
-    return (
-      <Card className="p-4">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal size={16} className="text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">{t("noMatchingGroups")}</p>
-        </div>
-      </Card>
-    );
+  if (!visibleBoxes.length) {
+    return null;
   }
 
   return (
     <div className="flex flex-col">
-      {fieldBoxes.map((box, idx) =>
+      {visibleBoxes.map((box, idx) =>
         collapsible ? (
           <Card key={box.groupId} className="mb-2">
             <details open={idx === 0}>

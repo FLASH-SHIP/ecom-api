@@ -1,8 +1,8 @@
 {
   "title": "Posts",
   "subtitle": "Manage your blog posts",
-  "newPost": "New Post",
-  "editPost": "Edit Post",
+  "newPost": "Create",
+  "editPost": "Edit",
   "noPostsTitle": "No posts found",
   "noPostsDescription": "Get started by creating your first blog post.",
   "createPost": "Create Post",

@@ -41,8 +41,6 @@ export function useLanguageSwitcher(entityType: EntityType, entityId?: number) {
     [activeLanguages, locale],
   );
 
-  const activeCode = refLang ?? currentUiLanguage?.code ?? defaultLanguage?.code ?? null;
-
   const originLangCode = useMemo(() => {
     if (!translationStatus) return defaultLanguage?.code ?? null;
     if (Array.isArray(translationStatus)) {
@@ -50,6 +48,9 @@ export function useLanguageSwitcher(entityType: EntityType, entityId?: number) {
     }
     return translationStatus.originLangCode ?? defaultLanguage?.code ?? null;
   }, [translationStatus, defaultLanguage]);
+
+  const activeCode =
+    refLang ?? originLangCode ?? currentUiLanguage?.code ?? defaultLanguage?.code ?? null;
 
   const isDefaultLanguage = useMemo(() => {
     if (!activeCode || !originLangCode) return true;

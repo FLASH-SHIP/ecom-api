@@ -19,8 +19,9 @@ export class PostQueries {
     includeDeleted?: boolean;
     page?: number;
     perPage?: number;
-    sortBy?: "createdAt" | "title" | "publishedAt" | "views";
+    sortBy?: "id" | "title" | "status" | "createdAt" | "publishedAt" | "views";
     sortOrder?: "asc" | "desc";
+    where?: Record<string, unknown>;
   }) {
     // Map standard query options using PrismaQueryBuilder
     const filter: Record<string, unknown> = {};

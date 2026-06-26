@@ -3,14 +3,15 @@
 import { PostForm } from "@admin/components/blog/post-form";
 import { useLanguageSwitcher } from "@admin/hooks/useLanguageSwitcher";
 import { trpc } from "@admin/lib/trpc";
-import { LanguageSwitcher } from "@ecom/ui/components/language-switcher";
 import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: handles both default and translation mode data loading
 export default function EditPostPage() {
   const params = useParams<{ id: string }>();
   const postId = Number(params.id);
+  const t = useTranslations("posts");
 
   const {
     data: post,
@@ -18,8 +19,7 @@ export default function EditPostPage() {
     error,
   } = trpc.viewer.posts.get.useQuery({ id: postId }, { enabled: !Number.isNaN(postId) });
 
-  const { languageTabs, activeCode, isDefaultLanguage, onLanguageChange, isSwitcherLoading } =
-    useLanguageSwitcher("post", postId);
+  const { activeCode, isDefaultLanguage, isSwitcherLoading } = useLanguageSwitcher("post", postId);
 
   const { data: translation } = trpc.viewer.translations.get.useQuery(
     { entityType: "post", entityId: postId, langCode: activeCode ?? "" },
@@ -53,11 +53,16 @@ export default function EditPostPage() {
         content: post.content ?? "",
         excerpt: post.excerpt ?? "",
         featuredImage: post.featuredImage ?? "",
+        bannerImage: post.bannerImage ?? "",
         status: post.status as "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED",
         isFeatured: post.isFeatured,
         allowComments: post.allowComments,
         categoryIds: post.categories.map((pc) => pc.category.id),
         tagIds: post.tags.map((pt) => pt.tag.id),
+        authorId: post.authorId ?? undefined,
+        formatType: post.formatType || undefined,
+        externalSource: post.externalSource ?? "",
+        sponsoredBy: post.sponsoredBy ?? "",
       }
     : {
         title: getTranslationField(translation, "title") ?? "",
@@ -65,27 +70,25 @@ export default function EditPostPage() {
         content: getTranslationField(translation, "content") ?? "",
         excerpt: getTranslationField(translation, "excerpt") ?? "",
         featuredImage: post.featuredImage ?? "",
+        bannerImage: post.bannerImage ?? "",
         status: post.status as "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED",
         isFeatured: post.isFeatured,
         allowComments: post.allowComments,
         categoryIds: post.categories.map((pc) => pc.category.id),
         tagIds: post.tags.map((pt) => pt.tag.id),
+        authorId: post.authorId ?? undefined,
+        formatType: post.formatType || undefined,
+        externalSource: post.externalSource ?? "",
+        sponsoredBy: post.sponsoredBy ?? "",
       };
 
   return (
     <div className="flex flex-col gap-6">
+      <title>{post ? `${t("editPost")}: ${post.title}` : t("editPost")}</title>
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Edit Post</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Update the details of your blog post.
-        </p>
+        <h1 className="text-xl font-bold">{t("editPost")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Update the details of your blog post.</p>
       </div>
-
-      <LanguageSwitcher
-        languages={languageTabs}
-        activeCode={activeCode}
-        onLanguageChange={onLanguageChange}
-      />
 
       <PostForm
         key={activeCode ?? "default"}

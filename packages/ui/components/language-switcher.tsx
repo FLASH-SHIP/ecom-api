@@ -74,17 +74,6 @@ export function LanguageSwitcher({
           );
         })}
       </div>
-
-      {/* Active language indicator */}
-      {activeCode && !languages.find((l) => l.code === activeCode)?.isDefault && (
-        <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 text-sm text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-          <Globe className="size-3.5" />
-          <span>
-            Editing translation:{" "}
-            <strong>{languages.find((l) => l.code === activeCode)?.name}</strong>
-          </span>
-        </div>
-      )}
     </div>
   );
 }

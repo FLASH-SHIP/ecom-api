@@ -454,8 +454,12 @@ export class CustomFieldService {
 
   private resolveContextValue(name: string, context: RuleContext): string | null {
     switch (name) {
-      case "model_name":
-        return context.modelName ?? null;
+      case "model_name": {
+        const val = context.modelName;
+        if (val === "posts") return "post";
+        if (val === "pages") return "page";
+        return val ?? null;
+      }
       case "category":
         return context.categoryId !== undefined ? String(context.categoryId) : null;
       case "page_template":
