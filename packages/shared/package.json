@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@ecom/i18n": "workspace:*",
+    "@ecom/lib": "workspace:*",
     "@ecom/ui": "workspace:*",
     "@floating-ui/react": "^0.27.17",
     "@hookform/resolvers": "^5.2.2",

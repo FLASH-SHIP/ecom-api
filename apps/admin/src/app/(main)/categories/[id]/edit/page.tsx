@@ -1,12 +1,22 @@
 "use client";
 
 import { CategoryForm } from "@admin/components/blog/category-form";
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
 import { useLanguageSwitcher } from "@admin/hooks/useLanguageSwitcher";
 import { trpc } from "@admin/lib/trpc";
+import { Permissions } from "@ecom/lib/permissions";
 import { LanguageSwitcher } from "@ecom/ui/components/language-switcher";
 import { useParams } from "next/navigation";
 
 export default function EditCategoryPage() {
+  return (
+    <PermissionGuard permissions={[Permissions.CATEGORIES_UPDATE]}>
+      <EditCategoryContent />
+    </PermissionGuard>
+  );
+}
+
+function EditCategoryContent() {
   const params = useParams<{ id: string }>();
   const categoryId = Number(params.id);
 
@@ -47,29 +57,7 @@ export default function EditCategoryPage() {
     );
   }
 
-  const formInitialData = isDefaultLanguage
-    ? {
-        name: category.name,
-        slug: category.slug,
-        description: category.description ?? "",
-        icon: category.icon ?? "",
-        status: category.status as "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED",
-        isFeatured: category.isFeatured,
-        isDefault: category.isDefault,
-        parentId: category.parentId,
-        order: category.order,
-      }
-    : {
-        name: getTranslationField(translation, "name") ?? "",
-        slug: category.slug,
-        description: getTranslationField(translation, "description") ?? "",
-        icon: category.icon ?? "",
-        status: category.status as "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED",
-        isFeatured: category.isFeatured,
-        isDefault: category.isDefault,
-        parentId: category.parentId,
-        order: category.order,
-      };
+  const formInitialData = getFormInitialData(category, translation, isDefaultLanguage);
 
   return (
     <div className="flex flex-col gap-6">
@@ -87,6 +75,49 @@ export default function EditCategoryPage() {
       <CategoryForm mode="edit" categoryId={categoryId} initialData={formInitialData} />
     </div>
   );
+}
+
+interface CategoryQueryData {
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  icon?: string | null;
+  status?: string;
+  isFeatured?: boolean;
+  isDefault?: boolean;
+  parentId?: number | null;
+  order?: number;
+}
+
+function getFormInitialData(
+  category: CategoryQueryData,
+  translation: Record<string, unknown> | null | undefined,
+  isDefaultLanguage: boolean,
+) {
+  const status = (category.status as "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED") ?? "DRAFT";
+  const baseData = {
+    slug: category.slug ?? "",
+    icon: category.icon ?? "",
+    status,
+    isFeatured: category.isFeatured ?? false,
+    isDefault: category.isDefault ?? false,
+    parentId: category.parentId ?? null,
+    order: category.order ?? 0,
+  };
+
+  if (isDefaultLanguage) {
+    return {
+      ...baseData,
+      name: category.name ?? "",
+      description: category.description ?? "",
+    };
+  }
+
+  return {
+    ...baseData,
+    name: getTranslationField(translation, "name") ?? "",
+    description: getTranslationField(translation, "description") ?? "",
+  };
 }
 
 function getTranslationField(

@@ -3,7 +3,8 @@ import { env } from "@admin/env";
 
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { createLogger } from "@ecom/lib/logger";
-import { getRedisClient } from "@ecom/lib/redis";
+import { ALL_PERMISSIONS } from "@ecom/lib/permissions";
+import { getRedisClient, RedisCache } from "@ecom/lib/redis";
 import {
   getCachedSession,
   invalidateCachedSession,
@@ -21,6 +22,55 @@ export const AUTH_KEYS = {
 } as const;
 
 const log = createLogger("NextAuthAdmin");
+
+const permissionsCache = new RedisCache<string[]>("user-permissions", 3600); // 1 hour TTL
+
+export async function resolveUserPermissions(userId: number): Promise<string[]> {
+  const cacheKey = `user:${userId}`;
+  const cachedPermissions = await permissionsCache.get(cacheKey);
+
+  if (cachedPermissions) {
+    return cachedPermissions;
+  }
+
+  const roleData = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      roles: {
+        select: {
+          role: {
+            select: {
+              name: true,
+              permissions: {
+                select: {
+                  permission: {
+                    select: { name: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!roleData) {
+    return [];
+  }
+
+  const isSuperAdmin = roleData.roles.some((r) => r.role.name === "admin");
+  let permissions: string[];
+  if (isSuperAdmin) {
+    permissions = ALL_PERMISSIONS.map((p) => p.name);
+  } else {
+    permissions = roleData.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.name));
+  }
+
+  const uniquePermissions = [...new Set(permissions)];
+  await permissionsCache.set(cacheKey, uniquePermissions);
+  return uniquePermissions;
+}
 
 /** Delete an expired/invalid admin session from DB and cache */
 async function deleteAdminSession(sessionId: string, cacheKey: string) {
@@ -273,6 +323,7 @@ const nextAuth: NextAuthResult = NextAuth({
         email: (token.email as string) ?? undefined,
         photoURL: (token.avatarUrl as string) ?? undefined,
         role: (token.roles as string[]) ?? [],
+        permissions: (token.permissions as string[]) ?? [],
         loginRedirectUrl: "/",
       };
       session.db = appUser;
@@ -319,6 +370,7 @@ const nextAuth: NextAuthResult = NextAuth({
                   email: true,
                   name: true,
                   avatarUrl: true,
+                  status: true,
                   roles: {
                     select: {
                       role: { select: { name: true } },
@@ -342,6 +394,15 @@ const nextAuth: NextAuthResult = NextAuth({
 
       if (!dbSession) {
         log.warn("Session not found in DB", { token: sessionToken });
+        return {};
+      }
+
+      if (dbSession.user.status !== "ACTIVE") {
+        log.warn("User account is not active", {
+          userId: dbSession.user.id,
+          status: dbSession.user.status,
+        });
+        await deleteAdminSession(dbSession.id, cacheKey);
         return {};
       }
 
@@ -383,6 +444,8 @@ const nextAuth: NextAuthResult = NextAuth({
         return {};
       }
 
+      const userPermissions = await resolveUserPermissions(Number(dbSession.user.id));
+
       const payload = {
         sessionId: dbSession.sessionToken,
         id: dbSession.user.id,
@@ -390,6 +453,7 @@ const nextAuth: NextAuthResult = NextAuth({
         name: dbSession.user.name,
         avatarUrl: dbSession.user.avatarUrl,
         roles: dbSession.user.roles.map((r) => r.role.name),
+        permissions: userPermissions,
       };
 
       // 3️⃣ Sliding Window + Batched lastActiveAt update (every 5 min)

@@ -1,5 +1,8 @@
 import { getRoleService } from "@ecom/features/di/containers/RbacService";
 import { Permissions } from "@ecom/lib/permissions";
+import { RedisCache } from "@ecom/lib/redis";
+import { invalidateCachedSession } from "@ecom/lib/session-cache";
+import { prisma } from "@ecom/prisma";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
 import { authedProcedure, requirePermission } from "@ecom/trpc/server/trpc";
 import { z } from "zod";
@@ -55,8 +58,35 @@ export const remove = authedProcedure
   .use(auditLog({ module: "roles", action: "DELETE", entityType: "Role" }))
   .input(z.object({ id: z.string().min(1) }))
   .mutation(async ({ input }) => {
+    // Get all users associated with this role before deletion
+    const userRoles = await prisma.userRoleAssignment.findMany({
+      where: { roleId: input.id },
+      select: { userId: true },
+    });
+    const userIds = userRoles.map((ur: { userId: number }) => ur.userId);
+
     const roleService = getRoleService();
-    return roleService.deleteRole(input.id);
+    const result = await roleService.deleteRole(input.id);
+
+    if (userIds.length > 0) {
+      // Invalidate permission cache for all affected users
+      const permissionsCache = new RedisCache<string[]>("user-permissions", 3600);
+      for (const userId of userIds) {
+        await permissionsCache.invalidate(`user:${userId}`).catch(() => {});
+      }
+
+      // Invalidate NextAuth sessions for all affected users
+      const sessions = await prisma.session.findMany({
+        where: { userId: { in: userIds } },
+        select: { sessionToken: true },
+      });
+
+      for (const session of sessions) {
+        await invalidateCachedSession(`admin_session:${session.sessionToken}`).catch(() => {});
+      }
+    }
+
+    return result;
   });
 
 export const syncPermissions = authedProcedure
@@ -70,7 +100,34 @@ export const syncPermissions = authedProcedure
   )
   .mutation(async ({ input }) => {
     const roleService = getRoleService();
-    return roleService.syncPermissions(input.roleId, input.permissionIds);
+    const result = await roleService.syncPermissions(input.roleId, input.permissionIds);
+
+    // Get all users associated with this role
+    const userRoles = await prisma.userRoleAssignment.findMany({
+      where: { roleId: input.roleId },
+      select: { userId: true },
+    });
+    const userIds = userRoles.map((ur: { userId: number }) => ur.userId);
+
+    if (userIds.length > 0) {
+      // Invalidate permission cache for all affected users
+      const permissionsCache = new RedisCache<string[]>("user-permissions", 3600);
+      for (const userId of userIds) {
+        await permissionsCache.invalidate(`user:${userId}`).catch(() => {});
+      }
+
+      // Invalidate NextAuth sessions for all affected users
+      const sessions = await prisma.session.findMany({
+        where: { userId: { in: userIds } },
+        select: { sessionToken: true },
+      });
+
+      for (const session of sessions) {
+        await invalidateCachedSession(`admin_session:${session.sessionToken}`);
+      }
+    }
+
+    return result;
   });
 
 export const permissions = authedProcedure

@@ -1,7 +1,9 @@
 "use client";
 
 import { PageShell } from "@admin/components/layout/PageShell";
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
 import { trpc } from "@admin/lib/trpc";
+import { Permissions } from "@ecom/lib/permissions";
 import { Badge } from "@ecom/ui/components/badge";
 import { Card } from "@ecom/ui/components/card";
 import { Skeleton } from "@ecom/ui/components/skeleton";
@@ -281,91 +283,93 @@ export default function SystemInfoPage() {
     : [];
 
   return (
-    <PageShell title={t("title")}>
-      {/* Skeleton */}
-      {isLoading && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-        </div>
-      )}
-
-      {/* Info sections grid */}
-      {data && (
-        <>
+    <PermissionGuard permissions={[Permissions.SYSTEM_READ]}>
+      <PageShell title={t("title")}>
+        {/* Skeleton */}
+        {isLoading && (
           <div className="grid gap-6 lg:grid-cols-2">
-            {sections.map((s) => (
-              <SectionCard key={s.title} section={s} />
-            ))}
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
+        )}
 
-          {/* Usage bars — full width */}
-          <Card className="mt-6 overflow-hidden">
-            <div className="flex items-center gap-3 border-b border-border bg-muted/50 px-5 py-3">
-              <HardDrive size={18} className="text-muted-foreground" />
-              <p className="text-sm font-semibold">{t("resources")}</p>
-            </div>
-            <div className="flex flex-col gap-6 p-6">
-              {/* System RAM */}
-              <UsageBar
-                label={t("systemRam")}
-                used={data.system.totalMem - data.system.freeMem}
-                total={data.system.totalMem}
-              />
-
-              {/* Node Heap */}
-              <UsageBar
-                label="Node.js Heap"
-                used={data.memoryUsage.heapUsed}
-                total={data.memoryUsage.heapTotal}
-              />
-
-              {/* Disk */}
-              {data.disk && (
-                <UsageBar
-                  label={t("diskLabel", { mount: data.disk.mountpoint })}
-                  used={data.disk.used}
-                  total={data.disk.free + data.disk.used}
-                />
-              )}
-            </div>
-          </Card>
-
-          {/* Node memory details */}
-          <Card className="mt-6 overflow-hidden">
-            <div className="flex items-center gap-3 border-b border-border bg-muted/50 px-5 py-3">
-              <MemoryStick size={18} className="text-muted-foreground" />
-              <p className="text-sm font-semibold">{t("memoryDetails")}</p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5">
-              {[
-                { label: "RAM Total", value: formatBytes(data.system.totalMem) },
-                { label: "RAM Free", value: formatBytes(data.system.freeMem) },
-                { label: "Heap Used", value: formatBytes(data.memoryUsage.heapUsed) },
-                { label: "Heap Total", value: formatBytes(data.memoryUsage.heapTotal) },
-                { label: "RSS", value: formatBytes(data.memoryUsage.rss) },
-                ...(data.disk
-                  ? [
-                      { label: "Disk Total", value: formatBytes(data.disk.total) },
-                      { label: "Disk Used", value: formatBytes(data.disk.used) },
-                      { label: "Disk Free", value: formatBytes(data.disk.free) },
-                    ]
-                  : []),
-              ].map(({ label, value }) => (
-                <div
-                  key={label}
-                  className="border-b border-r border-border px-5 py-3.5 last:border-r-0"
-                >
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className="mt-0.5 font-mono text-sm font-semibold">{value}</p>
-                </div>
+        {/* Info sections grid */}
+        {data && (
+          <>
+            <div className="grid gap-6 lg:grid-cols-2">
+              {sections.map((s) => (
+                <SectionCard key={s.title} section={s} />
               ))}
             </div>
-          </Card>
-        </>
-      )}
-    </PageShell>
+
+            {/* Usage bars — full width */}
+            <Card className="mt-6 overflow-hidden">
+              <div className="flex items-center gap-3 border-b border-border bg-muted/50 px-5 py-3">
+                <HardDrive size={18} className="text-muted-foreground" />
+                <p className="text-sm font-semibold">{t("resources")}</p>
+              </div>
+              <div className="flex flex-col gap-6 p-6">
+                {/* System RAM */}
+                <UsageBar
+                  label={t("systemRam")}
+                  used={data.system.totalMem - data.system.freeMem}
+                  total={data.system.totalMem}
+                />
+
+                {/* Node Heap */}
+                <UsageBar
+                  label="Node.js Heap"
+                  used={data.memoryUsage.heapUsed}
+                  total={data.memoryUsage.heapTotal}
+                />
+
+                {/* Disk */}
+                {data.disk && (
+                  <UsageBar
+                    label={t("diskLabel", { mount: data.disk.mountpoint })}
+                    used={data.disk.used}
+                    total={data.disk.free + data.disk.used}
+                  />
+                )}
+              </div>
+            </Card>
+
+            {/* Node memory details */}
+            <Card className="mt-6 overflow-hidden">
+              <div className="flex items-center gap-3 border-b border-border bg-muted/50 px-5 py-3">
+                <MemoryStick size={18} className="text-muted-foreground" />
+                <p className="text-sm font-semibold">{t("memoryDetails")}</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5">
+                {[
+                  { label: "RAM Total", value: formatBytes(data.system.totalMem) },
+                  { label: "RAM Free", value: formatBytes(data.system.freeMem) },
+                  { label: "Heap Used", value: formatBytes(data.memoryUsage.heapUsed) },
+                  { label: "Heap Total", value: formatBytes(data.memoryUsage.heapTotal) },
+                  { label: "RSS", value: formatBytes(data.memoryUsage.rss) },
+                  ...(data.disk
+                    ? [
+                        { label: "Disk Total", value: formatBytes(data.disk.total) },
+                        { label: "Disk Used", value: formatBytes(data.disk.used) },
+                        { label: "Disk Free", value: formatBytes(data.disk.free) },
+                      ]
+                    : []),
+                ].map(({ label, value }) => (
+                  <div
+                    key={label}
+                    className="border-b border-r border-border px-5 py-3.5 last:border-r-0"
+                  >
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p className="mt-0.5 font-mono text-sm font-semibold">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </>
+        )}
+      </PageShell>
+    </PermissionGuard>
   );
 }

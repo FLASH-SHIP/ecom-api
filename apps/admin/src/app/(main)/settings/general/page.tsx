@@ -1,9 +1,11 @@
 "use client";
 
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
 import { useToast } from "@admin/components/toast-provider";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
 import { trpc } from "@admin/lib/trpc";
+import { Permissions } from "@ecom/lib/permissions";
 import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ecom/ui/components/card";
 import { Input } from "@ecom/ui/components/input";
@@ -63,11 +65,7 @@ export default function GeneralSettingsPage() {
   const tc = useTranslations("common");
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState<Set<string>>(new Set());
-  const [showAddCustom, setShowAddCustom] = useState(false);
-  const [customKey, setCustomKey] = useState("");
-  const [customValue, setCustomValue] = useState("");
   const { toast } = useToast();
-  const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
 
   const { data: settings, isLoading } = trpc.viewer.settings.getMany.useQuery({ keys: ALL_KEYS });
   const { data: allSettings } = trpc.viewer.settings.getAll.useQuery();
@@ -93,6 +91,104 @@ export default function GeneralSettingsPage() {
     onError: (err) => toast(err.message, "error"),
   });
 
+  function handleChange(key: string, value: string) {
+    setLocalValues((prev) => ({ ...prev, [key]: value }));
+    setDirty((prev) => new Set(prev).add(key));
+  }
+
+  function handleSave() {
+    const items = Array.from(dirty).map((key) => ({ key, value: localValues[key] ?? "" }));
+    if (items.length > 0) bulkSetMut.mutate({ items });
+  }
+
+  const customSettings = allSettings
+    ? Object.entries(allSettings).filter(([k]) => !ALL_KEYS.includes(k))
+    : [];
+
+  return (
+    <PermissionGuard permissions={[Permissions.SETTINGS_READ]}>
+      {isLoading ? (
+        <div className="mx-auto flex max-w-3xl flex-col gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loading array — items have no stable IDs
+            <Skeleton key={i} className="h-[200px] rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="mx-auto flex max-w-3xl flex-col gap-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold">{t("general")}</h1>
+            <Button onClick={handleSave} disabled={dirty.size === 0 || bulkSetMut.isPending}>
+              {bulkSetMut.isPending ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 size-4" />
+              )}
+              {bulkSetMut.isPending
+                ? t("saving")
+                : dirty.size > 0
+                  ? t("saveChangesCount", { count: String(dirty.size) })
+                  : t("saveChanges")}
+            </Button>
+          </div>
+
+          {bulkSetMut.error && (
+            <div className="rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
+              {bulkSetMut.error.message}
+            </div>
+          )}
+
+          {/* Setting Groups */}
+          {SETTING_GROUPS.map((group) => (
+            <Card key={group.labelKey}>
+              <CardHeader className="border-b border-border px-6 py-4">
+                <CardTitle className="text-base font-semibold">{t(group.labelKey)}</CardTitle>
+              </CardHeader>
+              <CardContent className="divide-y divide-border p-0">
+                {group.keys.map((setting) => (
+                  <div key={setting.key} className="flex items-center gap-6 px-6 py-4">
+                    <div className="w-[200px] shrink-0">
+                      <Label htmlFor={`setting-${setting.key}`} className="font-medium">
+                        {t(setting.labelKey)}
+                      </Label>
+                      <code className="block text-xs text-muted-foreground">{setting.key}</code>
+                    </div>
+                    <Input
+                      id={`setting-${setting.key}`}
+                      value={localValues[setting.key] ?? ""}
+                      onChange={(e) => handleChange(setting.key, e.target.value)}
+                      placeholder={setting.placeholder}
+                      className={cn(dirty.has(setting.key) && "border-primary")}
+                    />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+
+          {/* Custom Settings */}
+          <CustomSettingsSection customSettings={customSettings} t={t} tc={tc} />
+        </div>
+      )}
+    </PermissionGuard>
+  );
+}
+
+interface CustomSettingsSectionProps {
+  customSettings: [string, string | null][];
+  t: ReturnType<typeof useTranslations>;
+  tc: ReturnType<typeof useTranslations>;
+}
+
+function CustomSettingsSection({ customSettings, t, tc }: CustomSettingsSectionProps) {
+  const [showAddCustom, setShowAddCustom] = useState(false);
+  const [customKey, setCustomKey] = useState("");
+  const [customValue, setCustomValue] = useState("");
+  const { toast } = useToast();
+  const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
+  const utils = trpc.useUtils();
+
   const setMut = trpc.viewer.settings.set.useMutation({
     onSuccess: () => {
       toast(t("added"), "success");
@@ -112,85 +208,14 @@ export default function GeneralSettingsPage() {
     },
   });
 
-  function handleChange(key: string, value: string) {
-    setLocalValues((prev) => ({ ...prev, [key]: value }));
-    setDirty((prev) => new Set(prev).add(key));
-  }
-
-  function handleSave() {
-    const items = Array.from(dirty).map((key) => ({ key, value: localValues[key] ?? "" }));
-    if (items.length > 0) bulkSetMut.mutate({ items });
-  }
-
-  const customSettings = allSettings
-    ? Object.entries(allSettings).filter(([k]) => !ALL_KEYS.includes(k))
-    : [];
-
-  if (isLoading) {
-    return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        {Array.from({ length: 3 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loading array — items have no stable IDs
-          <Skeleton key={i} className="h-[200px] rounded-xl" />
-        ))}
-      </div>
-    );
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!customKey.trim()) return;
+    setMut.mutate({ key: customKey.trim(), value: customValue || null });
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">{t("general")}</h1>
-        <Button onClick={handleSave} disabled={dirty.size === 0 || bulkSetMut.isPending}>
-          {bulkSetMut.isPending ? (
-            <Loader2 className="mr-2 size-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 size-4" />
-          )}
-          {bulkSetMut.isPending
-            ? t("saving")
-            : dirty.size > 0
-              ? t("saveChangesCount", { count: String(dirty.size) })
-              : t("saveChanges")}
-        </Button>
-      </div>
-
-      {bulkSetMut.error && (
-        <div className="rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
-          {bulkSetMut.error.message}
-        </div>
-      )}
-
-      {/* Setting Groups */}
-      {SETTING_GROUPS.map((group) => (
-        <Card key={group.labelKey}>
-          <CardHeader className="border-b border-border px-6 py-4">
-            <CardTitle className="text-base font-semibold">{t(group.labelKey)}</CardTitle>
-          </CardHeader>
-          <CardContent className="divide-y divide-border p-0">
-            {group.keys.map((setting) => (
-              <div key={setting.key} className="flex items-center gap-6 px-6 py-4">
-                <div className="w-[200px] shrink-0">
-                  <Label htmlFor={`setting-${setting.key}`} className="font-medium">
-                    {t(setting.labelKey)}
-                  </Label>
-                  <code className="block text-xs text-muted-foreground">{setting.key}</code>
-                </div>
-                <Input
-                  id={`setting-${setting.key}`}
-                  value={localValues[setting.key] ?? ""}
-                  onChange={(e) => handleChange(setting.key, e.target.value)}
-                  placeholder={setting.placeholder}
-                  className={cn(dirty.has(setting.key) && "border-primary")}
-                />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ))}
-
-      {/* Custom Settings */}
+    <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between border-b border-border px-6 py-4">
           <CardTitle className="text-base font-semibold">{t("customSettings")}</CardTitle>
@@ -205,13 +230,7 @@ export default function GeneralSettingsPage() {
         </CardHeader>
 
         {showAddCustom && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!customKey.trim()) return;
-              setMut.mutate({ key: customKey.trim(), value: customValue || null });
-            }}
-          >
+          <form onSubmit={handleSubmit}>
             <div className="flex items-end gap-4 border-b border-border px-6 py-4">
               <div className="flex-1 flex flex-col gap-1.5">
                 <Label htmlFor="custom-key">
@@ -272,6 +291,6 @@ export default function GeneralSettingsPage() {
       </Card>
 
       <ConfirmDialog {...confirmDialogProps} />
-    </div>
+    </>
   );
 }

@@ -9,6 +9,8 @@
  * Column count: 8 = [ID, Method, URL, Status, Duration, IP, Time, User]
  */
 import { DataTableSkeleton } from "@admin/components/data-table";
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
+import { Permissions } from "@ecom/lib/permissions";
 import dynamic from "next/dynamic";
 
 const RequestLogsContent = dynamic(() => import("./RequestLogsContent"), {
@@ -17,5 +19,9 @@ const RequestLogsContent = dynamic(() => import("./RequestLogsContent"), {
 });
 
 export default function RequestLogsPage() {
-  return <RequestLogsContent />;
+  return (
+    <PermissionGuard permissions={[Permissions.AUDIT_LOGS_READ]}>
+      <RequestLogsContent />
+    </PermissionGuard>
+  );
 }

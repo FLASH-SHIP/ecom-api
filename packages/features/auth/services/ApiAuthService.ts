@@ -3,7 +3,8 @@ import { ErrorWithCode } from "@ecom/lib/errors";
 import type { JwtPayload } from "@ecom/lib/jwt";
 import { verifyToken } from "@ecom/lib/jwt";
 import { createLogger } from "@ecom/lib/logger";
-import { getRedisClient } from "@ecom/lib/redis";
+import { ALL_PERMISSIONS } from "@ecom/lib/permissions";
+import { getRedisClient, RedisCache } from "@ecom/lib/redis";
 import type { ApiKeyRepository } from "../repositories/ApiKeyRepository";
 import type { UserRepository } from "../repositories/UserRepository";
 
@@ -21,6 +22,35 @@ export interface AuthenticatedUser {
   email: string;
   name: string | null;
   authMethod: "api_key" | "jwt" | "session";
+  permissions: string[];
+}
+
+const permissionsCache = new RedisCache<string[]>("user-permissions", 3600); // 1 hour TTL
+
+async function resolveUserPermissions(userId: number, userRepo: UserRepository): Promise<string[]> {
+  const cacheKey = `user:${userId}`;
+  const cachedPermissions = await permissionsCache.get(cacheKey);
+
+  if (cachedPermissions) {
+    return cachedPermissions;
+  }
+
+  const user = await userRepo.findByIdWithRoles(userId);
+  if (!user) {
+    return [];
+  }
+
+  const isSuperAdmin = user.roles.some((r) => r.role.name === "admin");
+  let permissions: string[];
+  if (isSuperAdmin) {
+    permissions = ALL_PERMISSIONS.map((p) => p.name);
+  } else {
+    permissions = user.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.name));
+  }
+
+  const uniquePermissions = [...new Set(permissions)];
+  await permissionsCache.set(cacheKey, uniquePermissions);
+  return uniquePermissions;
 }
 
 export class ApiAuthService {
@@ -61,11 +91,14 @@ export class ApiAuthService {
     // Fire-and-forget lastUsed update
     this.deps.apiKeyRepo.updateLastUsed(apiKey.id).catch(() => {});
 
+    const userPermissions = await resolveUserPermissions(apiKey.user.id, this.deps.userRepo);
+
     return {
       id: apiKey.user.id,
       email: apiKey.user.email,
       name: apiKey.user.name,
       authMethod: "api_key",
+      permissions: userPermissions,
     };
   }
 
@@ -96,11 +129,14 @@ export class ApiAuthService {
       throw ErrorWithCode.Factory.Forbidden("User account is not active");
     }
 
+    const userPermissions = await resolveUserPermissions(user.id, this.deps.userRepo);
+
     return {
       id: user.id,
       email: user.email,
       name: user.name,
       authMethod: "jwt",
+      permissions: userPermissions,
     };
   }
 

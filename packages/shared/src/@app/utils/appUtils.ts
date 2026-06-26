@@ -633,7 +633,11 @@ class appUtils {
   /**
    * The hasPermission function checks if a user has permission to access a resource.
    */
-  static hasPermission(authArr: string[] | string | undefined, userRole: User["role"]): boolean {
+  static hasPermission(
+    authArr: string[] | string | undefined,
+    userPermissions: string[] | undefined,
+    userRole?: User["role"],
+  ): boolean {
     /**
      * If auth array is not defined
      * Pass and allow
@@ -642,7 +646,9 @@ class appUtils {
       return true;
     }
 
-    if (Array.isArray(authArr) && authArr?.length === 0) {
+    const authPermissions = Array.isArray(authArr) ? authArr : [authArr];
+
+    if (authPermissions.length === 0) {
       /**
        * if auth array is empty means,
        * allow only user role is guest (null or empty[])
@@ -650,22 +656,27 @@ class appUtils {
       return !userRole || userRole.length === 0;
     }
 
-    /**
-     * Check if user has grants
-     */
-    /*
-            Check if user role is array,
-            */
-    if (userRole && Array.isArray(authArr) && Array.isArray(userRole)) {
-      return authArr.some((r: string) => userRole.indexOf(r) >= 0);
+    // 1. Check permission-based (PBAC) if permissions are provided
+    if (userPermissions && Array.isArray(userPermissions)) {
+      if (userPermissions.includes("*")) {
+        return true;
+      }
+      return authPermissions.some((perm) => userPermissions.includes(perm));
     }
 
-    if (typeof userRole === "string" && Array.isArray(authArr)) {
-      return authArr?.includes?.(userRole);
+    // 2. Fallback to role-based (RBAC) check for backward compatibility
+    if (userRole) {
+      if (Array.isArray(userRole)) {
+        return authPermissions.some((r) => userRole.includes(r));
+      }
+      if (typeof userRole === "string") {
+        return authPermissions.includes(userRole);
+      }
     }
 
     return false;
   }
+
 
   /**
    * The filterArrayByString function filters an array of objects by a search string.

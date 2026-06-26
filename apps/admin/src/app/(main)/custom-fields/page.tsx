@@ -1,5 +1,7 @@
 "use client";
 import { DataTableSkeleton } from "@admin/components/data-table";
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
+import { Permissions } from "@ecom/lib/permissions";
 /**
  * Custom Fields page — wrapper with `dynamic({ ssr: false })`.
  *
@@ -17,5 +19,9 @@ const CustomFieldsContent = dynamic(() => import("./CustomFieldsContent"), {
 });
 
 export default function CustomFieldsPage() {
-  return <CustomFieldsContent />;
+  return (
+    <PermissionGuard permissions={[Permissions.CUSTOM_FIELDS_READ]}>
+      <CustomFieldsContent />
+    </PermissionGuard>
+  );
 }
