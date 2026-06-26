@@ -9,7 +9,7 @@ import { ListPostsQueryDto } from "./dto/list-posts-query.dto";
 
 @ApiTags("Blog")
 @Controller("blog")
-@UseInterceptors(CacheControlInterceptor)
+@UseInterceptors(new CacheControlInterceptor())
 export class BlogController {
   @Get("posts")
   @ApiOperation({ summary: "List published blog posts" })
