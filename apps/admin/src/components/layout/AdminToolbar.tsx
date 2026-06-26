@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@ecom/ui/components/pop
 import { cn } from "@ecom/ui/lib/utils";
 import { ALargeSmall, Maximize, Minimize, PanelLeft, Search, Star } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAdminSidebar } from "./AdminSidebarContext";
 import { getNavIcon } from "./nav-icons";
@@ -218,14 +219,28 @@ function SearchButton() {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const { flattenData: navigation } = useNavigationItems();
+  const t = useTranslations("nav");
 
-  const allItems = useMemo(
-    () =>
-      navigation?.filter(
-        (item) => item.type === "item" && item.url && item.hasPermission !== false,
-      ) ?? [],
-    [navigation],
-  );
+  const allItems = useMemo(() => {
+    if (!navigation) return [];
+    return navigation
+      .filter((item) => item.type === "item" && item.url && item.hasPermission !== false)
+      .map((item) => {
+        let label = item.title ?? "";
+        if (item.translate) {
+          const key = item.translate.startsWith("nav.") ? item.translate.slice(4) : item.translate;
+          try {
+            label = t(key as Parameters<typeof t>[0]);
+          } catch {
+            // fallback
+          }
+        }
+        return {
+          ...item,
+          title: label,
+        };
+      });
+  }, [navigation, t]);
 
   const results = useMemo(() => {
     if (!query.trim()) return allItems.slice(0, 10);
@@ -367,6 +382,7 @@ function ToolbarShortcuts() {
   const [searchText, setSearchText] = useState("");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("nav");
 
   // Load pinned shortcuts from localStorage on mount
   useEffect(() => {
@@ -392,13 +408,26 @@ function ToolbarShortcuts() {
   }, []);
 
   // All permissioned nav items
-  const allItems = useMemo(
-    () =>
-      navigation?.filter(
-        (item) => item.type === "item" && item.url && item.hasPermission !== false,
-      ) ?? [],
-    [navigation],
-  );
+  const allItems = useMemo(() => {
+    if (!navigation) return [];
+    return navigation
+      .filter((item) => item.type === "item" && item.url && item.hasPermission !== false)
+      .map((item) => {
+        let label = item.title ?? "";
+        if (item.translate) {
+          const key = item.translate.startsWith("nav.") ? item.translate.slice(4) : item.translate;
+          try {
+            label = t(key as Parameters<typeof t>[0]);
+          } catch {
+            // fallback
+          }
+        }
+        return {
+          ...item,
+          title: label,
+        };
+      });
+  }, [navigation, t]);
 
   // Pinned items resolved from IDs
   const pinnedItems = useMemo(
