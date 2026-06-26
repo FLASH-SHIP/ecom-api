@@ -1,7 +1,7 @@
 import type { PageRepository } from "@ecom/features/page/repositories/PageRepository";
 import type { RevisionRepository } from "@ecom/features/shared/repositories/RevisionRepository";
 import { ErrorWithCode } from "@ecom/lib/errors";
-import type { ContentStatus } from "@ecom/prisma";
+import type { ContentStatus, Prisma } from "@ecom/prisma";
 
 export interface IPageServiceDeps {
   pageRepo: PageRepository;
@@ -20,6 +20,9 @@ export class PageService {
     parentId?: number | null;
     page?: number;
     perPage?: number;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
+    where?: Record<string, unknown>;
   }) {
     return this.deps.pageRepo.findMany(params);
   }
@@ -47,6 +50,17 @@ export class PageService {
     parentId?: number;
     status?: ContentStatus;
     authorId: number;
+    bannerImage?: string;
+    heroBanner?: string;
+    layout?: string;
+    hideTitle?: boolean;
+    hideBreadcrumb?: boolean;
+    hideSidebar?: boolean;
+    hideFooter?: boolean;
+    gallery?: Prisma.InputJsonValue;
+    subtitle?: string;
+    ctaText?: string;
+    ctaLink?: string;
   }) {
     const existing = await this.deps.pageRepo.findBySlugExact(data.slug);
     if (existing) throw ErrorWithCode.Factory.Conflict("Slug already in use");
@@ -66,6 +80,17 @@ export class PageService {
       order?: number;
       parentId?: number | null;
       status?: ContentStatus;
+      bannerImage?: string;
+      heroBanner?: string;
+      layout?: string;
+      hideTitle?: boolean;
+      hideBreadcrumb?: boolean;
+      hideSidebar?: boolean;
+      hideFooter?: boolean;
+      gallery?: Prisma.InputJsonValue;
+      subtitle?: string;
+      ctaText?: string;
+      ctaLink?: string;
     },
     authorId: number,
   ) {

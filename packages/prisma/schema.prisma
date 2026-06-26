@@ -445,6 +445,21 @@ model Page {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  // Custom Fields (Shared)
+  bannerImage   String?
+  heroBanner    String?
+  layout        String?       @default("default")
+  hideTitle     Boolean       @default(false)
+  hideBreadcrumb Boolean      @default(false)
+  hideSidebar   Boolean       @default(false)
+  hideFooter    Boolean       @default(false)
+  gallery       Json?
+
+  // Custom Fields (Default Locale)
+  subtitle      String?
+  ctaText       String?
+  ctaLink       String?
+
   @@index([authorId])
   @@index([status])
   @@index([slug])
@@ -463,6 +478,11 @@ model PageTranslation {
   slug     String?
   content  String? @db.Text
   excerpt  String? @db.Text
+
+  // Custom Fields (Translatable)
+  subtitle String?
+  ctaText  String?
+  ctaLink  String?
 
   @@unique([pageId, langCode])
   @@map("page_translations")

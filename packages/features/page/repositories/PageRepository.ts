@@ -1,4 +1,4 @@
-import type { ContentStatus, PrismaClient } from "@ecom/prisma";
+import type { ContentStatus, Prisma, PrismaClient } from "@ecom/prisma";
 
 export class PageRepository {
   private prisma: PrismaClient;
@@ -12,10 +12,22 @@ export class PageRepository {
     parentId?: number | null;
     page?: number;
     perPage?: number;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
+    where?: Record<string, unknown>;
   }) {
-    const { search, status, parentId, page = 1, perPage = 20 } = params;
+    const {
+      search,
+      status,
+      parentId,
+      page = 1,
+      perPage = 20,
+      sortBy,
+      sortDir,
+      where: customWhere,
+    } = params;
 
-    const where: Record<string, unknown> = { deletedAt: null };
+    const where: Record<string, unknown> = { deletedAt: null, ...customWhere };
     if (search) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
@@ -24,6 +36,13 @@ export class PageRepository {
     }
     if (status) where.status = status;
     if (parentId !== undefined) where.parentId = parentId;
+
+    const orderBy: Record<string, "asc" | "desc">[] = [];
+    if (sortBy) {
+      orderBy.push({ [sortBy]: sortDir ?? "asc" });
+    } else {
+      orderBy.push({ order: "asc" }, { createdAt: "desc" });
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.page.findMany({
@@ -43,7 +62,7 @@ export class PageRepository {
           updatedAt: true,
           _count: { select: { children: true } },
         },
-        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+        orderBy,
         skip: (page - 1) * perPage,
         take: perPage,
       }),
@@ -76,6 +95,17 @@ export class PageRepository {
         deletedAt: true,
         createdAt: true,
         updatedAt: true,
+        bannerImage: true,
+        heroBanner: true,
+        layout: true,
+        hideTitle: true,
+        hideBreadcrumb: true,
+        hideSidebar: true,
+        hideFooter: true,
+        gallery: true,
+        subtitle: true,
+        ctaText: true,
+        ctaLink: true,
       },
     });
   }
@@ -115,6 +145,17 @@ export class PageRepository {
     parentId?: number;
     status?: ContentStatus;
     authorId: number;
+    bannerImage?: string;
+    heroBanner?: string;
+    layout?: string;
+    hideTitle?: boolean;
+    hideBreadcrumb?: boolean;
+    hideSidebar?: boolean;
+    hideFooter?: boolean;
+    gallery?: Prisma.InputJsonValue;
+    subtitle?: string;
+    ctaText?: string;
+    ctaLink?: string;
   }) {
     return this.prisma.page.create({
       data,
@@ -134,6 +175,18 @@ export class PageRepository {
       order?: number;
       parentId?: number | null;
       status?: ContentStatus;
+      bannerImage?: string;
+      heroBanner?: string;
+      layout?: string;
+      hideTitle?: boolean;
+      hideBreadcrumb?: boolean;
+      hideSidebar?: boolean;
+      hideFooter?: boolean;
+      gallery?: Prisma.InputJsonValue;
+      subtitle?: string;
+      ctaText?: string;
+      ctaLink?: string;
+      publishedAt?: Date;
     },
   ) {
     return this.prisma.page.update({

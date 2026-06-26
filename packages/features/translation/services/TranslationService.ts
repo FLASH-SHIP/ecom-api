@@ -92,6 +92,9 @@ export class TranslationService {
           slug: data.slug,
           content: data.content,
           excerpt: data.excerpt,
+          subtitle: data.subtitle,
+          ctaText: data.ctaText,
+          ctaLink: data.ctaLink,
         });
         if (data.slug) {
           const mainSlug = await this.deps.slugRepo.findByReference(entityId, "Page");

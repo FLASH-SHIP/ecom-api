@@ -134,11 +134,15 @@ export class TranslationRepository {
       where: { pageId_langCode: { pageId, langCode } },
       select: {
         id: true,
+        pageId: true,
         langCode: true,
         title: true,
         slug: true,
         content: true,
         excerpt: true,
+        subtitle: true,
+        ctaText: true,
+        ctaLink: true,
       },
     });
   }
@@ -148,11 +152,15 @@ export class TranslationRepository {
       where: { pageId },
       select: {
         id: true,
+        pageId: true,
         langCode: true,
         title: true,
         slug: true,
         content: true,
         excerpt: true,
+        subtitle: true,
+        ctaText: true,
+        ctaLink: true,
       },
       orderBy: { langCode: "asc" },
     });
@@ -161,7 +169,15 @@ export class TranslationRepository {
   async upsertPageTranslation(
     pageId: number,
     langCode: string,
-    data: { title: string; slug?: string; content?: string; excerpt?: string },
+    data: {
+      title: string;
+      slug?: string;
+      content?: string;
+      excerpt?: string;
+      subtitle?: string;
+      ctaText?: string;
+      ctaLink?: string;
+    },
   ) {
     return this.prisma.pageTranslation.upsert({
       where: { pageId_langCode: { pageId, langCode } },
@@ -174,6 +190,9 @@ export class TranslationRepository {
         slug: true,
         content: true,
         excerpt: true,
+        subtitle: true,
+        ctaText: true,
+        ctaLink: true,
       },
     });
   }
