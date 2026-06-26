@@ -95,18 +95,19 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
 3. **Run with PM2**:
    Create a centralized `pm2.config.js` in the root of the project to orchestrate all four applications. It is highly recommended to run the Next.js standalone server outputs directly (which reduces memory overhead significantly compared to executing `next start`):
    ```javascript
-   module.exports = {
-     apps: [
-       // 1. NestJS Backend API (Port 4000)
-       {
-         name: "ecom-api",
-         script: "apps/api/dist/main.js",
-         instances: "max",
-         exec_mode: "cluster",
-         env: {
-           NODE_ENV: "production",
-         },
-       },
+    module.exports = {
+      apps: [
+        // 1. NestJS Backend API (Port 4000)
+        {
+          name: "ecom-api",
+          script: "apps/api/dist/src/main.js",
+          node_args: "--import tsx",
+          instances: "max",
+          exec_mode: "cluster",
+          env: {
+            NODE_ENV: "production",
+          },
+        },
        // 2. Next.js Public Portal (Port 3000)
        {
          name: "ecom-web",
@@ -203,7 +204,7 @@ COPY --from=builder /app/apps/api/package.json ./apps/api/
 USER nestjs
 EXPOSE 4000
 ENV PORT=4000
-CMD ["node", "apps/api/dist/main.js"]
+CMD ["node", "--import", "tsx", "apps/api/dist/src/main.js"]
 ```
 
 Build and run:

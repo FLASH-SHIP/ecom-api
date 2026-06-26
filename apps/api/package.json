@@ -5,8 +5,8 @@
   "scripts": {
     "build": "nest build",
     "dev": "tsx watch src/main.ts",
-    "start": "node dist/main",
-    "start:prod": "node dist/main",
+    "start": "node --import tsx dist/src/main.js",
+    "start:prod": "node --import tsx dist/src/main.js",
     "type-check": "tsc --noEmit",
     "db:seed": "tsx src/seed.ts",
     "lint": "biome check",
