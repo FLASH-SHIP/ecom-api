@@ -1,3 +1,4 @@
+import { getSlugRepository } from "@ecom/features/di/containers/BlogService";
 import { TranslationRepository } from "@ecom/features/translation/repositories/TranslationRepository";
 import { TranslationService } from "@ecom/features/translation/services/TranslationService";
 import { prisma } from "@ecom/prisma";
@@ -16,6 +17,7 @@ export function getTranslationService(): TranslationService {
   if (!_translationService) {
     _translationService = new TranslationService({
       translationRepo: getTranslationRepository(),
+      slugRepo: getSlugRepository(),
     });
   }
   return _translationService;

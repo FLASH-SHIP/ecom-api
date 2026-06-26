@@ -1,5 +1,7 @@
 {
   "title": "Posts",
+  "languages": "Languages",
+  "editingVersion": "You are editing \"{language}\" version",
   "subtitle": "Manage your blog posts",
   "newPost": "Create",
   "editPost": "Edit",

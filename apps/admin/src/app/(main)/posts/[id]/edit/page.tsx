@@ -19,7 +19,10 @@ export default function EditPostPage() {
     error,
   } = trpc.viewer.posts.get.useQuery({ id: postId }, { enabled: !Number.isNaN(postId) });
 
-  const { activeCode, isDefaultLanguage, isSwitcherLoading } = useLanguageSwitcher("post", postId);
+  const { activeCode, isDefaultLanguage, originLangCode, isSwitcherLoading } = useLanguageSwitcher(
+    "post",
+    postId,
+  );
 
   const { data: translation } = trpc.viewer.translations.get.useQuery(
     { entityType: "post", entityId: postId, langCode: activeCode ?? "" },
@@ -96,6 +99,7 @@ export default function EditPostPage() {
         postId={postId}
         initialData={formInitialData}
         translationMode={!isDefaultLanguage ? activeCode : undefined}
+        originLangCode={originLangCode ?? undefined}
       />
     </div>
   );

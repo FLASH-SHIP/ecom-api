@@ -1,5 +1,7 @@
 {
   "title": "Bài viết",
+  "languages": "Ngôn ngữ",
+  "editingVersion": "Bạn đang chỉnh sửa phiên bản \"{language}\"",
   "subtitle": "Quản lý bài viết blog",
   "newPost": "Tạo mới",
   "editPost": "Sửa",

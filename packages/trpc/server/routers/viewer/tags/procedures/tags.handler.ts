@@ -69,20 +69,26 @@ export const create = authedProcedure
       authorType: "User",
     });
 
+    const languageRepo = getLanguageRepository();
+    let langCode = "vi";
     if (ctx.locale) {
-      const languageRepo = getLanguageRepository();
       const dbLang = await languageRepo.findByLocale(ctx.locale);
-      const langCode = dbLang?.code ?? ctx.locale;
-
-      const languageService = getLanguageService();
-      await languageService.saveContentLanguage(tag.id, "tag", langCode);
-
-      const translationService = getTranslationService();
-      await translationService.saveTranslation("tag", tag.id, langCode, {
-        name: input.name,
-        description: input.description,
-      });
+      langCode = dbLang?.code ?? ctx.locale;
+    } else {
+      const defaultLang = await languageRepo.findDefault();
+      if (defaultLang) {
+        langCode = defaultLang.code;
+      }
     }
+
+    const languageService = getLanguageService();
+    await languageService.saveContentLanguage(tag.id, "tag", langCode);
+
+    const translationService = getTranslationService();
+    await translationService.saveTranslation("tag", tag.id, langCode, {
+      name: input.name,
+      description: input.description,
+    });
 
     return tag;
   });

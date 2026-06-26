@@ -16,6 +16,7 @@ import {
 } from "@ecom/ui/components/select";
 import { Switch } from "@ecom/ui/components/switch";
 import { Textarea } from "@ecom/ui/components/textarea";
+import { cn } from "@ecom/ui/lib/utils";
 import { ExternalLink, Globe, Info, Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -503,31 +504,37 @@ export function CategoryForm({
                     lang.locale === locale
                       ? `/categories/${categoryId}/edit`
                       : `/categories/${categoryId}/edit?ref_lang=${lang.code}`;
+                  const isCurrent =
+                    (translationMode && lang.code === translationMode) ||
+                    (!translationMode && lang.code === originLangCode);
                   return (
-                    <div key={lang.id} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2 font-medium">
+                    <a
+                      key={lang.id}
+                      href={link}
+                      target={isCurrent ? undefined : "_blank"}
+                      rel={isCurrent ? undefined : "noopener noreferrer"}
+                      className={cn(
+                        "flex items-center justify-between text-sm p-2 rounded-md transition-colors border border-transparent",
+                        isCurrent
+                          ? "bg-primary/5 text-primary font-semibold border-primary/10"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
                         {lang.flag && (
                           <span className="text-base" role="img" aria-label={lang.name}>
                             {getFlagEmoji(lang.flag)}
                           </span>
                         )}
                         <span>{lang.name}</span>
-                        {((translationMode && lang.code === translationMode) ||
-                          (!translationMode && lang.code === originLangCode)) && (
-                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        {isCurrent && (
+                          <span className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded font-normal">
                             editing
                           </span>
                         )}
                       </div>
-                      <a
-                        href={link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <ExternalLink className="size-3.5" />
-                      </a>
-                    </div>
+                      <ExternalLink className="size-3.5 opacity-60" />
+                    </a>
                   );
                 })}
               </CardContent>

@@ -94,10 +94,18 @@ export const create = authedProcedure
       authorId: ctx.user.id,
     });
 
-    if (ctx.locale && result) {
+    if (result) {
       const languageRepo = getLanguageRepository();
-      const dbLang = await languageRepo.findByLocale(ctx.locale);
-      const langCode = dbLang?.code ?? ctx.locale;
+      let langCode = "vi";
+      if (ctx.locale) {
+        const dbLang = await languageRepo.findByLocale(ctx.locale);
+        langCode = dbLang?.code ?? ctx.locale;
+      } else {
+        const defaultLang = await languageRepo.findDefault();
+        if (defaultLang) {
+          langCode = defaultLang.code;
+        }
+      }
 
       const languageService = getLanguageService();
       await languageService.saveContentLanguage(result.id, "category", langCode);

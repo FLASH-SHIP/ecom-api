@@ -25,8 +25,11 @@ import { cn } from "@ecom/ui/lib/utils";
 import type { Editor } from "@tiptap/react";
 import {
   AlertCircle,
+  ExternalLink,
   Eye,
+  Globe,
   ImageIcon,
+  Info,
   Loader2,
   Save,
   Search,
@@ -35,7 +38,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type PostStatus = "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED";
@@ -67,6 +70,14 @@ interface PostFormProps {
   postId?: number;
   initialData?: Partial<PostFormData>;
   translationMode?: string | null;
+  originLangCode?: string;
+}
+
+function getFlagEmoji(countryCode: string): string {
+  const code = countryCode.toUpperCase();
+  if (code.length !== 2) return countryCode;
+  const codePoints = [...code].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65);
+  return String.fromCodePoint(...codePoints);
 }
 
 const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
@@ -77,12 +88,31 @@ const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
 ];
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: handles complex edit/create form state initialization, query calls, and sidebar elements
-export function PostForm({ mode, postId, initialData, translationMode }: PostFormProps) {
+export function PostForm({
+  mode,
+  postId,
+  initialData,
+  translationMode,
+  originLangCode,
+}: PostFormProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const { toast } = useToast();
   const t = useTranslations("common");
+  const tPost = useTranslations("posts");
+  const locale = useLocale();
   const { data: currentUser } = useUser();
+
+  const { data: activeLanguages } = trpc.viewer.languages.getActive.useQuery();
+
+  const bannerLangCode =
+    translationMode ||
+    (mode === "create"
+      ? activeLanguages?.find((l) => l.locale === locale)?.code || locale
+      : originLangCode || activeLanguages?.find((l) => l.isDefault)?.code || locale);
+
+  const activeLanguageName =
+    activeLanguages?.find((l) => l.code === bannerLangCode)?.name ?? bannerLangCode;
 
   const [formData, setFormData] = useState<PostFormData>({
     title: initialData?.title ?? "",
@@ -403,37 +433,10 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
           },
           {
             onSuccess: () => {
-              // Step 2: Save non-translatable fields
-              const mainPostPayload = {
-                featuredImage: formData.featuredImage || null,
-                bannerImage: formData.bannerImage || null,
-                status: formData.status,
-                isFeatured: formData.isFeatured,
-                allowComments: formData.allowComments,
-                formatType: formData.formatType || "Article",
-                categoryIds: formData.categoryIds,
-                tagIds: formData.tagIds,
-                authorId: formData.authorId,
-                externalSource: externalSource || null,
-                sponsoredBy: sponsoredBy || null,
-              };
-              updateMutation.mutate(
-                { id: postId, ...mainPostPayload },
-                {
-                  onSuccess: () => {
-                    // Step 3: Save SEO
-                    saveSeo(postId, () => {
-                      // Step 4: Save Custom Fields
-                      saveCustomFields(postId, () => {
-                        toast(t("successUpdated"), "success");
-                        if (exit) {
-                          router.push("/posts");
-                        }
-                      });
-                    });
-                  },
-                },
-              );
+              toast(t("successUpdated"), "success");
+              if (exit) {
+                router.push("/posts");
+              }
             },
           },
         );
@@ -481,6 +484,7 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
     }
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: compares multiple form inputs against initialData state
   const isDirty = useMemo(() => {
     if (mode === "create") {
       return formData.title.trim().length > 0;
@@ -608,6 +612,14 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
         <div className="flex flex-col gap-6">
           <Card>
             <CardContent className="flex flex-col gap-5 p-5">
+              <div className="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                <Info className="size-4 shrink-0" />
+                <span>
+                  {tPost("editingVersion", {
+                    language: activeLanguageName,
+                  })}
+                </span>
+              </div>
               {/* Name */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="post-title" className="text-sm font-semibold">
@@ -667,18 +679,23 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
               </div>
 
               {/* Featured toggle switch */}
-              <div className="flex items-center gap-2 py-1">
-                <Switch
-                  id="is-featured-switch"
-                  checked={formData.isFeatured}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, isFeatured: checked }))
-                  }
-                />
-                <Label htmlFor="is-featured-switch" className="cursor-pointer text-sm font-medium">
-                  Is featured?
-                </Label>
-              </div>
+              {!translationMode && (
+                <div className="flex items-center gap-2 py-1">
+                  <Switch
+                    id="is-featured-switch"
+                    checked={formData.isFeatured}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, isFeatured: checked }))
+                    }
+                  />
+                  <Label
+                    htmlFor="is-featured-switch"
+                    className="cursor-pointer text-sm font-medium"
+                  >
+                    Is featured?
+                  </Label>
+                </div>
+              )}
 
               {/* Content Editor area */}
               <div className="flex flex-col gap-2">
@@ -731,206 +748,216 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
             </CardContent>
           </Card>
 
-          {/* Post Additional Information */}
-          <Card>
-            <CardHeader className="border-b border-border px-5 py-4">
-              <CardTitle className="text-base font-semibold">Post Additional Information</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-6 p-6">
-              {/* Options Checklist */}
-              <div className="flex flex-col gap-2">
-                <Label className="text-sm font-semibold text-slate-800">Post Options</Label>
-                <div className="flex flex-col gap-2.5">
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={formData.isFeatured}
+          {!translationMode && (
+            <>
+              {/* Post Additional Information */}
+              <Card>
+                <CardHeader className="border-b border-border px-5 py-4">
+                  <CardTitle className="text-base font-semibold">
+                    Post Additional Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-6 p-6">
+                  {/* Options Checklist */}
+                  <div className="flex flex-col gap-2">
+                    <Label className="text-sm font-semibold text-slate-800">Post Options</Label>
+                    <div className="flex flex-col gap-2.5">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={formData.isFeatured}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, isFeatured: e.target.checked }))
+                          }
+                          className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
+                        />
+                        Featured post
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={sticky}
+                          onChange={(e) => setSticky(e.target.checked)}
+                          className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
+                        />
+                        Sticky post
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={showAuthor}
+                          onChange={(e) => setShowAuthor(e.target.checked)}
+                          className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
+                        />
+                        Show author
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={formData.allowComments}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, allowComments: e.target.checked }))
+                          }
+                          className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
+                        />
+                        Allow comments
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+                        <input
+                          type="checkbox"
+                          checked={showPublishDate}
+                          onChange={(e) => setShowPublishDate(e.target.checked)}
+                          className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
+                        />
+                        Show publish date
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* Reading Time */}
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="post-reading-time" className="text-sm font-medium">
+                        Reading Time
+                      </Label>
+                      <Input
+                        id="post-reading-time"
+                        type="number"
+                        value={readingTime}
+                        onChange={(e) => setReadingTime(e.target.value)}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        Estimated reading time in minutes
+                      </span>
+                    </div>
+
+                    {/* External Source */}
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="post-external-source" className="text-sm font-medium">
+                        External Source
+                      </Label>
+                      <Input
+                        id="post-external-source"
+                        placeholder="https://example.com/article"
+                        value={externalSource}
+                        onChange={(e) => setExternalSource(e.target.value)}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        Link to external source or reference
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Post Type & Sponsored */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="post-type" className="text-sm font-medium">
+                        Post Type
+                      </Label>
+                      <Select
+                        value={formData.formatType}
+                        onValueChange={(v) => setFormData((prev) => ({ ...prev, formatType: v }))}
+                      >
+                        <SelectTrigger id="post-type">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Article">Article</SelectItem>
+                          <SelectItem value="Video">Video</SelectItem>
+                          <SelectItem value="Gallery">Gallery</SelectItem>
+                          <SelectItem value="Standard">Standard</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-xs text-muted-foreground">Select the type of post</span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="post-sponsored" className="text-sm font-medium">
+                        Sponsored By
+                      </Label>
+                      <Input
+                        id="post-sponsored"
+                        placeholder="Company name"
+                        value={sponsoredBy}
+                        onChange={(e) => setSponsoredBy(e.target.value)}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        Sponsor name (if applicable)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Custom Excerpt */}
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="post-custom-excerpt" className="text-sm font-medium">
+                      Custom Excerpt
+                    </Label>
+                    <Textarea
+                      id="post-custom-excerpt"
+                      placeholder="Enter a brief summary..."
+                      value={formData.excerpt}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, isFeatured: e.target.checked }))
+                        setFormData((prev) => ({ ...prev, excerpt: e.target.value }))
                       }
-                      className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
+                      rows={3}
                     />
-                    Featured post
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={sticky}
-                      onChange={(e) => setSticky(e.target.checked)}
-                      className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
-                    />
-                    Sticky post
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={showAuthor}
-                      onChange={(e) => setShowAuthor(e.target.checked)}
-                      className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
-                    />
-                    Show author
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={formData.allowComments}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, allowComments: e.target.checked }))
-                      }
-                      className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
-                    />
-                    Allow comments
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
-                    <input
-                      type="checkbox"
-                      checked={showPublishDate}
-                      onChange={(e) => setShowPublishDate(e.target.checked)}
-                      className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
-                    />
-                    Show publish date
-                  </label>
-                </div>
-              </div>
+                    <span className="text-xs text-muted-foreground">
+                      Custom excerpt for social media sharing
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Reading Time */}
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="post-reading-time" className="text-sm font-medium">
-                    Reading Time
-                  </Label>
-                  <Input
-                    id="post-reading-time"
-                    type="number"
-                    value={readingTime}
-                    onChange={(e) => setReadingTime(e.target.value)}
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    Estimated reading time in minutes
-                  </span>
-                </div>
-
-                {/* External Source */}
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="post-external-source" className="text-sm font-medium">
-                    External Source
-                  </Label>
-                  <Input
-                    id="post-external-source"
-                    placeholder="https://example.com/article"
-                    value={externalSource}
-                    onChange={(e) => setExternalSource(e.target.value)}
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    Link to external source or reference
-                  </span>
-                </div>
-              </div>
-
-              {/* Post Type & Sponsored */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="post-type" className="text-sm font-medium">
-                    Post Type
-                  </Label>
-                  <Select
-                    value={formData.formatType}
-                    onValueChange={(v) => setFormData((prev) => ({ ...prev, formatType: v }))}
+              {/* Gallery images */}
+              <Card>
+                <CardHeader className="border-b border-border px-5 py-4">
+                  <CardTitle className="text-base font-semibold">Gallery images</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMediaPickerTarget("featured")}
                   >
-                    <SelectTrigger id="post-type">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Article">Article</SelectItem>
-                      <SelectItem value="Video">Video</SelectItem>
-                      <SelectItem value="Gallery">Gallery</SelectItem>
-                      <SelectItem value="Standard">Standard</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="text-xs text-muted-foreground">Select the type of post</span>
-                </div>
+                    Select images
+                  </Button>
+                </CardContent>
+              </Card>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="post-sponsored" className="text-sm font-medium">
-                    Sponsored By
-                  </Label>
-                  <Input
-                    id="post-sponsored"
-                    placeholder="Company name"
-                    value={sponsoredBy}
-                    onChange={(e) => setSponsoredBy(e.target.value)}
-                  />
-                  <span className="text-xs text-muted-foreground">
-                    Sponsor name (if applicable)
-                  </span>
-                </div>
-              </div>
+              {/* SEO meta widget */}
+              <SearchEngineOptimize
+                seoTitle={formData.seoTitle}
+                onChangeSeoTitle={(v) => setFormData((prev) => ({ ...prev, seoTitle: v }))}
+                seoDescription={formData.seoDescription}
+                onChangeSeoDescription={(v) =>
+                  setFormData((prev) => ({ ...prev, seoDescription: v }))
+                }
+                seoImage={formData.seoImage}
+                onChangeSeoImage={(v) => setFormData((prev) => ({ ...prev, seoImage: v }))}
+                indexMode={formData.indexMode}
+                onChangeIndexMode={(v) => setFormData((prev) => ({ ...prev, indexMode: v }))}
+                defaultTitle={formData.title}
+                defaultUrl={formData.slug}
+              />
 
-              {/* Custom Excerpt */}
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="post-custom-excerpt" className="text-sm font-medium">
-                  Custom Excerpt
-                </Label>
-                <Textarea
-                  id="post-custom-excerpt"
-                  placeholder="Enter a brief summary..."
-                  value={formData.excerpt}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, excerpt: e.target.value }))}
-                  rows={3}
-                />
-                <span className="text-xs text-muted-foreground">
-                  Custom excerpt for social media sharing
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Gallery images */}
-          <Card>
-            <CardHeader className="border-b border-border px-5 py-4">
-              <CardTitle className="text-base font-semibold">Gallery images</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setMediaPickerTarget("featured")}
-              >
-                Select images
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* SEO meta widget */}
-          <SearchEngineOptimize
-            seoTitle={formData.seoTitle}
-            onChangeSeoTitle={(v) => setFormData((prev) => ({ ...prev, seoTitle: v }))}
-            seoDescription={formData.seoDescription}
-            onChangeSeoDescription={(v) => setFormData((prev) => ({ ...prev, seoDescription: v }))}
-            seoImage={formData.seoImage}
-            onChangeSeoImage={(v) => setFormData((prev) => ({ ...prev, seoImage: v }))}
-            indexMode={formData.indexMode}
-            onChangeIndexMode={(v) => setFormData((prev) => ({ ...prev, indexMode: v }))}
-            defaultTitle={formData.title}
-            defaultUrl={formData.slug}
-          />
-
-          {/* Custom Fields panel */}
-          {mode === "edit" && postId && customFieldsCount > 0 && (
-            <Card>
-              <CardHeader className="border-b border-border px-5 py-4">
-                <CardTitle className="text-base font-semibold">{t("customFields")}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <CustomFieldsPanel
-                  modelName="posts"
-                  modelId={postId}
-                  context={{ categoryId: formData.categoryIds[0] }}
-                  onGroupsLoad={setCustomFieldsCount}
-                />
-              </CardContent>
-            </Card>
+              {/* Custom Fields panel */}
+              {mode === "edit" && postId && customFieldsCount > 0 && (
+                <Card>
+                  <CardHeader className="border-b border-border px-5 py-4">
+                    <CardTitle className="text-base font-semibold">{t("customFields")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <CustomFieldsPanel
+                      modelName="posts"
+                      modelId={postId}
+                      context={{ categoryId: formData.categoryIds[0] }}
+                      onGroupsLoad={setCustomFieldsCount}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </div>
 
@@ -944,7 +971,11 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
             <CardContent className="flex gap-2 p-4">
               <Button
                 type="button"
-                disabled={isPending || !formData.title.trim() || (mode === "edit" && !isDirty)}
+                disabled={
+                  isPending ||
+                  !formData.title.trim() ||
+                  (mode === "edit" && !translationMode && !isDirty)
+                }
                 onClick={() => handleSave(false)}
                 size="sm"
                 className="flex-1 font-semibold"
@@ -959,7 +990,11 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
               <Button
                 type="button"
                 variant="outline"
-                disabled={isPending || !formData.title.trim() || (mode === "edit" && !isDirty)}
+                disabled={
+                  isPending ||
+                  !formData.title.trim() ||
+                  (mode === "edit" && !translationMode && !isDirty)
+                }
                 onClick={() => handleSave(true)}
                 size="sm"
               >
@@ -969,290 +1004,350 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
             </CardContent>
           </Card>
 
-          {/* Status Card */}
-          <Card>
-            <CardHeader className="border-b border-border px-4 py-3">
-              <CardTitle className="text-sm font-semibold">
-                Status <span className="text-destructive">*</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <Select
-                value={formData.status}
-                onValueChange={(v) => setFormData((prev) => ({ ...prev, status: v as PostStatus }))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
+          {/* Languages */}
+          {mode === "edit" && postId && (
+            <Card>
+              <CardHeader className="border-b border-border px-4 py-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Globe className="size-4 text-muted-foreground" />
+                  {tPost("languages")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 flex flex-col gap-3">
+                {activeLanguages?.map((lang) => {
+                  const link =
+                    lang.locale === locale
+                      ? `/posts/${postId}/edit`
+                      : `/posts/${postId}/edit?ref_lang=${lang.code}`;
+                  const isCurrent =
+                    (translationMode && lang.code === translationMode) ||
+                    (!translationMode && lang.code === originLangCode);
+                  return (
+                    <a
+                      key={lang.id}
+                      href={link}
+                      target={isCurrent ? undefined : "_blank"}
+                      rel={isCurrent ? undefined : "noopener noreferrer"}
+                      className={cn(
+                        "flex items-center justify-between text-sm p-2 rounded-md transition-colors border border-transparent",
+                        isCurrent
+                          ? "bg-primary/5 text-primary font-semibold border-primary/10"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        {lang.flag && (
+                          <span className="text-base" role="img" aria-label={lang.name}>
+                            {getFlagEmoji(lang.flag)}
+                          </span>
+                        )}
+                        <span>{lang.name}</span>
+                        {isCurrent && (
+                          <span className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded font-normal">
+                            editing
+                          </span>
+                        )}
+                      </div>
+                      <ExternalLink className="size-3.5 opacity-60" />
+                    </a>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Author Card */}
-          <Card>
-            <CardHeader className="border-b border-border px-4 py-3">
-              <CardTitle className="text-sm font-semibold">Author</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 p-4">
-              <Select
-                value={formData.authorId !== undefined ? String(formData.authorId) : ""}
-                onValueChange={(v) =>
-                  setFormData((prev) => ({ ...prev, authorId: v ? Number(v) : undefined }))
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select author" />
-                </SelectTrigger>
-                <SelectContent>
-                  {usersData?.data.map((user) => (
-                    <SelectItem key={user.id} value={String(user.id)}>
-                      {user.name || user.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <span className="text-xs text-muted-foreground">
-                The list of authors is from Admin → Members.
-              </span>
-            </CardContent>
-          </Card>
-
-          {/* Categories Card */}
-          <Card>
-            <CardHeader className="border-b border-border px-4 py-3">
-              <CardTitle className="text-sm font-semibold">Categories</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 p-4">
-              {/* Search category */}
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search..."
-                  value={categorySearch}
-                  onChange={(e) => setCategorySearch(e.target.value)}
-                  className="pl-9 h-9"
-                />
-              </div>
-
-              {/* Categories checklist */}
-              <div className="flex max-h-56 flex-col gap-2 overflow-y-auto pt-1">
-                {filteredCategories.map((cat) => (
-                  <label
-                    key={cat.id}
-                    htmlFor={`cat-select-${cat.id}`}
-                    className="flex cursor-pointer items-start gap-2.5 text-sm text-slate-700"
+          {!translationMode && (
+            <>
+              {/* Status Card */}
+              <Card>
+                <CardHeader className="border-b border-border px-4 py-3">
+                  <CardTitle className="text-sm font-semibold">
+                    Status <span className="text-destructive">*</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <Select
+                    value={formData.status}
+                    onValueChange={(v) =>
+                      setFormData((prev) => ({ ...prev, status: v as PostStatus }))
+                    }
                   >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              {/* Author Card */}
+              <Card>
+                <CardHeader className="border-b border-border px-4 py-3">
+                  <CardTitle className="text-sm font-semibold">Author</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2 p-4">
+                  <Select
+                    value={formData.authorId !== undefined ? String(formData.authorId) : ""}
+                    onValueChange={(v) =>
+                      setFormData((prev) => ({ ...prev, authorId: v ? Number(v) : undefined }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select author" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {usersData?.data.map((user) => (
+                        <SelectItem key={user.id} value={String(user.id)}>
+                          {user.name || user.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-xs text-muted-foreground">
+                    The list of authors is from Admin → Members.
+                  </span>
+                </CardContent>
+              </Card>
+
+              {/* Categories Card */}
+              <Card>
+                <CardHeader className="border-b border-border px-4 py-3">
+                  <CardTitle className="text-sm font-semibold">Categories</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3 p-4">
+                  {/* Search category */}
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      className="pl-9 h-9"
+                    />
+                  </div>
+
+                  {/* Categories checklist */}
+                  <div className="flex max-h-56 flex-col gap-2 overflow-y-auto pt-1">
+                    {filteredCategories.map((cat) => (
+                      <label
+                        key={cat.id}
+                        htmlFor={`cat-select-${cat.id}`}
+                        className="flex cursor-pointer items-start gap-2.5 text-sm text-slate-700"
+                      >
+                        <input
+                          type="checkbox"
+                          id={`cat-select-${cat.id}`}
+                          checked={formData.categoryIds.includes(cat.id)}
+                          onChange={() => toggleCategory(cat.id)}
+                          className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
+                        />
+                        <span>{cat.name}</span>
+                      </label>
+                    ))}
+                    {filteredCategories.length === 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        No categories match search.
+                      </span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Featured Image Card */}
+              <Card>
+                <CardHeader className="border-b border-border px-4 py-3">
+                  <CardTitle className="text-sm font-semibold">Image</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3 p-4">
+                  <button
+                    type="button"
+                    onClick={() => setMediaPickerTarget("featured")}
+                    className="w-full text-left group relative border border-dashed border-input rounded-md flex flex-col items-center justify-center bg-muted/5 h-36 overflow-hidden transition-all hover:bg-muted/10 cursor-pointer"
+                  >
+                    {formData.featuredImage ? (
+                      <>
+                        <Image
+                          src={formData.featuredImage}
+                          alt="Featured image"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormData((prev) => ({ ...prev, featuredImage: "" }));
+                          }}
+                          className="absolute top-2 right-2 bg-background/90 hover:bg-background rounded-full p-1 shadow-sm h-7 w-7 flex items-center justify-center cursor-pointer z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-4 text-muted-foreground/60 w-full">
+                        <ImageIcon className="size-10 stroke-1 mb-2 mx-auto" />
+                        <span className="text-xs text-center block">No image selected</span>
+                      </div>
+                    )}
+                  </button>
+
+                  <div className="flex items-center justify-center gap-1.5 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setMediaPickerTarget("featured")}
+                      className="text-primary hover:underline font-semibold"
+                    >
+                      Choose image
+                    </button>
+                    <span className="text-muted-foreground/55">or</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = prompt("Enter Image URL:");
+                        if (url) setFormData((prev) => ({ ...prev, featuredImage: url }));
+                      }}
+                      className="text-primary hover:underline font-semibold"
+                    >
+                      Add from URL
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Banner Image Card */}
+              <Card>
+                <CardHeader className="border-b border-border px-4 py-3">
+                  <CardTitle className="text-sm font-semibold">Banner image (1920×170px)</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3 p-4">
+                  <button
+                    type="button"
+                    onClick={() => setMediaPickerTarget("banner")}
+                    className="w-full text-left group relative border border-dashed border-input rounded-md flex flex-col items-center justify-center bg-muted/5 h-28 overflow-hidden transition-all hover:bg-muted/10 cursor-pointer"
+                  >
+                    {formData.bannerImage ? (
+                      <>
+                        <Image
+                          src={formData.bannerImage}
+                          alt="Banner image"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFormData((prev) => ({ ...prev, bannerImage: "" }));
+                          }}
+                          className="absolute top-2 right-2 bg-background/90 hover:bg-background rounded-full p-1 shadow-sm h-7 w-7 flex items-center justify-center cursor-pointer z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-4 text-muted-foreground/60 w-full">
+                        <ImageIcon className="size-8 stroke-1 mb-2 mx-auto" />
+                        <span className="text-xs text-center block">No banner image selected</span>
+                      </div>
+                    )}
+                  </button>
+
+                  <div className="flex items-center justify-center gap-1.5 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setMediaPickerTarget("banner")}
+                      className="text-primary hover:underline font-semibold"
+                    >
+                      Choose image
+                    </button>
+                    <span className="text-muted-foreground/55">or</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = prompt("Enter Banner Image URL:");
+                        if (url) setFormData((prev) => ({ ...prev, bannerImage: url }));
+                      }}
+                      className="text-primary hover:underline font-semibold"
+                    >
+                      Add from URL
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tags Card */}
+              <Card>
+                <CardHeader className="border-b border-border px-4 py-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-1">
+                    <TagIcon className="size-4 text-muted-foreground" />
+                    Tags
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3.5 p-4">
+                  <Input
+                    type="text"
+                    placeholder="Write some tags"
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    onKeyDown={handleAddTag}
+                    className="h-9"
+                  />
+
+                  <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
+                    {tagsData?.rows.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant={formData.tagIds.includes(tag.id) ? "default" : "outline"}
+                        className={cn(
+                          "cursor-pointer select-none transition-colors px-2 py-0.5 text-xs",
+                          formData.tagIds.includes(tag.id)
+                            ? "bg-primary hover:bg-primary/90 text-primary-foreground border-transparent"
+                            : "text-muted-foreground border-border hover:bg-muted",
+                        )}
+                        onClick={() => toggleTag(tag.id)}
+                      >
+                        {tag.name}
+                      </Badge>
+                    ))}
+                    {tagsData?.rows.length === 0 && (
+                      <span className="text-xs text-muted-foreground">No tags available.</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Allow comments card */}
+              <Card>
+                <CardHeader className="border-b border-border px-4 py-3">
+                  <CardTitle className="text-sm font-semibold">Allow comments</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 flex items-center">
+                  <label className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-700">
                     <input
                       type="checkbox"
-                      id={`cat-select-${cat.id}`}
-                      checked={formData.categoryIds.includes(cat.id)}
-                      onChange={() => toggleCategory(cat.id)}
-                      className="size-4 rounded border-input text-primary focus:ring-primary mt-0.5"
+                      checked={formData.allowComments}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, allowComments: e.target.checked }))
+                      }
+                      className="size-4 rounded border-input text-primary focus:ring-primary"
                     />
-                    <span>{cat.name}</span>
+                    <span>Allow comments</span>
                   </label>
-                ))}
-                {filteredCategories.length === 0 && (
-                  <span className="text-xs text-muted-foreground">No categories match search.</span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Featured Image Card */}
-          <Card>
-            <CardHeader className="border-b border-border px-4 py-3">
-              <CardTitle className="text-sm font-semibold">Image</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 p-4">
-              <button
-                type="button"
-                onClick={() => setMediaPickerTarget("featured")}
-                className="w-full text-left group relative border border-dashed border-input rounded-md flex flex-col items-center justify-center bg-muted/5 h-36 overflow-hidden transition-all hover:bg-muted/10 cursor-pointer"
-              >
-                {formData.featuredImage ? (
-                  <>
-                    <Image
-                      src={formData.featuredImage}
-                      alt="Featured image"
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFormData((prev) => ({ ...prev, featuredImage: "" }));
-                      }}
-                      className="absolute top-2 right-2 bg-background/90 hover:bg-background rounded-full p-1 shadow-sm h-7 w-7 flex items-center justify-center cursor-pointer z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-4 text-muted-foreground/60 w-full">
-                    <ImageIcon className="size-10 stroke-1 mb-2 mx-auto" />
-                    <span className="text-xs text-center block">No image selected</span>
-                  </div>
-                )}
-              </button>
-
-              <div className="flex items-center justify-center gap-1.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setMediaPickerTarget("featured")}
-                  className="text-primary hover:underline font-semibold"
-                >
-                  Choose image
-                </button>
-                <span className="text-muted-foreground/55">or</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const url = prompt("Enter Image URL:");
-                    if (url) setFormData((prev) => ({ ...prev, featuredImage: url }));
-                  }}
-                  className="text-primary hover:underline font-semibold"
-                >
-                  Add from URL
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Banner Image Card */}
-          <Card>
-            <CardHeader className="border-b border-border px-4 py-3">
-              <CardTitle className="text-sm font-semibold">Banner image (1920×170px)</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 p-4">
-              <button
-                type="button"
-                onClick={() => setMediaPickerTarget("banner")}
-                className="w-full text-left group relative border border-dashed border-input rounded-md flex flex-col items-center justify-center bg-muted/5 h-28 overflow-hidden transition-all hover:bg-muted/10 cursor-pointer"
-              >
-                {formData.bannerImage ? (
-                  <>
-                    <Image
-                      src={formData.bannerImage}
-                      alt="Banner image"
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFormData((prev) => ({ ...prev, bannerImage: "" }));
-                      }}
-                      className="absolute top-2 right-2 bg-background/90 hover:bg-background rounded-full p-1 shadow-sm h-7 w-7 flex items-center justify-center cursor-pointer z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-4 text-muted-foreground/60 w-full">
-                    <ImageIcon className="size-8 stroke-1 mb-2 mx-auto" />
-                    <span className="text-xs text-center block">No banner image selected</span>
-                  </div>
-                )}
-              </button>
-
-              <div className="flex items-center justify-center gap-1.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setMediaPickerTarget("banner")}
-                  className="text-primary hover:underline font-semibold"
-                >
-                  Choose image
-                </button>
-                <span className="text-muted-foreground/55">or</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const url = prompt("Enter Banner Image URL:");
-                    if (url) setFormData((prev) => ({ ...prev, bannerImage: url }));
-                  }}
-                  className="text-primary hover:underline font-semibold"
-                >
-                  Add from URL
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tags Card */}
-          <Card>
-            <CardHeader className="border-b border-border px-4 py-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-1">
-                <TagIcon className="size-4 text-muted-foreground" />
-                Tags
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3.5 p-4">
-              <Input
-                type="text"
-                placeholder="Write some tags"
-                value={newTagInput}
-                onChange={(e) => setNewTagInput(e.target.value)}
-                onKeyDown={handleAddTag}
-                className="h-9"
-              />
-
-              <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
-                {tagsData?.rows.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant={formData.tagIds.includes(tag.id) ? "default" : "outline"}
-                    className={cn(
-                      "cursor-pointer select-none transition-colors px-2 py-0.5 text-xs",
-                      formData.tagIds.includes(tag.id)
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground border-transparent"
-                        : "text-muted-foreground border-border hover:bg-muted",
-                    )}
-                    onClick={() => toggleTag(tag.id)}
-                  >
-                    {tag.name}
-                  </Badge>
-                ))}
-                {tagsData?.rows.length === 0 && (
-                  <span className="text-xs text-muted-foreground">No tags available.</span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Allow comments card */}
-          <Card>
-            <CardHeader className="border-b border-border px-4 py-3">
-              <CardTitle className="text-sm font-semibold">Allow comments</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 flex items-center">
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={formData.allowComments}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, allowComments: e.target.checked }))
-                  }
-                  className="size-4 rounded border-input text-primary focus:ring-primary"
-                />
-                <span>Allow comments</span>
-              </label>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
       </div>
 

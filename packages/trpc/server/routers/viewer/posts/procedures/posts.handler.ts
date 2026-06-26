@@ -104,22 +104,28 @@ export const create = authedProcedure
     if (!result)
       throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create post" });
 
+    const languageRepo = getLanguageRepository();
+    let langCode = "vi";
     if (ctx.locale) {
-      const languageRepo = getLanguageRepository();
       const dbLang = await languageRepo.findByLocale(ctx.locale);
-      const langCode = dbLang?.code ?? ctx.locale;
-
-      const languageService = getLanguageService();
-      await languageService.saveContentLanguage(result.id, "post", langCode);
-
-      const translationService = getTranslationService();
-      await translationService.saveTranslation("post", result.id, langCode, {
-        title: input.title,
-        slug: input.slug,
-        excerpt: input.excerpt,
-        content: input.content,
-      });
+      langCode = dbLang?.code ?? ctx.locale;
+    } else {
+      const defaultLang = await languageRepo.findDefault();
+      if (defaultLang) {
+        langCode = defaultLang.code;
+      }
     }
+
+    const languageService = getLanguageService();
+    await languageService.saveContentLanguage(result.id, "post", langCode);
+
+    const translationService = getTranslationService();
+    await translationService.saveTranslation("post", result.id, langCode, {
+      title: input.title,
+      slug: input.slug,
+      excerpt: input.excerpt,
+      content: input.content,
+    });
 
     return new PostTransformer().transformItem(result);
   });
