@@ -92,6 +92,15 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
    # Build Next.js Admin CMS
    yarn workspace @ecom/admin build
    ```
+
+   > [!IMPORTANT]
+   > **Build-time Environment Variables for Next.js**:
+   > Next.js bakes public client variables (prefixed with `NEXT_PUBLIC_`) into the JavaScript bundle *during build time*. Before running the build commands above, you **must** load the `.env` variables into your shell session:
+   > ```bash
+   > export $(grep -v '^#' .env | xargs)
+   > ```
+   > Or copy/link the root `.env` into each application's directory (e.g., `cp .env apps/web/.env`).
+
 3. **Run with PM2**:
    Create a centralized `pm2.config.js` in the root of the project to orchestrate all four applications. It is highly recommended to run the Next.js standalone server outputs directly (which reduces memory overhead significantly compared to executing `next start`):
    ```javascript
@@ -101,7 +110,7 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
         {
           name: "ecom-api",
           script: "apps/api/dist/src/main.js",
-          node_args: "--import tsx",
+          node_args: "--import tsx --env-file=.env",
           instances: "max",
           exec_mode: "cluster",
           env: {
@@ -112,6 +121,7 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
        {
          name: "ecom-web",
          script: "apps/web/.next/standalone/apps/web/server.js",
+         node_args: "--env-file=.env",
          instances: "max",
          exec_mode: "cluster",
          env: {
@@ -123,6 +133,7 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
        {
          name: "ecom-customer",
          script: "apps/customer/.next/standalone/apps/customer/server.js",
+         node_args: "--env-file=.env",
          instances: "max",
          exec_mode: "cluster",
          env: {
@@ -134,6 +145,7 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
        {
          name: "ecom-admin",
          script: "apps/admin/.next/standalone/apps/admin/server.js",
+         node_args: "--env-file=.env",
          instances: "max",
          exec_mode: "cluster",
          env: {
