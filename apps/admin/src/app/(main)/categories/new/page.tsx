@@ -15,7 +15,7 @@ export default function NewCategoryPage() {
           <h1 className="text-xl font-bold">{t("createCategory")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("createSubtitle")}</p>
         </div>
-        <CategoryForm mode="create" />
+        <CategoryForm mode="create"/>
       </div>
     </PermissionGuard>
   );
