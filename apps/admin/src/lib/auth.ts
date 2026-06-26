@@ -156,6 +156,20 @@ const nextAuth: NextAuthResult = NextAuth({
   pages: {
     signIn: "/login",
   },
+  cookies: {
+    sessionToken: {
+      name:
+        env.NODE_ENV === "production"
+          ? "__Secure-ecom-admin.session-token"
+          : "ecom-admin.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: env.NODE_ENV === "production",
+      },
+    },
+  },
   debug: env.NODE_ENV === "development",
   providers: [
     Credentials({
