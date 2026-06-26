@@ -1,4 +1,5 @@
 import "./load-env";
+import "./bootstrap-env";
 import "reflect-metadata";
 import { registerEventListeners } from "@ecom/features/events/listeners";
 import { JobQueue } from "@ecom/features/queue/JobQueue";
@@ -48,16 +49,16 @@ async function bootstrap() {
 
   const { httpAdapter } = app.get(HttpAdapterHost);
   app.useGlobalFilters(
-    new I18nHttpExceptionFilter(),
-    new I18nValidationExceptionFilter(),
-    new ErrorWithCodeExceptionFilter(),
-    new PrismaClientExceptionFilter(httpAdapter),
     new AllExceptionsFilter(),
+    new PrismaClientExceptionFilter(httpAdapter),
+    new ErrorWithCodeExceptionFilter(),
+    new I18nValidationExceptionFilter(),
+    new I18nHttpExceptionFilter(),
   );
 
   const configService = app.get(ConfigService);
 
-  // SEC-05: CORS multi-origin support — whitelist Admin, Web, and Customer apps
+  // SEC-05: CORS multi-origin support — whitelist both Admin and Customer apps
   const allowedOrigins = [
     configService.get<string>("WEB_URL"),
     configService.get<string>("CUSTOMER_APP_URL"),

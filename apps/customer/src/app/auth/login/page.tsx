@@ -1,18 +1,18 @@
 "use client";
 
 import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
-import { zodResolver } from "@hookform/resolvers/zod";
 import NextLink from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { AuthCard } from "../../../components/auth/AuthCard";
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type SupportedLocale } from "../../../lib/i18n";
+import { zodResolver } from "../../../lib/zodResolver";
 
 type FormValues = {
   identifier: string;
@@ -21,22 +21,23 @@ type FormValues = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const pathname = usePathname();
+  const { languageId: currentLocale } = useI18n();
   const [error, setError] = useState<string | null>(null);
 
-  // Detect current locale from path
-  const currentLocale: SupportedLocale = pathname
-    ? ((SUPPORTED_LOCALES.find(
-        (l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`,
-      ) as SupportedLocale) ?? DEFAULT_LOCALE)
-    : DEFAULT_LOCALE;
+  const schema = useMemo(
+    () =>
+      z.object({
+        identifier: z
+          .string()
+          .min(1, translate("customerAuth.login.emailUsernameRequired", currentLocale)),
+        password: z
+          .string()
+          .min(1, translate("customerAuth.register.passwordRequired", currentLocale)),
+      }),
+    [currentLocale],
+  );
 
-  const schema = z.object({
-    identifier: z
-      .string()
-      .min(1, translate("customerAuth.login.emailUsernameRequired", currentLocale)),
-    password: z.string().min(1, translate("customerAuth.register.passwordRequired", currentLocale)),
-  });
+  const resolver = useMemo(() => zodResolver(schema), [schema]);
 
   const { control, handleSubmit, formState } = useForm<FormValues>({
     mode: "onChange",
@@ -44,7 +45,7 @@ export default function LoginPage() {
       identifier: "",
       password: "",
     },
-    resolver: zodResolver(schema),
+    resolver,
   });
 
   const { isSubmitting } = formState;
@@ -62,7 +63,7 @@ export default function LoginPage() {
       if (res?.error) {
         setError(translate("customerAuth.login.invalidCredentials", currentLocale));
       } else {
-        router.push(`/${currentLocale}/customer/dashboard`);
+        router.push("/dashboard");
       }
     } catch (err) {
       console.error(err);
@@ -87,10 +88,7 @@ export default function LoginPage() {
           control={control}
           render={({ field, fieldState }) => (
             <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="login-identifier"
-                className="text-xs font-bold text-slate-600 dark:text-slate-300"
-              >
+              <Label htmlFor="login-identifier" className="text-xs font-bold text-muted-foreground">
                 {translate("customerAuth.login.emailUsername", currentLocale)}
               </Label>
               <Input
@@ -102,7 +100,7 @@ export default function LoginPage() {
                   "customerAuth.login.emailUsernamePlaceholder",
                   currentLocale,
                 )}
-                className="w-full bg-background/50 dark:bg-slate-900/30"
+                className="w-full bg-background/50"
                 aria-invalid={!!fieldState.error}
               />
               {fieldState.error && (
@@ -118,10 +116,7 @@ export default function LoginPage() {
           control={control}
           render={({ field, fieldState }) => (
             <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="login-password"
-                className="text-xs font-bold text-slate-600 dark:text-slate-300"
-              >
+              <Label htmlFor="login-password" className="text-xs font-bold text-muted-foreground">
                 {translate("customerAuth.login.password", currentLocale)}
               </Label>
               <Input
@@ -130,7 +125,7 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 placeholder={translate("customerAuth.login.passwordPlaceholder", currentLocale)}
-                className="w-full bg-background/50 dark:bg-slate-900/30"
+                className="w-full bg-background/50"
                 showPasswordLabel={translate("auth.showPassword", currentLocale)}
                 hidePasswordLabel={translate("auth.hidePassword", currentLocale)}
                 aria-invalid={!!fieldState.error}
@@ -145,8 +140,8 @@ export default function LoginPage() {
         {/* Forgot password */}
         <div className="flex justify-end -mt-1.5">
           <NextLink
-            href={`/${currentLocale}/auth/forgot-password`}
-            className="text-xs font-bold text-cyan-500 hover:text-cyan-600 transition-colors"
+            href="/auth/forgot-password"
+            className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
           >
             {translate("customerAuth.login.forgotPassword", currentLocale)}
           </NextLink>
@@ -164,11 +159,11 @@ export default function LoginPage() {
       </form>
 
       {/* Footer Info */}
-      <p className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+      <p className="text-center text-xs font-semibold text-muted-foreground">
         {translate("customerAuth.login.dontHaveAccount", currentLocale)}{" "}
         <NextLink
-          href={`/${currentLocale}/auth/register`}
-          className="font-bold text-cyan-500 hover:underline transition-colors"
+          href="/auth/register"
+          className="font-bold text-primary hover:underline transition-colors"
         >
           {translate("customerAuth.login.signUp", currentLocale)}
         </NextLink>

@@ -1,6 +1,9 @@
 import type { PermissionRepository } from "@ecom/features/rbac/repositories/PermissionRepository";
 import type { RoleRepository } from "@ecom/features/rbac/repositories/RoleRepository";
 import { ErrorWithCode } from "@ecom/lib/errors";
+import { RedisCache } from "@ecom/lib/redis";
+
+const permissionsCache = new RedisCache<string[]>("user-permissions");
 
 export interface IRoleServiceDeps {
   roleRepo: RoleRepository;
@@ -69,6 +72,7 @@ export class RoleService {
     }
 
     await this.deps.roleRepo.syncPermissions(roleId, permissionIds);
+    await permissionsCache.clear().catch(() => {});
     return this.deps.roleRepo.findById(roleId);
   }
 

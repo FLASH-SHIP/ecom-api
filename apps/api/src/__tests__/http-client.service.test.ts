@@ -40,7 +40,7 @@ describe("HttpClientService", () => {
     expect(fetchSpy).toHaveBeenCalled();
     const call = fetchSpy.mock.calls[0];
     expect(call).toBeDefined();
-    const headersArg = (call![1] as RequestInit).headers as Headers;
+    const headersArg = (call?.[1] as RequestInit).headers as Headers;
     expect(headersArg.get("x-trace-id")).toBe("my-custom-trace-id");
   });
 
@@ -57,7 +57,7 @@ describe("HttpClientService", () => {
     expect(fetchSpy).toHaveBeenCalled();
     const call = fetchSpy.mock.calls[0];
     expect(call).toBeDefined();
-    const options = call![1] as RequestInit;
+    const options = call?.[1] as RequestInit;
     expect(options.method).toBe("POST");
     expect(options.body).toBe(JSON.stringify({ key: "value" }));
     const headers = options.headers as Headers;

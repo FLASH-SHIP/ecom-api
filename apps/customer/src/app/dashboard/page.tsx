@@ -1,7 +1,7 @@
 "use client";
 
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@customer/lib/i18n";
 import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
 import {
   Dialog,
@@ -21,14 +21,13 @@ import {
 } from "@ecom/ui/components/select";
 import { AtSign, FileText, LayoutDashboard, Mail, User } from "lucide-react";
 import NextLink from "next/link";
-import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { trpc } from "../../../lib/trpc";
+import { trpc } from "../../lib/trpc";
 
 const QUICK_LINKS = [
   {
-    href: "/customer/profile",
+    href: "/profile",
     icon: User,
     title: "Hồ sơ cá nhân",
     desc: "Cập nhật thông tin của bạn",
@@ -44,15 +43,11 @@ const QUICK_LINKS = [
 ];
 
 export default function CustomerDashboardPage() {
-  const pathname = usePathname();
   const { status } = useSession();
-
-  const currentLocale =
-    SUPPORTED_LOCALES.find((l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`) ??
-    DEFAULT_LOCALE;
+  const { languageId: currentLocale } = useI18n();
 
   const getLocalizedHref = (href: string) => {
-    return `/${currentLocale}${href === "/" ? "" : href}`;
+    return href;
   };
 
   const {
@@ -101,11 +96,11 @@ export default function CustomerDashboardPage() {
   const handleModalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setFormError(translate("profileModal.nameRequired", currentLocale));
+      setFormError(translate("customerAuth.profileModal.nameRequired", currentLocale));
       return;
     }
     if (!phone.trim()) {
-      setFormError(translate("profileModal.phoneRequired", currentLocale));
+      setFormError(translate("customerAuth.profileModal.phoneRequired", currentLocale));
       return;
     }
 
@@ -180,7 +175,7 @@ export default function CustomerDashboardPage() {
   );
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 md:py-16">
+    <div className="flex flex-col gap-6 max-w-2xl">
       {/* Welcome */}
       <div className="mb-10 flex items-center gap-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2563EB] to-[#7C3AED] text-2xl font-bold text-white">
@@ -266,12 +261,12 @@ export default function CustomerDashboardPage() {
               <Icon className={`h-8 w-8 ${link.color}`} />
               <div>
                 <p className="font-bold group-hover:text-primary">
-                  {link.href === "/customer/profile"
+                  {link.href === "/profile"
                     ? translate("customerDashboard.profileTitle", currentLocale)
                     : translate("customerDashboard.blogTitle", currentLocale)}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {link.href === "/customer/profile"
+                  {link.href === "/profile"
                     ? translate("customerDashboard.profileDesc", currentLocale)
                     : translate("customerDashboard.blogDesc", currentLocale)}
                 </p>
@@ -289,11 +284,11 @@ export default function CustomerDashboardPage() {
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle className="text-lg md:text-xl font-bold text-slate-900 dark:text-white leading-none">
-              {translate("profileModal.title", currentLocale)}
+            <DialogTitle className="text-lg md:text-xl font-bold text-foreground leading-none">
+              {translate("customerAuth.profileModal.title", currentLocale)}
             </DialogTitle>
-            <DialogDescription className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
-              {translate("profileModal.desc", currentLocale)}
+            <DialogDescription className="text-xs md:text-sm font-medium text-muted-foreground mt-2">
+              {translate("customerAuth.profileModal.desc", currentLocale)}
             </DialogDescription>
           </DialogHeader>
 
@@ -306,11 +301,8 @@ export default function CustomerDashboardPage() {
           <form onSubmit={handleModalSubmit} className="flex flex-col gap-4 mt-2">
             {/* Username */}
             <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="modal-username"
-                className="text-xs font-bold text-slate-600 dark:text-slate-300"
-              >
-                {translate("profileModal.usernameLabel", currentLocale)}
+              <Label htmlFor="modal-username" className="text-xs font-bold text-muted-foreground">
+                {translate("customerAuth.profileModal.usernameLabel", currentLocale)}
               </Label>
               <Input
                 id="modal-username"
@@ -320,18 +312,18 @@ export default function CustomerDashboardPage() {
                 onChange={(e) =>
                   setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""))
                 }
-                placeholder={translate("profileModal.usernamePlaceholder", currentLocale)}
-                className="w-full bg-background/50 dark:bg-slate-900/30"
+                placeholder={translate(
+                  "customerAuth.profileModal.usernamePlaceholder",
+                  currentLocale,
+                )}
+                className="w-full bg-background/50"
               />
             </div>
 
             {/* Họ và tên */}
             <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="modal-name"
-                className="text-xs font-bold text-slate-600 dark:text-slate-300"
-              >
-                {translate("profileModal.nameLabel", currentLocale)} *
+              <Label htmlFor="modal-name" className="text-xs font-bold text-muted-foreground">
+                {translate("customerAuth.profileModal.nameLabel", currentLocale)} *
               </Label>
               <Input
                 id="modal-name"
@@ -339,18 +331,15 @@ export default function CustomerDashboardPage() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={translate("profileModal.namePlaceholder", currentLocale)}
-                className="w-full bg-background/50 dark:bg-slate-900/30"
+                placeholder={translate("customerAuth.profileModal.namePlaceholder", currentLocale)}
+                className="w-full bg-background/50"
               />
             </div>
 
             {/* Số điện thoại */}
             <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="modal-phone"
-                className="text-xs font-bold text-slate-600 dark:text-slate-300"
-              >
-                {translate("profileModal.phoneLabel", currentLocale)} *
+              <Label htmlFor="modal-phone" className="text-xs font-bold text-muted-foreground">
+                {translate("customerAuth.profileModal.phoneLabel", currentLocale)} *
               </Label>
               <Input
                 id="modal-phone"
@@ -358,40 +347,37 @@ export default function CustomerDashboardPage() {
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder={translate("profileModal.phonePlaceholder", currentLocale)}
-                className="w-full bg-background/50 dark:bg-slate-900/30"
+                placeholder={translate("customerAuth.profileModal.phonePlaceholder", currentLocale)}
+                className="w-full bg-background/50"
               />
             </div>
 
             {/* DOB & Gender (Optional) */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="modal-dob"
-                  className="text-xs font-bold text-slate-600 dark:text-slate-300"
-                >
-                  {translate("profileModal.dobLabel", currentLocale)}
+                <Label htmlFor="modal-dob" className="text-xs font-bold text-muted-foreground">
+                  {translate("customerAuth.profileModal.dobLabel", currentLocale)}
                 </Label>
                 <Input
                   id="modal-dob"
                   type="date"
                   value={dob}
                   onChange={(e) => setDob(e.target.value)}
-                  className="w-full bg-background/50 dark:bg-slate-900/30"
+                  className="w-full bg-background/50"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="modal-gender"
-                  className="text-xs font-bold text-slate-600 dark:text-slate-300"
-                >
-                  {translate("profileModal.genderLabel", currentLocale)}
+                <Label htmlFor="modal-gender" className="text-xs font-bold text-muted-foreground">
+                  {translate("customerAuth.profileModal.genderLabel", currentLocale)}
                 </Label>
                 <Select value={gender} onValueChange={setGender}>
-                  <SelectTrigger className="w-full bg-background/50 dark:bg-slate-900/30 border-input">
+                  <SelectTrigger className="w-full bg-background/50 border-input">
                     <SelectValue
-                      placeholder={translate("profileModal.genderPlaceholder", currentLocale)}
+                      placeholder={translate(
+                        "customerAuth.profileModal.genderPlaceholder",
+                        currentLocale,
+                      )}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -420,8 +406,8 @@ export default function CustomerDashboardPage() {
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
               )}
               {updateProfileMutation.isPending
-                ? translate("profileModal.submitting", currentLocale)
-                : translate("profileModal.submit", currentLocale)}
+                ? translate("customerAuth.profileModal.submitting", currentLocale)
+                : translate("customerAuth.profileModal.submit", currentLocale)}
             </Button>
           </form>
         </DialogContent>

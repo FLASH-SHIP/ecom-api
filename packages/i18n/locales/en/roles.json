@@ -37,9 +37,136 @@
     "clone": "Clone",
     "saving": "Saving...",
     "save": "Save",
-    "cancel": "Cancel"
+    "saveAndEdit": "Save & Edit",
+    "cancel": "Cancel",
+    "reload": "Reload",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "searchPlaceholder": "Search permissions..."
   },
   "deleteConfirm": "Delete role \"{name}\"?",
   "deleteSuccess": "Role deleted successfully",
-  "cloneSuccess": "Role cloned successfully"
+  "cloneSuccess": "Role cloned successfully",
+  "sections": {
+    "cms": "CMS & Content",
+    "system": "System Management",
+    "settings": "Settings",
+    "tools": "Tools"
+  },
+  "modules": {
+    "blog": "Blog",
+    "posts": "Posts",
+    "categories": "Categories",
+    "tags": "Tags",
+    "pages": "Pages",
+    "media": "Media Library",
+    "users": "Users",
+    "roles": "Roles & Permissions",
+    "customers": "Customers",
+    "custom-fields": "Custom Fields",
+    "admin-menus": "Admin Menus",
+    "settings": "General Settings",
+    "audit-logs": "Audit Logs",
+    "system": "System Info",
+    "tools": "Sync Tools",
+    "webhooks": "Webhooks",
+    "comments": "Comments",
+    "contacts": "Contacts"
+  },
+  "permissionsList": {
+    "blog": {
+      "posts": {
+        "read": "View Posts List",
+        "create": "Create New Post",
+        "update": "Update Post Info",
+        "delete": "Delete Post"
+      },
+      "categories": {
+        "read": "View Categories List",
+        "create": "Create Category",
+        "update": "Update Category",
+        "delete": "Delete Category"
+      },
+      "tags": {
+        "read": "View Tags List",
+        "create": "Create New Tag",
+        "update": "Update Tag Info",
+        "delete": "Delete Tag"
+      }
+    },
+    "pages": {
+      "read": "View Pages List",
+      "create": "Create New Page",
+      "update": "Update Page Info",
+      "delete": "Delete Page"
+    },
+    "media": {
+      "read": "View Media Library",
+      "upload": "Upload New Media",
+      "update": "Update File/Folder",
+      "delete": "Delete File/Folder"
+    },
+    "custom-fields": {
+      "read": "View Custom Fields",
+      "create": "Create Custom Field",
+      "update": "Update Custom Field",
+      "delete": "Delete Custom Field"
+    },
+    "admin-menus": {
+      "read": "View Admin Menus",
+      "create": "Create New Menu",
+      "update": "Update Menu Info",
+      "delete": "Delete Menu"
+    },
+    "comments": {
+      "read": "View Comments List",
+      "moderate": "Moderate Comments",
+      "delete": "Delete Comment"
+    },
+    "contacts": {
+      "read": "View Contact Submissions",
+      "manage": "Manage Contact Responses",
+      "delete": "Delete Submission"
+    },
+    "users": {
+      "read": "View Users List",
+      "create": "Create New User",
+      "update": "Update User Info",
+      "delete": "Delete User"
+    },
+    "roles": {
+      "read": "View Roles List",
+      "create": "Create New Role",
+      "update": "Update Role Info",
+      "delete": "Delete Role"
+    },
+    "customers": {
+      "read": "View Customers List",
+      "create": "Create New Customer",
+      "update": "Update Customer Info",
+      "delete": "Delete Customer"
+    },
+    "audit-logs": {
+      "read": "View System Audit Logs",
+      "purge": "Purge Old Logs"
+    },
+    "webhooks": {
+      "read": "View Webhooks List",
+      "create": "Create New Webhook",
+      "update": "Update Webhook Info",
+      "delete": "Delete Webhook"
+    },
+    "system": {
+      "read": "View System Info",
+      "manage": "Manage System Settings"
+    },
+    "settings": {
+      "read": "View Global Settings",
+      "update": "Update Global Settings"
+    },
+    "tools": {
+      "export": "Export System Data",
+      "import": "Import System Data"
+    }
+  }
 }

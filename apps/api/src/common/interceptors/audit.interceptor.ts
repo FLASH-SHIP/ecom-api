@@ -6,7 +6,6 @@ import {
   Injectable,
   type NestInterceptor,
 } from "@nestjs/common";
-// biome-ignore lint/style/useImportType: need value-level import for NestJS DI metadata
 import { Reflector } from "@nestjs/core";
 import type { Request } from "express";
 import type { Observable } from "rxjs";

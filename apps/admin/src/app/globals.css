@@ -1,5 +1,6 @@
 @layer theme, base, components, utilities;
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /*
  * Tailwind v4 + Monorepo: explicit @source paths
@@ -179,6 +180,40 @@
   --z-popover: 65;
   --z-toast: 70;
   --z-tooltip: 80;
+
+  /* Indeterminate progress bar animations */
+  --animate-mui-indeterminate1: mui-indeterminate1 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+  --animate-mui-indeterminate2: mui-indeterminate2 2.1s cubic-bezier(0.165, 0.84, 0.44, 1) 1.15s infinite;
+
+  @keyframes mui-indeterminate1 {
+    0% {
+      left: -35%;
+      right: 100%;
+    }
+    60% {
+      left: 100%;
+      right: -90%;
+    }
+    100% {
+      left: 100%;
+      right: -90%;
+    }
+  }
+
+  @keyframes mui-indeterminate2 {
+    0% {
+      left: -200%;
+      right: 100%;
+    }
+    60% {
+      left: 107%;
+      right: -8%;
+    }
+    100% {
+      left: 107%;
+      right: -8%;
+    }
+  }
 }
 
 /* Base styles */
@@ -309,12 +344,23 @@ a, button, input, select, textarea {
  * touch-action: manipulation (Web Interface Guidelines)
  * Eliminates the 300ms double-tap zoom delay on mobile for all
  * interactive elements — improves perceived responsiveness on touch devices.
+ * cursor: pointer ensures all clickable actions show a hand pointer.
  */
 button,
 a,
 [role="button"],
+input[type="submit"],
+input[type="button"],
 label {
+  cursor: pointer;
   touch-action: manipulation;
+}
+
+button:disabled,
+input:disabled,
+[aria-disabled="true"],
+[disabled] {
+  cursor: not-allowed !important;
 }
 
 /*
@@ -452,5 +498,6 @@ label {
 [role="option"] {
   outline: none !important;
 }
+
 
 

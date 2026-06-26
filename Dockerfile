@@ -23,8 +23,11 @@ COPY packages/i18n/package.json packages/i18n/
 COPY packages/config/package.json packages/config/
 COPY packages/emails/package.json packages/emails/
 COPY packages/tsconfig/package.json packages/tsconfig/
+COPY packages/shared/package.json packages/shared/
 COPY apps/admin/package.json apps/admin/
 COPY apps/customer/package.json apps/customer/
+COPY apps/web/package.json apps/web/
+COPY apps/api/package.json apps/api/
 COPY turbo.json ./
 
 RUN yarn install --immutable
@@ -53,6 +56,7 @@ RUN corepack enable
 WORKDIR /app
 
 ARG APP=admin
+ENV APP_NAME=${APP}
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -73,4 +77,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "apps/admin/server.js"]
+CMD ["sh", "-c", "node apps/${APP_NAME}/server.js"]

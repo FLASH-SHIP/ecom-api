@@ -1,8 +1,8 @@
 /**
- * Centralized permission constants for the Ecom.
+ * Centralized permission constants for Ecom.
  *
  * Convention: `module.resource.action`
- * Groups:    the first two segments form the group key used in the admin UI.
+ * Dynamic hierarchy: sections group modules; modules group permissions; parent permissions represent dependencies.
  */
 
 export const Permissions = {
@@ -98,119 +98,498 @@ export const Permissions = {
 
 export type PermissionName = (typeof Permissions)[keyof typeof Permissions];
 
+export interface SystemPermission {
+  name: string;
+  displayName: string;
+  group: string; // Backward compatibility with Prisma schema & seeders
+  section: string; // Top-level section grouping: "cms" | "system" | "settings" | "tools"
+  module: string; // Feature grouping: e.g. "posts" | "users" | "media"
+  parent?: string; // Flag of parent permission dependency (typically the .read action)
+}
+
 /**
- * All permission entries as an array — used for seeding.
+ * All permission entries mapped with structural hierarchy.
  */
-export const ALL_PERMISSIONS: Array<{ name: string; displayName: string; group: string }> = [
+export const ALL_PERMISSIONS: SystemPermission[] = [
+  // ── CMS Section ───────────────────────────────────────────────────────────
   // Blog — Posts
-  { name: Permissions.POSTS_READ, displayName: "View Posts", group: "blog" },
-  { name: Permissions.POSTS_CREATE, displayName: "Create Posts", group: "blog" },
-  { name: Permissions.POSTS_UPDATE, displayName: "Update Posts", group: "blog" },
-  { name: Permissions.POSTS_DELETE, displayName: "Delete Posts", group: "blog" },
+  {
+    name: Permissions.POSTS_READ,
+    displayName: "View Posts",
+    group: "blog",
+    section: "cms",
+    module: "posts",
+  },
+  {
+    name: Permissions.POSTS_CREATE,
+    displayName: "Create Posts",
+    group: "blog",
+    section: "cms",
+    module: "posts",
+    parent: Permissions.POSTS_READ,
+  },
+  {
+    name: Permissions.POSTS_UPDATE,
+    displayName: "Update Posts",
+    group: "blog",
+    section: "cms",
+    module: "posts",
+    parent: Permissions.POSTS_READ,
+  },
+  {
+    name: Permissions.POSTS_DELETE,
+    displayName: "Delete Posts",
+    group: "blog",
+    section: "cms",
+    module: "posts",
+    parent: Permissions.POSTS_READ,
+  },
 
   // Blog — Categories
-  { name: Permissions.CATEGORIES_READ, displayName: "View Categories", group: "blog" },
-  { name: Permissions.CATEGORIES_CREATE, displayName: "Create Categories", group: "blog" },
-  { name: Permissions.CATEGORIES_UPDATE, displayName: "Update Categories", group: "blog" },
-  { name: Permissions.CATEGORIES_DELETE, displayName: "Delete Categories", group: "blog" },
+  {
+    name: Permissions.CATEGORIES_READ,
+    displayName: "View Categories",
+    group: "blog",
+    section: "cms",
+    module: "categories",
+  },
+  {
+    name: Permissions.CATEGORIES_CREATE,
+    displayName: "Create Categories",
+    group: "blog",
+    section: "cms",
+    module: "categories",
+    parent: Permissions.CATEGORIES_READ,
+  },
+  {
+    name: Permissions.CATEGORIES_UPDATE,
+    displayName: "Update Categories",
+    group: "blog",
+    section: "cms",
+    module: "categories",
+    parent: Permissions.CATEGORIES_READ,
+  },
+  {
+    name: Permissions.CATEGORIES_DELETE,
+    displayName: "Delete Categories",
+    group: "blog",
+    section: "cms",
+    module: "categories",
+    parent: Permissions.CATEGORIES_READ,
+  },
 
   // Blog — Tags
-  { name: Permissions.TAGS_READ, displayName: "View Tags", group: "blog" },
-  { name: Permissions.TAGS_CREATE, displayName: "Create Tags", group: "blog" },
-  { name: Permissions.TAGS_UPDATE, displayName: "Update Tags", group: "blog" },
-  { name: Permissions.TAGS_DELETE, displayName: "Delete Tags", group: "blog" },
+  {
+    name: Permissions.TAGS_READ,
+    displayName: "View Tags",
+    group: "blog",
+    section: "cms",
+    module: "tags",
+  },
+  {
+    name: Permissions.TAGS_CREATE,
+    displayName: "Create Tags",
+    group: "blog",
+    section: "cms",
+    module: "tags",
+    parent: Permissions.TAGS_READ,
+  },
+  {
+    name: Permissions.TAGS_UPDATE,
+    displayName: "Update Tags",
+    group: "blog",
+    section: "cms",
+    module: "tags",
+    parent: Permissions.TAGS_READ,
+  },
+  {
+    name: Permissions.TAGS_DELETE,
+    displayName: "Delete Tags",
+    group: "blog",
+    section: "cms",
+    module: "tags",
+    parent: Permissions.TAGS_READ,
+  },
 
   // Pages
-  { name: Permissions.PAGES_READ, displayName: "View Pages", group: "pages" },
-  { name: Permissions.PAGES_CREATE, displayName: "Create Pages", group: "pages" },
-  { name: Permissions.PAGES_UPDATE, displayName: "Update Pages", group: "pages" },
-  { name: Permissions.PAGES_DELETE, displayName: "Delete Pages", group: "pages" },
+  {
+    name: Permissions.PAGES_READ,
+    displayName: "View Pages",
+    group: "pages",
+    section: "cms",
+    module: "pages",
+  },
+  {
+    name: Permissions.PAGES_CREATE,
+    displayName: "Create Pages",
+    group: "pages",
+    section: "cms",
+    module: "pages",
+    parent: Permissions.PAGES_READ,
+  },
+  {
+    name: Permissions.PAGES_UPDATE,
+    displayName: "Update Pages",
+    group: "pages",
+    section: "cms",
+    module: "pages",
+    parent: Permissions.PAGES_READ,
+  },
+  {
+    name: Permissions.PAGES_DELETE,
+    displayName: "Delete Pages",
+    group: "pages",
+    section: "cms",
+    module: "pages",
+    parent: Permissions.PAGES_READ,
+  },
 
   // Media
-  { name: Permissions.MEDIA_READ, displayName: "View Media", group: "media" },
-  { name: Permissions.MEDIA_UPLOAD, displayName: "Upload Media", group: "media" },
-  { name: Permissions.MEDIA_UPDATE, displayName: "Update Media", group: "media" },
-  { name: Permissions.MEDIA_DELETE, displayName: "Delete Media", group: "media" },
-
-  // Users
-  { name: Permissions.USERS_READ, displayName: "View Users", group: "users" },
-  { name: Permissions.USERS_CREATE, displayName: "Create Users", group: "users" },
-  { name: Permissions.USERS_UPDATE, displayName: "Update Users", group: "users" },
-  { name: Permissions.USERS_DELETE, displayName: "Delete Users", group: "users" },
-
-  // Roles
-  { name: Permissions.ROLES_READ, displayName: "View Roles", group: "roles" },
-  { name: Permissions.ROLES_CREATE, displayName: "Create Roles", group: "roles" },
-  { name: Permissions.ROLES_UPDATE, displayName: "Update Roles", group: "roles" },
-  { name: Permissions.ROLES_DELETE, displayName: "Delete Roles", group: "roles" },
-
-  // Customers
-  { name: Permissions.CUSTOMERS_READ, displayName: "View Customers", group: "customers" },
-  { name: Permissions.CUSTOMERS_CREATE, displayName: "Create Customers", group: "customers" },
-  { name: Permissions.CUSTOMERS_UPDATE, displayName: "Update Customers", group: "customers" },
-  { name: Permissions.CUSTOMERS_DELETE, displayName: "Delete Customers", group: "customers" },
+  {
+    name: Permissions.MEDIA_READ,
+    displayName: "View Media",
+    group: "media",
+    section: "cms",
+    module: "media",
+  },
+  {
+    name: Permissions.MEDIA_UPLOAD,
+    displayName: "Upload Media",
+    group: "media",
+    section: "cms",
+    module: "media",
+    parent: Permissions.MEDIA_READ,
+  },
+  {
+    name: Permissions.MEDIA_UPDATE,
+    displayName: "Update Media",
+    group: "media",
+    section: "cms",
+    module: "media",
+    parent: Permissions.MEDIA_READ,
+  },
+  {
+    name: Permissions.MEDIA_DELETE,
+    displayName: "Delete Media",
+    group: "media",
+    section: "cms",
+    module: "media",
+    parent: Permissions.MEDIA_READ,
+  },
 
   // Custom Fields
   {
     name: Permissions.CUSTOM_FIELDS_READ,
     displayName: "View Custom Fields",
     group: "custom-fields",
+    section: "cms",
+    module: "custom-fields",
   },
   {
     name: Permissions.CUSTOM_FIELDS_CREATE,
     displayName: "Create Custom Fields",
     group: "custom-fields",
+    section: "cms",
+    module: "custom-fields",
+    parent: Permissions.CUSTOM_FIELDS_READ,
   },
   {
     name: Permissions.CUSTOM_FIELDS_UPDATE,
     displayName: "Update Custom Fields",
     group: "custom-fields",
+    section: "cms",
+    module: "custom-fields",
+    parent: Permissions.CUSTOM_FIELDS_READ,
   },
   {
     name: Permissions.CUSTOM_FIELDS_DELETE,
     displayName: "Delete Custom Fields",
     group: "custom-fields",
+    section: "cms",
+    module: "custom-fields",
+    parent: Permissions.CUSTOM_FIELDS_READ,
   },
 
   // Admin Menus
-  { name: Permissions.ADMIN_MENUS_READ, displayName: "View Admin Menus", group: "admin-menus" },
-  { name: Permissions.ADMIN_MENUS_CREATE, displayName: "Create Admin Menus", group: "admin-menus" },
-  { name: Permissions.ADMIN_MENUS_UPDATE, displayName: "Update Admin Menus", group: "admin-menus" },
-  { name: Permissions.ADMIN_MENUS_DELETE, displayName: "Delete Admin Menus", group: "admin-menus" },
-
-  // Settings
-  { name: Permissions.SETTINGS_READ, displayName: "View Settings", group: "settings" },
-  { name: Permissions.SETTINGS_UPDATE, displayName: "Update Settings", group: "settings" },
-
-  // Audit Logs
-  { name: Permissions.AUDIT_LOGS_READ, displayName: "View Audit Logs", group: "audit-logs" },
-  { name: Permissions.AUDIT_LOGS_PURGE, displayName: "Purge Audit Logs", group: "audit-logs" },
-
-  // System
-  { name: Permissions.SYSTEM_READ, displayName: "View System Info", group: "system" },
-  { name: Permissions.SYSTEM_MANAGE, displayName: "Manage System", group: "system" },
-
-  // Tools
-  { name: Permissions.TOOLS_EXPORT, displayName: "Export Data", group: "tools" },
-  { name: Permissions.TOOLS_IMPORT, displayName: "Import Data", group: "tools" },
-
-  // Webhooks
-  { name: Permissions.WEBHOOKS_READ, displayName: "View Webhooks", group: "webhooks" },
-  { name: Permissions.WEBHOOKS_CREATE, displayName: "Create Webhooks", group: "webhooks" },
-  { name: Permissions.WEBHOOKS_UPDATE, displayName: "Update Webhooks", group: "webhooks" },
-  { name: Permissions.WEBHOOKS_DELETE, displayName: "Delete Webhooks", group: "webhooks" },
+  {
+    name: Permissions.ADMIN_MENUS_READ,
+    displayName: "View Admin Menus",
+    group: "admin-menus",
+    section: "cms",
+    module: "admin-menus",
+  },
+  {
+    name: Permissions.ADMIN_MENUS_CREATE,
+    displayName: "Create Admin Menus",
+    group: "admin-menus",
+    section: "cms",
+    module: "admin-menus",
+    parent: Permissions.ADMIN_MENUS_READ,
+  },
+  {
+    name: Permissions.ADMIN_MENUS_UPDATE,
+    displayName: "Update Admin Menus",
+    group: "admin-menus",
+    section: "cms",
+    module: "admin-menus",
+    parent: Permissions.ADMIN_MENUS_READ,
+  },
+  {
+    name: Permissions.ADMIN_MENUS_DELETE,
+    displayName: "Delete Admin Menus",
+    group: "admin-menus",
+    section: "cms",
+    module: "admin-menus",
+    parent: Permissions.ADMIN_MENUS_READ,
+  },
 
   // Comments
-  { name: Permissions.COMMENTS_READ, displayName: "View Comments", group: "comments" },
-  { name: Permissions.COMMENTS_MODERATE, displayName: "Moderate Comments", group: "comments" },
-  { name: Permissions.COMMENTS_DELETE, displayName: "Delete Comments", group: "comments" },
+  {
+    name: Permissions.COMMENTS_READ,
+    displayName: "View Comments",
+    group: "comments",
+    section: "cms",
+    module: "comments",
+  },
+  {
+    name: Permissions.COMMENTS_MODERATE,
+    displayName: "Moderate Comments",
+    group: "comments",
+    section: "cms",
+    module: "comments",
+    parent: Permissions.COMMENTS_READ,
+  },
+  {
+    name: Permissions.COMMENTS_DELETE,
+    displayName: "Delete Comments",
+    group: "comments",
+    section: "cms",
+    module: "comments",
+    parent: Permissions.COMMENTS_READ,
+  },
 
   // Contacts
-  { name: Permissions.CONTACTS_READ, displayName: "View Contact Submissions", group: "contacts" },
-  { name: Permissions.CONTACTS_MANAGE, displayName: "Manage Contacts", group: "contacts" },
+  {
+    name: Permissions.CONTACTS_READ,
+    displayName: "View Contact Submissions",
+    group: "contacts",
+    section: "cms",
+    module: "contacts",
+  },
+  {
+    name: Permissions.CONTACTS_MANAGE,
+    displayName: "Manage Contacts",
+    group: "contacts",
+    section: "cms",
+    module: "contacts",
+    parent: Permissions.CONTACTS_READ,
+  },
   {
     name: Permissions.CONTACTS_DELETE,
     displayName: "Delete Contact Submissions",
     group: "contacts",
+    section: "cms",
+    module: "contacts",
+    parent: Permissions.CONTACTS_READ,
+  },
+
+  // ── System Section ────────────────────────────────────────────────────────
+  // Users
+  {
+    name: Permissions.USERS_READ,
+    displayName: "View Users",
+    group: "users",
+    section: "system",
+    module: "users",
+  },
+  {
+    name: Permissions.USERS_CREATE,
+    displayName: "Create Users",
+    group: "users",
+    section: "system",
+    module: "users",
+    parent: Permissions.USERS_READ,
+  },
+  {
+    name: Permissions.USERS_UPDATE,
+    displayName: "Update Users",
+    group: "users",
+    section: "system",
+    module: "users",
+    parent: Permissions.USERS_READ,
+  },
+  {
+    name: Permissions.USERS_DELETE,
+    displayName: "Delete Users",
+    group: "users",
+    section: "system",
+    module: "users",
+    parent: Permissions.USERS_READ,
+  },
+
+  // Roles
+  {
+    name: Permissions.ROLES_READ,
+    displayName: "View Roles",
+    group: "roles",
+    section: "system",
+    module: "roles",
+  },
+  {
+    name: Permissions.ROLES_CREATE,
+    displayName: "Create Roles",
+    group: "roles",
+    section: "system",
+    module: "roles",
+    parent: Permissions.ROLES_READ,
+  },
+  {
+    name: Permissions.ROLES_UPDATE,
+    displayName: "Update Roles",
+    group: "roles",
+    section: "system",
+    module: "roles",
+    parent: Permissions.ROLES_READ,
+  },
+  {
+    name: Permissions.ROLES_DELETE,
+    displayName: "Delete Roles",
+    group: "roles",
+    section: "system",
+    module: "roles",
+    parent: Permissions.ROLES_READ,
+  },
+
+  // Customers
+  {
+    name: Permissions.CUSTOMERS_READ,
+    displayName: "View Customers",
+    group: "customers",
+    section: "system",
+    module: "customers",
+  },
+  {
+    name: Permissions.CUSTOMERS_CREATE,
+    displayName: "Create Customers",
+    group: "customers",
+    section: "system",
+    module: "customers",
+    parent: Permissions.CUSTOMERS_READ,
+  },
+  {
+    name: Permissions.CUSTOMERS_UPDATE,
+    displayName: "Update Customers",
+    group: "customers",
+    section: "system",
+    module: "customers",
+    parent: Permissions.CUSTOMERS_READ,
+  },
+  {
+    name: Permissions.CUSTOMERS_DELETE,
+    displayName: "Delete Customers",
+    group: "customers",
+    section: "system",
+    module: "customers",
+    parent: Permissions.CUSTOMERS_READ,
+  },
+
+  // Audit Logs
+  {
+    name: Permissions.AUDIT_LOGS_READ,
+    displayName: "View Audit Logs",
+    group: "audit-logs",
+    section: "system",
+    module: "audit-logs",
+  },
+  {
+    name: Permissions.AUDIT_LOGS_PURGE,
+    displayName: "Purge Audit Logs",
+    group: "audit-logs",
+    section: "system",
+    module: "audit-logs",
+    parent: Permissions.AUDIT_LOGS_READ,
+  },
+
+  // Webhooks
+  {
+    name: Permissions.WEBHOOKS_READ,
+    displayName: "View Webhooks",
+    group: "webhooks",
+    section: "system",
+    module: "webhooks",
+  },
+  {
+    name: Permissions.WEBHOOKS_CREATE,
+    displayName: "Create Webhooks",
+    group: "webhooks",
+    section: "system",
+    module: "webhooks",
+    parent: Permissions.WEBHOOKS_READ,
+  },
+  {
+    name: Permissions.WEBHOOKS_UPDATE,
+    displayName: "Update Webhooks",
+    group: "webhooks",
+    section: "system",
+    module: "webhooks",
+    parent: Permissions.WEBHOOKS_READ,
+  },
+  {
+    name: Permissions.WEBHOOKS_DELETE,
+    displayName: "Delete Webhooks",
+    group: "webhooks",
+    section: "system",
+    module: "webhooks",
+    parent: Permissions.WEBHOOKS_READ,
+  },
+
+  // System Settings
+  {
+    name: Permissions.SYSTEM_READ,
+    displayName: "View System Info",
+    group: "system",
+    section: "system",
+    module: "system",
+  },
+  {
+    name: Permissions.SYSTEM_MANAGE,
+    displayName: "Manage System",
+    group: "system",
+    section: "system",
+    module: "system",
+    parent: Permissions.SYSTEM_READ,
+  },
+
+  // ── Settings Section ──────────────────────────────────────────────────────
+  {
+    name: Permissions.SETTINGS_READ,
+    displayName: "View Settings",
+    group: "settings",
+    section: "settings",
+    module: "settings",
+  },
+  {
+    name: Permissions.SETTINGS_UPDATE,
+    displayName: "Update Settings",
+    group: "settings",
+    section: "settings",
+    module: "settings",
+    parent: Permissions.SETTINGS_READ,
+  },
+
+  // ── Tools Section ─────────────────────────────────────────────────────────
+  {
+    name: Permissions.TOOLS_EXPORT,
+    displayName: "Export Data",
+    group: "tools",
+    section: "tools",
+    module: "tools",
+  },
+  {
+    name: Permissions.TOOLS_IMPORT,
+    displayName: "Import Data",
+    group: "tools",
+    section: "tools",
+    module: "tools",
   },
 ];

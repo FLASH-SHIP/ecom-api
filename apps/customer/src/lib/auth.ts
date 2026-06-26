@@ -2,6 +2,11 @@ import crypto from "node:crypto";
 import { env } from "@customer/env";
 import { getCustomerAuthService } from "@ecom/features/di/containers/CustomerService";
 import { getRedisClient } from "@ecom/lib/redis";
+import {
+  getCachedSession,
+  invalidateCachedSession,
+  setCachedSession,
+} from "@ecom/lib/session-cache";
 import { prisma } from "@ecom/prisma";
 import type { User as AppUser } from "@ecom/shared/@auth/user";
 import type { NextAuthResult } from "next-auth";
@@ -12,6 +17,12 @@ export const AUTH_KEYS = {
   accessToken: "customerAccessToken",
   refreshToken: "customerRefreshToken",
 } as const;
+
+/** Delete an expired/invalid customer session from DB and cache */
+async function deleteCustomerSession(sessionId: string, cacheKey: string) {
+  await prisma.customerSession.delete({ where: { id: sessionId } }).catch(() => {});
+  await invalidateCachedSession(cacheKey);
+}
 
 const customerAdapter = {
   async createSession(session: { sessionToken: string; userId: string; expires: Date }) {
@@ -65,7 +76,22 @@ const customerAdapter = {
 
     const dbSession = await prisma.customerSession.findUnique({
       where: { sessionToken },
-      include: { customer: true },
+      select: {
+        id: true,
+        sessionToken: true,
+        customerId: true,
+        expires: true,
+        customer: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            emailVerified: true,
+            status: true,
+            deletedAt: true,
+          },
+        },
+      },
     });
     if (
       !dbSession ||
@@ -75,12 +101,7 @@ const customerAdapter = {
     ) {
       if (dbSession) {
         await prisma.customerSession.delete({ where: { sessionToken } }).catch(() => {});
-        try {
-          const redis = getRedisClient();
-          await redis.del(cacheKey);
-        } catch {
-          // Ignore
-        }
+        await invalidateCachedSession(cacheKey);
       }
       return null;
     }
@@ -100,12 +121,7 @@ const customerAdapter = {
       },
     };
 
-    try {
-      const redis = getRedisClient();
-      await redis.set(cacheKey, JSON.stringify(result), "EX", env.CUSTOMER_SESSION_CACHE_TTL_SEC);
-    } catch {
-      // Ignore
-    }
+    await setCachedSession(cacheKey, result, env.CUSTOMER_SESSION_CACHE_TTL_SEC);
 
     return result;
   },
@@ -117,12 +133,7 @@ const customerAdapter = {
       },
     });
 
-    try {
-      const redis = getRedisClient();
-      await redis.del(`customer_session:${session.sessionToken}`);
-    } catch {
-      // Ignore
-    }
+    await invalidateCachedSession(`customer_session:${session.sessionToken}`);
 
     return {
       id: updated.id,
@@ -138,19 +149,14 @@ const customerAdapter = {
       })
       .catch(() => {});
 
-    try {
-      const redis = getRedisClient();
-      await redis.del(`customer_session:${sessionToken}`);
-    } catch {
-      // Ignore
-    }
+    await invalidateCachedSession(`customer_session:${sessionToken}`);
   },
 };
 
 const nextAuth: NextAuthResult = NextAuth({
   adapter: customerAdapter,
   secret: env.AUTH_SECRET,
-  session: { strategy: "database" },
+  session: { strategy: "jwt" },
   pages: {
     signIn: "/auth/login",
   },
@@ -191,7 +197,9 @@ const nextAuth: NextAuthResult = NextAuth({
     async jwt({ token, user, account }) {
       if (account?.provider === "credentials" && user) {
         const sessionToken = crypto.randomUUID();
-        const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        const now = new Date();
+        const sessionMaxAgeMs = env.CUSTOMER_SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+        const expires = new Date(now.getTime() + sessionMaxAgeMs);
 
         let ipAddress: string | null = null;
         let userAgent: string | null = null;
@@ -212,42 +220,57 @@ const nextAuth: NextAuthResult = NextAuth({
             sessionToken,
             customerId: Number(user.id),
             expires,
+            loginAt: now,
+            lastActiveAt: now,
             ipAddress,
             userAgent,
           },
         });
+
+        // Enforce max sessions per user — evict oldest sessions (excluding the current session)
+        const maxSessions = env.CUSTOMER_MAX_SESSIONS_PER_USER;
+        const existingSessions = await prisma.customerSession.findMany({
+          where: { customerId: Number(user.id) },
+          orderBy: { lastActiveAt: "asc" },
+          select: { id: true, sessionToken: true },
+        });
+
+        if (existingSessions.length > maxSessions) {
+          const sessionsToDelete = existingSessions
+            .filter((s) => s.sessionToken !== sessionToken)
+            .slice(0, existingSessions.length - maxSessions);
+
+          if (sessionsToDelete.length > 0) {
+            await prisma.customerSession
+              .deleteMany({
+                where: { id: { in: sessionsToDelete.map((s) => s.id) } },
+              })
+              .catch(() => {});
+          }
+        }
 
         token.sessionId = sessionToken;
         token.id = Number(user.id);
       }
       return token;
     },
-    async session({ session, user }) {
-      if (user?.id) {
-        session.user.id = user.id;
+    async session({ session, token }) {
+      const id = token?.id ? String(token.id) : null;
+      if (!id) return session;
 
-        const dbCustomer = await prisma.customer.findUnique({
-          where: { id: Number(user.id) },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
-          },
-        });
+      session.user.id = id;
 
-        if (dbCustomer) {
-          const appUser: AppUser = {
-            id: String(dbCustomer.id),
-            displayName: dbCustomer.name ?? dbCustomer.email ?? "Customer",
-            email: dbCustomer.email ?? undefined,
-            photoURL: dbCustomer.avatarUrl ?? undefined,
-            role: ["customer"], // Standard customer role
-            loginRedirectUrl: "/customer/dashboard",
-          };
-          session.db = appUser;
-        }
-      }
+      // Use cached user data from decode() payload — no extra DB query
+      const appUser: AppUser = {
+        id,
+        displayName: (token.name as string) ?? (token.email as string) ?? "Customer",
+        email: (token.email as string) ?? undefined,
+        photoURL: (token.avatarUrl as string) ?? undefined,
+        role: ["customer"],
+        loginRedirectUrl: "/dashboard",
+      };
+      session.db = appUser;
+
       return session;
     },
   },
@@ -258,8 +281,123 @@ const nextAuth: NextAuthResult = NextAuth({
       }
       return "";
     },
-    async decode() {
-      return null;
+    async decode(params) {
+      if (!params.token) return {};
+
+      const sessionToken = params.token;
+      const cacheKey = `customer_session:${sessionToken}`;
+      const cacheTtl = env.CUSTOMER_SESSION_CACHE_TTL_SEC;
+
+      if (cacheTtl > 0) {
+        const cached = await getCachedSession(cacheKey);
+        if (cached) return cached;
+      }
+
+      const dbSession = await prisma.customerSession.findUnique({
+        where: { sessionToken },
+        select: {
+          id: true,
+          sessionToken: true,
+          customerId: true,
+          expires: true,
+          loginAt: true,
+          lastActiveAt: true,
+          customer: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              emailVerified: true,
+              status: true,
+              deletedAt: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      });
+
+      if (
+        !dbSession ||
+        dbSession.expires < new Date() ||
+        dbSession.customer.status !== "ACTIVE" ||
+        dbSession.customer.deletedAt !== null
+      ) {
+        if (dbSession) {
+          await deleteCustomerSession(dbSession.id, cacheKey);
+        }
+        return {};
+      }
+
+      const now = Date.now();
+
+      // 1️⃣ Absolute Timeout — hard stop after configured days from login
+      const absoluteMaxMs = env.CUSTOMER_SESSION_ABSOLUTE_TIMEOUT_DAYS * 24 * 60 * 60 * 1000;
+      if (now - dbSession.loginAt.getTime() > absoluteMaxMs) {
+        await deleteCustomerSession(dbSession.id, cacheKey);
+        return {};
+      }
+
+      // 2️⃣ Idle Timeout — no activity within configured days
+      const idleMaxMs = env.CUSTOMER_SESSION_IDLE_TIMEOUT_DAYS * 24 * 60 * 60 * 1000;
+      if (now - dbSession.lastActiveAt.getTime() > idleMaxMs) {
+        await deleteCustomerSession(dbSession.id, cacheKey);
+        return {};
+      }
+
+      const payload = {
+        sessionId: dbSession.sessionToken,
+        id: dbSession.customer.id,
+        email: dbSession.customer.email,
+        name: dbSession.customer.name,
+        avatarUrl: dbSession.customer.avatarUrl,
+      };
+
+      // 3️⃣ Sliding Window + Batched lastActiveAt update (every 5 min)
+      const sessionMaxAgeMs = env.CUSTOMER_SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+      const halfLife = sessionMaxAgeMs / 2;
+      const timeRemaining = dbSession.expires.getTime() - now;
+      const ACTIVITY_BATCH_MS = 5 * 60 * 1000;
+      const needsActivityUpdate = now - dbSession.lastActiveAt.getTime() > ACTIVITY_BATCH_MS;
+
+      if (timeRemaining < halfLife) {
+        const newExpires = new Date(now + sessionMaxAgeMs);
+        await prisma.customerSession
+          .update({
+            where: { id: dbSession.id },
+            data: { expires: newExpires, lastActiveAt: new Date() },
+          })
+          .catch(() => {});
+        await invalidateCachedSession(cacheKey);
+      } else if (needsActivityUpdate) {
+        await prisma.customerSession
+          .update({
+            where: { id: dbSession.id },
+            data: { lastActiveAt: new Date() },
+          })
+          .catch(() => {});
+      }
+
+      if (cacheTtl > 0) {
+        await setCachedSession(cacheKey, payload, cacheTtl);
+      }
+
+      return payload;
+    },
+  },
+  events: {
+    async signOut(message) {
+      const token = "token" in message ? message.token : null;
+      const sessionToken = token?.sessionId as string | undefined;
+
+      if (sessionToken) {
+        await prisma.customerSession
+          .delete({
+            where: { sessionToken },
+          })
+          .catch(() => {});
+
+        await invalidateCachedSession(`customer_session:${sessionToken}`);
+      }
     },
   },
 });

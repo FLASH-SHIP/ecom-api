@@ -37,9 +37,136 @@
     "clone": "Nhân bản",
     "saving": "Đang lưu...",
     "save": "Lưu",
-    "cancel": "Hủy"
+    "saveAndEdit": "Lưu & chỉnh sửa",
+    "cancel": "Hủy",
+    "reload": "Tải lại",
+    "selectAll": "Chọn tất cả",
+    "deselectAll": "Bỏ chọn",
+    "searchPlaceholder": "Tìm kiếm quyền hạn..."
   },
   "deleteConfirm": "Xóa vai trò \"{name}\"?",
   "deleteSuccess": "Xóa vai trò thành công",
-  "cloneSuccess": "Nhân bản vai trò thành công"
+  "cloneSuccess": "Nhân bản vai trò thành công",
+  "sections": {
+    "cms": "CMS / Nội dung",
+    "system": "Quản trị hệ thống",
+    "settings": "Cấu hình",
+    "tools": "Công cụ"
+  },
+  "modules": {
+    "blog": "Blog",
+    "posts": "Bài viết",
+    "categories": "Danh mục bài viết",
+    "tags": "Thẻ bài viết",
+    "pages": "Trang tĩnh",
+    "media": "Thư viện ảnh",
+    "users": "Thành viên",
+    "roles": "Vai trò & Quyền",
+    "customers": "Khách hàng",
+    "custom-fields": "Trường tùy chỉnh",
+    "admin-menus": "Menu hệ thống",
+    "settings": "Cấu hình chung",
+    "audit-logs": "Nhật ký hệ thống",
+    "system": "Hệ thống",
+    "tools": "Công cụ đồng bộ",
+    "webhooks": "Webhooks",
+    "comments": "Bình luận",
+    "contacts": "Liên hệ"
+  },
+  "permissionsList": {
+    "blog": {
+      "posts": {
+        "read": "Xem danh sách bài viết",
+        "create": "Tạo bài viết mới",
+        "update": "Cập nhật bài viết",
+        "delete": "Xóa bài viết"
+      },
+      "categories": {
+        "read": "Xem danh mục bài viết",
+        "create": "Tạo danh mục",
+        "update": "Cập nhật danh mục",
+        "delete": "Xóa danh mục"
+      },
+      "tags": {
+        "read": "Xem danh sách thẻ",
+        "create": "Tạo thẻ mới",
+        "update": "Cập nhật thẻ",
+        "delete": "Xóa thẻ"
+      }
+    },
+    "pages": {
+      "read": "Xem danh sách trang",
+      "create": "Tạo trang mới",
+      "update": "Cập nhật trang",
+      "delete": "Xóa trang"
+    },
+    "media": {
+      "read": "Xem thư viện ảnh",
+      "upload": "Tải ảnh lên",
+      "update": "Cập nhật ảnh/thư mục",
+      "delete": "Xóa ảnh/thư mục"
+    },
+    "custom-fields": {
+      "read": "Xem trường tùy chỉnh",
+      "create": "Tạo trường tùy chỉnh",
+      "update": "Cập nhật trường tùy chỉnh",
+      "delete": "Xóa trường tùy chỉnh"
+    },
+    "admin-menus": {
+      "read": "Xem menu hệ thống",
+      "create": "Tạo menu mới",
+      "update": "Cập nhật menu",
+      "delete": "Xóa menu"
+    },
+    "comments": {
+      "read": "Xem bình luận",
+      "moderate": "Duyệt/Quản lý bình luận",
+      "delete": "Xóa bình luận"
+    },
+    "contacts": {
+      "read": "Xem liên hệ",
+      "manage": "Quản lý phản hồi liên hệ",
+      "delete": "Xóa liên hệ"
+    },
+    "users": {
+      "read": "Xem thành viên",
+      "create": "Tạo thành viên mới",
+      "update": "Cập nhật thành viên",
+      "delete": "Xóa thành viên"
+    },
+    "roles": {
+      "read": "Xem danh sách vai trò",
+      "create": "Tạo vai trò mới",
+      "update": "Cập nhật vai trò",
+      "delete": "Xóa vai trò"
+    },
+    "customers": {
+      "read": "Xem danh sách khách hàng",
+      "create": "Tạo khách hàng mới",
+      "update": "Cập nhật khách hàng",
+      "delete": "Xóa khách hàng"
+    },
+    "audit-logs": {
+      "read": "Xem nhật ký hệ thống",
+      "purge": "Xóa nhật ký cũ"
+    },
+    "webhooks": {
+      "read": "Xem danh sách webhook",
+      "create": "Tạo webhook mới",
+      "update": "Cập nhật webhook",
+      "delete": "Xóa webhook"
+    },
+    "system": {
+      "read": "Xem thông tin hệ thống",
+      "manage": "Quản trị hệ thống"
+    },
+    "settings": {
+      "read": "Xem cấu hình",
+      "update": "Cập nhật cấu hình"
+    },
+    "tools": {
+      "export": "Xuất dữ liệu",
+      "import": "Nhập dữ liệu"
+    }
+  }
 }

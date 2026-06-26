@@ -92,11 +92,27 @@ const replicaClients = replicaUrls.map((url) => {
   });
 });
 
-const extendedPrisma = basePrisma.$extends(
-  readReplicas({
-    replicas: replicaClients,
-  })
-);
+const hasReplicas = !!(process.env.DATABASE_REPLICA_URLS || process.env.DATABASE_REPLICA_URL);
+const prismaWithReplicas = hasReplicas
+  ? basePrisma.$extends(
+      readReplicas({
+        replicas: replicaClients,
+      }),
+    )
+  : basePrisma.$extends({
+      client: {
+        $primary<T>(this: T): T {
+          return this;
+        },
+        $replica<T>(this: T): T {
+          return this;
+        },
+      },
+    });
+
+const extendedPrisma = prismaWithReplicas.$extends({
+  // other extensions (e.g. audit logs, etc.)
+});
 ```
 
 ---
@@ -208,9 +224,11 @@ By using read replicas, the application instantiates separate connection pools f
 
 ### Best Practices for Local Development
 
-In local environments where `DATABASE_REPLICA_URL` points to the same instance as `DATABASE_URL`, monitor the database connection limit. If your local PostgreSQL only allows 100 connections, and multiple development processes start, you may exhaust connections.
+To optimize resource usage, if no database replica connection strings (`DATABASE_REPLICA_URL` or `DATABASE_REPLICA_URLS`) are configured in the environment variables:
+1. **Dynamic Bypass**: The `@prisma/extension-read-replicas` extension is bypassed completely. No secondary connection pools are established, saving local database connection slots.
+2. **API Compatibility**: The client is extended with lightweight, fallback `$primary()` and `$replica()` methods that simply return `this` (the main client instance). This ensures local code invoking these methods continues to compile and execute successfully without throwing type errors.
 
-To limit connection usage, append `connection_limit` to the database URL in local development:
+If you explicitly configure replica URLs in local development pointing to the same database instance, make sure to monitor the database connection limit and append `connection_limit` to your connection strings:
 
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ecom?connection_limit=5"

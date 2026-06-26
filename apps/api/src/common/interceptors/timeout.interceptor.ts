@@ -6,9 +6,7 @@ import {
   type NestInterceptor,
   RequestTimeoutException,
 } from "@nestjs/common";
-// biome-ignore lint/style/useImportType: need value-level import for NestJS DI metadata
 import { ConfigService } from "@nestjs/config";
-// biome-ignore lint/style/useImportType: need value-level import for NestJS DI metadata
 import { Reflector } from "@nestjs/core";
 import { type Observable, TimeoutError, throwError } from "rxjs";
 import { catchError, timeout } from "rxjs/operators";

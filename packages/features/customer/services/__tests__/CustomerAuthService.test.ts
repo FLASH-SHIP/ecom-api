@@ -24,10 +24,19 @@ const mockBuildCustomerPasswordResetEmail = vi.fn((data) => ({
   subject: "Reset Password",
   html: `<p>Reset: ${data.resetUrl}</p>`,
 }));
+const mockBuildVerificationCodeEmail = vi.fn((data) => ({
+  to: "",
+  subject: "Verification Code",
+  html: `<p>Code: ${data.code}</p>`,
+}));
 
 vi.mock("@ecom/emails", () => ({
-  buildEmailVerificationEmail: (data: unknown) => mockBuildEmailVerificationEmail(data),
-  buildCustomerPasswordResetEmail: (data: unknown) => mockBuildCustomerPasswordResetEmail(data),
+  buildEmailVerificationEmail: (data: Record<string, unknown>) =>
+    mockBuildEmailVerificationEmail(data),
+  buildCustomerPasswordResetEmail: (data: Record<string, unknown>) =>
+    mockBuildCustomerPasswordResetEmail(data),
+  buildVerificationCodeEmail: (data: Record<string, unknown>) =>
+    mockBuildVerificationCodeEmail(data),
 }));
 
 function createMockDeps() {
@@ -40,15 +49,61 @@ function createMockDeps() {
       findById: vi.fn(),
       findByEmailOrUsername: vi.fn(),
       updateLastLogin: vi.fn(),
+      findLatestPendingVerificationCode: vi.fn(),
+      invalidatePreviousVerificationCodes: vi.fn(),
+      createVerificationCode: vi.fn(),
+      markVerificationCodeExpired: vi.fn(),
+      incrementVerificationCodeAttempts: vi.fn(),
+      markVerificationCodeVerified: vi.fn(),
+      verifyEmail: vi.fn(),
+      findByIdWithPassword: vi.fn(),
+      updatePassword: vi.fn(),
+      deleteSessions: vi.fn(),
     } as unknown as CustomerRepository,
   };
 }
 
 describe("CustomerAuthService", () => {
-  it("should register customer and queue verification email", async () => {
+  it("should send registration verification code email", async () => {
     const deps = createMockDeps();
     const service = new CustomerAuthService(deps);
 
+    deps.customerRepo.findByEmail.mockResolvedValue(null);
+    deps.customerRepo.findLatestPendingVerificationCode.mockResolvedValue(null);
+
+    await service.sendVerificationCode("john@example.com");
+
+    expect(deps.customerRepo.invalidatePreviousVerificationCodes).toHaveBeenCalledWith(
+      "john@example.com",
+    );
+    expect(deps.customerRepo.createVerificationCode).toHaveBeenCalledWith(
+      "john@example.com",
+      expect.any(String),
+      expect.any(Date),
+    );
+    expect(mockBuildVerificationCodeEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: expect.any(String),
+      }),
+    );
+    expect(mockQueueEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "john@example.com",
+        subject: "Verification Code",
+      }),
+    );
+  });
+
+  it("should register customer and mark email verified after checking code", async () => {
+    const deps = createMockDeps();
+    const service = new CustomerAuthService(deps);
+
+    deps.customerRepo.findLatestPendingVerificationCode.mockResolvedValue({
+      id: 1,
+      code: "123456",
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      attempts: 0,
+    });
     deps.customerRepo.findByEmail.mockResolvedValue(null);
     deps.customerRepo.generateUniqueUsername.mockResolvedValue("johndoe");
     deps.customerRepo.createWithPassword.mockResolvedValue({
@@ -57,33 +112,17 @@ describe("CustomerAuthService", () => {
       username: "johndoe",
       name: "John Doe",
     });
-    deps.customerRepo.findById.mockResolvedValue({
-      id: 42,
-      email: "john@example.com",
-      name: "John Doe",
-      emailVerified: null,
-    });
 
     const result = await service.register({
       email: "john@example.com",
       password: "password123",
-      name: "John Doe",
+      code: "123456",
     });
 
     expect(result.id).toBe(42);
+    expect(deps.customerRepo.markVerificationCodeVerified).toHaveBeenCalledWith(1);
     expect(deps.customerRepo.createWithPassword).toHaveBeenCalled();
-    expect(mockBuildEmailVerificationEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: "John Doe",
-        verifyUrl: expect.stringContaining("/auth/verify-email?token="),
-      }),
-    );
-    expect(mockQueueEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: "john@example.com",
-        subject: "Verify Email",
-      }),
-    );
+    expect(deps.customerRepo.verifyEmail).toHaveBeenCalledWith(42);
   });
 
   it("should queue password reset email for forgotPassword", async () => {

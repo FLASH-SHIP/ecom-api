@@ -33,16 +33,27 @@ export function formatDate(value: string | number | Date | null | undefined): st
   return `${day}-${month}-${year}`;
 }
 
-/** Format a Date-like value as DD-MM-YYYY HH:mm */
-export function formatDateTime(value: string | number | Date | null | undefined): string {
+/** Format a Date-like value with a custom format (default: "DD-MM-YYYY HH:mm") */
+export function formatDateTime(
+  value: string | number | Date | null | undefined,
+  format = "DD-MM-YYYY HH:mm",
+): string {
   const d = toSafeDate(value);
   if (!d) return value != null ? String(value) : "";
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
+  const year = String(d.getFullYear());
   const hours = String(d.getHours()).padStart(2, "0");
   const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${day}-${month}-${year} ${hours}:${minutes}`;
+  const seconds = String(d.getSeconds()).padStart(2, "0");
+
+  return format
+    .replace(/DD|dd/g, day)
+    .replace(/MM/g, month)
+    .replace(/YYYY|yyyy/g, year)
+    .replace(/HH|hh/g, hours)
+    .replace(/mm/g, minutes)
+    .replace(/ss/g, seconds);
 }
 
 // ── API formatter ──────────────────────────────────────────────────────────────

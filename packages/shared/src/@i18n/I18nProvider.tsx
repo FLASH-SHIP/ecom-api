@@ -6,6 +6,7 @@ import I18nContext, { type LanguageType } from "./I18nContext";
 
 type I18nProviderProps = {
   children: React.ReactNode;
+  initialLocale?: string;
 };
 
 const languages: LanguageType[] = [
@@ -33,8 +34,8 @@ function setLocaleCookie(locale: string) {
 }
 
 export function I18nProvider(props: I18nProviderProps) {
-  const { children } = props;
-  const [languageId, setLanguageId] = useState(getLocaleFromCookie);
+  const { children, initialLocale } = props;
+  const [languageId, setLanguageId] = useState(() => initialLocale || getLocaleFromCookie());
 
   const changeLanguage = useCallback(async (newLocale: string) => {
     if (!(locales as readonly string[]).includes(newLocale)) return;
@@ -50,7 +51,7 @@ export function I18nProvider(props: I18nProviderProps) {
     <I18nContext
       value={useMemo(
         () => ({
-          language: languages.find((l) => l.id === languageId) ?? languages[0],
+          language: languages.find((l) => l.id === languageId) ?? languages[0]!,
           languageId,
           langDirection: "ltr" as const,
           languages,
