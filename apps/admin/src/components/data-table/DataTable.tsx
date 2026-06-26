@@ -875,7 +875,7 @@ export function DataTable<T extends Record<string, unknown>>({
         <div
           className={cn(
             "relative w-full overflow-hidden bg-primary/15 transition-all ease-in-out",
-            stage !== "idle" ? "h-1" : "h-0",
+            stage !== "idle" ? "h-0.5" : "h-0",
             stage === "fading" || stage === "idle"
               ? "opacity-0 duration-200"
               : "opacity-100 duration-0",
