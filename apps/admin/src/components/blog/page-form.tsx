@@ -94,6 +94,7 @@ export function PageForm({
   const utils = trpc.useUtils();
   const { toast } = useToast();
   const tPage = useTranslations("pages");
+  const t = useTranslations("common");
   const locale = useLocale();
 
   const { data: activeLanguages } = trpc.viewer.languages.getActive.useQuery();
@@ -133,6 +134,13 @@ export function PageForm({
     ctaText: initialData?.ctaText ?? "",
     ctaLink: initialData?.ctaLink ?? "",
   });
+
+  const [origin, setOrigin] = useState("http://127.0.0.1:8000");
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
 
   const [showEditor, setShowEditor] = useState(true);
   const [seoOpen, setSeoOpen] = useState(false);
@@ -326,6 +334,7 @@ export function PageForm({
         langCode: translationMode,
         data: {
           title: formData.title,
+          slug: formData.slug || undefined,
           content: formData.content || undefined,
           excerpt: formData.excerpt || undefined,
           subtitle: formData.subtitle || undefined,
@@ -351,6 +360,7 @@ export function PageForm({
         langCode: translationMode,
         data: {
           title: formData.title,
+          slug: formData.slug || undefined,
           content: formData.content || undefined,
           excerpt: formData.excerpt || undefined,
           subtitle: formData.subtitle || undefined,
@@ -478,33 +488,38 @@ export function PageForm({
                 />
               </div>
 
-              {!translationMode && (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="page-slug">
-                    {tPage("fields.slug")} <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
+              {/* Permalink / Slug */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="page-slug" className="text-sm font-semibold">
+                  {tPage("fields.slug")} <span className="text-destructive">*</span>
+                </Label>
+                <div className="flex items-center rounded-md border border-input bg-background focus-within:ring-1 focus-within:ring-ring">
+                  <span className="select-none px-3 text-sm text-muted-foreground bg-muted border-r border-input py-2 rounded-l-md">
+                    {origin}/
+                  </span>
+                  <input
                     id="page-slug"
+                    className="flex-1 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
                     value={formData.slug}
                     onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
-                    placeholder="http://127.0.0.1:8000/"
+                    placeholder="slug"
                     required
                   />
-                  {slugPreview && (
-                    <p className="text-xs text-muted-foreground">
-                      Preview:{" "}
-                      <a
-                        href={`${PERMALINK_PREFIX}${slugPreview}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        http://127.0.0.1:8000/{slugPreview}
-                      </a>
-                    </p>
-                  )}
                 </div>
-              )}
+                {slugPreview && (
+                  <p className="text-xs text-muted-foreground">
+                    Preview:{" "}
+                    <a
+                      href={`${origin}/${slugPreview}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline font-medium"
+                    >
+                      {origin}/{slugPreview}
+                    </a>
+                  </p>
+                )}
+              </div>
 
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="page-excerpt">Description</Label>
@@ -792,7 +807,7 @@ export function PageForm({
                 ) : (
                   <Save className="mr-2 size-4" />
                 )}
-                Save
+                {t("saveAndEdit")}
               </Button>
               <Button
                 id="page-save"
@@ -801,10 +816,10 @@ export function PageForm({
                 disabled={isPending || !formData.title.trim()}
                 onClick={handleSave}
                 size="sm"
-                className="flex-1 font-semibold"
+                className="font-semibold"
               >
                 <Save className="mr-2 size-4" />
-                Save & Exit
+                {t("save")}
               </Button>
             </CardContent>
           </Card>
