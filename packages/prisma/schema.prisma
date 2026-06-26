@@ -312,9 +312,9 @@ model Post {
 
 model PostTranslation {
   id          Int    @id @default(autoincrement())
-  postId      Int    @map("post_id")
+  postId      Int
   post        Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  langCode    String @map("lang_code")
+  langCode    String
   title       String
   slug        String?
   excerpt     String? @db.Text
@@ -354,9 +354,9 @@ model Category {
 
 model CategoryTranslation {
   id          Int      @id @default(autoincrement())
-  categoryId  Int      @map("category_id")
+  categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  langCode    String   @map("lang_code")
+  langCode    String
   name        String
   description String?  @db.Text
 
@@ -385,9 +385,9 @@ model Tag {
 
 model TagTranslation {
   id          Int     @id @default(autoincrement())
-  tagId       Int     @map("tag_id")
+  tagId       Int
   tag         Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  langCode    String  @map("lang_code")
+  langCode    String
   name        String
   description String? @db.Text
 
@@ -409,9 +409,9 @@ model PostCategory {
 model PostTag {
   id     Int  @id @default(autoincrement())
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId Int  @map("post_id")
+  postId Int
   tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  tagId  Int  @map("tag_id")
+  tagId  Int
 
   @@unique([postId, tagId])
   @@map("post_tags")
