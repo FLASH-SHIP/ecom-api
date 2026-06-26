@@ -1,8 +1,11 @@
 "use client";
 
 import { PostForm } from "@admin/components/blog/post-form";
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
 import { useLanguageSwitcher } from "@admin/hooks/useLanguageSwitcher";
 import { trpc } from "@admin/lib/trpc";
+import { Permissions } from "@ecom/lib/permissions";
+import { LanguageSwitcher } from "@ecom/ui/components/language-switcher";
 import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";

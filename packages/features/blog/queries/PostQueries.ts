@@ -1,4 +1,5 @@
 import { ErrorWithCode } from "@ecom/lib/errors";
+import { createLogger } from "@ecom/lib/logger";
 import type { ContentStatus } from "@ecom/prisma";
 import { PrismaQueryBuilder } from "../../shared/PrismaQueryBuilder";
 import type { PostRepository } from "../repositories/PostRepository";
@@ -6,6 +7,8 @@ import type { PostRepository } from "../repositories/PostRepository";
 export interface IPostQueriesDeps {
   postRepo: PostRepository;
 }
+
+const log = createLogger("PostQueries");
 
 export class PostQueries {
   constructor(private deps: IPostQueriesDeps) {}
@@ -48,10 +51,7 @@ export class PostQueries {
       searchFields: ["title", "excerpt"],
     });
 
-    // Log the generated specifications for debugging and trace analysis in development
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[PostQueries] dynamic query specification built: ${JSON.stringify(qbArgs)}`);
-    }
+    log.debug("Dynamic query specification built", { queryArgs: qbArgs });
 
     return this.deps.postRepo.findMany(options);
   }

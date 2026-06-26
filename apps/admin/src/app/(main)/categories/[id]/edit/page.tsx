@@ -1,8 +1,10 @@
 "use client";
 
 import { CategoryForm } from "@admin/components/blog/category-form";
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
 import { useLanguageSwitcher } from "@admin/hooks/useLanguageSwitcher";
 import { trpc } from "@admin/lib/trpc";
+import { Permissions } from "@ecom/lib/permissions";
 import { Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -79,21 +81,23 @@ export default function EditCategoryPage() {
       };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-bold">{t("editCategory")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{category.name}</p>
-      </div>
+    <PermissionGuard permissions={[Permissions.CATEGORIES_UPDATE]}>
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-xl font-bold">{t("editCategory")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{category.name}</p>
+        </div>
 
-      <CategoryForm
-        key={activeCode ?? "default"}
-        mode="edit"
-        categoryId={categoryId}
-        initialData={formInitialData}
-        translationMode={!isDefaultLanguage ? activeCode : undefined}
-        originLangCode={originLangCode ?? undefined}
-      />
-    </div>
+        <CategoryForm
+          key={activeCode ?? "default"}
+          mode="edit"
+          categoryId={categoryId}
+          initialData={formInitialData}
+          translationMode={!isDefaultLanguage ? activeCode : undefined}
+          originLangCode={originLangCode ?? undefined}
+        />
+      </div>
+    </PermissionGuard>
   );
 }
 

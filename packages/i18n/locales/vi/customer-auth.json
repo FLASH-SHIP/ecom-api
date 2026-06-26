@@ -27,6 +27,8 @@
     "alreadyHaveAccount": "Đã có tài khoản?",
     "signIn": "Đăng nhập ngay",
     "passwordMin": "Mật khẩu phải có ít nhất 8 ký tự",
+    "passwordRequired": "Vui lòng nhập mật khẩu",
+    "passwordMismatch": "Mật khẩu xác nhận không khớp",
     "emailRequired": "Vui lòng nhập email",
     "emailInvalid": "Email không hợp lệ",
     "codeRequired": "Vui lòng nhập mã xác minh",

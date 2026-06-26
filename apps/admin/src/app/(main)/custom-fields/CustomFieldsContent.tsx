@@ -6,12 +6,14 @@ import type { BulkActionConfig, RowAction } from "@admin/components/data-table";
 import { DataTable, toFilterInput } from "@admin/components/data-table";
 import { useServerTable } from "@admin/components/data-table/hooks/useServerTable";
 import type { DataTableServerParams, FilterFieldDef } from "@admin/components/data-table/types";
+import { useRequirePermission } from "@admin/components/layout/PermissionGuard";
 import { useToast } from "@admin/components/toast-provider";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
 import { downloadJson } from "@admin/lib/download";
 import { trpc } from "@admin/lib/trpc";
 import { formatDate } from "@admin/utils/dateFormat";
+import { Permissions } from "@ecom/lib/permissions";
 import { Button } from "@ecom/ui/components/button";
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -47,6 +49,10 @@ function toQueryInput(params: DataTableServerParams) {
 
 export default function CustomFieldsContent() {
   const t = useTranslations("customFields");
+  const { hasPermission: canCreate } = useRequirePermission([Permissions.CUSTOM_FIELDS_CREATE]);
+  const { hasPermission: canUpdate } = useRequirePermission([Permissions.CUSTOM_FIELDS_UPDATE]);
+  const { hasPermission: canDelete } = useRequirePermission([Permissions.CUSTOM_FIELDS_DELETE]);
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
   const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
@@ -99,14 +105,19 @@ export default function CustomFieldsContent() {
   });
 
   function openCreate() {
+    if (!canCreate) return;
     setEditingGroupId(null);
     setDrawerOpen(true);
   }
 
-  const openEdit = useCallback((groupId: number) => {
-    setEditingGroupId(groupId);
-    setDrawerOpen(true);
-  }, []);
+  const openEdit = useCallback(
+    (groupId: number) => {
+      if (!canUpdate) return;
+      setEditingGroupId(groupId);
+      setDrawerOpen(true);
+    },
+    [canUpdate],
+  );
 
   // ── Column definitions ─────────────────────────────────────────────────────
 
@@ -121,15 +132,18 @@ export default function CustomFieldsContent() {
       {
         accessorKey: "title",
         header: t("tableColName"),
-        cell: ({ row }) => (
-          <button
-            type="button"
-            className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary"
-            onClick={() => openEdit(row.original.id)}
-          >
-            {row.original.title}
-          </button>
-        ),
+        cell: ({ row }) =>
+          canUpdate ? (
+            <button
+              type="button"
+              className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary"
+              onClick={() => openEdit(row.original.id)}
+            >
+              {row.original.title}
+            </button>
+          ) : (
+            <span className="text-sm font-medium text-foreground">{row.original.title}</span>
+          ),
       },
       {
         accessorKey: "createdAt",
@@ -149,7 +163,7 @@ export default function CustomFieldsContent() {
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
       },
     ],
-    [t, openEdit],
+    [t, openEdit, canUpdate],
   );
 
   // ── Filter fields (Botble-style) ──────────────────────────────────────────
@@ -187,26 +201,32 @@ export default function CustomFieldsContent() {
 
   // ── Row actions ───────────────────────────────────────────────────────────
 
-  const rowActions: RowAction<FieldGroup>[] = useMemo(
-    () => [
-      {
-        key: "export",
-        tooltip: t("exportGroup"),
-        icon: <Download size={16} />,
-        color: "primary",
-        onClick: async (row) => {
-          const exportData = await utils.viewer.customFields.exportGroups.fetch({ ids: [row.id] });
-          await downloadJson(exportData, `custom-field-${row.id}.json`);
-        },
+  const rowActions: RowAction<FieldGroup>[] = useMemo(() => {
+    const actions: RowAction<FieldGroup>[] = [];
+
+    actions.push({
+      key: "export",
+      tooltip: t("exportGroup"),
+      icon: <Download size={16} />,
+      color: "primary",
+      onClick: async (row) => {
+        const exportData = await utils.viewer.customFields.exportGroups.fetch({ ids: [row.id] });
+        await downloadJson(exportData, `custom-field-${row.id}.json`);
       },
-      {
+    });
+
+    if (canUpdate) {
+      actions.push({
         key: "edit",
         tooltip: t("editGroup"),
         icon: <Pencil size={16} />,
         color: "success",
         onClick: (row) => openEdit(row.id),
-      },
-      {
+      });
+    }
+
+    if (canDelete) {
+      actions.push({
         key: "delete",
         tooltip: t("deleteGroup"),
         icon: <Trash2 size={16} />,
@@ -220,59 +240,65 @@ export default function CustomFieldsContent() {
             },
           });
         },
-      },
-    ],
-    [t, utils, deleteGroupMut, askConfirm, openEdit],
-  );
+      });
+    }
+    return actions;
+  }, [t, utils, deleteGroupMut, askConfirm, openEdit, canUpdate, canDelete]);
 
   // ── Bulk action config (Botble-style dropdown) ───────────────────────────
 
-  const bulkActionConfig: BulkActionConfig<FieldGroup> = useMemo(
-    () => ({
-      bulkChangeFields: [
-        { key: "title", label: t("tableColName"), type: "text" as const },
-        {
-          key: "status",
-          label: t("tableColStatus"),
-          type: "select" as const,
-          options: [
-            { value: "published", label: t("status.published") },
-            { value: "pending", label: t("status.pending") },
-            { value: "draft", label: t("status.draft") },
-          ],
-        },
-        { key: "createdAt", label: t("tableColCreatedAt"), type: "date" as const },
-      ],
-      onBulkChange: async (selected, fieldKey, value) => {
-        try {
-          await Promise.all(
-            selected.map((r) => updateGroupMut.mutateAsync({ id: r.id, [fieldKey]: value })),
-          );
-          toast(t("bulkChangeSuccess", { count: selected.length }), "success");
-        } catch {
-          toast(t("bulkDeleteError"), "error");
-        }
-      },
-      onBulkDelete: (selected, clearSelection) => {
-        askConfirm({
-          message: t("bulkDeleteConfirm", { count: selected.length }),
-          onConfirm: async () => {
-            isBulkRef.current = true;
+  const bulkActionConfig: BulkActionConfig<FieldGroup> | undefined = useMemo(() => {
+    if (!canUpdate && !canDelete) return undefined;
+    return {
+      bulkChangeFields: canUpdate
+        ? [
+            { key: "title", label: t("tableColName"), type: "text" as const },
+            {
+              key: "status",
+              label: t("tableColStatus"),
+              type: "select" as const,
+              options: [
+                { value: "published", label: t("status.published") },
+                { value: "pending", label: t("status.pending") },
+                { value: "draft", label: t("status.draft") },
+              ],
+            },
+            { key: "createdAt", label: t("tableColCreatedAt"), type: "date" as const },
+          ]
+        : undefined,
+      onBulkChange: canUpdate
+        ? async (selected, fieldKey, value) => {
             try {
-              await Promise.all(selected.map((r) => deleteGroupMut.mutateAsync({ id: r.id })));
-              toast(t("bulkDeleteSuccess", { count: selected.length }), "success");
-              clearSelection();
+              await Promise.all(
+                selected.map((r) => updateGroupMut.mutateAsync({ id: r.id, [fieldKey]: value })),
+              );
+              toast(t("bulkChangeSuccess", { count: selected.length }), "success");
             } catch {
               toast(t("bulkDeleteError"), "error");
-            } finally {
-              isBulkRef.current = false;
             }
-          },
-        });
-      },
-    }),
-    [updateGroupMut, deleteGroupMut, t, toast, askConfirm],
-  );
+          }
+        : undefined,
+      onBulkDelete: canDelete
+        ? (selected, clearSelection) => {
+            askConfirm({
+              message: t("bulkDeleteConfirm", { count: selected.length }),
+              onConfirm: async () => {
+                isBulkRef.current = true;
+                try {
+                  await Promise.all(selected.map((r) => deleteGroupMut.mutateAsync({ id: r.id })));
+                  toast(t("bulkDeleteSuccess", { count: selected.length }), "success");
+                  clearSelection();
+                } catch {
+                  toast(t("bulkDeleteError"), "error");
+                } finally {
+                  isBulkRef.current = false;
+                }
+              },
+            });
+          }
+        : undefined,
+    };
+  }, [updateGroupMut, deleteGroupMut, t, toast, askConfirm, canUpdate, canDelete]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -310,23 +336,29 @@ export default function CustomFieldsContent() {
         onRefresh={() => refetch()}
         headerActions={
           <div className="flex gap-2">
-            <ExportImportControls
-              onImported={() => utils.viewer.customFields.listGroups.invalidate()}
-            />
-            <Button id="create-field-group" size="sm" onClick={openCreate}>
-              <Plus className="mr-2 size-4" />
-              {t("createGroup")}
-            </Button>
+            {(canCreate || canUpdate) && (
+              <ExportImportControls
+                onImported={() => utils.viewer.customFields.listGroups.invalidate()}
+              />
+            )}
+            {canCreate && (
+              <Button id="create-field-group" size="sm" onClick={openCreate}>
+                <Plus className="mr-2 size-4" />
+                {t("createGroup")}
+              </Button>
+            )}
           </div>
         }
         emptyState={
           <div className="py-8 text-center">
             <p className="mb-1 text-muted-foreground">{t("noGroupsTitle")}</p>
             <p className="mb-4 text-sm text-muted-foreground/60">{t("noGroupsSubtitle")}</p>
-            <Button id="create-field-group-empty" size="sm" onClick={openCreate}>
-              <Plus className="mr-2 size-4" />
-              {t("newGroup")}
-            </Button>
+            {canCreate && (
+              <Button id="create-field-group-empty" size="sm" onClick={openCreate}>
+                <Plus className="mr-2 size-4" />
+                {t("newGroup")}
+              </Button>
+            )}
           </div>
         }
       />

@@ -10,6 +10,7 @@ function useNavigationItems() {
   const { navigationItems: navigationData } = useNavigationContext();
 
   const { data: user } = useUser();
+  const userPermissions = user?.permissions;
   const userRole = user?.role;
   const { languageId } = useI18n();
 
@@ -18,7 +19,7 @@ function useNavigationItems() {
 
     function setAdditionalData(data: NavItemType[]): NavItemType[] {
       return data?.map((item) => ({
-        hasPermission: Boolean(appUtils.hasPermission(item?.auth, userRole)),
+        hasPermission: Boolean(appUtils.hasPermission(item?.auth, userPermissions, userRole)),
         ...item,
         ...(item?.children ? { children: setAdditionalData(item?.children) } : {}),
       }));
@@ -28,7 +29,7 @@ function useNavigationItems() {
 
     return translatedValues;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigationData, userRole, languageId]);
+  }, [navigationData, userPermissions, userRole, languageId]);
 
   const flattenData = useMemo(() => {
     return navigationHelper.flattenNavigation(data);

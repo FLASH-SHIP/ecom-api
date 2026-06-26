@@ -1,9 +1,13 @@
 import { getUserManagementService } from "@ecom/features/di/containers/RbacService";
 import { UserTransformer } from "@ecom/features/rbac/transformers/UserTransformer";
 import { Permissions } from "@ecom/lib/permissions";
-import { UserStatus } from "@ecom/prisma";
+import { RedisCache } from "@ecom/lib/redis";
+import { invalidateCachedSession } from "@ecom/lib/session-cache";
+import { prisma, UserStatus } from "@ecom/prisma";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
+import { rateLimiters } from "@ecom/trpc/server/middleware/rateLimit";
 import { authedProcedure, requirePermission } from "@ecom/trpc/server/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 const userStatusSchema = z.nativeEnum(UserStatus);
@@ -32,10 +36,14 @@ export const get = authedProcedure
   .query(async ({ input }) => {
     const userService = getUserManagementService();
     const result = await userService.getUser(input.id);
-    return new UserTransformer().transformItem(result!);
+    if (!result) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+    }
+    return new UserTransformer().transformItem(result);
   });
 
 export const create = authedProcedure
+  .use(rateLimiters.mutation)
   .use(requirePermission(Permissions.USERS_CREATE))
   .use(auditLog({ module: "users", action: "CREATE", entityType: "User" }))
   .input(
@@ -51,7 +59,10 @@ export const create = authedProcedure
   .mutation(async ({ input }) => {
     const userService = getUserManagementService();
     const result = await userService.createUser(input);
-    return new UserTransformer().transformItem(result!);
+    if (!result) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create user" });
+    }
+    return new UserTransformer().transformItem(result);
   });
 
 export const update = authedProcedure
@@ -71,10 +82,29 @@ export const update = authedProcedure
     const { id, ...data } = input;
     const userService = getUserManagementService();
     const result = await userService.updateUser(id, data);
-    return new UserTransformer().transformItem(result!);
+    if (!result) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found or update failed" });
+    }
+
+    if (data.status) {
+      const permissionsCache = new RedisCache<string[]>("user-permissions", 3600);
+      await permissionsCache.invalidate(`user:${id}`).catch(() => {});
+
+      const sessions = await prisma.session.findMany({
+        where: { userId: id },
+        select: { sessionToken: true },
+      });
+
+      for (const session of sessions) {
+        await invalidateCachedSession(`admin_session:${session.sessionToken}`).catch(() => {});
+      }
+    }
+
+    return new UserTransformer().transformItem(result);
   });
 
 export const changePassword = authedProcedure
+  .use(rateLimiters.mutation)
   .use(requirePermission(Permissions.USERS_UPDATE))
   .use(auditLog({ module: "users", action: "CHANGE_PASSWORD", entityType: "User" }))
   .input(
@@ -86,6 +116,16 @@ export const changePassword = authedProcedure
   .mutation(async ({ input }) => {
     const userService = getUserManagementService();
     await userService.changePassword(input.userId, input.newPassword);
+
+    const sessions = await prisma.session.findMany({
+      where: { userId: input.userId },
+      select: { sessionToken: true },
+    });
+
+    for (const session of sessions) {
+      await invalidateCachedSession(`admin_session:${session.sessionToken}`).catch(() => {});
+    }
+
     return { success: true };
   });
 
@@ -101,7 +141,25 @@ export const syncRoles = authedProcedure
   .mutation(async ({ input }) => {
     const userService = getUserManagementService();
     const result = await userService.syncRoles(input.userId, input.roleIds);
-    return new UserTransformer().transformItem(result!);
+    if (!result) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+    }
+
+    // Invalidate permission cache
+    const permissionsCache = new RedisCache<string[]>("user-permissions", 3600);
+    await permissionsCache.invalidate(`user:${input.userId}`).catch(() => {});
+
+    // Invalidate NextAuth session cache
+    const sessions = await prisma.session.findMany({
+      where: { userId: input.userId },
+      select: { sessionToken: true },
+    });
+
+    for (const session of sessions) {
+      await invalidateCachedSession(`admin_session:${session.sessionToken}`);
+    }
+
+    return new UserTransformer().transformItem(result);
   });
 
 export const remove = authedProcedure
@@ -109,7 +167,20 @@ export const remove = authedProcedure
   .use(auditLog({ module: "users", action: "DELETE", entityType: "User" }))
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ ctx, input }) => {
+    const sessions = await prisma.session.findMany({
+      where: { userId: input.id },
+      select: { sessionToken: true },
+    });
+
     const userService = getUserManagementService();
     const result = await userService.deleteUser(input.id, ctx.user.id);
-    return new UserTransformer().transformItem(result!);
+    if (!result) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+    }
+
+    for (const session of sessions) {
+      await invalidateCachedSession(`admin_session:${session.sessionToken}`).catch(() => {});
+    }
+
+    return new UserTransformer().transformItem(result);
   });

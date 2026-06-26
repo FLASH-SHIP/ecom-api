@@ -1,6 +1,8 @@
 "use client";
 
 import { DataTableSkeleton } from "@admin/components/data-table";
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
+import { Permissions } from "@ecom/lib/permissions";
 import dynamic from "next/dynamic";
 
 const RolesListContent = dynamic(() => import("./RolesListContent"), {
@@ -9,5 +11,9 @@ const RolesListContent = dynamic(() => import("./RolesListContent"), {
 });
 
 export default function RolesListPage() {
-  return <RolesListContent />;
+  return (
+    <PermissionGuard permissions={[Permissions.ROLES_READ]}>
+      <RolesListContent />
+    </PermissionGuard>
+  );
 }

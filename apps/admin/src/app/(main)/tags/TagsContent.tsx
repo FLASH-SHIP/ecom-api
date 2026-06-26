@@ -3,12 +3,14 @@ import type { BulkActionConfig, RowAction } from "@admin/components/data-table";
 import { DataTable, toFilterInput } from "@admin/components/data-table";
 import { useServerTable } from "@admin/components/data-table/hooks/useServerTable";
 import type { DataTableServerParams, FilterFieldDef } from "@admin/components/data-table/types";
+import { useRequirePermission } from "@admin/components/layout/PermissionGuard";
 import { useToast } from "@admin/components/toast-provider";
 import { TranslationStatusIndicator } from "@admin/components/translation/TranslationStatusIndicator";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
 import { trpc } from "@admin/lib/trpc";
 import { formatDate } from "@admin/utils/dateFormat";
+import { Permissions } from "@ecom/lib/permissions";
 import { Button } from "@ecom/ui/components/button";
 import { cn } from "@ecom/ui/lib/utils";
 import { keepPreviousData } from "@tanstack/react-query";
@@ -52,6 +54,10 @@ function toQueryInput(params: DataTableServerParams) {
 
 export default function TagsContent() {
   const t = useTranslations("tags");
+  const { hasPermission: canCreate } = useRequirePermission([Permissions.TAGS_CREATE]);
+  const { hasPermission: canUpdate } = useRequirePermission([Permissions.TAGS_UPDATE]);
+  const { hasPermission: canDelete } = useRequirePermission([Permissions.TAGS_DELETE]);
+
   const router = useRouter();
   const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
   const { toast } = useToast();
@@ -115,15 +121,18 @@ export default function TagsContent() {
         accessorKey: "name",
         header: t("tableColName"),
         size: 250,
-        cell: ({ row }) => (
-          <button
-            type="button"
-            className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary"
-            onClick={() => router.push(`/tags/${row.original.id}/edit`)}
-          >
-            {row.original.name}
-          </button>
-        ),
+        cell: ({ row }) =>
+          canUpdate ? (
+            <button
+              type="button"
+              className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary"
+              onClick={() => router.push(`/tags/${row.original.id}/edit`)}
+            >
+              {row.original.name}
+            </button>
+          ) : (
+            <span className="text-sm font-medium text-foreground">{row.original.name}</span>
+          ),
       },
       {
         accessorKey: "createdAt",
@@ -173,7 +182,7 @@ export default function TagsContent() {
         ),
       },
     ],
-    [t, router, translationBatchMap],
+    [t, router, translationBatchMap, canUpdate],
   );
 
   // ── Filter fields (Botble-style) ──────────────────────────────────────────
@@ -226,16 +235,19 @@ export default function TagsContent() {
 
   // ── Row actions ───────────────────────────────────────────────────────────
 
-  const rowActions: RowAction<TagRow>[] = useMemo(
-    () => [
-      {
+  const rowActions: RowAction<TagRow>[] = useMemo(() => {
+    const actions: RowAction<TagRow>[] = [];
+    if (canUpdate) {
+      actions.push({
         key: "edit",
         tooltip: t("editTag"),
         icon: <Pencil size={16} />,
         color: "success",
         onClick: (row) => router.push(`/tags/${row.id}/edit`),
-      },
-      {
+      });
+    }
+    if (canDelete) {
+      actions.push({
         key: "delete",
         tooltip: t("deleteTag"),
         icon: <Trash2 size={16} />,
@@ -249,58 +261,64 @@ export default function TagsContent() {
             },
           });
         },
-      },
-    ],
-    [t, deleteTagMut, askConfirm, router],
-  );
+      });
+    }
+    return actions;
+  }, [t, deleteTagMut, askConfirm, router, canUpdate, canDelete]);
 
   // ── Bulk action config (Botble-style dropdown) ───────────────────────────
 
-  const bulkActionConfig: BulkActionConfig<TagRow> = useMemo(
-    () => ({
-      bulkChangeFields: [
-        { key: "name", label: t("tableColName"), type: "text" as const },
-        {
-          key: "status",
-          label: t("tableColStatus"),
-          type: "select" as const,
-          options: [
-            { value: "PUBLISHED", label: t("status.published") },
-            { value: "PENDING", label: t("status.pending") },
-            { value: "DRAFT", label: t("status.draft") },
-          ],
-        },
-      ],
-      onBulkChange: async (selected, fieldKey, value) => {
-        try {
-          await Promise.all(
-            selected.map((r) => updateTagMut.mutateAsync({ id: r.id, [fieldKey]: value })),
-          );
-          toast(t("bulkChangeSuccess", { count: selected.length }), "success");
-        } catch {
-          toast(t("bulkDeleteError"), "error");
-        }
-      },
-      onBulkDelete: (selected, clearSelection) => {
-        askConfirm({
-          message: t("bulkDeleteConfirm", { count: selected.length }),
-          onConfirm: async () => {
-            isBulkRef.current = true;
+  const bulkActionConfig: BulkActionConfig<TagRow> | undefined = useMemo(() => {
+    if (!canUpdate && !canDelete) return undefined;
+    return {
+      bulkChangeFields: canUpdate
+        ? [
+            { key: "name", label: t("tableColName"), type: "text" as const },
+            {
+              key: "status",
+              label: t("tableColStatus"),
+              type: "select" as const,
+              options: [
+                { value: "PUBLISHED", label: t("status.published") },
+                { value: "PENDING", label: t("status.pending") },
+                { value: "DRAFT", label: t("status.draft") },
+              ],
+            },
+          ]
+        : undefined,
+      onBulkChange: canUpdate
+        ? async (selected, fieldKey, value) => {
             try {
-              await Promise.all(selected.map((r) => deleteTagMut.mutateAsync({ id: r.id })));
-              toast(t("bulkDeleteSuccess", { count: selected.length }), "success");
-              clearSelection();
+              await Promise.all(
+                selected.map((r) => updateTagMut.mutateAsync({ id: r.id, [fieldKey]: value })),
+              );
+              toast(t("bulkChangeSuccess", { count: selected.length }), "success");
             } catch {
               toast(t("bulkDeleteError"), "error");
-            } finally {
-              isBulkRef.current = false;
             }
-          },
-        });
-      },
-    }),
-    [updateTagMut, deleteTagMut, t, toast, askConfirm],
-  );
+          }
+        : undefined,
+      onBulkDelete: canDelete
+        ? (selected, clearSelection) => {
+            askConfirm({
+              message: t("bulkDeleteConfirm", { count: selected.length }),
+              onConfirm: async () => {
+                isBulkRef.current = true;
+                try {
+                  await Promise.all(selected.map((r) => deleteTagMut.mutateAsync({ id: r.id })));
+                  toast(t("bulkDeleteSuccess", { count: selected.length }), "success");
+                  clearSelection();
+                } catch {
+                  toast(t("bulkDeleteError"), "error");
+                } finally {
+                  isBulkRef.current = false;
+                }
+              },
+            });
+          }
+        : undefined,
+    };
+  }, [updateTagMut, deleteTagMut, t, toast, askConfirm, canUpdate, canDelete]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -337,23 +355,9 @@ export default function TagsContent() {
         pageTitle={t("title")}
         onRefresh={() => refetch()}
         headerActions={
-          <Button
-            id="create-tag"
-            className="text-sm"
-            size="sm"
-            onClick={() => router.push("/tags/create")}
-          >
-            <Plus className="mr-2 size-4" />
-            {t("createTag")}
-          </Button>
-        }
-        emptyState={
-          <div className="py-8 text-center">
-            <Tag size={48} className="mx-auto mb-3 text-muted-foreground/40" />
-            <p className="mb-1 text-muted-foreground">{t("noTagsTitle")}</p>
-            <p className="mb-4 text-sm text-muted-foreground/60">{t("noTagsSubtitle")}</p>
+          canCreate ? (
             <Button
-              id="create-tag-empty"
+              id="create-tag"
               className="text-sm"
               size="sm"
               onClick={() => router.push("/tags/create")}
@@ -361,6 +365,24 @@ export default function TagsContent() {
               <Plus className="mr-2 size-4" />
               {t("createTag")}
             </Button>
+          ) : undefined
+        }
+        emptyState={
+          <div className="py-8 text-center">
+            <Tag size={48} className="mx-auto mb-3 text-muted-foreground/40" />
+            <p className="mb-1 text-muted-foreground">{t("noTagsTitle")}</p>
+            <p className="mb-4 text-sm text-muted-foreground/60">{t("noTagsSubtitle")}</p>
+            {canCreate && (
+              <Button
+                id="create-tag-empty"
+                className="text-sm"
+                size="sm"
+                onClick={() => router.push("/tags/create")}
+              >
+                <Plus className="mr-2 size-4" />
+                {t("createTag")}
+              </Button>
+            )}
           </div>
         }
       />

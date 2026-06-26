@@ -1,7 +1,9 @@
 "use client";
 
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
 import PageBreadcrumb from "@admin/components/PageBreadcrumb";
 import { trpc } from "@admin/lib/trpc";
+import { Permissions } from "@ecom/lib/permissions";
 import { Button } from "@ecom/ui/components/button";
 import { Card } from "@ecom/ui/components/card";
 import {
@@ -197,140 +199,145 @@ export default function EditRolePage({ params }: { params: Promise<{ id: string 
   const isPending = updateMutation.isPending || syncPermsMutation.isPending;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageBreadcrumb className="mb-0" />
+    <PermissionGuard permissions={[Permissions.ROLES_UPDATE]}>
+      <div className="flex flex-col gap-6">
+        <PageBreadcrumb className="mb-0" />
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">{t("editRole")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">{t("editRole")}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+          </div>
         </div>
+
+        {isRoleLoading ? (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 items-start">
+            <div className="lg:col-span-3 flex flex-col gap-6">
+              <Skeleton className="h-40 w-full" />
+              <Skeleton className="h-[400px] w-full" />
+            </div>
+            <Skeleton className="h-44 w-full" />
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 gap-6 lg:grid-cols-4 items-start"
+          >
+            {/* Left Column: Form & Permissions */}
+            <div className="lg:col-span-3 flex flex-col gap-6">
+              {/* Inputs Card */}
+              <Card className="p-6 border-border/80">
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="role-name">{t("fields.name")}</Label>
+                      <Input
+                        id="role-name"
+                        value={newRoleName}
+                        disabled
+                        className="bg-muted/40 cursor-not-allowed"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="role-display">{t("fields.displayName")}</Label>
+                      <Input
+                        id="role-display"
+                        value={newRoleDisplay}
+                        onChange={(e) => setNewRoleDisplay(e.target.value)}
+                        placeholder={t("form.displayNameLabel")}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="role-desc">{t("fields.description")}</Label>
+                    <Textarea
+                      id="role-desc"
+                      value={newRoleDesc}
+                      onChange={(e) => setNewRoleDesc(e.target.value)}
+                      placeholder={t("form.descriptionLabel")}
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Permissions Accordion Card */}
+              <PermissionTree
+                dbPermissions={dbPermissions}
+                selectedPermissionIds={selectedPermissionIds}
+                onChange={setSelectedPermissionIds}
+                isPending={isPending}
+                isLoading={isPermsLoading}
+              />
+            </div>
+
+            {/* Right Column: Publish Sidebar */}
+            <div className="flex flex-col gap-4">
+              <Card className="p-4 border-border/80">
+                <div className="border-b border-border/60 pb-2 mb-3">
+                  <h3 className="text-sm font-semibold">{commonT("publish")}</h3>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {updateMutation.error && (
+                    <div className="flex items-center gap-2 rounded-md border border-destructive/20 bg-red-50 px-3 py-2 text-xs text-destructive dark:bg-red-950/45">
+                      <AlertCircle className="size-4 shrink-0" />
+                      <span className="truncate">{updateMutation.error.message}</span>
+                    </div>
+                  )}
+                  <Button
+                    type="submit"
+                    onClick={() => setRedirectAfterSave(false)}
+                    disabled={isPending}
+                    className="w-full text-xs h-9 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all font-semibold"
+                  >
+                    {isPending && !redirectAfterSave ? t("form.saving") : t("form.saveAndEdit")}
+                  </Button>
+                  <Button
+                    type="submit"
+                    onClick={() => setRedirectAfterSave(true)}
+                    disabled={isPending}
+                    className="w-full text-xs h-9 font-semibold"
+                  >
+                    {isPending && redirectAfterSave ? t("form.saving") : t("form.save")}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setCloneDialogOpen(true)}
+                    disabled={isPending}
+                    className="w-full text-xs h-9 bg-muted/70 text-foreground border border-border/80 hover:bg-muted transition-all font-semibold"
+                  >
+                    <Copy className="mr-2 size-3.5" />
+                    {t("form.clone")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full text-xs h-9"
+                    onClick={() => router.push("/system/roles")}
+                    disabled={isPending}
+                  >
+                    {t("form.cancel")}
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </form>
+        )}
+
+        {roleDetail && (
+          <CloneRoleDialog
+            open={cloneDialogOpen}
+            onOpenChange={setCloneDialogOpen}
+            sourceId={roleDetail.id}
+            sourceName={roleDetail.name}
+            onSuccess={(newId) => {
+              setCloneDialogOpen(false);
+              router.push(`/system/roles/edit/${newId}`);
+            }}
+          />
+        )}
       </div>
-
-      {isRoleLoading ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 items-start">
-          <div className="lg:col-span-3 flex flex-col gap-6">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-[400px] w-full" />
-          </div>
-          <Skeleton className="h-44 w-full" />
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-4 items-start">
-          {/* Left Column: Form & Permissions */}
-          <div className="lg:col-span-3 flex flex-col gap-6">
-            {/* Inputs Card */}
-            <Card className="p-6 border-border/80">
-              <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="role-name">{t("fields.name")}</Label>
-                    <Input
-                      id="role-name"
-                      value={newRoleName}
-                      disabled
-                      className="bg-muted/40 cursor-not-allowed"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="role-display">{t("fields.displayName")}</Label>
-                    <Input
-                      id="role-display"
-                      value={newRoleDisplay}
-                      onChange={(e) => setNewRoleDisplay(e.target.value)}
-                      placeholder={t("form.displayNameLabel")}
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="role-desc">{t("fields.description")}</Label>
-                  <Textarea
-                    id="role-desc"
-                    value={newRoleDesc}
-                    onChange={(e) => setNewRoleDesc(e.target.value)}
-                    placeholder={t("form.descriptionLabel")}
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            {/* Permissions Accordion Card */}
-            <PermissionTree
-              dbPermissions={dbPermissions}
-              selectedPermissionIds={selectedPermissionIds}
-              onChange={setSelectedPermissionIds}
-              isPending={isPending}
-              isLoading={isPermsLoading}
-            />
-          </div>
-
-          {/* Right Column: Publish Sidebar */}
-          <div className="flex flex-col gap-4">
-            <Card className="p-4 border-border/80">
-              <div className="border-b border-border/60 pb-2 mb-3">
-                <h3 className="text-sm font-semibold">{commonT("publish")}</h3>
-              </div>
-              <div className="flex flex-col gap-2">
-                {updateMutation.error && (
-                  <div className="flex items-center gap-2 rounded-md border border-destructive/20 bg-red-50 px-3 py-2 text-xs text-destructive dark:bg-red-950/45">
-                    <AlertCircle className="size-4 shrink-0" />
-                    <span className="truncate">{updateMutation.error.message}</span>
-                  </div>
-                )}
-                <Button
-                  type="submit"
-                  onClick={() => setRedirectAfterSave(false)}
-                  disabled={isPending}
-                  className="w-full text-xs h-9 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all font-semibold"
-                >
-                  {isPending && !redirectAfterSave ? t("form.saving") : t("form.saveAndEdit")}
-                </Button>
-                <Button
-                  type="submit"
-                  onClick={() => setRedirectAfterSave(true)}
-                  disabled={isPending}
-                  className="w-full text-xs h-9 font-semibold"
-                >
-                  {isPending && redirectAfterSave ? t("form.saving") : t("form.save")}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setCloneDialogOpen(true)}
-                  disabled={isPending}
-                  className="w-full text-xs h-9 bg-muted/70 text-foreground border border-border/80 hover:bg-muted transition-all font-semibold"
-                >
-                  <Copy className="mr-2 size-3.5" />
-                  {t("form.clone")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full text-xs h-9"
-                  onClick={() => router.push("/system/roles")}
-                  disabled={isPending}
-                >
-                  {t("form.cancel")}
-                </Button>
-              </div>
-            </Card>
-          </div>
-        </form>
-      )}
-
-      {roleDetail && (
-        <CloneRoleDialog
-          open={cloneDialogOpen}
-          onOpenChange={setCloneDialogOpen}
-          sourceId={roleDetail.id}
-          sourceName={roleDetail.name}
-          onSuccess={(newId) => {
-            setCloneDialogOpen(false);
-            router.push(`/system/roles/edit/${newId}`);
-          }}
-        />
-      )}
-    </div>
+    </PermissionGuard>
   );
 }

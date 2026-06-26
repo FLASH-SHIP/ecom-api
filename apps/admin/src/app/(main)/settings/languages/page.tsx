@@ -1,6 +1,8 @@
 "use client";
 
 import { DataTableSkeleton } from "@admin/components/data-table";
+import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
+import { Permissions } from "@ecom/lib/permissions";
 import dynamic from "next/dynamic";
 
 const LanguagesContent = dynamic(() => import("./LanguagesContent"), {
@@ -9,5 +11,9 @@ const LanguagesContent = dynamic(() => import("./LanguagesContent"), {
 });
 
 export default function LanguagesPage() {
-  return <LanguagesContent />;
+  return (
+    <PermissionGuard permissions={[Permissions.SETTINGS_READ]}>
+      <LanguagesContent />
+    </PermissionGuard>
+  );
 }

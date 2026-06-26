@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { loggerContext } from "@ecom/lib/logger";
+import { createLogger, loggerContext } from "@ecom/lib/logger";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { readReplicas } from "@prisma/extension-read-replicas";
 import { PostFactory } from "./factories/PostFactory";
@@ -37,6 +37,8 @@ const replicaClients = replicaUrls.map((url) => {
 
 // Storage for active transaction client
 export const txStorage = new AsyncLocalStorage<unknown>();
+
+const log = createLogger("PrismaExtension");
 
 const globalForPrisma = globalThis as unknown as {
   basePrisma: PrismaClient | undefined;
@@ -121,7 +123,7 @@ const extendedPrisma = prismaWithReplicas.$extends({
             },
           });
         } catch (err) {
-          console.error("Failed to write create audit log in prisma extension", err);
+          log.error("Failed to write create audit log in prisma extension", { error: err });
         }
 
         return result;
@@ -171,7 +173,7 @@ const extendedPrisma = prismaWithReplicas.$extends({
             },
           });
         } catch (err) {
-          console.error("Failed to write update audit log in prisma extension", err);
+          log.error("Failed to write update audit log in prisma extension", { error: err });
         }
 
         return result;
@@ -220,7 +222,7 @@ const extendedPrisma = prismaWithReplicas.$extends({
             },
           });
         } catch (err) {
-          console.error("Failed to write delete audit log in prisma extension", err);
+          log.error("Failed to write delete audit log in prisma extension", { error: err });
         }
 
         return result;

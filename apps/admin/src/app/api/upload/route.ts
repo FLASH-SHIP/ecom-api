@@ -1,6 +1,9 @@
 import { auth } from "@admin/lib/auth";
 import { getMediaFileService } from "@ecom/features/di/containers/MediaService";
+import { createLogger } from "@ecom/lib/logger";
 import { NextResponse } from "next/server";
+
+const log = createLogger("UploadRoute");
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = [
@@ -65,7 +68,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    console.error("Upload error:", error);
+    log.error("Upload error", { error });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Upload failed" },
       { status: 500 },

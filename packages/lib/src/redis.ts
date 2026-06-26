@@ -74,26 +74,43 @@ export class RedisCache<T> {
   }
 
   async get(key: string): Promise<T | undefined> {
-    const redis = getRedisClient();
-    const raw = await redis.get(this.key(key));
-    if (!raw) return undefined;
-
     try {
+      const redis = getRedisClient();
+      const raw = await redis.get(this.key(key));
+      if (!raw) return undefined;
       return JSON.parse(raw) as T;
-    } catch {
+    } catch (err: unknown) {
+      log.error("Redis get cache error, falling back to database", {
+        key,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return undefined;
     }
   }
 
   async set(key: string, data: T, ttlSeconds?: number): Promise<void> {
-    const redis = getRedisClient();
-    const ttl = ttlSeconds ?? this.defaultTtlSeconds;
-    await redis.set(this.key(key), JSON.stringify(data), "EX", ttl);
+    try {
+      const redis = getRedisClient();
+      const ttl = ttlSeconds ?? this.defaultTtlSeconds;
+      await redis.set(this.key(key), JSON.stringify(data), "EX", ttl);
+    } catch (err: unknown) {
+      log.error("Redis set cache error", {
+        key,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   async invalidate(key: string): Promise<void> {
-    const redis = getRedisClient();
-    await redis.del(this.key(key));
+    try {
+      const redis = getRedisClient();
+      await redis.del(this.key(key));
+    } catch (err: unknown) {
+      log.error("Redis invalidate cache error", {
+        key,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   /**
@@ -101,18 +118,31 @@ export class RedisCache<T> {
    * SCAN is non-blocking unlike KEYS which does a full O(N) scan (PERF-01).
    */
   async invalidatePrefix(prefix: string): Promise<void> {
-    const redis = getRedisClient();
-    const pattern = `cache:${this.prefix}:${prefix}*`;
-    await scanAndDelete(redis, pattern);
+    try {
+      const redis = getRedisClient();
+      const pattern = `cache:${this.prefix}:${prefix}*`;
+      await scanAndDelete(redis, pattern);
+    } catch (err: unknown) {
+      log.error("Redis invalidatePrefix cache error", {
+        prefix,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   /**
    * Clear all keys for this cache namespace using cursor-based SCAN (PERF-01).
    */
   async clear(): Promise<void> {
-    const redis = getRedisClient();
-    const pattern = `cache:${this.prefix}:*`;
-    await scanAndDelete(redis, pattern);
+    try {
+      const redis = getRedisClient();
+      const pattern = `cache:${this.prefix}:*`;
+      await scanAndDelete(redis, pattern);
+    } catch (err: unknown) {
+      log.error("Redis clear cache error", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 }
 

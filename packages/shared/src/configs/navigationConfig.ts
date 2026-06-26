@@ -1,3 +1,4 @@
+import { Permissions } from "@ecom/lib/permissions";
 import type { NavItemType } from "../@app/core/navigation/types/NavItemType";
 
 /**
@@ -45,6 +46,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:file",
         url: "/pages",
+        auth: [Permissions.PAGES_READ],
       },
       {
         id: "posts",
@@ -53,6 +55,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:file-text",
         url: "/posts",
+        auth: [Permissions.POSTS_READ],
       },
       {
         id: "categories",
@@ -61,6 +64,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:folder-tree",
         url: "/categories",
+        auth: [Permissions.CATEGORIES_READ],
       },
       {
         id: "tags",
@@ -69,6 +73,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:tag",
         url: "/tags",
+        auth: [Permissions.TAGS_READ],
       },
       {
         id: "media",
@@ -77,6 +82,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:image",
         url: "/media",
+        auth: [Permissions.MEDIA_READ],
       },
     ],
   },
@@ -95,6 +101,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:user-check",
         url: "/customers",
+        auth: [Permissions.CUSTOMERS_READ],
       },
       {
         id: "verification-codes",
@@ -103,6 +110,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:clipboard-list",
         url: "/customers/verification-codes",
+        auth: [Permissions.CUSTOMERS_READ],
       },
       {
         id: "comments",
@@ -111,6 +119,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:message-circle",
         url: "/comments",
+        auth: [Permissions.COMMENTS_READ],
       },
       {
         id: "contacts",
@@ -119,6 +128,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:mail",
         url: "/contacts",
+        auth: [Permissions.CONTACTS_READ],
       },
     ],
   },
@@ -137,6 +147,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:sliders-horizontal",
         url: "/custom-fields",
+        auth: [Permissions.CUSTOM_FIELDS_READ],
       },
       {
         id: "menus",
@@ -144,7 +155,8 @@ const navigationConfig: NavItemType[] = [
         translate: "nav.menus",
         type: "item",
         icon: "lucide:menu",
-        url: "/menus",
+        url: "/admin-menus",
+        auth: [Permissions.ADMIN_MENUS_READ],
       },
       {
         id: "tools",
@@ -160,6 +172,7 @@ const navigationConfig: NavItemType[] = [
             type: "item",
             icon: "lucide:webhook",
             url: "/tools/webhooks",
+            auth: [Permissions.WEBHOOKS_READ],
           },
           {
             id: "tools-data-sync",
@@ -168,6 +181,7 @@ const navigationConfig: NavItemType[] = [
             type: "item",
             icon: "lucide:refresh-cw",
             url: "/tools/data-synchronize",
+            auth: [Permissions.SYSTEM_MANAGE],
           },
         ],
       },
@@ -178,6 +192,7 @@ const navigationConfig: NavItemType[] = [
         type: "item",
         icon: "lucide:settings",
         url: "/settings",
+        auth: [Permissions.SETTINGS_READ],
       },
     ],
   },
@@ -197,6 +212,7 @@ const navigationConfig: NavItemType[] = [
         icon: "lucide:shield-check",
         url: "/system",
         end: true,
+        auth: [Permissions.SYSTEM_READ],
         // Children are intentionally NOT rendered on sidebar (type:"item" ignores children in NavVerticalItemBase),
         // but flattenNavigation() recurses into them — so they remain discoverable in search and shortcuts.
         children: [
@@ -207,6 +223,7 @@ const navigationConfig: NavItemType[] = [
             type: "item",
             icon: "lucide:users",
             url: "/system/users",
+            auth: [Permissions.USERS_READ],
           },
           {
             id: "system-roles",
@@ -215,6 +232,7 @@ const navigationConfig: NavItemType[] = [
             type: "item",
             icon: "lucide:lock",
             url: "/system/roles",
+            auth: [Permissions.ROLES_READ],
           },
           {
             id: "system-audit-logs",
@@ -223,6 +241,7 @@ const navigationConfig: NavItemType[] = [
             type: "item",
             icon: "lucide:clipboard-list",
             url: "/system/audit-logs",
+            auth: [Permissions.AUDIT_LOGS_READ],
           },
           {
             id: "system-request-logs",
@@ -231,6 +250,7 @@ const navigationConfig: NavItemType[] = [
             type: "item",
             icon: "lucide:activity",
             url: "/system/request-logs",
+            auth: [Permissions.AUDIT_LOGS_READ],
           },
           {
             id: "system-cache",
@@ -239,6 +259,7 @@ const navigationConfig: NavItemType[] = [
             type: "item",
             icon: "lucide:database-backup",
             url: "/system/cache",
+            auth: [Permissions.SYSTEM_MANAGE],
           },
           {
             id: "system-info",
@@ -247,6 +268,7 @@ const navigationConfig: NavItemType[] = [
             type: "item",
             icon: "lucide:info",
             url: "/system/info",
+            auth: [Permissions.SYSTEM_READ],
           },
         ],
       },

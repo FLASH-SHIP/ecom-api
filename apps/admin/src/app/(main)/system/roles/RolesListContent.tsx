@@ -2,10 +2,12 @@
 
 import type { RowAction } from "@admin/components/data-table";
 import { DataTable } from "@admin/components/data-table";
+import { useRequirePermission } from "@admin/components/layout/PermissionGuard";
 import PageBreadcrumb from "@admin/components/PageBreadcrumb";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
 import { trpc } from "@admin/lib/trpc";
+import { Permissions } from "@ecom/lib/permissions";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -30,6 +32,10 @@ type RoleRow = {
 
 export default function RolesListContent() {
   const t = useTranslations("roles");
+  const { hasPermission: canCreate } = useRequirePermission([Permissions.ROLES_CREATE]);
+  const { hasPermission: canUpdate } = useRequirePermission([Permissions.ROLES_UPDATE]);
+  const { hasPermission: canDelete } = useRequirePermission([Permissions.ROLES_DELETE]);
+
   const router = useRouter();
   const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
 
@@ -49,12 +55,18 @@ export default function RolesListContent() {
         header: t("fields.name"),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <Link
-              href={`/system/roles/edit/${row.original.id}`}
-              className="font-medium text-foreground hover:text-primary transition-colors text-sm"
-            >
-              {row.original.displayName ?? row.original.name}
-            </Link>
+            {canUpdate ? (
+              <Link
+                href={`/system/roles/edit/${row.original.id}`}
+                className="font-medium text-foreground hover:text-primary transition-colors text-sm"
+              >
+                {row.original.displayName ?? row.original.name}
+              </Link>
+            ) : (
+              <span className="font-medium text-foreground text-sm">
+                {row.original.displayName ?? row.original.name}
+              </span>
+            )}
             {row.original.name === "admin" && (
               <Badge
                 variant="outline"
@@ -103,19 +115,22 @@ export default function RolesListContent() {
         ),
       },
     ],
-    [t],
+    [t, canUpdate],
   );
 
-  const rowActions: RowAction<RoleRow>[] = useMemo(
-    () => [
-      {
+  const rowActions: RowAction<RoleRow>[] = useMemo(() => {
+    const actions: RowAction<RoleRow>[] = [];
+    if (canUpdate) {
+      actions.push({
         key: "edit",
         tooltip: t("editRole"),
         icon: <Edit size={16} />,
         color: "success",
         onClick: (row) => router.push(`/system/roles/edit/${row.id}`),
-      },
-      {
+      });
+    }
+    if (canDelete) {
+      actions.push({
         key: "delete",
         tooltip: t("deleteRole"),
         icon: <Trash2 size={16} />,
@@ -129,10 +144,10 @@ export default function RolesListContent() {
             },
           });
         },
-      },
-    ],
-    [t, deleteMutation, askConfirm, router],
-  );
+      });
+    }
+    return actions;
+  }, [t, deleteMutation, askConfirm, router, canUpdate, canDelete]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -143,12 +158,14 @@ export default function RolesListContent() {
             <h1 className="text-xl font-bold text-foreground">{t("title")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button size="sm" onClick={() => router.push("/system/roles/create")} className="h-9">
-              <Plus className="mr-2 size-4" />
-              {t("newRole")}
-            </Button>
-          </div>
+          {canCreate && (
+            <div className="flex items-center gap-3">
+              <Button size="sm" onClick={() => router.push("/system/roles/create")} className="h-9">
+                <Plus className="mr-2 size-4" />
+                {t("newRole")}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -9,6 +9,7 @@ import type { AppSettingsConfigType } from "../../@app/core/AppSettings/AppSetti
 export type User = {
   id: string;
   role: string[] | string | null;
+  permissions?: string[];
   displayName: string;
   photoURL?: string;
   email?: string;
@@ -16,3 +17,4 @@ export type User = {
   settings?: PartialDeep<AppSettingsConfigType>;
   loginRedirectUrl?: string;
 };
+

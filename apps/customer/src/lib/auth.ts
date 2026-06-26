@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { env } from "@customer/env";
 import { getCustomerAuthService } from "@ecom/features/di/containers/CustomerService";
+import { createLogger } from "@ecom/lib/logger";
 import { getRedisClient } from "@ecom/lib/redis";
 import {
   getCachedSession,
@@ -17,6 +18,8 @@ export const AUTH_KEYS = {
   accessToken: "customerAccessToken",
   refreshToken: "customerRefreshToken",
 } as const;
+
+const log = createLogger("NextAuthCustomer");
 
 /** Delete an expired/invalid customer session from DB and cache */
 async function deleteCustomerSession(sessionId: string, cacheKey: string) {
@@ -293,38 +296,75 @@ const nextAuth: NextAuthResult = NextAuth({
         if (cached) return cached;
       }
 
-      const dbSession = await prisma.customerSession.findUnique({
-        where: { sessionToken },
-        select: {
-          id: true,
-          sessionToken: true,
-          customerId: true,
-          expires: true,
-          loginAt: true,
-          lastActiveAt: true,
-          customer: {
+      let dbSession = null;
+      let retries = 3;
+
+      while (retries > 0) {
+        try {
+          dbSession = await prisma.customerSession.findUnique({
+            where: { sessionToken },
             select: {
               id: true,
-              email: true,
-              name: true,
-              emailVerified: true,
-              status: true,
-              deletedAt: true,
-              avatarUrl: true,
+              sessionToken: true,
+              customerId: true,
+              expires: true,
+              loginAt: true,
+              lastActiveAt: true,
+              customer: {
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                  emailVerified: true,
+                  status: true,
+                  deletedAt: true,
+                  avatarUrl: true,
+                },
+              },
             },
-          },
-        },
-      });
-
-      if (
-        !dbSession ||
-        dbSession.expires < new Date() ||
-        dbSession.customer.status !== "ACTIVE" ||
-        dbSession.customer.deletedAt !== null
-      ) {
-        if (dbSession) {
-          await deleteCustomerSession(dbSession.id, cacheKey);
+          });
+          break; // Success, exit retry loop
+        } catch (error) {
+          retries--;
+          if (retries === 0) {
+            console.error(
+              "❌ NextAuth customer decode session DB query failed after retries:",
+              error,
+            );
+            return {};
+          }
+          // Wait 150ms before retrying to allow HMR compilation to finish/Prisma connection to recover
+          await new Promise((resolve) => setTimeout(resolve, 150));
         }
+      }
+
+      if (!dbSession) {
+        log.warn("Customer session not found in DB", { token: sessionToken });
+        return {};
+      }
+
+      if (dbSession.expires < new Date()) {
+        log.warn("Customer session expired", {
+          token: sessionToken,
+          expires: dbSession.expires.toISOString(),
+          now: new Date().toISOString(),
+        });
+        await deleteCustomerSession(dbSession.id, cacheKey);
+        return {};
+      }
+
+      if (dbSession.customer.status !== "ACTIVE") {
+        log.warn("Customer not active", { token: sessionToken, status: dbSession.customer.status });
+        await deleteCustomerSession(dbSession.id, cacheKey);
+        return {};
+      }
+
+      if (dbSession.customer.deletedAt !== null) {
+        log.warn("Customer is deleted", {
+          token: sessionToken,
+          deletedAt: dbSession.customer.deletedAt.toISOString(),
+        });
+        await deleteCustomerSession(dbSession.id, cacheKey);
         return {};
       }
 
@@ -333,6 +373,12 @@ const nextAuth: NextAuthResult = NextAuth({
       // 1️⃣ Absolute Timeout — hard stop after configured days from login
       const absoluteMaxMs = env.CUSTOMER_SESSION_ABSOLUTE_TIMEOUT_DAYS * 24 * 60 * 60 * 1000;
       if (now - dbSession.loginAt.getTime() > absoluteMaxMs) {
+        log.warn("Customer absolute timeout exceeded", {
+          loginAt: dbSession.loginAt.toISOString(),
+          now: new Date(now).toISOString(),
+          maxAgeMs: absoluteMaxMs,
+          ageMs: now - dbSession.loginAt.getTime(),
+        });
         await deleteCustomerSession(dbSession.id, cacheKey);
         return {};
       }
@@ -340,6 +386,12 @@ const nextAuth: NextAuthResult = NextAuth({
       // 2️⃣ Idle Timeout — no activity within configured days
       const idleMaxMs = env.CUSTOMER_SESSION_IDLE_TIMEOUT_DAYS * 24 * 60 * 60 * 1000;
       if (now - dbSession.lastActiveAt.getTime() > idleMaxMs) {
+        log.warn("Customer idle timeout exceeded", {
+          lastActiveAt: dbSession.lastActiveAt.toISOString(),
+          now: new Date(now).toISOString(),
+          idleMaxMs,
+          idleMs: now - dbSession.lastActiveAt.getTime(),
+        });
         await deleteCustomerSession(dbSession.id, cacheKey);
         return {};
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { NavItemType } from "@app/core/navigation/types/NavItemType";
+import type { FlatNavItemType, NavItemType } from "@app/core/navigation/types/NavItemType";
 import useUser from "@auth/useUser";
 import useNavigationItems from "@ecom/shared/components/theme-layouts/components/navigation/hooks/useNavigationItems";
 import {
@@ -17,7 +17,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Fragment, memo, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  Fragment,
+  memo,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { useAdminSidebar } from "./AdminSidebarContext";
 import { getNavIcon } from "./nav-icons";
@@ -61,14 +70,56 @@ function useNavLabel(item: NavItemType): string {
 }
 
 /**
+ * Find the navigation item URL that is the longest matching prefix for the current pathname.
+ * This prevents parent-level URLs (e.g. /customers) from being highlighted when a more specific
+ * peer URL (e.g. /customers/verification-codes) is active.
+ */
+function getActiveUrl(pathname: string, items: FlatNavItemType[]): string | null {
+  let activeUrl: string | null = null;
+  let maxLength = 0;
+
+  for (const item of items) {
+    const url = item.url;
+    if (!url) continue;
+
+    const isMatch = item.end
+      ? pathname === url
+      : pathname === url || (url !== "/" && pathname.startsWith(url + "/"));
+
+    if (isMatch && url.length > maxLength) {
+      maxLength = url.length;
+      activeUrl = url;
+    }
+  }
+
+  if (!activeUrl) {
+    for (const item of items) {
+      const url = item.url;
+      if (!url) continue;
+
+      const isMatch = item.end
+        ? pathname === url
+        : pathname === url || (url !== "/" && pathname.startsWith(url));
+
+      if (isMatch && url.length > maxLength) {
+        maxLength = url.length;
+        activeUrl = url;
+      }
+    }
+  }
+
+  return activeUrl;
+}
+
+const ActiveUrlContext = createContext<string | null>(null);
+
+/**
  * Single navigation item (type="item")
  */
 function NavItem({ item }: { item: NavItemType }) {
-  const pathname = usePathname();
+  const activeUrl = useContext(ActiveUrlContext);
   const url = item.url ?? "#";
-  const isActive = item.end
-    ? pathname === url
-    : pathname === url || (url !== "/" && pathname.startsWith(url));
+  const isActive = activeUrl === url;
   const Icon = getNavIcon(item.icon as string);
   const label = useNavLabel(item);
 
@@ -97,12 +148,12 @@ function NavItem({ item }: { item: NavItemType }) {
  * Collapsible navigation item (type="collapse")
  */
 function NavCollapse({ item }: { item: NavItemType }) {
-  const pathname = usePathname();
+  const activeUrl = useContext(ActiveUrlContext);
   const [open, setOpen] = useState(() => {
     return (
       item.children?.some((child) => {
         const url = child.url ?? "";
-        return pathname === url || (url !== "/" && pathname.startsWith(url));
+        return activeUrl === url;
       }) ?? false
     );
   });
@@ -163,68 +214,78 @@ function NavGroup({ item }: { item: NavItemType }) {
  * Sidebar content — logo, navigation, user menu
  */
 function SidebarContent() {
-  const { data: navigation } = useNavigationItems();
+  const { data: navigation, flattenData } = useNavigationItems();
+  const pathname = usePathname();
   const { data: user, signOut } = useUser();
   const tAuth = useTranslations("auth");
   const tUsers = useTranslations("users");
 
+  const activeUrl = useMemo(() => {
+    if (!flattenData) return null;
+    return getActiveUrl(pathname, flattenData);
+  }, [pathname, flattenData]);
+
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-[var(--sidebar-bg)]">
-      {/* Logo header */}
-      <div className="flex h-12 shrink-0 items-center gap-2 px-5 md:h-16">
-        <Image className="size-6" src="/favicon.ico" alt="Ecom" width={24} height={24} />
-        <div className="flex flex-col gap-0.5">
-          <span className="text-lg font-semibold leading-none tracking-tight">Ecom</span>
-          <span className="text-[12px] font-semibold leading-none text-muted-foreground">CMS</span>
+    <ActiveUrlContext.Provider value={activeUrl}>
+      <div className="flex h-full flex-col overflow-hidden bg-[var(--sidebar-bg)]">
+        {/* Logo header */}
+        <div className="flex h-12 shrink-0 items-center gap-2 px-5 md:h-16">
+          <Image className="size-6" src="/favicon.ico" alt="Ecom" width={24} height={24} />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-lg font-semibold leading-none tracking-tight">Ecom</span>
+            <span className="text-[12px] font-semibold leading-none text-muted-foreground">
+              CMS
+            </span>
+          </div>
         </div>
+
+        {/* Navigation */}
+        <PerfectScroll className="flex-1 px-3 py-4 flex flex-col gap-6">
+          {navigation?.map((group) => (
+            <NavGroup key={group.id} item={group} />
+          ))}
+        </PerfectScroll>
+
+        {/* User menu with profile + logout */}
+        {user && (
+          <div className="border-t border-[var(--sidebar-border)] p-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
+                >
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-muted-foreground">
+                    {user.displayName?.[0]?.toUpperCase() ?? "U"}
+                  </div>
+                  <div className="flex min-w-0 flex-col text-left">
+                    <span className="truncate text-sm font-semibold">{user.displayName}</span>
+                    <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                  </div>
+                  <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" side="top" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href={`/system/users/profile/${user.id}`}>
+                    <UserIcon className="mr-2 size-4" />
+                    {tUsers("profile.title")}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => signOut()}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="mr-2 size-4" />
+                  {tAuth("logout")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
-
-      {/* Navigation */}
-      <PerfectScroll className="flex-1 px-3 py-4 flex flex-col gap-6">
-        {navigation?.map((group) => (
-          <NavGroup key={group.id} item={group} />
-        ))}
-      </PerfectScroll>
-
-      {/* User menu with profile + logout */}
-      {user && (
-        <div className="border-t border-[var(--sidebar-border)] p-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex w-full items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
-              >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-muted-foreground">
-                  {user.displayName?.[0]?.toUpperCase() ?? "U"}
-                </div>
-                <div className="flex min-w-0 flex-col text-left">
-                  <span className="truncate text-sm font-semibold">{user.displayName}</span>
-                  <span className="truncate text-xs text-muted-foreground">{user.email}</span>
-                </div>
-                <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="top" className="w-56">
-              <DropdownMenuItem asChild>
-                <Link href={`/system/users/profile/${user.id}`}>
-                  <UserIcon className="mr-2 size-4" />
-                  {tUsers("profile.title")}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => signOut()}
-                className="text-destructive focus:text-destructive"
-              >
-                <LogOut className="mr-2 size-4" />
-                {tAuth("logout")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
-    </div>
+    </ActiveUrlContext.Provider>
   );
 }
 
