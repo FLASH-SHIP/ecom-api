@@ -256,30 +256,46 @@ const nextAuth: NextAuthResult = NextAuth({
         if (cached) return cached;
       }
 
-      const dbSession = await prisma.session.findUnique({
-        where: { sessionToken },
-        select: {
-          id: true,
-          sessionToken: true,
-          userId: true,
-          expires: true,
-          loginAt: true,
-          lastActiveAt: true,
-          user: {
+      let dbSession = null;
+      let retries = 3;
+
+      while (retries > 0) {
+        try {
+          dbSession = await prisma.session.findUnique({
+            where: { sessionToken },
             select: {
               id: true,
-              email: true,
-              name: true,
-              avatarUrl: true,
-              roles: {
+              sessionToken: true,
+              userId: true,
+              expires: true,
+              loginAt: true,
+              lastActiveAt: true,
+              user: {
                 select: {
-                  role: { select: { name: true } },
+                  id: true,
+                  email: true,
+                  name: true,
+                  avatarUrl: true,
+                  roles: {
+                    select: {
+                      role: { select: { name: true } },
+                    },
+                  },
                 },
               },
             },
-          },
-        },
-      });
+          });
+          break; // Success, exit retry loop
+        } catch (error) {
+          retries--;
+          if (retries === 0) {
+            console.error("❌ NextAuth decode session DB query failed after retries:", error);
+            return {};
+          }
+          // Wait 150ms before retrying to allow HMR compilation to finish/Prisma connection to recover
+          await new Promise((resolve) => setTimeout(resolve, 150));
+        }
+      }
 
       if (!dbSession || dbSession.expires < new Date()) {
         if (dbSession) {
