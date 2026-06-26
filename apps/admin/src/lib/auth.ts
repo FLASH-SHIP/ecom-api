@@ -2,6 +2,8 @@ import crypto from "node:crypto";
 import { env } from "@admin/env";
 
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
+import { createLogger } from "@ecom/lib/logger";
+import { getRedisClient } from "@ecom/lib/redis";
 import {
   getCachedSession,
   invalidateCachedSession,
@@ -17,6 +19,8 @@ export const AUTH_KEYS = {
   accessToken: "accessToken",
   refreshToken: "refreshToken",
 } as const;
+
+const log = createLogger("NextAuthAdmin");
 
 /** Delete an expired/invalid admin session from DB and cache */
 async function deleteAdminSession(sessionId: string, cacheKey: string) {
@@ -57,6 +61,22 @@ const adminAdapter = {
     };
   },
   async getSessionAndUser(sessionToken: string) {
+    const cacheKey = `admin_session:${sessionToken}`;
+    try {
+      const redis = getRedisClient();
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        parsed.session.expires = new Date(parsed.session.expires);
+        if (parsed.user.emailVerified) {
+          parsed.user.emailVerified = new Date(parsed.user.emailVerified);
+        }
+        return parsed;
+      }
+    } catch {
+      // Fallback to database query on Redis failure
+    }
+
     const dbSession = await prisma.session.findUnique({
       where: { sessionToken },
       select: {
@@ -77,10 +97,12 @@ const adminAdapter = {
     if (!dbSession || dbSession.expires < new Date()) {
       if (dbSession) {
         await prisma.session.delete({ where: { sessionToken } }).catch(() => {});
+        await invalidateCachedSession(cacheKey);
       }
       return null;
     }
-    return {
+
+    const result = {
       session: {
         id: dbSession.id,
         sessionToken: dbSession.sessionToken,
@@ -94,6 +116,10 @@ const adminAdapter = {
         emailVerified: dbSession.user.emailVerified,
       },
     };
+
+    await setCachedSession(cacheKey, result, env.ADMIN_SESSION_CACHE_TTL_SEC);
+
+    return result;
   },
   async updateSession(session: { sessionToken: string; expires?: Date; userId?: string }) {
     const updated = await prisma.session.update({
@@ -102,6 +128,9 @@ const adminAdapter = {
         expires: session.expires,
       },
     });
+
+    await invalidateCachedSession(`admin_session:${session.sessionToken}`);
+
     return {
       id: updated.id,
       sessionToken: updated.sessionToken,
@@ -297,10 +326,18 @@ const nextAuth: NextAuthResult = NextAuth({
         }
       }
 
-      if (!dbSession || dbSession.expires < new Date()) {
-        if (dbSession) {
-          await deleteAdminSession(dbSession.id, cacheKey);
-        }
+      if (!dbSession) {
+        log.warn("Session not found in DB", { token: sessionToken });
+        return {};
+      }
+
+      if (dbSession.expires < new Date()) {
+        log.warn("Session expired", {
+          token: sessionToken,
+          expires: dbSession.expires.toISOString(),
+          now: new Date().toISOString(),
+        });
+        await deleteAdminSession(dbSession.id, cacheKey);
         return {};
       }
 
@@ -309,6 +346,12 @@ const nextAuth: NextAuthResult = NextAuth({
       // 1️⃣ Absolute Timeout — hard stop after configured hours from login
       const absoluteMaxMs = env.ADMIN_SESSION_ABSOLUTE_TIMEOUT_HOURS * 60 * 60 * 1000;
       if (now - dbSession.loginAt.getTime() > absoluteMaxMs) {
+        log.warn("Absolute timeout exceeded", {
+          loginAt: dbSession.loginAt.toISOString(),
+          now: new Date(now).toISOString(),
+          maxAgeMs: absoluteMaxMs,
+          ageMs: now - dbSession.loginAt.getTime(),
+        });
         await deleteAdminSession(dbSession.id, cacheKey);
         return {};
       }
@@ -316,6 +359,12 @@ const nextAuth: NextAuthResult = NextAuth({
       // 2️⃣ Idle Timeout — no activity within configured hours
       const idleMaxMs = env.ADMIN_SESSION_IDLE_TIMEOUT_HOURS * 60 * 60 * 1000;
       if (now - dbSession.lastActiveAt.getTime() > idleMaxMs) {
+        log.warn("Idle timeout exceeded", {
+          lastActiveAt: dbSession.lastActiveAt.toISOString(),
+          now: new Date(now).toISOString(),
+          idleMaxMs,
+          idleMs: now - dbSession.lastActiveAt.getTime(),
+        });
         await deleteAdminSession(dbSession.id, cacheKey);
         return {};
       }
