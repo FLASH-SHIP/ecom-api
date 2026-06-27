@@ -10,6 +10,10 @@
   "purge30Title": "Purge logs older than 30 days?",
   "purge30Message": "All request logs older than 30 days will be permanently deleted.",
   "purgeSuccess": "Request logs older than 30 days deleted",
+  "purgeAll": "Delete all",
+  "purgeAllTitle": "Delete all request logs?",
+  "purgeAllMessage": "All request log records will be permanently deleted and cannot be recovered.",
+  "purgeAllSuccess": "All request logs deleted successfully",
   "purgeError": "Failed to purge logs",
   "reload": "Reload",
   "openUrl": "Open URL",
@@ -49,5 +53,29 @@
   "tableColDuration": "Duration",
   "tableColIp": "IP Address",
   "tableColTime": "Time",
-  "tableColUser": "User"
+  "tableColUser": "User",
+  "stats": {
+    "total": "Total Requests",
+    "today": "Today's Requests",
+    "errors": "Failed Requests"
+  },
+  "detail": {
+    "title": "Request Details",
+    "close": "Close",
+    "method": "Method",
+    "url": "Request URL",
+    "statusCode": "Response Status",
+    "duration": "Duration Time",
+    "ipAddress": "Client IP",
+    "user": "Auth Account",
+    "timestamp": "Request Time",
+    "userAgent": "Browser & Device",
+    "referer": "Referer Page",
+    "guest": "Guest Client",
+    "copy": "Copy URL",
+    "copySuccess": "URL copied to clipboard",
+    "copyError": "Could not copy URL",
+    "noUserAgent": "Unknown",
+    "noReferer": "No referrer"
+  }
 }

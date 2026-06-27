@@ -1,5 +1,6 @@
 "use client";
 
+import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { useToast } from "@admin/components/toast-provider";
 import { trpc } from "@admin/lib/trpc";
 import { Button } from "@ecom/ui/components/button";
@@ -17,7 +18,7 @@ import { Switch } from "@ecom/ui/components/switch";
 import { Textarea } from "@ecom/ui/components/textarea";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type CategoryStatus = "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED";
 
@@ -71,6 +72,7 @@ export function CategoryForm({
   const utils = trpc.useUtils();
   const { toast } = useToast();
   const t = useTranslations("common");
+  const publishCardRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<CategoryFormData>({
     name: initialData?.name ?? "",
@@ -138,6 +140,16 @@ export function CategoryForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      {!translationMode && (
+        <StickyPublishBar
+          publishCardRef={publishCardRef}
+          title={formData.name}
+          label={mode === "create" ? "Tạo danh mục" : "Sửa danh mục"}
+          isPending={isPending}
+          onSave={() => {}}
+          saveLabel={isPending ? "Đang lưu..." : mode === "create" ? "Tạo danh mục" : "Cập nhật"}
+        />
+      )}
       {error && (
         <div className="rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           {error.message}
@@ -216,97 +228,103 @@ export function CategoryForm({
 
         {/* Sidebar — hidden in translation mode */}
         {!translationMode && (
-          <Card>
-            <CardHeader className="border-b border-border px-4 py-3">
-              <CardTitle className="text-sm font-semibold">Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4 p-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="cat-status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(v) =>
-                    setFormData((prev) => ({ ...prev, status: v as CategoryStatus }))
-                  }
-                >
-                  <SelectTrigger id="cat-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div ref={publishCardRef}>
+            <Card>
+              <CardHeader className="border-b border-border px-4 py-3">
+                <CardTitle className="text-sm font-semibold">Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4 p-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="cat-status">Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(v) =>
+                      setFormData((prev) => ({ ...prev, status: v as CategoryStatus }))
+                    }
+                  >
+                    <SelectTrigger id="cat-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="cat-parent">Parent Category</Label>
-                <Select
-                  value={formData.parentId?.toString() ?? ""}
-                  onValueChange={(v) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      parentId: v ? Number(v) : null,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="cat-parent">
-                    <SelectValue placeholder="None (Root)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None (Root)</SelectItem>
-                    {flatCategories.map((cat) => (
-                      <SelectItem key={cat.id} value={String(cat.id)}>
-                        {"—".repeat(cat.depth)} {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="cat-parent">Parent Category</Label>
+                  <Select
+                    value={formData.parentId?.toString() ?? ""}
+                    onValueChange={(v) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        parentId: v ? Number(v) : null,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="cat-parent">
+                      <SelectValue placeholder="None (Root)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None (Root)</SelectItem>
+                      {flatCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={String(cat.id)}>
+                          {"—".repeat(cat.depth)} {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="cat-featured" className="cursor-pointer text-sm">
-                  Featured category
-                </Label>
-                <Switch
-                  id="cat-featured"
-                  checked={formData.isFeatured}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, isFeatured: checked }))
-                  }
-                />
-              </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="cat-featured" className="cursor-pointer text-sm">
+                    Featured category
+                  </Label>
+                  <Switch
+                    id="cat-featured"
+                    checked={formData.isFeatured}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, isFeatured: checked }))
+                    }
+                  />
+                </div>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="cat-default" className="cursor-pointer text-sm">
-                  Default category
-                </Label>
-                <Switch
-                  id="cat-default"
-                  checked={formData.isDefault}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, isDefault: checked }))
-                  }
-                />
-              </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="cat-default" className="cursor-pointer text-sm">
+                    Default category
+                  </Label>
+                  <Switch
+                    id="cat-default"
+                    checked={formData.isDefault}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, isDefault: checked }))
+                    }
+                  />
+                </div>
 
-              <div className="flex gap-2 pt-2">
-                <Button type="submit" disabled={isPending} className="flex-1">
-                  {isPending
-                    ? "Saving..."
-                    : mode === "create"
-                      ? "Create Category"
-                      : "Update Category"}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => router.push("/categories")}>
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex gap-2 pt-2">
+                  <Button type="submit" disabled={isPending} className="flex-1">
+                    {isPending
+                      ? "Saving..."
+                      : mode === "create"
+                        ? "Create Category"
+                        : "Update Category"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push("/categories")}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Translation save button */}

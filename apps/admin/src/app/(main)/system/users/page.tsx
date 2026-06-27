@@ -14,13 +14,27 @@ import { formatDate } from "@admin/utils/dateFormat";
 import { Permissions } from "@ecom/lib/permissions";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
+import { Checkbox } from "@ecom/ui/components/checkbox";
+import { Input } from "@ecom/ui/components/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@ecom/ui/components/popover";
 import { cn } from "@ecom/ui/lib/utils";
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertCircle, Key, Pencil, Plus, Trash2, Users } from "lucide-react";
+import {
+  AlertCircle,
+  Edit2,
+  Key,
+  Loader2,
+  Pencil,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type UserRole = {
   role: {
@@ -83,6 +97,10 @@ export default function SystemUsersPage() {
   // Queries
   const { data: me } = trpc.viewer.auth.me.useQuery(undefined, {
     staleTime: 30_000,
+  });
+
+  const { data: allRoles } = trpc.viewer.roles.list.useQuery(undefined, {
+    staleTime: 300_000,
   });
 
   const {
@@ -205,21 +223,14 @@ export default function SystemUsersPage() {
         accessorKey: "roles",
         header: t("fields.role"),
         size: 200,
-        cell: ({ row }) => {
-          const userRoles = row.original.roles ?? [];
-          return (
-            <div className="flex flex-wrap gap-1">
-              {userRoles.map((ur) => (
-                <Badge key={ur.role.id} variant="outline" className="text-xs">
-                  {ur.role.displayName ?? ur.role.name}
-                </Badge>
-              ))}
-              {userRoles.length === 0 && (
-                <span className="text-xs text-muted-foreground/50">{t("noRole")}</span>
-              )}
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <UserRolesPopoverCell
+            user={row.original}
+            allRoles={allRoles}
+            canUpdate={canUpdate}
+            t={t}
+          />
+        ),
       },
       {
         id: "isSuperAdmin",
@@ -271,7 +282,7 @@ export default function SystemUsersPage() {
         ),
       },
     ],
-    [t, tCommon, router],
+    [t, tCommon, router, allRoles, canUpdate],
   );
 
   // Filter fields (Botble-style)
@@ -451,5 +462,181 @@ export default function SystemUsersPage() {
 
       <ConfirmDialog {...confirmDialogProps} />
     </>
+  );
+}
+
+interface UserRolesPopoverCellProps {
+  user: UserRow;
+  allRoles: Array<{ id?: string; name?: string; displayName?: string | null }> | undefined;
+  canUpdate: boolean;
+  t: (key: string) => string;
+}
+
+function UserRolesPopoverCell({ user, allRoles, canUpdate, t }: UserRolesPopoverCellProps) {
+  const [open, setOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const utils = trpc.useUtils();
+  const { toast } = useToast();
+
+  const userRoles = user.roles ?? [];
+
+  const filteredRoles = useMemo(() => {
+    if (!allRoles) return [];
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return allRoles;
+    return allRoles.filter((role) => {
+      const name = role.name?.toLowerCase() ?? "";
+      const displayName = role.displayName?.toLowerCase() ?? "";
+      return name.includes(q) || displayName.includes(q);
+    });
+  }, [allRoles, searchQuery]);
+
+  // Sync state when popover opens or user roles change
+  useEffect(() => {
+    if (open) {
+      setSelectedIds((user.roles ?? []).map((ur) => ur.role.id));
+    } else {
+      setSearchQuery("");
+    }
+  }, [open, user.roles]);
+
+  const syncRolesMut = trpc.viewer.users.syncRoles.useMutation({
+    onSuccess: () => {
+      toast(t("rolesUpdated") || "Roles updated successfully!", "success");
+      setOpen(false);
+      void utils.viewer.users.list.invalidate();
+    },
+    onError: (err) => {
+      toast(err.message, "error");
+    },
+  });
+
+  const handleToggle = (roleId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, roleId]);
+    } else {
+      setSelectedIds((prev) => prev.filter((id) => id !== roleId));
+    }
+  };
+
+  const handleSave = () => {
+    syncRolesMut.mutate({
+      userId: user.id,
+      roleIds: selectedIds,
+    });
+  };
+
+  if (!canUpdate) {
+    return (
+      <div className="flex flex-wrap gap-1">
+        {userRoles.map((ur) => (
+          <Badge key={ur.role.id} variant="outline" className="text-xs">
+            {ur.role.displayName ?? ur.role.name}
+          </Badge>
+        ))}
+        {userRoles.length === 0 && (
+          <span className="text-xs text-muted-foreground/50">{t("noRole")}</span>
+        )}
+      </div>
+    );
+  }
+
+  const isPending = syncRolesMut.isPending;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="group flex flex-wrap gap-1 items-center cursor-pointer p-0.5 hover:bg-accent/40 rounded transition-all text-left w-full border border-dashed border-transparent hover:border-border min-h-6"
+        >
+          {userRoles.map((ur) => (
+            <Badge
+              key={ur.role.id}
+              variant="outline"
+              className="text-xs border-primary/20 bg-primary/5 text-primary group-hover:border-primary/45"
+            >
+              {ur.role.displayName ?? ur.role.name}
+            </Badge>
+          ))}
+          {userRoles.length === 0 && (
+            <span className="text-xs text-blue-600 dark:text-blue-400 underline decoration-dotted decoration-blue-600/40 hover:decoration-blue-600 px-1 py-0.5">
+              {t("assignRoles") || "Gán vai trò"}
+            </span>
+          )}
+          {userRoles.length > 0 && (
+            <Edit2 className="size-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-3" align="start">
+        <div className="space-y-3">
+          <div className="font-semibold text-sm border-b pb-1.5 border-border">
+            {t("assignRoles") || "Thay đổi vai trò"}
+          </div>
+          {allRoles && allRoles.length > 5 && (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+              <Input
+                placeholder={t("searchRoles") || "Tìm kiếm vai trò..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 pl-8 text-xs bg-muted/30 focus:bg-background border-border"
+              />
+            </div>
+          )}
+          <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+            {filteredRoles.map((role) => {
+              if (!role.id) return null;
+              const isChecked = selectedIds.includes(role.id);
+              return (
+                <div key={role.id} className="flex items-center space-x-2.5 py-0.5">
+                  <Checkbox
+                    id={`popover-role-${user.id}-${role.id}`}
+                    checked={isChecked}
+                    onCheckedChange={(checked) => handleToggle(role.id, !!checked)}
+                    disabled={isPending}
+                  />
+                  <label
+                    htmlFor={`popover-role-${user.id}-${role.id}`}
+                    className="text-sm font-medium leading-none cursor-pointer select-none text-foreground"
+                  >
+                    {role.displayName ?? role.name}
+                  </label>
+                </div>
+              );
+            })}
+            {filteredRoles.length === 0 && (
+              <div className="text-xs text-muted-foreground text-center py-2">{t("noRole")}</div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOpen(false)}
+              disabled={isPending}
+              className="h-7 px-2.5 text-xs rounded-md"
+            >
+              Huỷ
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isPending}
+              className="h-7 px-2.5 text-xs rounded-md"
+            >
+              {isPending ? (
+                <Loader2 className="size-3 animate-spin mr-1" />
+              ) : (
+                <Save className="size-3 mr-1" />
+              )}
+              Lưu
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

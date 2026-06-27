@@ -1,6 +1,7 @@
 "use client";
 
 import { PermissionGuard } from "@admin/components/layout/PermissionGuard";
+import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import PageBreadcrumb from "@admin/components/PageBreadcrumb";
 import { trpc } from "@admin/lib/trpc";
 import { Permissions } from "@ecom/lib/permissions";
@@ -9,10 +10,10 @@ import { Card } from "@ecom/ui/components/card";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
 import { Textarea } from "@ecom/ui/components/textarea";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { PermissionTree } from "../components/PermissionTree";
 
 export default function CreateRolePage() {
@@ -25,7 +26,7 @@ export default function CreateRolePage() {
   const [newRoleDesc, setNewRoleDesc] = useState("");
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
 
-  const [redirectAfterSave, setRedirectAfterSave] = useState(true); // true = list, false = edit
+  const publishCardRef = useRef<HTMLDivElement>(null);
 
   const { data: allPermissions, isLoading: isPermsLoading } =
     trpc.viewer.roles.permissions.useQuery();
@@ -63,12 +64,7 @@ export default function CreateRolePage() {
       }
 
       utils.viewer.roles.list.invalidate();
-
-      if (redirectAfterSave) {
-        router.push("/system/roles");
-      } else {
-        router.push(`/system/roles/edit/${newRole.id}`);
-      }
+      router.push(`/system/roles/edit/${newRole.id}`);
     } catch {}
   }
 
@@ -80,14 +76,26 @@ export default function CreateRolePage() {
         <PageBreadcrumb className="mb-0" />
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 mt-1 mb-2">
           <div>
             <h1 className="text-xl font-bold">{t("newRole")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
           </div>
+          <Button variant="outline" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 size-4" />
+            {commonT("back") ?? "Quay lại"}
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-4 items-start">
+          <StickyPublishBar
+            publishCardRef={publishCardRef}
+            title={newRoleDisplay || newRoleName || t("newRole")}
+            label={t("newRole")}
+            isPending={isPending || !newRoleName.trim()}
+            onSave={() => {}}
+            saveLabel={isPending ? t("form.saving") : t("form.save")}
+          />
           {/* Left Column: Form & Permissions */}
           <div className="lg:col-span-3 flex flex-col gap-6">
             {/* Inputs Card */}
@@ -122,7 +130,7 @@ export default function CreateRolePage() {
                     id="role-desc"
                     value={newRoleDesc}
                     onChange={(e) => setNewRoleDesc(e.target.value)}
-                    placeholder={t("form.descriptionLabel")}
+                    placeholder={t("form.descriptionPlaceholder")}
                     rows={3}
                   />
                 </div>
@@ -140,7 +148,7 @@ export default function CreateRolePage() {
           </div>
 
           {/* Right Column: Publish Sidebar */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4" ref={publishCardRef}>
             <Card className="p-4 border-border/80">
               <div className="border-b border-border/60 pb-2 mb-3">
                 <h3 className="text-sm font-semibold">{commonT("publish")}</h3>
@@ -154,28 +162,15 @@ export default function CreateRolePage() {
                 )}
                 <Button
                   type="submit"
-                  onClick={() => setRedirectAfterSave(false)}
                   disabled={isPending || !newRoleName.trim()}
-                  className="w-full text-xs h-9 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all font-semibold"
+                  className="w-full text-xs h-9 font-semibold flex items-center justify-center gap-1.5"
                 >
-                  {isPending && !redirectAfterSave ? t("form.saving") : t("form.saveAndEdit")}
-                </Button>
-                <Button
-                  type="submit"
-                  onClick={() => setRedirectAfterSave(true)}
-                  disabled={isPending || !newRoleName.trim()}
-                  className="w-full text-xs h-9 font-semibold"
-                >
-                  {isPending && redirectAfterSave ? t("form.saving") : t("form.save")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full text-xs h-9"
-                  onClick={() => router.push("/system/roles")}
-                  disabled={isPending}
-                >
-                  {t("form.cancel")}
+                  {isPending ? (
+                    <Loader2 className="mr-1.5 size-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-1.5 size-4" />
+                  )}
+                  {isPending ? t("form.saving") : t("form.save")}
                 </Button>
               </div>
             </Card>

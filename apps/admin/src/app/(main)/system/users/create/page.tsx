@@ -1,6 +1,7 @@
 "use client";
 
 import { PageShell } from "@admin/components/layout/PageShell";
+import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { useToast } from "@admin/components/toast-provider";
 import { PhoneInput } from "@admin/components/ui/PhoneInput";
 import { trpc } from "@admin/lib/trpc";
@@ -19,7 +20,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, ArrowLeft, ChevronDown, Loader2, Save, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef } from "react";
 import type { Control, UseFormSetValue } from "react-hook-form";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -58,13 +59,6 @@ const getValidationSchema = (t: (key: string) => string) =>
       message: t("profile.passwordMismatch"),
       path: ["confirmPassword"],
     });
-
-function getRedirectUrl(submitAction: "save" | "save-edit", id?: number): string {
-  if (submitAction === "save-edit" && id) {
-    return `/system/users/profile/${id}`;
-  }
-  return "/system/users";
-}
 
 interface UserFieldsCardProps {
   control: Control<FormValues>;
@@ -349,8 +343,7 @@ export default function CreateUserPage() {
   const tCommon = useTranslations("common");
   const router = useRouter();
   const { toast } = useToast();
-
-  const [submitAction, setSubmitAction] = useState<"save" | "save-edit">("save");
+  const publishCardRef = useRef<HTMLDivElement>(null);
 
   // Fetch roles
   const { data: roles, isLoading: isRolesLoading } = trpc.viewer.roles.list.useQuery(undefined, {
@@ -379,7 +372,11 @@ export default function CreateUserPage() {
   const createMut = trpc.viewer.users.create.useMutation({
     onSuccess: (data) => {
       toast(tCommon("successCreated") ?? "Created successfully", "success");
-      router.push(getRedirectUrl(submitAction, data?.id));
+      if (data?.id) {
+        router.push(`/system/users/profile/${data.id}`);
+      } else {
+        router.push("/system/users");
+      }
     },
     onError: (err) => {
       toast(err.message, "error");
@@ -398,8 +395,6 @@ export default function CreateUserPage() {
   };
 
   const isPending = createMut.isPending;
-  const isSaveEditPending = isSubmitting || (isPending && submitAction === "save-edit");
-  const isSavePending = isSubmitting || (isPending && submitAction === "save");
   const isFormDisabled = isSubmitting || isPending;
 
   return (
@@ -413,6 +408,14 @@ export default function CreateUserPage() {
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <StickyPublishBar
+          publishCardRef={publishCardRef}
+          title={watch("name") || ""}
+          label={t("newUser")}
+          isPending={isFormDisabled}
+          onSave={() => {}}
+          saveLabel={isPending ? "Đang lưu..." : (tCommon("save") ?? "Lưu")}
+        />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main Form Fields */}
           <div className="flex flex-col gap-6 lg:col-span-2">
@@ -427,7 +430,7 @@ export default function CreateUserPage() {
           </div>
 
           {/* Right Sidebar Columns */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6" ref={publishCardRef}>
             {/* Card 1: Publish */}
             <Card className="rounded-lg">
               <CardHeader className="border-b border-border px-4 py-3">
@@ -435,36 +438,19 @@ export default function CreateUserPage() {
                   {tCommon("publish") ?? "Đăng"}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 flex flex-col gap-3">
+              <CardContent className="p-4">
                 <Button
                   type="submit"
-                  variant="outline"
-                  onClick={() => setSubmitAction("save-edit")}
-                  disabled={isSaveEditPending}
-                  id="user-create-save-edit-btn"
-                  className="w-full flex justify-center items-center"
-                >
-                  {isSaveEditPending && submitAction === "save-edit" ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 size-4" />
-                  )}
-                  <span className="truncate">{t("saveAndEdit") ?? "Lưu & chỉnh sửa"}</span>
-                </Button>
-
-                <Button
-                  type="submit"
-                  onClick={() => setSubmitAction("save")}
-                  disabled={isSavePending}
+                  disabled={isFormDisabled}
                   id="user-create-save-btn"
-                  className="w-full flex justify-center items-center"
+                  className="w-full flex justify-center items-center font-semibold"
                 >
-                  {isSavePending && submitAction === "save" ? (
+                  {isPending ? (
                     <Loader2 className="mr-2 size-4 animate-spin" />
                   ) : (
                     <Save className="mr-2 size-4" />
                   )}
-                  <span className="truncate">{t("actions.save") ?? "Lưu"}</span>
+                  <span className="truncate">{tCommon("save") ?? "Lưu"}</span>
                 </Button>
               </CardContent>
             </Card>

@@ -1,6 +1,7 @@
 "use client";
 
 import { CustomFieldsPanel } from "@admin/components/custom-fields/CustomFieldsPanel";
+import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { useToast } from "@admin/components/toast-provider";
 import { trpc } from "@admin/lib/trpc";
 import { Badge } from "@ecom/ui/components/badge";
@@ -22,7 +23,7 @@ import { cn } from "@ecom/ui/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type PostStatus = "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED";
 
@@ -62,6 +63,7 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
   const utils = trpc.useUtils();
   const { toast } = useToast();
   const t = useTranslations("common");
+  const publishCardRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<PostFormData>({
     title: initialData?.title ?? "",
@@ -176,6 +178,16 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
 
   return (
     <form onSubmit={handleSubmit}>
+      {!translationMode && (
+        <StickyPublishBar
+          publishCardRef={publishCardRef}
+          title={formData.title}
+          label={mode === "create" ? "Tạo bài viết" : "Sửa bài viết"}
+          isPending={isPending}
+          onSave={() => {}}
+          saveLabel={isPending ? "Đang lưu..." : mode === "create" ? "Tạo bài viết" : "Cập nhật"}
+        />
+      )}
       {error && (
         <div className="mb-6 rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           {error.message}
@@ -319,7 +331,7 @@ export function PostForm({ mode, postId, initialData, translationMode }: PostFor
 
         {/* ── Right: Sidebar — hidden in translation mode ── */}
         {!translationMode && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6" ref={publishCardRef}>
             {/* Publish Settings */}
             <Card>
               <CardHeader className="border-b border-border px-6 py-4">

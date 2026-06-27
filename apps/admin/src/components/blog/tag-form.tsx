@@ -1,5 +1,6 @@
 "use client";
 
+import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { useToast } from "@admin/components/toast-provider";
 import { RichTextEditor } from "@admin/components/ui/RichTextEditor";
 import { trpc } from "@admin/lib/trpc";
@@ -17,7 +18,7 @@ import {
 import { Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type TagStatus = "DRAFT" | "PENDING" | "PUBLISHED";
 
@@ -49,6 +50,7 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
   const utils = trpc.useUtils();
   const { toast } = useToast();
   const t = useTranslations("tags");
+  const publishCardRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<TagFormData>({
     name: initialData?.name ?? "",
@@ -66,15 +68,6 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
     onError: (err) => toast(err.message, "error"),
   });
 
-  const createAndExitMutation = trpc.viewer.tags.create.useMutation({
-    onSuccess: () => {
-      toast(t("createSuccess"), "success");
-      utils.viewer.tags.list.invalidate();
-      router.push("/tags");
-    },
-    onError: (err) => toast(err.message, "error"),
-  });
-
   const updateMutation = trpc.viewer.tags.update.useMutation({
     onSuccess: () => {
       toast(t("updateSuccess"), "success");
@@ -84,27 +77,9 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
     onError: (err) => toast(err.message, "error"),
   });
 
-  const updateAndExitMutation = trpc.viewer.tags.update.useMutation({
-    onSuccess: () => {
-      toast(t("updateSuccess"), "success");
-      utils.viewer.tags.list.invalidate();
-      if (tagId) utils.viewer.tags.get.invalidate({ id: tagId });
-      router.push("/tags");
-    },
-    onError: (err) => toast(err.message, "error"),
-  });
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
-  const isPending =
-    createMutation.isPending ||
-    createAndExitMutation.isPending ||
-    updateMutation.isPending ||
-    updateAndExitMutation.isPending;
-
-  const error =
-    createMutation.error ||
-    createAndExitMutation.error ||
-    updateMutation.error ||
-    updateAndExitMutation.error;
+  const error = createMutation.error || updateMutation.error;
 
   function buildPayload() {
     return {
@@ -115,22 +90,15 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
     };
   }
 
-  function handleSaveAndContinue(e: React.FormEvent) {
-    e.preventDefault();
+  function handleSave(e?: React.FormEvent) {
+    if (e) {
+      e.preventDefault();
+    }
     const payload = buildPayload();
     if (mode === "edit" && tagId) {
       updateMutation.mutate({ id: tagId, ...payload });
     } else {
       createMutation.mutate(payload);
-    }
-  }
-
-  function handleSave() {
-    const payload = buildPayload();
-    if (mode === "edit" && tagId) {
-      updateAndExitMutation.mutate({ id: tagId, ...payload });
-    } else {
-      createAndExitMutation.mutate(payload);
     }
   }
 
@@ -149,7 +117,17 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
       .trim();
 
   return (
-    <form onSubmit={handleSaveAndContinue}>
+    <form onSubmit={handleSave}>
+      {!translationMode && (
+        <StickyPublishBar
+          publishCardRef={publishCardRef}
+          title={formData.name}
+          label={mode === "create" ? "Tạo thẻ" : "Sửa thẻ"}
+          isPending={isPending || !formData.name.trim()}
+          onSave={() => {}}
+          saveLabel={isPending ? "Đang lưu..." : t("form.save")}
+        />
+      )}
       {error && (
         <div className="mb-4 rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           {error.message}
@@ -220,36 +198,25 @@ export function TagForm({ mode, tagId, initialData, translationMode }: TagFormPr
 
         {/* ── Right: Sidebar — hidden in translation mode ── */}
         {!translationMode ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4" ref={publishCardRef}>
             {/* Publish */}
             <Card>
               <CardHeader className="border-b border-border px-4 py-3">
                 <CardTitle className="text-sm font-semibold">{t("form.publish")}</CardTitle>
               </CardHeader>
-              <CardContent className="flex gap-2 p-4">
+              <CardContent className="p-4">
                 <Button
-                  id="tag-save-continue"
+                  id="tag-save"
                   type="submit"
                   disabled={isPending || !formData.name.trim()}
                   size="sm"
-                  className="flex-1 font-semibold"
+                  className="w-full font-semibold"
                 >
                   {isPending ? (
                     <Loader2 className="mr-2 size-4 animate-spin" />
                   ) : (
                     <Save className="mr-2 size-4" />
                   )}
-                  {t("form.saveAndContinue")}
-                </Button>
-                <Button
-                  id="tag-save"
-                  type="button"
-                  variant="outline"
-                  disabled={isPending || !formData.name.trim()}
-                  onClick={handleSave}
-                  size="sm"
-                >
-                  <Save className="mr-2 size-4" />
                   {t("form.save")}
                 </Button>
               </CardContent>

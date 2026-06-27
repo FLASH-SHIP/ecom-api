@@ -10,12 +10,32 @@ import { useConfirm } from "@admin/components/ui/useConfirm";
 import { trpc } from "@admin/lib/trpc";
 import { formatDateTime } from "@admin/utils/dateFormat";
 import { Button } from "@ecom/ui/components/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@ecom/ui/components/sheet";
 import { cn } from "@ecom/ui/lib/utils";
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ExternalLink, RefreshCw, Search, Trash, Trash2 } from "lucide-react";
+import {
+  Activity,
+  Check,
+  Copy,
+  ExternalLink,
+  Globe,
+  Laptop,
+  RefreshCw,
+  Search,
+  ShieldAlert,
+  Trash,
+  Trash2,
+  User,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -26,9 +46,14 @@ type RequestLog = {
   statusCode: number | null;
   duration: number | null;
   ipAddress: string | null;
+  userAgent?: string | null;
+  referer?: string | null;
   createdAt: string;
   user: { id: number; name: string | null; email: string } | null;
 };
+
+// biome-ignore lint/suspicious/noExplicitAny: generic next-intl translator type
+type TranslatorType = any;
 
 // ── HTTP method colour mapping ─────────────────────────────────────────────────
 
@@ -53,6 +78,30 @@ function durationColorClass(ms: number | null): string {
   if (ms < 200) return "text-emerald-600";
   if (ms < 1000) return "text-amber-600";
   return "text-red-600";
+}
+
+// ── User Agent Parser Helpers ─────────────────────────────────────────────────
+
+function detectOS(ua: string | null): string {
+  if (!ua) return "Unknown OS";
+  const lower = ua.toLowerCase();
+  if (lower.includes("windows")) return "Windows";
+  if (lower.includes("macintosh") || lower.includes("mac os")) return "macOS";
+  if (lower.includes("android")) return "Android";
+  if (lower.includes("iphone") || lower.includes("ipad")) return "iOS";
+  if (lower.includes("linux")) return "Linux";
+  return "Unknown OS";
+}
+
+function detectBrowser(ua: string | null): string {
+  if (!ua) return "Browser";
+  const lower = ua.toLowerCase();
+  if (lower.includes("firefox")) return "Firefox";
+  if (lower.includes("chrome") && !lower.includes("chromium")) return "Chrome";
+  if (lower.includes("safari") && !lower.includes("chrome")) return "Safari";
+  if (lower.includes("edge")) return "Edge";
+  if (lower.includes("opera") || lower.includes("opr")) return "Opera";
+  return "Browser";
 }
 
 // ── Map DataTable server params → tRPC input ──────────────────────────────────
@@ -80,6 +129,8 @@ export default function RequestLogsContent() {
   const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
   const { toast } = useToast();
 
+  const [detailId, setDetailId] = useState<number | null>(null);
+
   const { queryInput, onServerChange, tableKey, initialState } = useServerTable({
     tableId: "request-logs",
     defaultSort: { key: "id", direction: "desc" },
@@ -98,16 +149,23 @@ export default function RequestLogsContent() {
     },
   );
 
+  const { data: statsData } = trpc.viewer.system.requestStats.useQuery(undefined, {
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
   const rows: RequestLog[] = ((data?.items ?? []) as unknown[]).map((item) => {
     const i = item as RequestLog & { createdAt: Date | string };
     return { ...i, createdAt: String(i.createdAt) };
   });
 
+  const detailLog = rows.find((r) => r.id === detailId);
   const serverTotalCount = data?.total ?? 0;
 
   const deleteMut = trpc.viewer.system.deleteRequestLog.useMutation({
     onSuccess: () => {
       utils.viewer.system.requestLogs.invalidate();
+      utils.viewer.system.requestStats.invalidate();
       toast(t("deleteSuccess"), "success");
     },
     onError: () => {
@@ -116,10 +174,15 @@ export default function RequestLogsContent() {
   });
 
   const purgeMut = trpc.viewer.system.purgeRequestLogs.useMutation({
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       utils.viewer.system.requestLogs.invalidate();
       utils.viewer.system.requestStats.invalidate();
-      toast(t("purgeSuccess"), "success");
+      const days = (variables as { olderThanDays?: number })?.olderThanDays;
+      if (days === 0) {
+        toast(t("purgeAllSuccess"), "success");
+      } else {
+        toast(t("purgeSuccess"), "success");
+      }
     },
     onError: () => {
       toast(t("purgeError"), "error");
@@ -134,22 +197,36 @@ export default function RequestLogsContent() {
         accessorKey: "id",
         header: "ID",
         size: 60,
-        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.id}</span>,
+        cell: ({ row }) => (
+          <button
+            type="button"
+            className="cursor-pointer border-0 bg-transparent p-0 text-left font-mono text-sm text-muted-foreground hover:text-primary transition-colors focus:outline-none"
+            onClick={() => setDetailId(row.original.id)}
+          >
+            {row.original.id}
+          </button>
+        ),
       },
       {
         accessorKey: "method",
         header: t("tableColMethod"),
         size: 90,
         cell: ({ row }) => (
-          <span
-            className={cn(
-              "inline-block rounded-full border px-2 py-0 text-[0.7rem] font-semibold leading-[20px]",
-              METHOD_BADGE[row.original.method] ??
-                "border-neutral-200 bg-neutral-100 text-neutral-600",
-            )}
+          <button
+            type="button"
+            className="cursor-pointer border-0 bg-transparent p-0 text-left focus:outline-none"
+            onClick={() => setDetailId(row.original.id)}
           >
-            {row.original.method}
-          </span>
+            <span
+              className={cn(
+                "inline-block rounded-full border px-2 py-0 text-[0.7rem] font-semibold leading-[20px] transition-opacity hover:opacity-85",
+                METHOD_BADGE[row.original.method] ??
+                  "border-neutral-200 bg-neutral-100 text-neutral-600",
+              )}
+            >
+              {row.original.method}
+            </span>
+          </button>
         ),
       },
       {
@@ -158,10 +235,15 @@ export default function RequestLogsContent() {
         size: 320,
         enableSorting: false,
         cell: ({ row }) => (
-          <div className="flex min-w-0 items-center gap-1">
-            <span className="max-w-[400px] truncate font-mono text-xs" title={row.original.url}>
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              type="button"
+              className="cursor-pointer border-0 bg-transparent p-0 text-left truncate font-mono text-xs hover:text-primary transition-colors focus:outline-none max-w-[400px]"
+              title={row.original.url}
+              onClick={() => setDetailId(row.original.id)}
+            >
               {row.original.url}
-            </span>
+            </button>
             <button
               type="button"
               className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground"
@@ -229,7 +311,7 @@ export default function RequestLogsContent() {
     [t],
   );
 
-  // ── Filter fields (Botble-style) ──────────────────────────────────────────
+  // ── Filter fields ──────────────────────────────────────────────────────────
 
   const filterFields: FilterFieldDef[] = useMemo(
     () => [
@@ -343,7 +425,9 @@ export default function RequestLogsContent() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <>
+    <div className="space-y-6">
+      {statsData && <RequestLogStatsGrid stats={statsData} t={t} />}
+
       <DataTable<RequestLog>
         tableKey={tableKey}
         defaultPageSize={initialState.pageSize}
@@ -385,6 +469,23 @@ export default function RequestLogsContent() {
               <Trash2 className="mr-2 size-4" />
               {purgeMut.isPending ? t("purging") : t("purge30Days")}
             </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              disabled={purgeMut.isPending}
+              onClick={() => {
+                askConfirm({
+                  title: t("purgeAllTitle"),
+                  message: t("purgeAllMessage"),
+                  confirmLabel: t("actions.deleteConfirm"),
+                  onConfirm: () => purgeMut.mutate({ olderThanDays: 0 }),
+                });
+              }}
+            >
+              <Trash className="mr-2 size-4" />
+              {purgeMut.isPending ? t("purging") : t("purgeAll")}
+            </Button>
             <Button size="sm" variant="outline" onClick={() => refetch()}>
               <RefreshCw className="mr-2 size-4" />
               {t("reload")}
@@ -399,7 +500,321 @@ export default function RequestLogsContent() {
           </div>
         }
       />
+
+      <RequestLogDetailSheet
+        detailId={detailId}
+        onClose={() => setDetailId(null)}
+        isLoading={false}
+        detailLog={detailLog}
+        t={t}
+      />
+
       <ConfirmDialog {...confirmDialogProps} />
-    </>
+    </div>
+  );
+}
+
+// ── Presentation Subcomponents ───────────────────────────────────────────────
+
+interface RequestLogStatsGridProps {
+  stats: {
+    total: number;
+    todayCount: number;
+    errorCount: number;
+    byMethod: { method: string; count: number }[];
+  };
+  t: TranslatorType;
+}
+
+function RequestLogStatsGrid({ stats, t }: RequestLogStatsGridProps) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* Total Requests Card */}
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t("stats.total")}
+            </p>
+            <h3 className="mt-1.5 text-3xl font-bold text-foreground tracking-tight">
+              {stats.total.toLocaleString()}
+            </h3>
+          </div>
+          <div className="rounded-lg bg-blue-500/10 p-2.5 text-blue-600 border border-blue-500/10">
+            <Globe className="size-5" />
+          </div>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-blue-500 to-indigo-500" />
+      </div>
+
+      {/* Today Count Card */}
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t("stats.today")}
+            </p>
+            <h3 className="mt-1.5 text-3xl font-bold text-foreground tracking-tight">
+              {stats.todayCount.toLocaleString()}
+            </h3>
+          </div>
+          <div className="rounded-lg bg-emerald-500/10 p-2.5 text-emerald-600 border border-emerald-500/10">
+            <Activity className="size-5" />
+          </div>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-emerald-500 to-teal-500" />
+      </div>
+
+      {/* Error Count Card */}
+      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {t("stats.errors")}
+            </p>
+            <h3 className="mt-1.5 text-3xl font-bold text-foreground tracking-tight">
+              {stats.errorCount.toLocaleString()}
+            </h3>
+          </div>
+          <div className="rounded-lg bg-rose-500/10 p-2.5 text-rose-600 border border-rose-500/10">
+            <ShieldAlert className="size-5" />
+          </div>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-rose-500 to-red-500" />
+      </div>
+    </div>
+  );
+}
+
+interface RequestLogMetaCardsProps {
+  method: string;
+  statusCode: number | null;
+  duration: number | null;
+  t: TranslatorType;
+}
+
+function RequestLogMetaCards({ method, statusCode, duration, t }: RequestLogMetaCardsProps) {
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      <div className="rounded-lg border border-border bg-muted/20 p-3 text-center">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+          {t("detail.method")}
+        </span>
+        <span
+          className={cn(
+            "mt-1.5 inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold leading-relaxed",
+            METHOD_BADGE[method] ?? "border-neutral-200 bg-neutral-100 text-neutral-600",
+          )}
+        >
+          {method}
+        </span>
+      </div>
+      <div className="rounded-lg border border-border bg-muted/20 p-3 text-center">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+          {t("detail.statusCode")}
+        </span>
+        <span className={cn("mt-1.5 text-sm font-bold block", statusColorClass(statusCode))}>
+          {statusCode ?? "—"}
+        </span>
+      </div>
+      <div className="rounded-lg border border-border bg-muted/20 p-3 text-center">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+          {t("detail.duration")}
+        </span>
+        <span className={cn("mt-1.5 text-sm font-bold block", durationColorClass(duration))}>
+          {duration != null ? `${duration}ms` : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+interface RequestLogContextGridProps {
+  userAgent?: string | null;
+  referer?: string | null;
+  ipAddress: string | null;
+  createdAt: string;
+  t: TranslatorType;
+}
+
+function RequestLogContextGrid({
+  userAgent,
+  referer,
+  ipAddress,
+  createdAt,
+  t,
+}: RequestLogContextGridProps) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-muted/5 divide-y divide-border/40 overflow-hidden text-sm">
+      {/* User Agent */}
+      <div className="p-4 grid grid-cols-3 gap-2">
+        <span className="text-muted-foreground font-medium">{t("detail.userAgent")}</span>
+        <span className="col-span-2 text-foreground font-medium text-right flex items-center justify-end gap-1.5">
+          <Laptop className="size-4 text-muted-foreground/50 shrink-0" />
+          <span className="truncate" title={userAgent ?? undefined}>
+            {userAgent
+              ? `${detectBrowser(userAgent)} • ${detectOS(userAgent)}`
+              : t("detail.noUserAgent")}
+          </span>
+        </span>
+      </div>
+
+      {/* Referer */}
+      <div className="p-4 grid grid-cols-3 gap-2">
+        <span className="text-muted-foreground font-medium">{t("detail.referer")}</span>
+        <span
+          className="col-span-2 text-foreground font-medium text-right break-all"
+          title={referer ?? undefined}
+        >
+          {referer ? (
+            <span className="font-mono text-xs">{referer}</span>
+          ) : (
+            <span className="text-muted-foreground/40 italic">{t("detail.noReferer")}</span>
+          )}
+        </span>
+      </div>
+
+      {/* Client IP */}
+      <div className="p-4 grid grid-cols-3 gap-2">
+        <span className="text-muted-foreground font-medium">{t("detail.ipAddress")}</span>
+        <span className="col-span-2 text-foreground font-mono text-right font-medium">
+          {ipAddress ?? "—"}
+        </span>
+      </div>
+
+      {/* Timestamp */}
+      <div className="p-4 grid grid-cols-3 gap-2">
+        <span className="text-muted-foreground font-medium">{t("detail.timestamp")}</span>
+        <span className="col-span-2 text-foreground text-right font-medium">
+          {formatDateTime(createdAt)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+interface RequestLogActorCardProps {
+  user: { id: number; name: string | null; email: string } | null;
+  t: TranslatorType;
+}
+
+function RequestLogActorCard({ user, t }: RequestLogActorCardProps) {
+  const hasUser = !!user;
+  const userName = user?.name ?? user?.email ?? t("detail.guest");
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-3">
+        {t("detail.user")}
+      </span>
+      <div className="flex items-center gap-3">
+        <div className="rounded-full bg-primary/10 p-2 text-primary">
+          <User className="size-5" />
+        </div>
+        <div className="min-w-0">
+          <h4 className="text-sm font-semibold text-foreground truncate">{userName}</h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {hasUser ? `ID: ${user?.id}` : t("detail.guest")}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface RequestLogDetailSheetProps {
+  detailId: number | null;
+  onClose: () => void;
+  isLoading: boolean;
+  detailLog: RequestLog | null | undefined;
+  t: TranslatorType;
+}
+
+function RequestLogDetailSheet({
+  detailId,
+  onClose,
+  isLoading,
+  detailLog,
+  t,
+}: RequestLogDetailSheetProps) {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopy = async () => {
+    if (!detailLog?.url) return;
+    try {
+      await navigator.clipboard.writeText(detailLog.url);
+      setCopied(true);
+      toast(t("detail.copySuccess"), "success");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast(t("detail.copyError"), "error");
+    }
+  };
+
+  return (
+    <Sheet open={detailId !== null} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto border-l border-border bg-background shadow-xl p-6">
+        <SheetHeader className="pb-4 border-b border-border">
+          <SheetTitle className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+            <span>{t("detail.title")}</span>
+            {detailLog?.id && (
+              <span className="text-sm font-mono text-muted-foreground/60">#{detailLog.id}</span>
+            )}
+          </SheetTitle>
+          <SheetDescription className="text-xs text-muted-foreground/75 mt-1">
+            {detailLog?.createdAt ? formatDateTime(detailLog.createdAt) : ""}
+          </SheetDescription>
+        </SheetHeader>
+
+        {isLoading ? (
+          <div className="flex h-[300px] items-center justify-center">
+            <RefreshCw className="size-6 animate-spin text-muted-foreground/40" />
+          </div>
+        ) : detailLog ? (
+          <div className="mt-6 space-y-6">
+            {/* HTTP Status & Info Cards */}
+            <RequestLogMetaCards
+              method={detailLog.method}
+              statusCode={detailLog.statusCode}
+              duration={detailLog.duration}
+              t={t}
+            />
+
+            {/* URL Section */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                {t("detail.url")}
+              </span>
+              <div className="relative rounded-lg border border-border bg-muted/30 p-3 pr-12 font-mono text-xs break-all leading-relaxed">
+                {detailLog.url}
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className="absolute right-2.5 top-2.5 p-1.5 rounded-md hover:bg-muted text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer border border-border/40"
+                  title={t("detail.copy")}
+                >
+                  {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Context Info */}
+            <RequestLogContextGrid
+              userAgent={detailLog.userAgent}
+              referer={detailLog.referer}
+              ipAddress={detailLog.ipAddress}
+              createdAt={detailLog.createdAt}
+              t={t}
+            />
+
+            {/* Actor Card */}
+            <RequestLogActorCard user={detailLog.user} t={t} />
+          </div>
+        ) : (
+          <div className="mt-8 text-center text-muted-foreground">No details found</div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }

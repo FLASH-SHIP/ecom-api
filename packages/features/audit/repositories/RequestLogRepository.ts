@@ -67,6 +67,8 @@ export class RequestLogRepository {
           statusCode: true,
           duration: true,
           ipAddress: true,
+          userAgent: true,
+          referer: true,
           createdAt: true,
           user: { select: { id: true, name: true, email: true } },
         },
