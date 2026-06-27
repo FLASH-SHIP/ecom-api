@@ -378,7 +378,7 @@ export default function CreateUserPage() {
 
   const createMut = trpc.viewer.users.create.useMutation({
     onSuccess: (data) => {
-      toast(tCommon("successCreated") ?? "Created successfully", "success");
+      toast(tCommon("common.successCreated") ?? "Created successfully", "success");
       router.push(getRedirectUrl(submitAction, data?.id));
     },
     onError: (err) => {
@@ -408,7 +408,7 @@ export default function CreateUserPage() {
       headerActions={
         <Button variant="outline" size="sm" onClick={() => router.push("/system/users")}>
           <ArrowLeft className="mr-2 size-4" />
-          {tCommon("back") ?? "Quay lại"}
+          {tCommon("common.back") ?? "Quay lại"}
         </Button>
       }
     >
@@ -432,7 +432,7 @@ export default function CreateUserPage() {
             <Card className="rounded-lg">
               <CardHeader className="border-b border-border px-4 py-3">
                 <CardTitle className="text-sm font-semibold">
-                  {tCommon("publish") ?? "Đăng"}
+                  {tCommon("common.publish") ?? "Đăng"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 flex flex-col gap-3">
@@ -449,7 +449,7 @@ export default function CreateUserPage() {
                   ) : (
                     <Save className="mr-2 size-4" />
                   )}
-                  <span className="truncate">{tCommon("saveAndEdit") ?? "Lưu & chỉnh sửa"}</span>
+                  <span className="truncate">{t("saveAndEdit") ?? "Lưu & chỉnh sửa"}</span>
                 </Button>
 
                 <Button
@@ -464,7 +464,7 @@ export default function CreateUserPage() {
                   ) : (
                     <Save className="mr-2 size-4" />
                   )}
-                  <span className="truncate">{tCommon("save") ?? "Lưu"}</span>
+                  <span className="truncate">{t("actions.save") ?? "Lưu"}</span>
                 </Button>
               </CardContent>
             </Card>
