@@ -5,6 +5,7 @@ export interface UserResponseDto {
   email: string;
   name: string | null;
   username: string | null;
+  phone: string | null;
   status: string;
   locale: string | null;
   avatarUrl: string | null;
@@ -23,6 +24,7 @@ export interface UserInput {
   email?: string;
   name?: string | null;
   username?: string | null;
+  phone?: string | null;
   status?: string;
   locale?: string | null;
   avatarUrl?: string | null;
@@ -43,6 +45,7 @@ export class UserTransformer extends BaseTransformer<UserInput, UserResponseDto>
       email: user.email ?? "",
       name: user.name ?? null,
       username: user.username ?? null,
+      phone: user.phone ?? null,
       status: user.status ?? "ACTIVE",
       locale: user.locale ?? null,
       avatarUrl: user.avatarUrl ?? null,

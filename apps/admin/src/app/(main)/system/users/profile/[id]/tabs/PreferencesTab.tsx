@@ -49,12 +49,20 @@ export function PreferencesTab({ userId, isSelf, isAdmin }: PreferencesTabProps)
 
   // Sync state when data loads or refetches after save
   useEffect(() => {
-    setLocale(targetUser?.locale ?? "vi");
+    setLocale(targetUser?.locale || "vi");
   }, [targetUser?.locale]);
 
   useEffect(() => {
-    setTheme(prefs?.theme ?? "light");
+    setTheme(prefs?.theme || "light");
   }, [prefs?.theme]);
+
+  // Auto-hide success alert
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   // Locale is stored on the User model — use updateProfile
   const updateProfile = trpc.viewer.auth.updateProfile.useMutation({
@@ -77,20 +85,46 @@ export function PreferencesTab({ userId, isSelf, isAdmin }: PreferencesTabProps)
     },
   });
 
+  const applyClientPreferences = (targetTheme: "light" | "dark", targetLocale: string) => {
+    localStorage.setItem("theme", targetTheme);
+    const html = document.documentElement;
+    if (targetTheme === "dark") {
+      html.classList.add("dark");
+    } else {
+      html.classList.remove("dark");
+    }
+
+    const currentCookieLocale = document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1];
+    if (currentCookieLocale !== targetLocale) {
+      const maxAge = 365 * 24 * 60 * 60;
+      // biome-ignore lint/suspicious/noDocumentCookie: next-intl requires cookie-based locale persistence
+      document.cookie = `NEXT_LOCALE=${targetLocale};path=/;max-age=${maxAge};samesite=lax`;
+      window.location.reload();
+    }
+  };
+
+  const handleSaveResults = (results: PromiseSettledResult<unknown>[]) => {
+    const rejected = results.find((r) => r.status === "rejected") as
+      | PromiseRejectedResult
+      | undefined;
+    if (rejected) {
+      setError(rejected.reason instanceof Error ? rejected.reason.message : t("errorOccurred"));
+      return;
+    }
+
+    setSuccess(true);
+    setError(null);
+    if (isSelf) {
+      applyClientPreferences(theme, locale);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Use Promise.allSettled so one failure doesn't block the other
     Promise.allSettled([
-      // Only update locale when viewing own profile or admin editing another
       (isSelf || isAdmin) && updateProfile.mutateAsync({ userId, locale: locale as "en" | "vi" }),
       updatePreferences.mutateAsync({ userId, theme }),
-    ]).then((results) => {
-      const hasError = results.some((r) => r.status === "rejected");
-      if (hasError) {
-        const rejected = results.find((r) => r.status === "rejected") as PromiseRejectedResult;
-        setError(rejected.reason instanceof Error ? rejected.reason.message : t("errorOccurred"));
-      }
-    });
+    ]).then(handleSaveResults);
   };
 
   const isPending = updateProfile.isPending || updatePreferences.isPending;
@@ -105,8 +139,6 @@ export function PreferencesTab({ userId, isSelf, isAdmin }: PreferencesTabProps)
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <h3 className="mb-6 text-lg font-semibold">{t("tabPreferences")}</h3>
-
       {error && (
         <div className="mb-4 flex items-center justify-between rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           <span className="flex items-center gap-2">
@@ -134,9 +166,13 @@ export function PreferencesTab({ userId, isSelf, isAdmin }: PreferencesTabProps)
         {/* Locale select */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="pref-locale">{t("language")}</Label>
-          <Select value={locale} onValueChange={setLocale}>
+          <Select
+            value={locale}
+            onValueChange={(val) => val && setLocale(val)}
+            disabled={isPending}
+          >
             <SelectTrigger id="pref-locale">
-              <SelectValue />
+              <SelectValue placeholder={locale === "vi" ? "Tiếng Việt - vi" : "English - en"} />
             </SelectTrigger>
             <SelectContent>
               {LOCALES.map((l) => (
@@ -163,6 +199,7 @@ export function PreferencesTab({ userId, isSelf, isAdmin }: PreferencesTabProps)
                 value="light"
                 checked={theme === "light"}
                 onChange={() => setTheme("light")}
+                disabled={isPending}
                 className="size-4 text-primary"
               />
               {t("themeLight")}
@@ -178,6 +215,7 @@ export function PreferencesTab({ userId, isSelf, isAdmin }: PreferencesTabProps)
                 value="dark"
                 checked={theme === "dark"}
                 onChange={() => setTheme("dark")}
+                disabled={isPending}
                 className="size-4 text-primary"
               />
               {t("themeDark")}

@@ -51,6 +51,7 @@ export const create = authedProcedure
       email: z.string().email(),
       name: z.string().max(100).optional(),
       username: z.string().max(50).optional(),
+      phone: z.string().max(20).optional().nullable(),
       password: z.string().min(8).max(100),
       locale: z.string().max(10).optional(),
       roleIds: z.array(z.string()).optional(),
@@ -73,7 +74,8 @@ export const update = authedProcedure
       id: z.number().int().positive(),
       name: z.string().max(100).optional(),
       username: z.string().max(50).optional(),
-      avatarUrl: z.string().url().optional(),
+      phone: z.string().max(20).optional().nullable(),
+      avatarUrl: z.string().max(2048).optional(),
       locale: z.string().max(10).optional(),
       status: userStatusSchema.optional(),
     }),
@@ -177,6 +179,42 @@ export const remove = authedProcedure
     if (!result) {
       throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
     }
+
+    for (const session of sessions) {
+      await invalidateCachedSession(`admin_session:${session.sessionToken}`).catch(() => {});
+    }
+
+    return new UserTransformer().transformItem(result);
+  });
+
+export const toggleSuperAdmin = authedProcedure
+  .use(requirePermission(Permissions.USERS_UPDATE))
+  .use(auditLog({ module: "users", action: "TOGGLE_SUPER_ADMIN", entityType: "User" }))
+  .input(
+    z.object({
+      userId: z.number().int().positive(),
+      isSuperAdmin: z.boolean(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    if (input.userId === ctx.user.id) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Cannot modify your own super admin privileges.",
+      });
+    }
+
+    const userService = getUserManagementService();
+    const result = await userService.toggleSuperAdmin(input.userId, input.isSuperAdmin);
+    if (!result) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+    }
+
+    // Invalidate NextAuth session cache for the modified user
+    const sessions = await prisma.session.findMany({
+      where: { userId: input.userId },
+      select: { sessionToken: true },
+    });
 
     for (const session of sessions) {
       await invalidateCachedSession(`admin_session:${session.sessionToken}`).catch(() => {});

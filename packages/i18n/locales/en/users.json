@@ -21,7 +21,7 @@
     "emailVerified": "Email Verified",
     "actions": "Actions",
     "status": "Status",
-    "password": "Password * (min 8 characters)",
+    "password": "Password",
     "newPasswordLabel": "New Password (min 8 characters)"
   },
   "status": {
@@ -36,7 +36,9 @@
     "deleteConfirm": "Delete user \"{email}\"?",
     "save": "Save",
     "saving": "Saving...",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "grantSuperAdmin": "Grant Super Admin",
+    "revokeSuperAdmin": "Revoke Super Admin"
   },
   "accountsCount": "{count} accounts",
   "noRole": "No role assigned",
@@ -50,8 +52,13 @@
     "tabAvatar": "Avatar",
     "tabPassword": "Change Password",
     "tabPreferences": "Preferences",
-    "firstName": "First Name",
-    "lastName": "Last Name",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter full name",
+    "usernamePlaceholder": "Enter username",
+    "emailPlaceholder": "Enter email address",
+    "phonePlaceholder": "Enter phone number",
+    "changePhoto": "Change Photo",
+    "avatarDesc": "Upload a new photo with a minimum size of 256x256 pixels. Supported formats: JPG, PNG, GIF, WebP. Maximum file size: 10MB.",
     "updateSuccess": "Profile updated successfully!",
     "avatarUpdateSuccess": "Avatar updated successfully!",
     "passwordUpdateSuccess": "Password updated successfully!",
@@ -89,12 +96,28 @@
     "phone": "Phone",
     "nameWhitespace": "Name cannot be only whitespace",
     "usernameMin": "Username must be at least 3 characters",
-    "usernameInvalid": "Username can only contain letters, numbers, underscores (_), and hyphens (-)",
+    "usernameInvalid": "Username can only contain letters, numbers, dots (.), underscores (_), and hyphens (-)",
     "phoneInvalid": "Invalid phone number",
     "forbidden": "You do not have permission to perform this action",
     "forbiddenUpdate": "You do not have permission to edit this user's profile",
     "forbiddenRead": "You do not have permission to view this user's profile",
     "forbiddenPreferencesRead": "You do not have permission to view this user's preferences",
     "forbiddenPreferencesUpdate": "You do not have permission to update this user's preferences"
+  },
+  "isSuperAdmin": "Is Super Admin",
+  "confirmToggleSuperAdmin": "Are you sure you want to toggle super admin privileges for this user?",
+  "publish": "Publish",
+  "saveAndEdit": "Save & Edit",
+  "validation": {
+    "confirmPasswordRequired": "Please confirm password",
+    "passwordMismatch": "Passwords do not match",
+    "passwordRequired": "Please enter a password",
+    "passwordMin": "Password must be at least 8 characters",
+    "nameRequired": "Please enter full name",
+    "emailRequired": "Please enter email",
+    "emailInvalid": "Invalid email format",
+    "usernameRequired": "Please enter username",
+    "usernameMin": "Username must be at least 3 characters",
+    "usernameInvalid": "Username can only contain letters, numbers, underscores, dots, or hyphens"
   }
 }

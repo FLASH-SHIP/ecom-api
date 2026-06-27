@@ -25,7 +25,7 @@ export const updateProfile = authedProcedure
         .string()
         .min(3, "users.profile.usernameMin")
         .max(50)
-        .regex(/^[a-zA-Z0-9_-]+$/, "users.profile.usernameInvalid")
+        .regex(/^[a-zA-Z0-9_.-]+$/, "users.profile.usernameInvalid")
         .optional(),
       phone: z
         .string()
@@ -33,7 +33,7 @@ export const updateProfile = authedProcedure
         .regex(/^\+?[0-9\s\-().]{7,20}$/, "users.profile.phoneInvalid")
         .nullable()
         .optional(),
-      avatarUrl: z.string().url().nullable().optional(),
+      avatarUrl: z.string().max(2048).nullable().optional(),
       locale: z.enum(["en", "vi"]).optional(),
     }),
   )

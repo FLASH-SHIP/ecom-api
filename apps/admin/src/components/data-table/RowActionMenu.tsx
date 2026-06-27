@@ -53,7 +53,9 @@ export function RowActionMenu<T>({
             className={getActionColorClass(action.color)}
           >
             {action.icon && <span className="mr-2">{action.icon}</span>}
-            {action.tooltip}
+            {typeof action.tooltip === "function"
+              ? (action.tooltip as (row: T) => string)(row)
+              : action.tooltip}
           </DropdownMenuItem>
         ))}
         {visibleActions.length > 0 && renderCustomItems && <DropdownMenuSeparator />}

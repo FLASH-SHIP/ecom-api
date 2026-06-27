@@ -5,9 +5,9 @@ import { Button } from "@ecom/ui/components/button";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
 import { cn } from "@ecom/ui/lib/utils";
-import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, Save, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Save, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ChangePasswordTabProps {
   userId: number;
@@ -24,6 +24,10 @@ function PasswordField({
   onChange,
   required,
   error,
+  placeholder,
+  showPasswordLabel,
+  hidePasswordLabel,
+  disabled,
 }: {
   id: string;
   label: string;
@@ -31,29 +35,28 @@ function PasswordField({
   onChange: (v: string) => void;
   required?: boolean;
   error?: string;
+  placeholder?: string;
+  showPasswordLabel?: string;
+  hidePasswordLabel?: string;
+  disabled?: boolean;
 }) {
-  const [show, setShow] = useState(false);
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <div className="relative">
-        <Input
-          id={id}
-          type={show ? "text" : "password"}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          required={required}
-          className={cn(error && "border-destructive", "pr-10")}
-        />
-        <button
-          type="button"
-          onClick={() => setShow((s) => !s)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          aria-label="toggle password visibility"
-        >
-          {show ? <EyeOff size={16} /> : <Eye size={16} />}
-        </button>
-      </div>
+      <Label htmlFor={id}>
+        {label} {required && <span className="text-destructive">*</span>}
+      </Label>
+      <Input
+        id={id}
+        type="password"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        placeholder={placeholder}
+        showPasswordLabel={showPasswordLabel}
+        hidePasswordLabel={hidePasswordLabel}
+        disabled={disabled}
+        className={cn(error && "border-destructive")}
+      />
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
@@ -68,6 +71,14 @@ export function ChangePasswordTab({ userId, isSelf, isAdmin }: ChangePasswordTab
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Auto-hide success alert
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   const changePassword = trpc.viewer.auth.changePasswordSelf.useMutation({
     onSuccess: () => {
@@ -117,8 +128,6 @@ export function ChangePasswordTab({ userId, isSelf, isAdmin }: ChangePasswordTab
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <h3 className="mb-6 text-lg font-semibold">{t("tabPassword")}</h3>
-
       {error && (
         <div className="mb-4 flex items-center justify-between rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           <span className="flex items-center gap-2">
@@ -152,6 +161,10 @@ export function ChangePasswordTab({ userId, isSelf, isAdmin }: ChangePasswordTab
               value={currentPassword}
               onChange={setCurrentPassword}
               required
+              disabled={changePassword.isPending}
+              placeholder="Nhập mật khẩu hiện tại"
+              showPasswordLabel={t("showPassword")}
+              hidePasswordLabel={t("hidePassword")}
               error={fieldErrors.currentPassword}
             />
           </div>
@@ -164,6 +177,10 @@ export function ChangePasswordTab({ userId, isSelf, isAdmin }: ChangePasswordTab
           value={newPassword}
           onChange={setNewPassword}
           required
+          disabled={changePassword.isPending}
+          placeholder="Nhập mật khẩu mới (tối thiểu 8 ký tự)"
+          showPasswordLabel={t("showPassword")}
+          hidePasswordLabel={t("hidePassword")}
           error={fieldErrors.newPassword}
         />
 
@@ -174,6 +191,10 @@ export function ChangePasswordTab({ userId, isSelf, isAdmin }: ChangePasswordTab
           value={confirmPassword}
           onChange={setConfirmPassword}
           required
+          disabled={changePassword.isPending}
+          placeholder="Nhập lại mật khẩu mới"
+          showPasswordLabel={t("showPassword")}
+          hidePasswordLabel={t("hidePassword")}
           error={fieldErrors.confirmPassword}
         />
       </div>
