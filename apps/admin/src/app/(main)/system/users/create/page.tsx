@@ -378,7 +378,7 @@ export default function CreateUserPage() {
 
   const createMut = trpc.viewer.users.create.useMutation({
     onSuccess: (data) => {
-      toast(tCommon("common.successCreated") ?? "Created successfully", "success");
+      toast(tCommon("successCreated") ?? "Created successfully", "success");
       router.push(getRedirectUrl(submitAction, data?.id));
     },
     onError: (err) => {
@@ -408,7 +408,7 @@ export default function CreateUserPage() {
       headerActions={
         <Button variant="outline" size="sm" onClick={() => router.push("/system/users")}>
           <ArrowLeft className="mr-2 size-4" />
-          {tCommon("common.back") ?? "Quay lại"}
+          {tCommon("back") ?? "Quay lại"}
         </Button>
       }
     >
@@ -432,7 +432,7 @@ export default function CreateUserPage() {
             <Card className="rounded-lg">
               <CardHeader className="border-b border-border px-4 py-3">
                 <CardTitle className="text-sm font-semibold">
-                  {tCommon("common.publish") ?? "Đăng"}
+                  {tCommon("publish") ?? "Đăng"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 flex flex-col gap-3">
