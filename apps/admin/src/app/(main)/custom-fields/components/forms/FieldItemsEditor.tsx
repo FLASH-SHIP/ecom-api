@@ -205,10 +205,10 @@ function ItemRow({
       {/* Expand row for inline editing */}
       {expanded && (
         <tr>
-          <td colSpan={5} className="border-0 px-4 py-3 bg-muted/10">
-            <div className="rounded-lg border border-border bg-card shadow-sm text-left divide-y divide-border/60">
+          <td colSpan={5} className="border-b border-border px-6 py-4 bg-muted/5">
+            <div className="text-left space-y-2">
               {/* Row 1: Nhãn */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2 items-start">
                 <div className="md:col-span-1">
                   <Label className="text-sm font-semibold text-foreground">Nhãn (Title)</Label>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -225,7 +225,7 @@ function ItemRow({
               </div>
 
               {/* Row 2: Tên truy nhập trường */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2 items-start">
                 <div className="md:col-span-1">
                   <Label className="text-sm font-semibold text-foreground">
                     Tên truy nhập trường (Slug)
@@ -245,7 +245,7 @@ function ItemRow({
               </div>
 
               {/* Row 3: Kiểu trường */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2 items-start">
                 <div className="md:col-span-1">
                   <Label className="text-sm font-semibold text-foreground">
                     Kiểu trường (Type)
@@ -271,7 +271,7 @@ function ItemRow({
               </div>
 
               {/* Row 4: Hướng dẫn nhập liệu */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2 items-start">
                 <div className="md:col-span-1">
                   <Label className="text-sm font-semibold text-foreground">
                     Hướng dẫn nhập liệu cho trường
@@ -292,7 +292,7 @@ function ItemRow({
               </div>
 
               {/* Row 5: Placeholder */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2 items-start">
                 <div className="md:col-span-1">
                   <Label className="text-sm font-semibold text-foreground">
                     Placeholder / Gợi ý
@@ -311,7 +311,7 @@ function ItemRow({
               </div>
 
               {/* Row 6: Giá trị mặc định */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2 items-start">
                 <div className="md:col-span-1">
                   <Label className="text-sm font-semibold text-foreground">Giá trị mặc định</Label>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -329,7 +329,7 @@ function ItemRow({
 
               {/* Row 7: Các mục lựa chọn (select, checkbox, radio) */}
               {["select", "checkbox", "radio"].includes(editType) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2 items-start">
                   <div className="md:col-span-1">
                     <Label className="text-sm font-semibold text-foreground">
                       Các mục lựa chọn
@@ -352,7 +352,7 @@ function ItemRow({
               )}
 
               {/* Actions Row */}
-              <div className="flex justify-end gap-2 p-4 bg-muted/30 rounded-b-lg">
+              <div className="flex justify-end gap-2 pt-4 border-t border-border/60">
                 <Button
                   size="sm"
                   variant="destructive"
