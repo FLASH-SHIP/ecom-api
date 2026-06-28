@@ -1,8 +1,15 @@
+import type { PrismaClient } from "@ecom/prisma";
+import type { Mock } from "vitest";
 import { describe, expect, it, vi } from "vitest";
 import type { CustomFieldValueRepository } from "../../repositories/CustomFieldValueRepository";
 import type { FieldGroupRepository } from "../../repositories/FieldGroupRepository";
 import type { FieldItemRepository } from "../../repositories/FieldItemRepository";
 import { CustomFieldService } from "../CustomFieldService";
+
+type MockedRepository<T> = {
+  // biome-ignore lint/suspicious/noExplicitAny: generic mock mapped type allowing partial signatures
+  [K in keyof T]: T[K] extends (...args: any[]) => any ? Mock<any> : T[K];
+} & T;
 
 function createMockGroupRepo() {
   return {
@@ -11,7 +18,7 @@ function createMockGroupRepo() {
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
-  } as unknown as FieldGroupRepository & Record<string, ReturnType<typeof vi.fn>>;
+  } as unknown as MockedRepository<FieldGroupRepository>;
 }
 
 function createMockItemRepo() {
@@ -21,7 +28,7 @@ function createMockItemRepo() {
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
-  } as unknown as FieldItemRepository & Record<string, ReturnType<typeof vi.fn>>;
+  } as unknown as MockedRepository<FieldItemRepository>;
 }
 
 function createMockValueRepo() {
@@ -29,14 +36,15 @@ function createMockValueRepo() {
     findByEntity: vi.fn(),
     upsert: vi.fn(),
     removeByEntity: vi.fn(),
-  } as unknown as CustomFieldValueRepository & Record<string, ReturnType<typeof vi.fn>>;
+  } as unknown as MockedRepository<CustomFieldValueRepository>;
 }
 
 function createService() {
   const groupRepo = createMockGroupRepo();
   const itemRepo = createMockItemRepo();
   const valueRepo = createMockValueRepo();
-  const service = new CustomFieldService({ groupRepo, itemRepo, valueRepo });
+  const prisma = {} as unknown as PrismaClient;
+  const service = new CustomFieldService({ groupRepo, itemRepo, valueRepo, prisma });
   return { service, groupRepo, itemRepo, valueRepo };
 }
 
@@ -263,6 +271,69 @@ describe("CustomFieldService", () => {
       groupRepo.findById.mockResolvedValue(null);
 
       await expect(service.duplicateGroup(999)).rejects.toThrow("Field group not found");
+    });
+  });
+
+  describe("Importing", () => {
+    it("should import a group with rule conversion and item option extraction", async () => {
+      const { service, groupRepo, itemRepo } = createService();
+
+      groupRepo.create.mockResolvedValue({ id: 100, title: "Post Additional Information" });
+      itemRepo.create.mockResolvedValue({ id: 200 });
+
+      const importPayload = [
+        {
+          id: 1,
+          title: "Post Additional Information",
+          status: {
+            value: "published",
+            label: "Published",
+          },
+          order: 0,
+          rules: '[[{"name":"model_name","type":"==","value":"Botble\\\\Blog\\\\Models\\\\Post"}]]',
+          items: [
+            {
+              id: 1,
+              field_group_id: 1,
+              parent_id: null,
+              order: 0,
+              title: "Post Options",
+              slug: "post_options",
+              type: "checkbox",
+              instructions: "Select post display options",
+              options:
+                '{"selectChoices":"featured:Featured post\\nsticky:Sticky post","defaultValue":"featured"}',
+              children: [],
+            },
+          ],
+        },
+      ];
+
+      const result = await service.importGroups(importPayload);
+      expect(result.created).toBe(1);
+
+      // Verify that group rules were converted
+      expect(groupRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Post Additional Information",
+          rules: [[{ name: "model_name", type: "==", value: "post" }]],
+        }),
+      );
+
+      // Verify that options, defaultValue and placeholder are extracted/parsed
+      expect(itemRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          groupId: 100,
+          slug: "post_options",
+          title: "Post Options",
+          type: "checkbox",
+          options: [
+            { label: "Featured post", value: "featured" },
+            { label: "Sticky post", value: "sticky" },
+          ],
+          defaultValue: "featured",
+        }),
+      );
     });
   });
 });

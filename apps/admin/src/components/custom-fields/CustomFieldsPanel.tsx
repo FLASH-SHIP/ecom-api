@@ -77,9 +77,23 @@ function FieldInput({ item, value, onChange }: FieldInputProps) {
   }
 
   if (item.type === "select" || item.type === "radio") {
-    const opts = Array.isArray(item.options)
-      ? (item.options as { label: string; value: string }[])
-      : [];
+    let opts: { label: string; value: string }[] = [];
+    if (Array.isArray(item.options)) {
+      opts = item.options as { label: string; value: string }[];
+    } else if (item.options && typeof item.options === "object") {
+      const optionsObj = item.options as Record<string, unknown>;
+      if (typeof optionsObj.selectChoices === "string") {
+        opts = optionsObj.selectChoices
+          .split("\n")
+          .map((line: string) => {
+            const parts = line.split(":");
+            const value = parts[0]?.trim() || "";
+            const label = parts[1]?.trim() || value;
+            return { label, value };
+          })
+          .filter((o) => o.label !== "");
+      }
+    }
     return (
       <div className="flex flex-col gap-1.5">
         <Label>{item.title}</Label>
