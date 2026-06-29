@@ -41,6 +41,11 @@
     "restore": "Khôi phục",
     "permanentlyDelete": "Xóa vĩnh viễn",
     "delete": "Xóa",
-    "deleteConfirm": "Bạn có chắc chắn muốn xóa bài viết này?"
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa bài viết này?",
+    "bulkDeleteConfirm": "Xóa {count} bài viết đã chọn?",
+    "bulkDeleteSuccess": "Đã xóa thành công {count} bài viết",
+    "bulkDeleteError": "Xóa một số bài viết thất bại",
+    "bulkChangeSuccess": "Đã cập nhật thành công {count} bài viết",
+    "bulkChangeError": "Cập nhật một số bài viết thất bại"
   }
 }

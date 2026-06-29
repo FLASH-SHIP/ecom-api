@@ -40,7 +40,7 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
-import { useRef, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type PostStatus = "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED";
 

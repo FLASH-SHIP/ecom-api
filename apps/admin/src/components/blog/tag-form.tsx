@@ -184,7 +184,6 @@ export function TagForm({
     onError: (err) => toast(err.message, "error"),
   });
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
   const updateAndExitMutation = trpc.viewer.tags.update.useMutation({
     onSuccess: () => {
       if (tagId) {
