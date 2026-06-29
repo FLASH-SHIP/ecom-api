@@ -1,0 +1,87 @@
+meta {
+  name: Create Shipping Label
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{epicHubBaseUrl}}/v2/shipments/label-request
+  body: json
+  auth: none
+}
+
+headers {
+  Token: {{epicHubToken}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "RequestId": "req_dom_000001",
+    "ShipmentDescription": "Domestic US Shipping",
+    "ServiceCode": "03",
+    "AddressValidation": true,
+    "DeliveryConfirmation": 0,
+    "ReturnService": 0,
+    "ShipFrom": {
+      "Name": "Sender Name",
+      "Phone": "2133730000",
+      "EmailAddress": "sender@email.com",
+      "Address": {
+        "AddressLine1": "1234 Sender Address Ave",
+        "City": "Los Angeles",
+        "StateProvinceCode": "CA",
+        "PostalCode": "92231",
+        "CountryCode": "US"
+      }
+    },
+    "ShipTo": {
+      "Name": "Receiver Name",
+      "AttentionName": "Receiver",
+      "EmailAddress": "receiver@gmail.com",
+      "Address": {
+        "AddressLine1": "6789 Receiver Address Ave",
+        "AddressLine2": "Apt 15",
+        "City": "Doral",
+        "StateProvinceCode": "FL",
+        "PostalCode": "27000",
+        "CountryCode": "US"
+      }
+    },
+    "Package": [
+      {
+        "PackageWeight": {
+          "Weight": 5.0,
+          "UnitOfMeasurement": "LBS"
+        },
+        "Dimensions": {
+          "Length": 7.0,
+          "Width": 8.0,
+          "Height": 9.0,
+          "UnitOfMeasurement": "IN"
+        }
+      }
+    ]
+  }
+}
+
+docs {
+  # Create Shipping Label
+  
+  Tạo nhãn vận chuyển (Shipping Label) thông qua EpicHub.
+  
+  ## Headers bắt buộc
+  | Header | Giá trị | Mô tả |
+  |---|---|---|
+  | `Token` | `{{epicHubToken}}` | Session Token nhận từ `/auth/token` |
+  | `Content-Type` | `application/json` | Định dạng dữ liệu gửi lên |
+  
+  ## Các dịch vụ phổ biến (ServiceCode)
+  * `01`: UPS Next Day Air
+  * `02`: UPS 2nd Day Air
+  * `03`: UPS Ground (UPS Nội địa)
+  * `11`: UPS Standard (US sang Canada)
+  * `KRTHZXR`: Korea Standard (Hàn Quốc sang Mỹ)
+  
+  > ⚠️ Xem tài liệu chi tiết `docs/api/epic-hub/README.md` để biết thêm về cách cấu hình Address Validation, Delivery Confirmation (Ký nhận), Return Service, hoặc các yêu cầu đặc thù của Shipments quốc tế.
+}
