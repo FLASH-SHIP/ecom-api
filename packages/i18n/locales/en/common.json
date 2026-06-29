@@ -3,6 +3,7 @@
     "appName": "Ecom",
     "loading": "Loading...",
     "error": "An error occurred",
+    "success": "Success",
     "save": "Save",
     "saveAndEdit": "Save & Edit",
     "saving": "Saving...",

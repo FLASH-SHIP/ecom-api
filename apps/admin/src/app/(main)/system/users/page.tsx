@@ -1,733 +1,642 @@
 "use client";
 
-import { DataTablePagination } from "@admin/components/DataTablePagination";
-import { PermissionGuard, useRequirePermission } from "@admin/components/layout/PermissionGuard";
+import type { BulkActionConfig, RowAction } from "@admin/components/data-table";
+import { DataTable } from "@admin/components/data-table";
+import { CopyCell } from "@admin/components/data-table/CopyCell";
+import { useServerTable } from "@admin/components/data-table/hooks/useServerTable";
+import type { DataTableServerParams, FilterFieldDef } from "@admin/components/data-table/types";
+import Error403Page from "@admin/components/errors/Error403Page";
 import { useToast } from "@admin/components/toast-provider";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
-import { useDebounce } from "@admin/lib/hooks/useDebounce";
 import { trpc } from "@admin/lib/trpc";
 import { formatDate } from "@admin/utils/dateFormat";
 import { Permissions } from "@ecom/lib/permissions";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
-import { Card } from "@ecom/ui/components/card";
+import { Checkbox } from "@ecom/ui/components/checkbox";
 import { Input } from "@ecom/ui/components/input";
-import { Label } from "@ecom/ui/components/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ecom/ui/components/select";
-import { Skeleton } from "@ecom/ui/components/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@ecom/ui/components/popover";
 import { cn } from "@ecom/ui/lib/utils";
-import { AlertCircle, Pencil, Plus, Trash2, User, X } from "lucide-react";
+import { keepPreviousData } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
+import {
+  AlertCircle,
+  Edit2,
+  Key,
+  Loader2,
+  Pencil,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-interface UserRole {
+type UserRole = {
   role: {
-    id?: string;
-    name?: string;
-    displayName?: string | null;
+    id: string;
+    name: string;
+    displayName: string | null;
+  };
+};
+
+type UserRow = {
+  id: number;
+  email: string;
+  username: string | null;
+  name: string | null;
+  phone: string | null;
+  status: string;
+  createdAt: string;
+  avatarUrl: string | null;
+  roles: UserRole[];
+};
+
+const STATUS_BADGE_CONFIG: Record<string, string> = {
+  ACTIVE: "bg-emerald-500 text-white",
+  SUSPENDED: "bg-amber-500 text-white",
+  BANNED: "bg-red-500 text-white",
+};
+
+function toQueryInput(params: DataTableServerParams) {
+  const { search, filters, page, pageSize } = params;
+
+  // Extract status filter from standard filters array
+  const statusFilter = filters.find((f) => f.fieldKey === "status");
+  const status = statusFilter?.value as "ACTIVE" | "SUSPENDED" | "BANNED" | undefined;
+
+  return {
+    page,
+    perPage: pageSize,
+    search: search.trim() || undefined,
+    status: status || undefined,
   };
 }
 
-interface UserListItem {
-  id?: number;
-  email?: string;
-  name?: string | null;
-  username?: string | null;
-  status?: "ACTIVE" | "SUSPENDED" | "BANNED" | string;
-  avatarUrl?: string | null;
-  createdAt?: string | Date;
-  roles?: UserRole[];
-}
-
-interface RoleListItem {
-  id?: string;
-  name?: string;
-  displayName?: string | null;
-}
-
-const STATUS_KEYS = ["ALL", "ACTIVE", "SUSPENDED", "BANNED"] as const;
-
-const STATUS_BADGE: Record<string, string> = {
-  ACTIVE: "border-emerald-200 bg-emerald-100 text-emerald-800",
-  SUSPENDED: "border-amber-200 bg-amber-100 text-amber-800",
-  BANNED: "border-red-200 bg-red-100 text-red-800",
-};
-
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: system users list page with inline edit drawer, password reset, and role assignment
 export default function SystemUsersPage() {
   const t = useTranslations("users");
+  const tCommon = useTranslations("common");
   const { toast } = useToast();
-  const { hasPermission: canCreate } = useRequirePermission([Permissions.USERS_CREATE]);
-  const { hasPermission: canUpdate } = useRequirePermission([Permissions.USERS_UPDATE]);
-  const { hasPermission: canDelete } = useRequirePermission([Permissions.USERS_DELETE]);
-
+  const router = useRouter();
   const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [page, setPage] = useState(1);
-  const [showCreate, setShowCreate] = useState(false);
-  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const isBulkRef = useRef(false);
 
-  const debouncedSearch = useDebounce(search, 300);
-
-  const [newEmail, setNewEmail] = useState("");
-  const [newName, setNewName] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newRoleIds, setNewRoleIds] = useState<string[]>([]);
-
-  const { data, isLoading } = trpc.viewer.users.list.useQuery({
-    search: debouncedSearch || undefined,
-    status: (statusFilter as "ACTIVE" | "SUSPENDED" | "BANNED") || undefined,
-    page,
-    perPage: 20,
+  const { queryInput, onServerChange, tableKey, initialState } = useServerTable({
+    tableId: "system-users",
+    defaultSort: { key: "createdAt", direction: "desc" },
+    defaultPageSize: 25,
+    toQueryInput,
   });
-
-  const { data: roles } = trpc.viewer.roles.list.useQuery();
 
   const utils = trpc.useUtils();
 
-  const createMutation = trpc.viewer.users.create.useMutation({
+  // Queries
+  const { data: me } = trpc.viewer.auth.me.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+
+  const { data: allRoles } = trpc.viewer.roles.list.useQuery(undefined, {
+    staleTime: 300_000,
+  });
+
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error: listError,
+    refetch,
+  } = trpc.viewer.users.list.useQuery(queryInput, {
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
+
+  // Mutations
+  const deleteMut = trpc.viewer.users.remove.useMutation({
     onSuccess: () => {
       utils.viewer.users.list.invalidate();
-      resetCreateForm();
+      if (!isBulkRef.current) {
+        toast(tCommon("success") ?? "Deleted successfully", "success");
+      }
+    },
+    onError: (err) => {
+      if (!isBulkRef.current) {
+        toast(err.message, "error");
+      }
     },
   });
 
-  const deleteMutation = trpc.viewer.users.remove.useMutation({
+  const toggleSuperAdminMut = trpc.viewer.users.toggleSuperAdmin.useMutation({
     onSuccess: () => {
       utils.viewer.users.list.invalidate();
-      setEditingUserId(null);
+      toast(tCommon("success") ?? "Updated successfully", "success");
+    },
+    onError: (err) => {
+      toast(err.message, "error");
     },
   });
 
-  const syncRolesMutation = trpc.viewer.users.syncRoles.useMutation({
-    onMutate: async (variables) => {
-      if (!variables) return;
-      await utils.viewer.users.list.cancel();
+  const rows = (data?.data ?? []) as UserRow[];
+  const serverTotalCount = data?.meta.total ?? 0;
 
-      const queryKey = {
-        search: debouncedSearch || undefined,
-        status: (statusFilter as "ACTIVE" | "SUSPENDED" | "BANNED") || undefined,
-        page,
-        perPage: 20,
-      };
+  // Permissions
+  const canCreate = me?.permissions.includes(Permissions.USERS_CREATE) ?? false;
+  const canUpdate = me?.permissions.includes(Permissions.USERS_UPDATE) ?? false;
+  const canDelete = me?.permissions.includes(Permissions.USERS_DELETE) ?? false;
 
-      const previousUsers = utils.viewer.users.list.getData(queryKey);
-
-      if (previousUsers) {
-        const mappedRoles = variables.roleIds.map((id) => {
-          const roleInfo = roles?.find((r) => r.id === id);
-          return {
-            role: {
-              id,
-              name: roleInfo?.name ?? "",
-              displayName: roleInfo?.displayName ?? null,
-            },
-          };
-        });
-
-        utils.viewer.users.list.setData(queryKey, {
-          ...previousUsers,
-          data: previousUsers.data.map((user) =>
-            user.id === variables.userId ? { ...user, roles: mappedRoles } : user,
-          ),
-        });
-      }
-
-      return { previousUsers, queryKey };
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousUsers) {
-        utils.viewer.users.list.setData(context.queryKey, context.previousUsers);
-      }
-      toast(err.message || "An error occurred while updating roles.", "error");
-    },
-    onSettled: () => {
-      utils.viewer.users.list.invalidate();
-      utils.viewer.users.get.invalidate();
-    },
-  });
-
-  const updateMutation = trpc.viewer.users.update.useMutation({
-    onMutate: async (variables) => {
-      if (!variables) return;
-      await utils.viewer.users.list.cancel();
-
-      const queryKey = {
-        search: debouncedSearch || undefined,
-        status: (statusFilter as "ACTIVE" | "SUSPENDED" | "BANNED") || undefined,
-        page,
-        perPage: 20,
-      };
-
-      const previousUsers = utils.viewer.users.list.getData(queryKey);
-
-      if (previousUsers) {
-        utils.viewer.users.list.setData(queryKey, {
-          ...previousUsers,
-          data: previousUsers.data.map((user) =>
-            user.id === variables.id ? { ...user, ...variables } : user,
-          ),
-        });
-      }
-
-      return { previousUsers, queryKey };
-    },
-    onError: (err, _variables, context) => {
-      if (context?.previousUsers) {
-        utils.viewer.users.list.setData(context.queryKey, context.previousUsers);
-      }
-      toast(err.message || "An error occurred while updating user info.", "error");
-    },
-    onSettled: () => {
-      utils.viewer.users.list.invalidate();
-      utils.viewer.users.get.invalidate();
-    },
-  });
-
-  const changePasswordMutation = trpc.viewer.users.changePassword.useMutation();
-
-  function resetCreateForm() {
-    setShowCreate(false);
-    setNewEmail("");
-    setNewName("");
-    setNewPassword("");
-    setNewRoleIds([]);
-  }
-
-  function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newEmail.trim() || !newPassword.trim()) return;
-    createMutation.mutate({
-      email: newEmail.trim(),
-      name: newName.trim() || undefined,
-      password: newPassword,
-      roleIds: newRoleIds.length > 0 ? newRoleIds : undefined,
-    });
-  }
-
-  function handleDeleteUser(user: UserListItem) {
-    askConfirm({
-      message: t("actions.deleteConfirm", { email: user.email }),
-      onConfirm: () => deleteMutation.mutate({ id: user.id }),
-    });
-  }
-
-  function handleUpdateUser(
-    id: number,
-    data: { name?: string; username?: string; status?: "ACTIVE" | "SUSPENDED" | "BANNED" },
-  ) {
-    updateMutation.mutate({ id, ...data });
-  }
-
-  function handleSyncRoles(userId: number, roleIds: string[]) {
-    syncRolesMutation.mutate({ userId, roleIds });
-  }
-
-  function handleChangePassword(userId: number, newPassword: string, onSuccess: () => void) {
-    changePasswordMutation.mutate(
-      { userId, newPassword },
+  // Column definitions
+  const columns: ColumnDef<UserRow, unknown>[] = useMemo(
+    () => [
       {
-        onSuccess: () => {
-          onSuccess();
+        accessorKey: "id",
+        header: "ID",
+        size: 60,
+        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.id}</span>,
+      },
+      {
+        accessorKey: "name",
+        header: t("fields.fullName"),
+        size: 250,
+        minSize: 200,
+        cell: ({ row }) => {
+          const u = row.original;
+          return (
+            <div className="flex items-center gap-3">
+              {u.avatarUrl ? (
+                // biome-ignore lint/performance/noImgElement: user avatar display
+                <img
+                  src={u.avatarUrl}
+                  alt={u.name ?? u.email}
+                  className="size-8 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
+                  {(u.name ?? u.email).charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <button
+                  type="button"
+                  className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary whitespace-nowrap"
+                  onClick={() => router.push(`/system/users/profile/${u.id}`)}
+                >
+                  {u.name || "—"}
+                </button>
+                <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+              </div>
+            </div>
+          );
         },
       },
-    );
-  }
-
-  return (
-    <PermissionGuard permissions={[Permissions.USERS_READ]}>
-      <div className="flex flex-col gap-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">{t("title")}</h1>
-            <div className="mt-1 flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-              {data?.meta && (
-                <Badge variant="outline" className="text-xs">
-                  {t("accountsCount", { count: data.meta.total })}
-                </Badge>
+      {
+        accessorKey: "username",
+        header: t("fields.username"),
+        size: 150,
+        cell: ({ row }) => {
+          const username = row.original.username;
+          if (!username) return <span className="text-sm text-muted-foreground">—</span>;
+          return (
+            <CopyCell value={username}>
+              <span className="text-sm text-muted-foreground">@{username}</span>
+            </CopyCell>
+          );
+        },
+      },
+      {
+        accessorKey: "phone",
+        header: t("fields.phone"),
+        size: 150,
+        cell: ({ row }) => {
+          const phone = row.original.phone;
+          if (!phone) return <span className="text-sm text-muted-foreground">—</span>;
+          return (
+            <CopyCell value={phone}>
+              <span className="text-sm text-muted-foreground">{phone}</span>
+            </CopyCell>
+          );
+        },
+      },
+      {
+        accessorKey: "roles",
+        header: t("fields.role"),
+        size: 200,
+        cell: ({ row }) => (
+          <UserRolesPopoverCell
+            user={row.original}
+            allRoles={allRoles}
+            canUpdate={canUpdate}
+            t={t}
+          />
+        ),
+      },
+      {
+        id: "isSuperAdmin",
+        header: t("isSuperAdmin"),
+        size: 130,
+        cell: ({ row }) => {
+          const isSuper = row.original.roles?.some((r) => r.role.name === "admin");
+          return (
+            <span
+              className={cn(
+                "inline-block rounded-full px-2.5 py-0.5 text-center text-xs font-semibold",
+                isSuper
+                  ? "bg-emerald-500 text-white"
+                  : "bg-neutral-200 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
               )}
-            </div>
-          </div>
-          {canCreate && (
-            <Button
-              variant={showCreate ? "outline" : "default"}
-              onClick={() => setShowCreate(!showCreate)}
             >
-              {showCreate ? <X className="mr-2 size-4" /> : <Plus className="mr-2 size-4" />}
-              {showCreate ? t("actions.close") : t("addUser")}
-            </Button>
-          )}
-        </div>
-
-        {/* Create Form */}
-        {showCreate && canCreate && (
-          <Card className="p-6">
-            <p className="mb-4 font-semibold">{t("newUser")}</p>
-            <form onSubmit={handleCreate}>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="user-email">Email *</Label>
-                  <Input
-                    id="user-email"
-                    type="email"
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="user-name">{t("fields.fullName")}</Label>
-                  <Input
-                    id="user-name"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="user-password">{t("fields.password")}</Label>
-                  <Input
-                    id="user-password"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    minLength={8}
-                  />
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {roles?.map((role) => (
-                    <button
-                      key={role.id}
-                      type="button"
-                      className={cn(
-                        "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
-                        newRoleIds.includes(role.id)
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-background text-muted-foreground hover:bg-muted",
-                      )}
-                      onClick={() => {
-                        setNewRoleIds((prev) =>
-                          prev.includes(role.id)
-                            ? prev.filter((id) => id !== role.id)
-                            : [...prev, role.id],
-                        );
-                      }}
-                    >
-                      {role.displayName ?? role.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {createMutation.error && (
-                <div className="mt-3 flex items-center gap-2 rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
-                  <AlertCircle className="size-4 shrink-0" />
-                  {createMutation.error.message}
-                </div>
+              {isSuper ? (tCommon("yes") ?? "Có") : (tCommon("no") ?? "Không")}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: t("fields.status"),
+        size: 130,
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const colorClass = STATUS_BADGE_CONFIG[status] ?? "bg-neutral-400 text-white";
+          return (
+            <span
+              className={cn(
+                "inline-block min-w-[85px] rounded-full px-2.5 py-0.5 text-center text-xs font-semibold",
+                colorClass,
               )}
-              <Button
-                type="submit"
-                size="sm"
-                disabled={createMutation.isPending || !newEmail.trim() || !newPassword.trim()}
-                className="mt-4"
-              >
-                {createMutation.isPending ? t("creating") : t("createUser")}
-              </Button>
-            </form>
-          </Card>
-        )}
-
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <Input
-            id="users-search"
-            placeholder={t("searchPlaceholder")}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="w-full sm:w-[300px]"
-          />
-          <Select
-            value={statusFilter || "ALL"}
-            onValueChange={(v) => {
-              setStatusFilter(v === "ALL" ? "" : v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder={t("statusFilter")} />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_KEYS.map((key) => (
-                <SelectItem key={key} value={key}>
-                  {key === "ALL" ? t("allStatuses") : t(`status.${key}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Table */}
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                    {t("title")}
-                  </th>
-                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">
-                    {t("fields.role")}
-                  </th>
-                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground md:table-cell">
-                    {t("fields.status")}
-                  </th>
-                  <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground lg:table-cell">
-                    {t("fields.lastLogin")}
-                  </th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">
-                    {t("fields.actions")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: skeleton loading array — items have no stable IDs
-                    <tr key={i} className="border-b border-border">
-                      <td className="px-4 py-3">
-                        <Skeleton className="h-4 w-[200px]" />
-                      </td>
-                      <td className="hidden px-4 py-3 sm:table-cell">
-                        <Skeleton className="h-4 w-[100px]" />
-                      </td>
-                      <td className="hidden px-4 py-3 md:table-cell">
-                        <Skeleton className="h-4 w-[80px]" />
-                      </td>
-                      <td className="hidden px-4 py-3 lg:table-cell">
-                        <Skeleton className="h-4 w-[100px]" />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Skeleton className="h-4 w-[80px] ml-auto" />
-                      </td>
-                    </tr>
-                  ))
-                ) : !data?.data.length ? (
-                  <tr>
-                    <td colSpan={5}>
-                      <div className="flex flex-col items-center gap-2 py-8">
-                        <User size={48} className="text-muted-foreground/40" />
-                        <p className="text-sm text-muted-foreground">{t("noUsersTitle")}</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  data.data.map((user) => (
-                    <UserTableRow
-                      key={user.id}
-                      user={user}
-                      roles={roles}
-                      canUpdate={canUpdate}
-                      canDelete={canDelete}
-                      isEditing={editingUserId === user.id}
-                      onToggleEdit={() =>
-                        setEditingUserId(editingUserId === user.id ? null : user.id)
-                      }
-                      onDelete={handleDeleteUser}
-                      onUpdate={handleUpdateUser}
-                      onSyncRoles={handleSyncRoles}
-                      onChangePassword={handleChangePassword}
-                      isChangePwdPending={changePasswordMutation.isPending}
-                      t={t}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <DataTablePagination
-            page={page}
-            totalPages={data?.meta.totalPages ?? 1}
-            onChange={setPage}
-            total={data?.meta.total}
-          />
-        </Card>
-        <ConfirmDialog {...confirmDialogProps} />
-      </div>
-    </PermissionGuard>
-  );
-}
-
-interface UserTableRowProps {
-  user: UserListItem;
-  roles: RoleListItem[] | undefined;
-  canUpdate: boolean;
-  canDelete: boolean;
-  isEditing: boolean;
-  onToggleEdit: () => void;
-  onDelete: (user: UserListItem) => void;
-  onUpdate: (
-    id: number,
-    data: { name?: string; username?: string; status?: "ACTIVE" | "SUSPENDED" | "BANNED" },
-  ) => void;
-  onSyncRoles: (userId: number, roleIds: string[]) => void;
-  onChangePassword: (userId: number, newPassword: string, onSuccess: () => void) => void;
-  isChangePwdPending: boolean;
-  t: ReturnType<typeof useTranslations>;
-}
-
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: detailed table row rendering with inline edit panel and change password form
-function UserTableRow({
-  user,
-  roles,
-  canUpdate,
-  canDelete,
-  isEditing,
-  onToggleEdit,
-  onDelete,
-  onUpdate,
-  onSyncRoles,
-  onChangePassword,
-  isChangePwdPending,
-  t,
-}: UserTableRowProps) {
-  const [isChangingPwd, setIsChangingPwd] = useState(false);
-  const [newPwd, setNewPwd] = useState("");
-
-  const { data: editUser } = trpc.viewer.users.get.useQuery(
-    // biome-ignore lint/style/noNonNullAssertion: guaranteed to exist on active rows
-    { id: user.id! },
-    { enabled: isEditing && user.id !== undefined },
+            >
+              {t(`status.${status}`)}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "createdAt",
+        header: tCommon("createdAt"),
+        size: 150,
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {formatDate(row.original.createdAt)}
+          </span>
+        ),
+      },
+    ],
+    [t, tCommon, router, allRoles, canUpdate],
   );
 
-  const userRoleIds =
-    (user.roles?.map((r: UserRole) => r.role.id).filter(Boolean) as string[]) ?? [];
+  // Filter fields (Botble-style)
+  const filterFields: FilterFieldDef[] = useMemo(
+    () => [
+      {
+        key: "status",
+        label: t("fields.status"),
+        type: "select",
+        operators: [{ value: "equals", label: "equals" }],
+        options: [
+          { value: "ACTIVE", label: t("status.ACTIVE") },
+          { value: "SUSPENDED", label: t("status.SUSPENDED") },
+          { value: "BANNED", label: t("status.BANNED") },
+        ],
+      },
+    ],
+    [t],
+  );
+
+  // Row actions (inline menus)
+  const rowActions: RowAction<UserRow>[] = useMemo(
+    () => [
+      {
+        key: "toggle-super",
+        tooltip: t("actions.grantSuperAdmin"),
+        icon: <Key size={16} />,
+        color: "warning",
+        hidden: (row) => row.id === me?.id || !canUpdate,
+        disabled: () => toggleSuperAdminMut.isPending,
+        onClick: (row) => {
+          const isSuper = row.roles?.some((r) => r.role.name === "admin");
+          const msg = t("confirmToggleSuperAdmin");
+          askConfirm({
+            message: msg,
+            onConfirm: () => {
+              toggleSuperAdminMut.mutate({
+                userId: row.id,
+                isSuperAdmin: !isSuper,
+              });
+            },
+          });
+        },
+      },
+      {
+        key: "edit",
+        tooltip: tCommon("edit"),
+        icon: <Pencil size={16} />,
+        color: "primary",
+        hidden: () => !canUpdate,
+        onClick: (row) => router.push(`/system/users/profile/${row.id}`),
+      },
+      {
+        key: "delete",
+        tooltip: tCommon("delete"),
+        icon: <Trash2 size={16} />,
+        color: "error",
+        hidden: (row) => row.id === me?.id || !canDelete,
+        onClick: (row) => {
+          askConfirm({
+            message: t("actions.deleteConfirm", { email: row.email }),
+            onConfirm: () => deleteMut.mutate({ id: row.id }),
+          });
+        },
+      },
+    ],
+    [t, tCommon, askConfirm, deleteMut, toggleSuperAdminMut, me, canUpdate, canDelete, router],
+  );
+
+  // Dynamic tooltip for toggle-super based on user status
+  const rowActionsWithDynamicTooltips = useMemo(() => {
+    return rowActions.map((action) => {
+      if (action.key === "toggle-super") {
+        return {
+          ...action,
+          tooltip: (row: UserRow) => {
+            const isSuper = row.roles?.some((r) => r.role.name === "admin");
+            return isSuper ? t("actions.revokeSuperAdmin") : t("actions.grantSuperAdmin");
+          },
+        };
+      }
+      return action;
+    });
+  }, [rowActions, t]);
+
+  // Bulk actions
+  const bulkActionConfig: BulkActionConfig<UserRow> = useMemo(
+    () => ({
+      onBulkDelete: canDelete
+        ? (selected, clearSelection) => {
+            askConfirm({
+              message:
+                tCommon("confirmDeleteMultiple") ??
+                "Are you sure you want to delete selected users?",
+              onConfirm: async () => {
+                isBulkRef.current = true;
+                try {
+                  const filtered = selected.filter((u) => u.id !== me?.id);
+                  await Promise.all(filtered.map((u) => deleteMut.mutateAsync({ id: u.id })));
+                  toast(tCommon("success") ?? "Deleted", "success");
+                  clearSelection();
+                } catch {
+                  toast(tCommon("error") ?? "Error occurred", "error");
+                } finally {
+                  isBulkRef.current = false;
+                }
+              },
+            });
+          }
+        : undefined,
+    }),
+    [deleteMut, tCommon, askConfirm, toast, me, canDelete],
+  );
+
+  if (listError?.data?.code === "FORBIDDEN") {
+    return <Error403Page />;
+  }
 
   return (
     <>
-      <tr className="border-b border-border hover:bg-muted/30">
-        <td className="px-4 py-3">
-          <div className="flex items-center gap-3">
-            {user.avatarUrl ? (
-              // biome-ignore lint/performance/noImgElement: dynamic user avatar URL
-              <img
-                src={user.avatarUrl}
-                alt={user.name ?? user.email ?? ""}
-                className="size-8 shrink-0 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-primary">
-                {(user.name ?? user.email ?? "").charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{user.name ?? "—"}</p>
-              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
-            </div>
-          </div>
-        </td>
-        <td className="hidden px-4 py-3 sm:table-cell">
-          <div className="flex flex-wrap gap-1">
-            {user.roles?.map((r: UserRole) => (
-              <span
-                key={r.role.id}
-                className="inline-block rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-xs font-medium text-primary"
-              >
-                {r.role.displayName ?? r.role.name}
-              </span>
-            ))}
-            {(!user.roles || user.roles.length === 0) && (
-              <span className="text-xs text-muted-foreground/50">{t("noRole")}</span>
-            )}
-          </div>
-        </td>
-        <td className="hidden px-4 py-3 md:table-cell">
-          <span
-            className={cn(
-              "inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium",
-              STATUS_BADGE[user.status ?? ""] ??
-                "border-neutral-200 bg-neutral-100 text-neutral-600",
-            )}
-          >
-            {user.status ? t(`status.${user.status}`) : user.status}
-          </span>
-        </td>
-        <td className="hidden px-4 py-3 lg:table-cell">
-          <span className="text-sm text-muted-foreground">
-            {formatDate(user.createdAt ?? new Date())}
-          </span>
-        </td>
-        <td className="px-4 py-3 text-right">
-          <div className="flex items-center justify-end gap-1">
-            {canUpdate && (
-              <button
-                type="button"
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
-                aria-label={isEditing ? t("actions.close") : t("actions.edit")}
-                title={isEditing ? t("actions.close") : t("actions.edit")}
-                onClick={onToggleEdit}
-              >
-                {isEditing ? <X size={16} /> : <Pencil size={16} />}
-              </button>
-            )}
-            {canDelete && (
-              <button
-                type="button"
-                className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"
-                aria-label={t("actions.delete")}
-                title={t("actions.delete")}
-                onClick={() => onDelete(user)}
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
-          </div>
-        </td>
-      </tr>
-
-      {/* Inline edit panel */}
-      {isEditing && editUser && canUpdate && (
-        <tr key={`edit-${user.id}`}>
-          <td colSpan={5} className="bg-muted/30 px-4 py-3">
-            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`edit-name-${user.id}`}>{t("fields.fullName")}</Label>
-                <Input
-                  id={`edit-name-${user.id}`}
-                  defaultValue={editUser.name ?? ""}
-                  onBlur={(e) => {
-                    if (user.id !== undefined && e.target.value !== (editUser.name ?? "")) {
-                      onUpdate(user.id, {
-                        name: e.target.value || undefined,
-                      });
-                    }
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor={`edit-username-${user.id}`}>{t("fields.username")}</Label>
-                <Input
-                  id={`edit-username-${user.id}`}
-                  defaultValue={editUser.username ?? ""}
-                  onBlur={(e) => {
-                    if (user.id !== undefined && e.target.value !== (editUser.username ?? "")) {
-                      onUpdate(user.id, {
-                        username: e.target.value || undefined,
-                      });
-                    }
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>{t("fields.status")}</Label>
-                <Select
-                  defaultValue={editUser.status}
-                  onValueChange={(v) => {
-                    if (user.id !== undefined) {
-                      onUpdate(user.id, {
-                        status: v as "ACTIVE" | "SUSPENDED" | "BANNED",
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">{t("status.ACTIVE")}</SelectItem>
-                    <SelectItem value="SUSPENDED">{t("status.SUSPENDED")}</SelectItem>
-                    <SelectItem value="BANNED">{t("status.BANNED")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Change password */}
-            <div className="mb-4">
-              {isChangingPwd ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    id={`change-pwd-${user.id}`}
-                    type="password"
-                    placeholder={t("fields.newPasswordLabel")}
-                    value={newPwd}
-                    onChange={(e) => setNewPwd(e.target.value)}
-                    className="w-[280px]"
-                    minLength={8}
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      if (user.id !== undefined && newPwd.length >= 8) {
-                        onChangePassword(user.id, newPwd, () => {
-                          setIsChangingPwd(false);
-                          setNewPwd("");
-                        });
-                      }
-                    }}
-                    disabled={newPwd.length < 8 || isChangePwdPending}
-                  >
-                    {isChangePwdPending ? t("actions.saving") : t("actions.save")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setIsChangingPwd(false);
-                      setNewPwd("");
-                    }}
-                  >
-                    {t("actions.cancel")}
-                  </Button>
-                </div>
-              ) : (
-                <Button size="sm" variant="outline" onClick={() => setIsChangingPwd(true)}>
-                  {t("changePassword")}
-                </Button>
-              )}
-            </div>
-
-            {/* Role assignment */}
-            <p className="mb-2 text-xs text-muted-foreground">{t("fields.role")}</p>
-            <div className="flex flex-wrap gap-2">
-              {roles?.map((role) => (
-                <button
-                  key={role.id}
-                  type="button"
-                  className={cn(
-                    "rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
-                    userRoleIds.includes(role.id)
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-muted-foreground hover:bg-muted",
-                  )}
-                  onClick={() => {
-                    if (user.id !== undefined && role.id !== undefined) {
-                      const newIds = userRoleIds.includes(role.id)
-                        ? userRoleIds.filter((id: string) => id !== role.id)
-                        : [...userRoleIds, role.id];
-                      onSyncRoles(user.id, newIds);
-                    }
-                  }}
-                >
-                  {role.displayName ?? role.name}
-                </button>
-              ))}
-            </div>
-          </td>
-        </tr>
+      {listError && (
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
+          <AlertCircle className="size-4 shrink-0" />
+          {listError.message}
+        </div>
       )}
+
+      <DataTable<UserRow>
+        tableKey={tableKey}
+        defaultPageSize={initialState.pageSize}
+        defaultPage={initialState.page}
+        data={rows}
+        columns={columns}
+        rowActions={rowActionsWithDynamicTooltips}
+        bulkActionConfig={bulkActionConfig}
+        filterFields={filterFields}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        onServerChange={(params) =>
+          onServerChange({
+            search: params.search,
+            filters: params.filters,
+            sort: params.sort,
+            page: params.page,
+            pageSize: params.pageSize,
+          })
+        }
+        rowCount={serverTotalCount}
+        pageTitle={t("title")}
+        onRefresh={() => refetch()}
+        headerActions={
+          canCreate ? (
+            <Button id="create-user" size="sm" onClick={() => router.push("/system/users/create")}>
+              <Plus className="mr-2 size-4" />
+              {t("addUser")}
+            </Button>
+          ) : undefined
+        }
+        emptyState={
+          <div className="py-8 text-center">
+            <Users size={48} className="mx-auto mb-3 text-muted-foreground/40" />
+            <p className="mb-1 text-muted-foreground">{t("noUsersTitle")}</p>
+            {canCreate && (
+              <Button
+                id="create-user-empty"
+                size="sm"
+                className="mt-4"
+                onClick={() => router.push("/system/users/create")}
+              >
+                <Plus className="mr-2 size-4" />
+                {t("addUser")}
+              </Button>
+            )}
+          </div>
+        }
+      />
+
+      <ConfirmDialog {...confirmDialogProps} />
     </>
+  );
+}
+
+interface UserRolesPopoverCellProps {
+  user: UserRow;
+  allRoles: Array<{ id?: string; name?: string; displayName?: string | null }> | undefined;
+  canUpdate: boolean;
+  t: (key: string) => string;
+}
+
+function UserRolesPopoverCell({ user, allRoles, canUpdate, t }: UserRolesPopoverCellProps) {
+  const [open, setOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const utils = trpc.useUtils();
+  const { toast } = useToast();
+
+  const userRoles = user.roles ?? [];
+
+  const filteredRoles = useMemo(() => {
+    if (!allRoles) return [];
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return allRoles;
+    return allRoles.filter((role) => {
+      const name = role.name?.toLowerCase() ?? "";
+      const displayName = role.displayName?.toLowerCase() ?? "";
+      return name.includes(q) || displayName.includes(q);
+    });
+  }, [allRoles, searchQuery]);
+
+  // Sync state when popover opens or user roles change
+  useEffect(() => {
+    if (open) {
+      setSelectedIds((user.roles ?? []).map((ur) => ur.role.id));
+    } else {
+      setSearchQuery("");
+    }
+  }, [open, user.roles]);
+
+  const syncRolesMut = trpc.viewer.users.syncRoles.useMutation({
+    onSuccess: () => {
+      toast(t("rolesUpdated") || "Roles updated successfully!", "success");
+      setOpen(false);
+      void utils.viewer.users.list.invalidate();
+    },
+    onError: (err) => {
+      toast(err.message, "error");
+    },
+  });
+
+  const handleToggle = (roleId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds((prev) => [...prev, roleId]);
+    } else {
+      setSelectedIds((prev) => prev.filter((id) => id !== roleId));
+    }
+  };
+
+  const handleSave = () => {
+    syncRolesMut.mutate({
+      userId: user.id,
+      roleIds: selectedIds,
+    });
+  };
+
+  if (!canUpdate) {
+    return (
+      <div className="flex flex-wrap gap-1">
+        {userRoles.map((ur) => (
+          <Badge key={ur.role.id} variant="outline" className="text-xs">
+            {ur.role.displayName ?? ur.role.name}
+          </Badge>
+        ))}
+        {userRoles.length === 0 && (
+          <span className="text-xs text-muted-foreground/50">{t("noRole")}</span>
+        )}
+      </div>
+    );
+  }
+
+  const isPending = syncRolesMut.isPending;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="group flex flex-wrap gap-1 items-center cursor-pointer p-0.5 hover:bg-accent/40 rounded transition-all text-left w-full border border-dashed border-transparent hover:border-border min-h-6"
+        >
+          {userRoles.map((ur) => (
+            <Badge
+              key={ur.role.id}
+              variant="outline"
+              className="text-xs border-primary/20 bg-primary/5 text-primary group-hover:border-primary/45"
+            >
+              {ur.role.displayName ?? ur.role.name}
+            </Badge>
+          ))}
+          {userRoles.length === 0 && (
+            <span className="text-xs text-blue-600 dark:text-blue-400 underline decoration-dotted decoration-blue-600/40 hover:decoration-blue-600 px-1 py-0.5">
+              {t("assignRoles") || "Gán vai trò"}
+            </span>
+          )}
+          {userRoles.length > 0 && (
+            <Edit2 className="size-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-3" align="start">
+        <div className="space-y-3">
+          <div className="font-semibold text-sm border-b pb-1.5 border-border">
+            {t("assignRoles") || "Thay đổi vai trò"}
+          </div>
+          {allRoles && allRoles.length > 5 && (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+              <Input
+                placeholder={t("searchRoles") || "Tìm kiếm vai trò..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-8 pl-8 text-xs bg-muted/30 focus:bg-background border-border"
+              />
+            </div>
+          )}
+          <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+            {filteredRoles.map((role) => {
+              if (!role.id) return null;
+              const isChecked = selectedIds.includes(role.id);
+              return (
+                <div key={role.id} className="flex items-center space-x-2.5 py-0.5">
+                  <Checkbox
+                    id={`popover-role-${user.id}-${role.id}`}
+                    checked={isChecked}
+                    onCheckedChange={(checked) => handleToggle(role.id, !!checked)}
+                    disabled={isPending}
+                  />
+                  <label
+                    htmlFor={`popover-role-${user.id}-${role.id}`}
+                    className="text-sm font-medium leading-none cursor-pointer select-none text-foreground"
+                  >
+                    {role.displayName ?? role.name}
+                  </label>
+                </div>
+              );
+            })}
+            {filteredRoles.length === 0 && (
+              <div className="text-xs text-muted-foreground text-center py-2">{t("noRole")}</div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOpen(false)}
+              disabled={isPending}
+              className="h-7 px-2.5 text-xs rounded-md"
+            >
+              Huỷ
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isPending}
+              className="h-7 px-2.5 text-xs rounded-md"
+            >
+              {isPending ? (
+                <Loader2 className="size-3 animate-spin mr-1" />
+              ) : (
+                <Save className="size-3 mr-1" />
+              )}
+              Lưu
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

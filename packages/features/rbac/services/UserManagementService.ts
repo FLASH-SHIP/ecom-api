@@ -37,6 +37,7 @@ export class UserManagementService {
     email: string;
     name?: string;
     username?: string;
+    phone?: string | null;
     password: string;
     locale?: string;
     roleIds?: string[];
@@ -64,6 +65,7 @@ export class UserManagementService {
     data: {
       name?: string;
       username?: string;
+      phone?: string | null;
       avatarUrl?: string;
       locale?: string;
       status?: UserStatus;
@@ -108,5 +110,15 @@ export class UserManagementService {
     const result = await this.deps.userRepo.delete(userId);
     await permissionsCache.invalidate(`user:${userId}`).catch(() => {});
     return result;
+  }
+
+  async toggleSuperAdmin(userId: number, isSuperAdmin: boolean) {
+    const user = await this.deps.userRepo.findById(userId);
+    if (!user) {
+      throw ErrorWithCode.Factory.NotFound("User not found");
+    }
+    await this.deps.userRepo.toggleSuperAdmin(userId, isSuperAdmin);
+    await permissionsCache.invalidate(`user:${userId}`).catch(() => {});
+    return this.deps.userRepo.findById(userId);
   }
 }

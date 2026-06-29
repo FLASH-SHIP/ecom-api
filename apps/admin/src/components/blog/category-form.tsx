@@ -1,5 +1,6 @@
 "use client";
 
+import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { SearchEngineOptimize } from "@admin/components/blog/SearchEngineOptimize";
 import { useToast } from "@admin/components/toast-provider";
 import { trpc } from "@admin/lib/trpc";
@@ -19,8 +20,8 @@ import { Textarea } from "@ecom/ui/components/textarea";
 import { cn } from "@ecom/ui/lib/utils";
 import { ExternalLink, Globe, Info, Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
+import { useMemo, useRef, useState, useEffect } from "react";
 
 const PERMALINK_PREFIX = "/category/";
 
@@ -88,6 +89,8 @@ export function CategoryForm({
   const router = useRouter();
   const utils = trpc.useUtils();
   const { toast } = useToast();
+  const t = useTranslations("common");
+  const publishCardRef = useRef<HTMLDivElement>(null);
   const tCat = useTranslations("categories");
   const locale = useLocale();
 
@@ -343,6 +346,16 @@ export function CategoryForm({
 
   return (
     <form onSubmit={handleSaveAndContinue} className="flex flex-col gap-6">
+      {!translationMode && (
+        <StickyPublishBar
+          publishCardRef={publishCardRef}
+          title={formData.name}
+          label={mode === "create" ? "Tạo danh mục" : "Sửa danh mục"}
+          isPending={isPending}
+          onSave={() => {}}
+          saveLabel={isPending ? "Đang lưu..." : mode === "create" ? "Tạo danh mục" : "Cập nhật"}
+        />
+      )}
       {error && (
         <div className="rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           {error.message}
@@ -569,30 +582,30 @@ export function CategoryForm({
                   </Select>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="cat-parent">Parent Category</Label>
-                  <Select
-                    value={formData.parentId?.toString() ?? ""}
-                    onValueChange={(v) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        parentId: v ? Number(v) : null,
-                      }))
-                    }
-                  >
-                    <SelectTrigger id="cat-parent">
-                      <SelectValue placeholder="None (Root)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">None (Root)</SelectItem>
-                      {flatCategories.map((cat) => (
-                        <SelectItem key={cat.id} value={String(cat.id)}>
-                          {"—".repeat(cat.depth)} {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="cat-parent">Parent Category</Label>
+                <Select
+                  value={formData.parentId?.toString() ?? ""}
+                  onValueChange={(v) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      parentId: v ? Number(v) : null,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="cat-parent">
+                    <SelectValue placeholder="None (Root)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None (Root)</SelectItem>
+                    {flatCategories.map((cat) => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>
+                        {"—".repeat(cat.depth)} {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
                 <div className="flex items-center justify-between">
                   <Label htmlFor="cat-featured" className="cursor-pointer text-sm">

@@ -25,24 +25,12 @@ interface ProfileInfoTabProps {
   targetUser: TargetUser;
 }
 
-/** Split "Nguyễn Văn An" → { firstName: "Nguyễn Văn", lastName: "An" } */
-function splitName(name: string | null): { firstName: string; lastName: string } {
-  if (!name) return { firstName: "", lastName: "" };
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return { firstName: "", lastName: parts[0] };
-  const lastName = parts[parts.length - 1];
-  const firstName = parts.slice(0, -1).join(" ");
-  return { firstName, lastName };
-}
-
 export function ProfileInfoTab({ userId, targetUser }: ProfileInfoTabProps) {
   const t = useTranslations("users.profile");
   const tc = useTranslations("users");
   const utils = trpc.useUtils();
 
-  const split = splitName(targetUser.name ?? null);
-  const [firstName, setFirstName] = useState(split.firstName);
-  const [lastName, setLastName] = useState(split.lastName);
+  const [name, setName] = useState(targetUser.name ?? "");
   const [username, setUsername] = useState(targetUser.username ?? "");
   const [phone, setPhone] = useState(targetUser.phone ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +38,7 @@ export function ProfileInfoTab({ userId, targetUser }: ProfileInfoTabProps) {
 
   // Sync form fields when targetUser refetches (e.g. after save + cache invalidation)
   useEffect(() => {
-    const s = splitName(targetUser.name ?? null);
-    setFirstName(s.firstName);
-    setLastName(s.lastName);
+    setName(targetUser.name ?? "");
   }, [targetUser.name]);
 
   useEffect(() => {
@@ -61,6 +47,14 @@ export function ProfileInfoTab({ userId, targetUser }: ProfileInfoTabProps) {
   useEffect(() => {
     setPhone(targetUser.phone ?? "");
   }, [targetUser.phone]);
+
+  // Auto-hide success alert
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   const updateProfile = trpc.viewer.auth.updateProfile.useMutation({
     onSuccess: () => {
@@ -77,23 +71,34 @@ export function ProfileInfoTab({ userId, targetUser }: ProfileInfoTabProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!lastName.trim()) {
-      setError(t("nameRequired"));
+    if (!name.trim()) {
+      setError(tc("validation.nameRequired") || "Please enter your name");
       return;
     }
-    const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
+    const cleanUsername = username.trim();
+    if (!cleanUsername) {
+      setError(tc("validation.usernameRequired") || "Please enter username");
+      return;
+    }
+    if (cleanUsername.length < 3) {
+      setError(tc("validation.usernameMin") || "Username must be at least 3 characters");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_.-]+$/.test(cleanUsername)) {
+      setError(tc("validation.usernameInvalid") || "Username format is invalid");
+      return;
+    }
+
     updateProfile.mutate({
       userId,
-      name: fullName,
-      username: username.trim() || undefined,
+      name: name.trim(),
+      username: cleanUsername,
       phone: phone.trim() || null,
     });
   };
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <h3 className="mb-6 text-lg font-semibold">{t("tabInfo")}</h3>
-
       {error && (
         <div className="mb-4 flex items-center justify-between rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           <span className="flex items-center gap-2">
@@ -118,44 +123,47 @@ export function ProfileInfoTab({ userId, targetUser }: ProfileInfoTabProps) {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* Họ */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="profile-first-name">{t("firstName")}</Label>
+        {/* Họ tên */}
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
+          <Label htmlFor="profile-name">
+            {t("fullName")} <span className="text-destructive">*</span>
+          </Label>
           <Input
-            id="profile-first-name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
-        </div>
-
-        {/* Tên (required) */}
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="profile-last-name">{t("lastName")}</Label>
-          <Input
-            id="profile-last-name"
+            id="profile-name"
             required
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className={cn(!lastName.trim() && error && "border-destructive")}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={updateProfile.isPending}
+            className={cn(!name.trim() && error && "border-destructive")}
+            placeholder={t("fullNamePlaceholder")}
           />
         </div>
 
         {/* Tên đăng nhập */}
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="profile-username">{tc("fields.username")}</Label>
+          <Label htmlFor="profile-username">
+            {tc("fields.username")} <span className="text-destructive">*</span>
+          </Label>
           <Input
             id="profile-username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            disabled={updateProfile.isPending}
             minLength={3}
             maxLength={50}
+            placeholder={t("usernamePlaceholder")}
           />
         </div>
 
         {/* Email (readonly) */}
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="profile-email">{tc("fields.email")}</Label>
-          <Input id="profile-email" value={targetUser.email ?? ""} disabled />
+          <Input
+            id="profile-email"
+            value={targetUser.email ?? ""}
+            disabled
+            placeholder={t("emailPlaceholder")}
+          />
           <p className="text-xs text-muted-foreground">{t("emailReadonly")}</p>
         </div>
 
@@ -165,7 +173,9 @@ export function ProfileInfoTab({ userId, targetUser }: ProfileInfoTabProps) {
             id="profile-phone"
             value={phone}
             onChange={setPhone}
+            disabled={updateProfile.isPending}
             label={tc("fields.phone")}
+            placeholder={t("phonePlaceholder")}
           />
         </div>
       </div>

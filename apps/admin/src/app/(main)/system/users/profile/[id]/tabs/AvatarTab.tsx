@@ -10,9 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@ecom/ui/components/dialog";
-import { AlertCircle, Camera, CheckCircle2, Trash2, User, X } from "lucide-react";
+import { AlertCircle, Camera, CheckCircle2, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AvatarCropDialog } from "./AvatarCropDialog";
 
 interface TargetUser {
@@ -36,6 +36,14 @@ export function AvatarTab({ userId, targetUser }: AvatarTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Auto-hide success alert
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   // Local preview URL — updated instantly after upload to avoid stale cache
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
@@ -131,8 +139,6 @@ export function AvatarTab({ userId, targetUser }: AvatarTabProps) {
 
   return (
     <div>
-      <h3 className="mb-6 text-lg font-semibold">{t("avatarTitle")}</h3>
-
       {error && (
         <div className="mb-4 flex items-center justify-between rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           <span className="flex items-center gap-2">
@@ -155,80 +161,79 @@ export function AvatarTab({ userId, targetUser }: AvatarTabProps) {
           </button>
         </div>
       )}
-
-      {/* Current avatar + size previews */}
-      <div className="flex flex-wrap items-start gap-6">
-        {/* Main avatar */}
-        <div className="text-center">
-          {displayAvatarUrl ? (
-            // biome-ignore lint/performance/noImgElement: avatar uses dynamic upload URLs — next/image requires whitelisted domains
-            <img
-              src={displayAvatarUrl}
-              alt={displayName}
-              className="h-32 w-32 rounded-full border-3 border-border object-cover"
-            />
-          ) : (
-            <div className="flex h-32 w-32 items-center justify-center rounded-full border-3 border-border bg-primary text-primary-foreground">
-              <User size={64} />
-            </div>
-          )}
-        </div>
-
-        {/* Size previews — only when avatar exists */}
-        {displayAvatarUrl && (
-          <div className="flex flex-col justify-center gap-3">
-            {[64, 40, 24].map((size) => (
-              // biome-ignore lint/performance/noImgElement: avatar size previews use dynamic upload URLs
+      {/* Modern Profile Avatar Layout */}
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 max-w-2xl">
+        {/* Left Side: Main Avatar with Hover Camera Overlay */}
+        <div className="relative group shrink-0">
+          <div className="h-32 w-32 rounded-full overflow-hidden border-4 border-background shadow-md bg-muted flex items-center justify-center relative">
+            {displayAvatarUrl ? (
+              // biome-ignore lint/performance/noImgElement: avatar uses dynamic upload URLs
               <img
-                key={size}
                 src={displayAvatarUrl}
                 alt={displayName}
-                className="rounded-full bg-primary/20 object-cover"
-                style={{ width: size, height: size }}
+                className="h-full w-full object-cover"
               />
-            ))}
+            ) : (
+              <span className="text-4xl font-semibold text-muted-foreground uppercase">
+                {displayName.slice(0, 2)}
+              </span>
+            )}
+            {/* Hover overlay to change avatar */}
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer text-white text-[11px] font-medium"
+            >
+              <Camera size={20} />
+              <span>{t("changePhoto")}</span>
+            </button>
           </div>
-        )}
+        </div>
+
+        {/* Right Side: Description and Actions */}
+        <div className="flex-1 flex flex-col gap-4 text-center sm:text-left pt-2">
+          <div>
+            <h4 className="text-sm font-semibold text-foreground">{t("avatarTitle")}</h4>
+            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{t("avatarDesc")}</p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+            {/* Hidden file input */}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+              id="avatar-file-input"
+            />
+
+            <Button
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={updateProfile.isPending}
+              id="avatar-choose-btn"
+              className="h-9 text-xs"
+            >
+              <Camera className="mr-1.5 size-3.5" />
+              {t("choosePhoto")}
+            </Button>
+
+            {hasAvatar && (
+              <Button
+                variant="outline"
+                className="h-9 text-xs border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={updateProfile.isPending}
+                id="avatar-delete-btn"
+              >
+                <Trash2 className="mr-1.5 size-3.5" />
+                {t("deletePhoto")}
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
-
-      {/* Action buttons */}
-      <div className="mt-6 flex flex-wrap gap-3">
-        {/* Hidden file input */}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileChange}
-          id="avatar-file-input"
-        />
-
-        <Button
-          variant="outline"
-          onClick={() => fileRef.current?.click()}
-          disabled={updateProfile.isPending}
-          id="avatar-choose-btn"
-        >
-          <Camera className="mr-2 size-4" />
-          {t("choosePhoto")}
-        </Button>
-
-        {/* Xóa ảnh — only show when avatar exists */}
-        {hasAvatar && (
-          <Button
-            variant="outline"
-            className="border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={updateProfile.isPending}
-            id="avatar-delete-btn"
-          >
-            <Trash2 className="mr-2 size-4" />
-            {t("deletePhoto")}
-          </Button>
-        )}
-      </div>
-
-      <p className="mt-2 text-xs text-muted-foreground">{t("avatarHint")}</p>
 
       {/* Crop dialog */}
       {cropSrc && (

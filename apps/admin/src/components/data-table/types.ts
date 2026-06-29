@@ -67,7 +67,7 @@ export interface ColumnDef<T> {
 
 export interface RowAction<T> {
   key: string;
-  tooltip: string;
+  tooltip: string | ((row: T) => string);
   icon: ReactNode;
   onClick: (row: T) => void;
   color?: "default" | "primary" | "error" | "warning" | "info" | "success";

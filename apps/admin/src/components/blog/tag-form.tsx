@@ -3,6 +3,7 @@
 import type { MediaItem } from "@admin/app/(main)/media/model/media.model";
 import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
 import { SearchEngineOptimize } from "@admin/components/blog/SearchEngineOptimize";
+import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { useToast } from "@admin/components/toast-provider";
 import { RichTextEditor } from "@admin/components/ui/RichTextEditor";
 import { trpc } from "@admin/lib/trpc";
@@ -73,6 +74,7 @@ export function TagForm({
   const utils = trpc.useUtils();
   const { toast } = useToast();
   const t = useTranslations("tags");
+  const publishCardRef = useRef<HTMLDivElement>(null);
   const { data: activeLanguages } = trpc.viewer.languages.getActive.useQuery();
   const locale = useLocale();
   const bannerLangCode =
@@ -182,6 +184,7 @@ export function TagForm({
     onError: (err) => toast(err.message, "error"),
   });
 
+  const isPending = createMutation.isPending || updateMutation.isPending;
   const updateAndExitMutation = trpc.viewer.tags.update.useMutation({
     onSuccess: () => {
       if (tagId) {
@@ -326,6 +329,16 @@ export function TagForm({
 
   return (
     <form onSubmit={handleSaveAndContinue}>
+      {!translationMode && (
+        <StickyPublishBar
+          publishCardRef={publishCardRef}
+          title={formData.name}
+          label={mode === "create" ? "Tạo thẻ" : "Sửa thẻ"}
+          isPending={isPending || !formData.name.trim()}
+          onSave={() => {}}
+          saveLabel={isPending ? "Đang lưu..." : t("form.save")}
+        />
+      )}
       {error && (
         <div className="mb-4 rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           {error.message}

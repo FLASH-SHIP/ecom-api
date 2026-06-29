@@ -3,6 +3,7 @@
 import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
 import { SearchEngineOptimize } from "@admin/components/blog/SearchEngineOptimize";
 import { CustomFieldsPanel } from "@admin/components/custom-fields/CustomFieldsPanel";
+import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { useToast } from "@admin/components/toast-provider";
 import { RichTextEditor } from "@admin/components/ui/RichTextEditor";
 import { trpc } from "@admin/lib/trpc";
@@ -38,8 +39,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
+import { useRef, useState, useRef } from "react";
 
 type PostStatus = "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED";
 
@@ -99,6 +100,7 @@ export function PostForm({
   const utils = trpc.useUtils();
   const { toast } = useToast();
   const t = useTranslations("common");
+  const publishCardRef = useRef<HTMLDivElement>(null);
   const tPost = useTranslations("posts");
   const locale = useLocale();
   const { data: currentUser } = useUser();
@@ -600,6 +602,16 @@ export function PostForm({
 
   return (
     <div className="flex flex-col gap-6">
+      {!translationMode && (
+        <StickyPublishBar
+          publishCardRef={publishCardRef}
+          title={formData.title}
+          label={mode === "create" ? "Tạo bài viết" : "Sửa bài viết"}
+          isPending={isPending}
+          onSave={() => {}}
+          saveLabel={isPending ? "Đang lưu..." : mode === "create" ? "Tạo bài viết" : "Cập nhật"}
+        />
+      )}
       {error && (
         <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm text-destructive dark:bg-red-950">
           <AlertCircle className="size-4 shrink-0" />

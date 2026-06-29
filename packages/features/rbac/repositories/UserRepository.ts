@@ -34,6 +34,7 @@ export class UserRepository {
           email: true,
           name: true,
           username: true,
+          phone: true,
           avatarUrl: true,
           status: true,
           locale: true,
@@ -65,6 +66,7 @@ export class UserRepository {
         email: true,
         name: true,
         username: true,
+        phone: true,
         avatarUrl: true,
         status: true,
         locale: true,
@@ -91,12 +93,13 @@ export class UserRepository {
     email: string;
     name?: string;
     username?: string;
+    phone?: string | null;
     locale?: string;
     status?: UserStatus;
   }) {
     return this.prisma.user.create({
       data,
-      select: { id: true, email: true, name: true, username: true, status: true },
+      select: { id: true, email: true, name: true, username: true, phone: true, status: true },
     });
   }
 
@@ -105,6 +108,7 @@ export class UserRepository {
     data: {
       name?: string;
       username?: string;
+      phone?: string | null;
       avatarUrl?: string;
       locale?: string;
       status?: UserStatus;
@@ -113,7 +117,7 @@ export class UserRepository {
     return this.prisma.user.update({
       where: { id },
       data,
-      select: { id: true, email: true, name: true, username: true, status: true },
+      select: { id: true, email: true, name: true, username: true, phone: true, status: true },
     });
   }
 
@@ -134,6 +138,30 @@ export class UserRepository {
         }),
       ),
     ]);
+  }
+
+  async toggleSuperAdmin(userId: number, isSuperAdmin: boolean) {
+    const adminRole = await this.prisma.role.findUnique({
+      where: { name: "admin" },
+      select: { id: true },
+    });
+    if (!adminRole) {
+      throw new Error("Super Admin role ('admin') not found in database");
+    }
+
+    if (isSuperAdmin) {
+      await this.prisma.userRoleAssignment.upsert({
+        where: {
+          userId_roleId: { userId, roleId: adminRole.id },
+        },
+        create: { userId, roleId: adminRole.id },
+        update: {},
+      });
+    } else {
+      await this.prisma.userRoleAssignment.deleteMany({
+        where: { userId, roleId: adminRole.id },
+      });
+    }
   }
 
   async delete(id: number) {

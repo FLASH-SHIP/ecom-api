@@ -231,24 +231,29 @@ export function DataTable<T extends Record<string, unknown>>({
       if (timersRef.current.t2) clearTimeout(timersRef.current.t2);
     };
   }, []);
+  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
+
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: pinning logic checks selection, meta pins, and action columns
-  const initialColumnPinning = useMemo<ColumnPinningState>(() => {
-    const isMobile =
-      typeof window === "undefined" || !window.matchMedia("(min-width: 768px)").matches;
-    if (isMobile) return {};
-    const left: string[] = [];
-    const right: string[] = [];
-    if (bulkActionConfig || (bulkActions && bulkActions.length > 0)) left.push("select");
-    for (const col of columns) {
-      const pin = (col.meta as Record<string, string> | undefined)?.pin;
-      const id = (col as { accessorKey?: string }).accessorKey ?? col.id;
-      if (pin === "left" && id) left.push(id);
-      if (pin === "right" && id) right.push(id);
+  useEffect(() => {
+    // Only apply column pinning on desktop client after mount to prevent hydration mismatch
+    const isMobile = window.matchMedia("(min-width: 768px)").matches === false;
+    if (!isMobile) {
+      const left: string[] = [];
+      const right: string[] = [];
+      if (bulkActionConfig || (bulkActions && bulkActions.length > 0)) left.push("select");
+      for (const col of columns) {
+        const pin = (col.meta as Record<string, string> | undefined)?.pin;
+        const id = (col as { accessorKey?: string }).accessorKey ?? col.id;
+        if (pin === "left" && id) left.push(id);
+        if (pin === "right" && id) right.push(id);
+      }
+      if ((rowActions && rowActions.length > 0) || renderRowActionMenuItems) right.push("actions");
+      if (left.length > 0 || right.length > 0) {
+        setColumnPinning({ left, right });
+      }
     }
-    if ((rowActions && rowActions.length > 0) || renderRowActionMenuItems) right.push("actions");
-    return left.length > 0 || right.length > 0 ? { left, right } : {};
   }, [columns, bulkActionConfig, bulkActions, rowActions, renderRowActionMenuItems]);
-  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(initialColumnPinning);
+
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 

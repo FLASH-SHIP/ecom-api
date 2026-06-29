@@ -27,6 +27,7 @@ describe("UserTransformer", () => {
       locale: "en",
       avatarUrl: "http://example.com/avatar.png",
       createdAt: "2026-06-24T00:00:00.000Z",
+      phone: null,
       roles: [],
     });
   });
@@ -72,6 +73,7 @@ describe("UserTransformer", () => {
     expect(result.status).toBe("ACTIVE");
     expect(result.locale).toBeNull();
     expect(result.avatarUrl).toBeNull();
+    expect(result.phone).toBeNull();
     expect(result.roles).toEqual([]);
     expect(typeof result.createdAt).toBe("string");
   });

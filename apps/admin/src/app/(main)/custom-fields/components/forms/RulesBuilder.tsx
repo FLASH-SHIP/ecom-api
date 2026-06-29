@@ -216,6 +216,7 @@ export function RulesBuilder({ value, onChange }: RulesBuilderProps) {
 
                 {/* Add AND condition */}
                 <Button
+                  type="button"
                   size="sm"
                   variant="ghost"
                   onClick={() => addCondition(groupIdx)}
@@ -229,6 +230,7 @@ export function RulesBuilder({ value, onChange }: RulesBuilderProps) {
               {/* Remove group button */}
               <div className="mt-2 flex justify-end">
                 <Button
+                  type="button"
                   size="sm"
                   variant="ghost"
                   className="text-destructive hover:text-destructive"
@@ -243,7 +245,7 @@ export function RulesBuilder({ value, onChange }: RulesBuilderProps) {
       )}
 
       {/* Add OR group */}
-      <Button size="sm" variant="outline" onClick={addGroup} className="self-start">
+      <Button type="button" size="sm" variant="outline" onClick={addGroup} className="self-start">
         <Plus className="mr-2 size-4" />
         {t("addGroup")}
       </Button>

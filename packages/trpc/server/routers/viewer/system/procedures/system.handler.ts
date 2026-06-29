@@ -58,7 +58,7 @@ export const getRequestStats = authedProcedure
 export const purgeRequestLogs = authedProcedure
   .use(requirePermission(Permissions.SYSTEM_MANAGE))
   .use(auditLog({ module: "system", action: "PURGE", entityType: "RequestLog" }))
-  .input(z.object({ olderThanDays: z.number().int().min(1).max(365) }))
+  .input(z.object({ olderThanDays: z.number().int().min(0).max(365) }))
   .mutation(async ({ input }) => {
     const service = getAuditService();
     return service.purgeRequestLogs(input.olderThanDays);

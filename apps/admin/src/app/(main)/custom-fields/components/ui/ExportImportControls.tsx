@@ -10,10 +10,15 @@ import { useRef } from "react";
 
 interface ExportImportControlsProps {
   selectedIds?: number[];
+  disableExport?: boolean;
   onImported?: () => void;
 }
 
-export function ExportImportControls({ selectedIds, onImported }: ExportImportControlsProps) {
+export function ExportImportControls({
+  selectedIds,
+  disableExport,
+  onImported,
+}: ExportImportControlsProps) {
   const t = useTranslations("customFields.exportImport");
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +73,7 @@ export function ExportImportControls({ selectedIds, onImported }: ExportImportCo
         size="sm"
         variant="outline"
         onClick={handleExport}
-        disabled={isExporting}
+        disabled={isExporting || disableExport}
       >
         {isExporting ? (
           <Loader2 className="mr-2 size-4 animate-spin" />

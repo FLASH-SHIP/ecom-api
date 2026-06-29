@@ -94,8 +94,9 @@ function SearchableSelect({
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-1">
             {showClear && (
-              <button
-                type="button"
+              // biome-ignore lint/a11y/useSemanticElements: nested button is invalid HTML
+              <span
+                role="button"
                 tabIndex={-1}
                 aria-label="Clear selection"
                 onPointerDownCapture={(e) => {
@@ -103,10 +104,10 @@ function SearchableSelect({
                   e.stopPropagation();
                   onValueChange?.("");
                 }}
-                className="rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                className="rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer inline-flex items-center justify-center"
               >
                 <X className="size-3.5" />
-              </button>
+              </span>
             )}
             <span
               aria-hidden="true"

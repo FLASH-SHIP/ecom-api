@@ -1,17 +1,21 @@
 "use client";
 
+import PageBreadcrumb from "@admin/components/PageBreadcrumb";
 import { trpc } from "@admin/lib/trpc";
+import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent } from "@ecom/ui/components/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ecom/ui/components/tabs";
-import { Image, Loader2, Lock, Settings, User } from "lucide-react";
+import { ArrowLeft, Image, Loader2, Lock, Settings, Shield, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { AvatarTab } from "./tabs/AvatarTab";
 import { ChangePasswordTab } from "./tabs/ChangePasswordTab";
 import { PreferencesTab } from "./tabs/PreferencesTab";
 import { ProfileInfoTab } from "./tabs/ProfileInfoTab";
+import { RolesTab } from "./tabs/RolesTab";
 
-type TabId = "info" | "avatar" | "password" | "preferences";
+type TabId = "info" | "avatar" | "password" | "preferences" | "roles";
 
 interface TabDef {
   id: TabId;
@@ -24,17 +28,69 @@ const TAB_DEFS: TabDef[] = [
   { id: "avatar", labelKey: "tabAvatar", icon: Image },
   { id: "password", labelKey: "tabPassword", icon: Lock },
   { id: "preferences", labelKey: "tabPreferences", icon: Settings },
+  { id: "roles", labelKey: "tabRoles", icon: Shield },
 ];
 
 const HASH_MAP: Record<string, TabId> = {
   "#avatar": "avatar",
   "#change-password": "password",
   "#preferences": "preferences",
+  "#roles": "roles",
 };
 
 function getTabFromHash(): TabId {
   if (typeof window === "undefined") return "info";
   return HASH_MAP[window.location.hash] ?? "info";
+}
+
+interface ProfileHeaderProps {
+  targetUser: {
+    avatarUrl?: string | null;
+    name?: string | null;
+    email?: string | null;
+    username?: string | null;
+  };
+  displayName: string;
+  userInitials: string;
+}
+
+function ProfileHeader({ targetUser, displayName, userInitials }: ProfileHeaderProps) {
+  const router = useRouter();
+  const tCommon = useTranslations("common");
+
+  return (
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-1 mb-6">
+      <div className="flex items-center gap-4">
+        {targetUser.avatarUrl ? (
+          // biome-ignore lint/performance/noImgElement: avatar image loaded dynamically from storage
+          <img
+            src={targetUser.avatarUrl}
+            alt={displayName}
+            className="size-16 rounded-full border border-border object-cover shadow-sm bg-muted"
+          />
+        ) : (
+          <div className="flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground text-2xl font-bold border border-border shadow-sm">
+            {userInitials || <User size={28} />}
+          </div>
+        )}
+        <div className="flex flex-col">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
+            {displayName}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {targetUser.email} {targetUser.username ? `(@${targetUser.username})` : ""}
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <Button variant="outline" size="sm" onClick={() => router.push("/system/users")}>
+          <ArrowLeft className="mr-2 size-4" />
+          {tCommon("back") ?? "Quay lại"}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 interface ProfileContentProps {
@@ -82,6 +138,7 @@ export default function ProfileContent({ userId }: ProfileContentProps) {
       avatar: "#avatar",
       password: "#change-password",
       preferences: "#preferences",
+      roles: "#roles",
     };
     const hash = reverseHash[newTab as TabId];
     window.history.replaceState(null, "", hash || window.location.pathname);
@@ -106,44 +163,65 @@ export default function ProfileContent({ userId }: ProfileContentProps) {
     );
   }
 
-  return (
-    <Tabs value={activeTab} onValueChange={handleTabChange}>
-      {/* Tab navigation */}
-      <Card className="mb-6">
-        <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent p-0">
-          {TAB_DEFS.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="gap-1.5 rounded-none border-b-2 border-transparent px-4 py-3 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-              >
-                <Icon size={16} />
-                {t(tab.labelKey)}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-      </Card>
+  const displayName = targetUser.name ?? "User";
+  const userInitials = displayName.charAt(0).toUpperCase();
 
-      {/* Tab content — targetUser is the profile being viewed/edited */}
-      <Card>
-        <CardContent className="p-6">
-          <TabsContent value="info" className="mt-0">
-            <ProfileInfoTab userId={userId} targetUser={targetUser} />
-          </TabsContent>
-          <TabsContent value="avatar" className="mt-0">
-            <AvatarTab userId={userId} targetUser={targetUser} />
-          </TabsContent>
-          <TabsContent value="password" className="mt-0">
-            <ChangePasswordTab userId={userId} isSelf={isSelf} isAdmin={isAdmin} />
-          </TabsContent>
-          <TabsContent value="preferences" className="mt-0">
-            <PreferencesTab userId={userId} isSelf={isSelf} isAdmin={isAdmin} />
-          </TabsContent>
-        </CardContent>
-      </Card>
-    </Tabs>
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Page Breadcrumbs */}
+      <PageBreadcrumb className="mb-1" />
+
+      {/* Fuse React Style Premium Header */}
+      <ProfileHeader
+        targetUser={targetUser}
+        displayName={displayName}
+        userInitials={userInitials}
+      />
+
+      {/* Main Tabs Container (Unified Box) */}
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <Card className="rounded-lg border border-border bg-card overflow-hidden">
+          {/* Top Tabs Bar Area */}
+          <div className="px-6 pt-6 pb-2 flex items-center">
+            <TabsList className="inline-flex h-10 items-center justify-start rounded-lg bg-muted p-1 border border-border">
+              {TAB_DEFS.filter((tab) => tab.id !== "roles" || isAdmin).map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="flex items-center gap-1.5 rounded-md px-4 py-1.5 text-xs md:text-sm font-medium text-muted-foreground transition-all hover:bg-background/50 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                  >
+                    <Icon size={16} className="shrink-0" />
+                    <span>{t(tab.labelKey)}</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </div>
+
+          {/* Form Content Area */}
+          <CardContent className="px-6 pb-6 pt-6">
+            <TabsContent value="info" className="mt-0 outline-none">
+              <ProfileInfoTab userId={userId} targetUser={targetUser} />
+            </TabsContent>
+            <TabsContent value="avatar" className="mt-0 outline-none">
+              <AvatarTab userId={userId} targetUser={targetUser} />
+            </TabsContent>
+            <TabsContent value="password" className="mt-0 outline-none">
+              <ChangePasswordTab userId={userId} isSelf={isSelf} isAdmin={isAdmin} />
+            </TabsContent>
+            <TabsContent value="preferences" className="mt-0 outline-none">
+              <PreferencesTab userId={userId} isSelf={isSelf} isAdmin={isAdmin} />
+            </TabsContent>
+            {isAdmin && (
+              <TabsContent value="roles" className="mt-0 outline-none">
+                <RolesTab userId={userId} />
+              </TabsContent>
+            )}
+          </CardContent>
+        </Card>
+      </Tabs>
+    </div>
   );
 }

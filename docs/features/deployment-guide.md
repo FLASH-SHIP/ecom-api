@@ -7,6 +7,7 @@ This guide provides detailed instructions for the Infrastructure team to deploy 
 ## 1. System Architecture Overview
 
 The Ecom system is built as a Yarn workspaces monorepo containing:
+
 1. **NestJS API Backend (`@ecom/api`)**: Runs on Node.js, exposing REST/tRPC backend APIs.
 2. **Next.js Public Portal (`@ecom/web`)**: Customer-facing public website, blog, and static pages.
 3. **Next.js Customer Portal (`@ecom/customer`)**: Customer dashboard, profile, and user account management.
@@ -18,10 +19,12 @@ The Ecom system is built as a Yarn workspaces monorepo containing:
 ## 2. Infrastructure Requirements
 
 ### Backend Services
+
 - **Node.js**: `v20.x` or higher (Active LTS recommended).
 - **Yarn**: `v4.x` (managed via Corepack in the repo).
 
 ### Databases & Cache
+
 - **PostgreSQL**: `v18.x` or higher (Active LTS).
 - **Redis**: `v7.x` or higher.
 
@@ -32,17 +35,21 @@ The Ecom system is built as a Yarn workspaces monorepo containing:
 The project utilizes Prisma ORM to manage schema migrations.
 
 ### Step 1: Database Provisioning & Timezone Setup
+
 1. **Database Creation**: Ensure a PostgreSQL database is created and the user has permissions to create tables and execute DDL operations.
 2. **Timezone Configuration (Critical)**: The database **must** be configured to use the **UTC** timezone to avoid runtime logic issues (such as session eviction bugs caused by local timezone shifts).
    - **AWS RDS/Cloud SQL**: Ensure the database instance timezone parameter is set to `UTC` (this is the default on AWS RDS).
    - **Bare-Metal/Self-Hosted**: Set `timezone = 'UTC'` in your `postgresql.conf` or alter the target database timezone explicitly:
+
      ```sql
      ALTER DATABASE name_of_db SET timezone TO 'UTC';
      ```
+
      *(Note: Reconnect to verify the changes with `SHOW timezone;`)*
    - **Docker Containers**: Include environment variables `TZ=UTC` and `PGTZ=UTC` on the PostgreSQL service.
 
 ### Step 2: Apply Migrations (CI/CD Pipeline)
+
 During deployment, run the following command to apply schema migrations to the database. This command should run **before** starting the backend API or frontends.
 
 ```bash
@@ -55,6 +62,7 @@ npx prisma migrate deploy
 > Do not use `prisma migrate dev` on staging or production as it can cause database resets. Always use `prisma migrate deploy`.
 
 ### Step 3: Seed Database (Initial Setup)
+
 For new installations, seed the database with initial roles, permissions, and settings:
 
 ```bash
@@ -68,14 +76,19 @@ yarn prisma:seed
 The backend is located in [apps/api](../../apps/api). It compiles TypeScript into raw JavaScript.
 
 ### Approach A: Bare-Metal / PM2 (Recommended for VPS)
+
 If deploying directly to a Virtual Private Server (VPS) without Docker, you can build and run all applications (NestJS API, Next.js Public Web, Next.js Customer, and Next.js Admin) using Yarn and PM2:
 
 1. **Install Dependencies**:
+
    ```bash
    yarn install --immutable
    ```
+
 2. **Build all Applications**:
+
    Generate the Prisma client and build all the workspaces:
+
    ```bash
    # Generate Prisma client
    yarn prisma generate
@@ -92,15 +105,29 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
    # Build Next.js Admin CMS
    yarn workspace @ecom/admin build
    ```
+
+   > [!IMPORTANT]
+   > **Build-time Environment Variables for Next.js**:
+   > Next.js bakes public client variables (prefixed with `NEXT_PUBLIC_`) into the JavaScript bundle *during build time*. Before running the build commands above, you **must** load the `.env` variables into your shell session:
+   >
+   > ```bash
+   > export $(grep -v '^#' .env | xargs)
+   > ```
+   >
+   > Or copy/link the root `.env` into each application's directory (e.g., `cp .env apps/web/.env`).
+
 3. **Run with PM2**:
+
    Create a centralized `pm2.config.js` in the root of the project to orchestrate all four applications. It is highly recommended to run the Next.js standalone server outputs directly (which reduces memory overhead significantly compared to executing `next start`):
+
    ```javascript
    module.exports = {
      apps: [
        // 1. NestJS Backend API (Port 4000)
        {
          name: "ecom-api",
-         script: "apps/api/dist/main.js",
+         script: "apps/api/dist/src/main.js",
+         node_args: "--import tsx --env-file=.env",
          instances: "max",
          exec_mode: "cluster",
          env: {
@@ -111,6 +138,7 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
        {
          name: "ecom-web",
          script: "apps/web/.next/standalone/apps/web/server.js",
+         node_args: "--env-file=.env",
          instances: "max",
          exec_mode: "cluster",
          env: {
@@ -122,6 +150,7 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
        {
          name: "ecom-customer",
          script: "apps/customer/.next/standalone/apps/customer/server.js",
+         node_args: "--env-file=.env",
          instances: "max",
          exec_mode: "cluster",
          env: {
@@ -133,6 +162,7 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
        {
          name: "ecom-admin",
          script: "apps/admin/.next/standalone/apps/admin/server.js",
+         node_args: "--env-file=.env",
          instances: "max",
          exec_mode: "cluster",
          env: {
@@ -143,12 +173,15 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
      ],
    };
    ```
+
    Start all applications simultaneously:
+
    ```bash
    pm2 start pm2.config.js
    ```
 
 ### Approach B: Dockerizing the NestJS API
+
 To package the NestJS API into a Docker container, use the following production-optimized multi-stage Dockerfile (save as `Dockerfile.api` in the root):
 
 ```dockerfile
@@ -203,10 +236,11 @@ COPY --from=builder /app/apps/api/package.json ./apps/api/
 USER nestjs
 EXPOSE 4000
 ENV PORT=4000
-CMD ["node", "apps/api/dist/main.js"]
+CMD ["node", "--import", "tsx", "apps/api/dist/src/main.js"]
 ```
 
 Build and run:
+
 ```bash
 docker build -f Dockerfile.api -t ecom-api .
 docker run -d -p 4000:4000 --env-file .env ecom-api
@@ -219,9 +253,11 @@ docker run -d -p 4000:4000 --env-file .env ecom-api
 The frontends are built using Next.js **standalone** mode (which bundles dependencies into a minimal runner setup to reduce Docker image sizes to < 100MB).
 
 ### Build & Package using Docker
+
 The root [Dockerfile](../../Dockerfile) compiles Next.js projects based on the `APP` build argument. Because the Dockerfile is configured to use dynamic entrypoint scripts via `ENV APP_NAME`, you do **not** need to manually override the container start command (`CMD`) when running different application targets.
 
 #### 1. Public Portal (`@ecom/web`)
+
 ```bash
 # Build the Public Web Image
 docker build -t ecom-web --build-arg APP=web .
@@ -231,6 +267,7 @@ docker run -d -p 3000:3000 --env-file .env ecom-web
 ```
 
 #### 2. Customer Portal (`@ecom/customer`)
+
 ```bash
 # Build the Customer Image
 docker build -t ecom-customer --build-arg APP=customer .
@@ -240,6 +277,7 @@ docker run -d -p 3001:3000 --env-file .env ecom-customer
 ```
 
 #### 3. Admin Portal (`@ecom/admin`)
+
 ```bash
 # Build the Admin Image
 docker build -t ecom-admin --build-arg APP=admin .
@@ -358,11 +396,13 @@ The application validates environment variables at startup using **Zod**. If any
 Ensure all values in the production environment variables (injected at container start or runtime) are configured as follows:
 
 ### 1. Database & Cache Infrastructure (All Services)
+
 - [ ] `DATABASE_URL`: Production PostgreSQL connection string (e.g., `postgresql://user:pass@host:5432/db?sslmode=require`).
 - [ ] `DATABASE_REPLICA_URLS` (Optional): Comma-separated list of database read-replica URLs (used for database read scaling).
 - [ ] `REDIS_URL`: Production Redis URL for queue management and cache (e.g., `redis://host:6379`).
 
 ### 2. NestJS API Backend (`@ecom/api`)
+
 - [ ] `JWT_SECRET`: Cryptographically strong random key for customer sessions (minimum 8 characters, 32+ recommended).
 - [ ] `JWT_ADMIN_SECRET`: Cryptographically strong random key for admin sessions (minimum 8 characters, must match `@ecom/admin`'s `JWT_ADMIN_SECRET`).
 - [ ] `WEB_URL`: The production URL of the Admin CMS (used for CORS mapping, e.g., `https://admin.ecom.com`).
@@ -371,17 +411,19 @@ Ensure all values in the production environment variables (injected at container
 ### 3. Next.js Frontends (Public Web, Customer, Admin)
 
 #### Shared Authentication Secrets
+
 - [ ] `AUTH_SECRET` & `NEXTAUTH_SECRET`: Set to the same cryptographically secure 32-character key (`openssl rand -base64 32`) on Admin and Customer portals.
 - [ ] `JWT_SECRET` (Customer Portal only): Must match the API's `JWT_SECRET`.
 - [ ] `JWT_ADMIN_SECRET` (Admin Portal only): Must match the API's `JWT_ADMIN_SECRET`.
 
 #### Client-side Variables (Exposed via `NEXT_PUBLIC_*`)
+
 - [ ] `NEXT_PUBLIC_API_URL`: Set to production API URL (e.g., `https://api.ecom.com`).
 - [ ] `NEXT_PUBLIC_APP_URL`: Set to the app's own domain name.
 - [ ] `NEXT_PUBLIC_WEB_URL`: Set to the production Public Web URL (e.g., `https://ecom.com`).
 - [ ] `NEXT_PUBLIC_CUSTOMER_URL`: Set to the production Customer Portal URL (e.g., `https://customer.ecom.com`).
 
 ### 4. Third-Party Services
+
 - [ ] **Email (SMTP)**: Provide `SMTP_HOST`, `SMTP_PORT` (e.g., `587` or `465`), `SMTP_USER`, `SMTP_PASS`, and a valid `MAIL_FROM` address.
 - [ ] **Storage (S3)**: If `STORAGE_DISK` is set to `s3`, ensure `STORAGE_S3_BUCKET`, `STORAGE_S3_REGION`, `STORAGE_S3_ACCESS_KEY`, and `STORAGE_S3_SECRET_KEY` are provided.
-

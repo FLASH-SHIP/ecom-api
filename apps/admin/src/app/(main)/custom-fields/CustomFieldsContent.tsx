@@ -1,6 +1,5 @@
 "use client";
 
-import { FieldGroupFormDrawer } from "@admin/app/(main)/custom-fields/components/forms/FieldGroupFormDrawer";
 import { StatusBadge } from "@admin/app/(main)/custom-fields/components/ui/StatusBadge";
 import type { BulkActionConfig, RowAction } from "@admin/components/data-table";
 import { DataTable, toFilterInput } from "@admin/components/data-table";
@@ -17,15 +16,17 @@ import { Permissions } from "@ecom/lib/permissions";
 import { Button } from "@ecom/ui/components/button";
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertCircle, Download, Pencil, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, Copy, Download, Pencil, Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { ExportImportControls } from "./components/ui/ExportImportControls";
 
 type FieldGroup = {
   id: number;
   title: string;
   status: string;
+  order: number;
   createdAt: string;
   _count: { items: number };
 };
@@ -49,12 +50,11 @@ function toQueryInput(params: DataTableServerParams) {
 
 export default function CustomFieldsContent() {
   const t = useTranslations("customFields");
+  const router = useRouter();
   const { hasPermission: canCreate } = useRequirePermission([Permissions.CUSTOM_FIELDS_CREATE]);
   const { hasPermission: canUpdate } = useRequirePermission([Permissions.CUSTOM_FIELDS_UPDATE]);
   const { hasPermission: canDelete } = useRequirePermission([Permissions.CUSTOM_FIELDS_DELETE]);
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
   const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
   const { toast } = useToast();
 
@@ -77,6 +77,7 @@ export default function CustomFieldsContent() {
       g.id !== undefined &&
       g.title !== undefined &&
       g.status !== undefined &&
+      g.order !== undefined &&
       g.createdAt !== undefined &&
       g._count !== undefined,
   );
@@ -104,19 +105,27 @@ export default function CustomFieldsContent() {
     onSuccess: () => utils.viewer.customFields.listGroups.invalidate(),
   });
 
+  const duplicateGroupMut = trpc.viewer.customFields.duplicateGroup.useMutation({
+    onSuccess: () => {
+      utils.viewer.customFields.listGroups.invalidate();
+      toast(t("duplicateGroupSuccess") ?? "Nhân bản nhóm trường thành công", "success");
+    },
+    onError: (err) => {
+      toast(err.message, "error");
+    },
+  });
+
   function openCreate() {
     if (!canCreate) return;
-    setEditingGroupId(null);
-    setDrawerOpen(true);
+    router.push("/custom-fields/new");
   }
 
   const openEdit = useCallback(
     (groupId: number) => {
       if (!canUpdate) return;
-      setEditingGroupId(groupId);
-      setDrawerOpen(true);
+      router.push(`/custom-fields/${groupId}/edit`);
     },
-    [canUpdate],
+    [canUpdate, router],
   );
 
   // ── Column definitions ─────────────────────────────────────────────────────
@@ -144,6 +153,22 @@ export default function CustomFieldsContent() {
           ) : (
             <span className="text-sm font-medium text-foreground">{row.original.title}</span>
           ),
+      },
+      {
+        accessorKey: "fieldsCount",
+        header: t("tableColFields"),
+        size: 100,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">{row.original._count.items}</span>
+        ),
+      },
+      {
+        accessorKey: "order",
+        header: t("tableColOrder"),
+        size: 80,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">{row.original.order}</span>
+        ),
       },
       {
         accessorKey: "createdAt",
@@ -225,6 +250,23 @@ export default function CustomFieldsContent() {
       });
     }
 
+    if (canCreate) {
+      actions.push({
+        key: "duplicate",
+        tooltip: t("duplicateGroup"),
+        icon: <Copy size={16} />,
+        color: "info",
+        onClick: (row) => {
+          askConfirm({
+            message: t("duplicateGroupConfirm", { name: row.title }),
+            onConfirm: () => {
+              duplicateGroupMut.mutate({ id: row.id });
+            },
+          });
+        },
+      });
+    }
+
     if (canDelete) {
       actions.push({
         key: "delete",
@@ -243,7 +285,17 @@ export default function CustomFieldsContent() {
       });
     }
     return actions;
-  }, [t, utils, deleteGroupMut, askConfirm, openEdit, canUpdate, canDelete]);
+  }, [
+    t,
+    utils,
+    deleteGroupMut,
+    duplicateGroupMut,
+    askConfirm,
+    openEdit,
+    canCreate,
+    canUpdate,
+    canDelete,
+  ]);
 
   // ── Bulk action config (Botble-style dropdown) ───────────────────────────
 
@@ -338,6 +390,7 @@ export default function CustomFieldsContent() {
           <div className="flex gap-2">
             {(canCreate || canUpdate) && (
               <ExportImportControls
+                disableExport={serverTotalCount === 0}
                 onImported={() => utils.viewer.customFields.listGroups.invalidate()}
               />
             )}
@@ -363,15 +416,6 @@ export default function CustomFieldsContent() {
         }
       />
 
-      <FieldGroupFormDrawer
-        open={drawerOpen}
-        groupId={editingGroupId}
-        onClose={() => setDrawerOpen(false)}
-        onSaved={() => {
-          setDrawerOpen(false);
-          utils.viewer.customFields.listGroups.invalidate();
-        }}
-      />
       <ConfirmDialog {...confirmDialogProps} />
     </>
   );

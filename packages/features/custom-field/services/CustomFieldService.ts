@@ -391,7 +391,24 @@ export class CustomFieldService {
       let parsedRules: FieldGroupRules = [];
       if (entry.rules) {
         try {
-          parsedRules = JSON.parse(entry.rules as string) as FieldGroupRules;
+          let rawRules = entry.rules;
+          if (typeof rawRules === "string") {
+            rawRules = JSON.parse(rawRules);
+          }
+          if (Array.isArray(rawRules)) {
+            parsedRules = (rawRules as FieldGroupRules).map((group) => {
+              if (!Array.isArray(group)) return group;
+              return group.map((condition) => {
+                if (condition.name === "model_name") {
+                  return {
+                    ...condition,
+                    value: this.mapModelNameRuleValue(condition.value),
+                  };
+                }
+                return condition;
+              });
+            });
+          }
         } catch {
           throw ErrorWithCode.Factory.BadRequest(
             `Invalid import data: 'rules' is not valid JSON for group "${entry.title}"`,
@@ -422,6 +439,19 @@ export class CustomFieldService {
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
+
+  private mapModelNameRuleValue(val: string): string {
+    if (val.includes("Blog\\Models\\Post") || val.includes("Blog\\\\Models\\\\Post")) {
+      return "post";
+    }
+    if (val.includes("Page\\Models\\Page") || val.includes("Page\\\\Models\\\\Page")) {
+      return "page";
+    }
+    if (val.includes("Blog\\Models\\Category") || val.includes("Blog\\\\Models\\\\Category")) {
+      return "category";
+    }
+    return val;
+  }
 
   /**
    * Botble-compatible rule evaluation.
@@ -525,6 +555,61 @@ export class CustomFieldService {
         );
       }
 
+      // Try parsing legacy stringified options
+      let parsedOptions = item.options;
+      if (typeof parsedOptions === "string" && parsedOptions.trim() !== "") {
+        try {
+          parsedOptions = JSON.parse(parsedOptions);
+        } catch {
+          // Keep as string
+        }
+      }
+
+      // Standardize options structure: convert selectChoices line-format to array
+      let finalOptions: Array<{ label: string; value: string }> | undefined;
+      if (parsedOptions && typeof parsedOptions === "object") {
+        const optObj = parsedOptions as Record<string, unknown>;
+        if (typeof optObj.selectChoices === "string" && optObj.selectChoices.trim() !== "") {
+          finalOptions = optObj.selectChoices
+            .split("\n")
+            .map((line: string) => {
+              const parts = line.split(":");
+              const val = parts[0]?.trim() || "";
+              const lbl = parts[1]?.trim() || val;
+              return { label: lbl, value: val };
+            })
+            .filter((o) => o.value !== "");
+        } else if (Array.isArray(parsedOptions)) {
+          finalOptions = parsedOptions as Array<{ label: string; value: string }>;
+        }
+      }
+
+      // Resolve placeholder (either root or nested in options)
+      let placeholder = typeof item.placeholder === "string" ? item.placeholder : undefined;
+      if (!placeholder && parsedOptions && typeof parsedOptions === "object") {
+        const optObj = parsedOptions as Record<string, unknown>;
+        if (typeof optObj.placeholderText === "string") {
+          placeholder = optObj.placeholderText;
+        }
+      }
+
+      // Resolve default value (either root, default_value, or nested in options)
+      let defaultValue =
+        typeof item.defaultValue === "string"
+          ? item.defaultValue
+          : typeof item.default_value === "string"
+            ? item.default_value
+            : undefined;
+
+      if (!defaultValue && parsedOptions && typeof parsedOptions === "object") {
+        const optObj = parsedOptions as Record<string, unknown>;
+        if (typeof optObj.defaultValue === "string") {
+          defaultValue = optObj.defaultValue;
+        } else if (typeof optObj.defaultValue === "number") {
+          defaultValue = String(optObj.defaultValue);
+        }
+      }
+
       const created = await this.deps.itemRepo.create({
         groupId,
         slug: item.slug as string,
@@ -532,8 +617,9 @@ export class CustomFieldService {
         type: item.type as string,
         order: typeof item.order === "number" ? item.order : 0,
         instructions: typeof item.instructions === "string" ? item.instructions : undefined,
-        options: item.options as Array<{ label: string; value: string }> | undefined,
-        defaultValue: typeof item.default_value === "string" ? item.default_value : undefined,
+        options: finalOptions,
+        placeholder,
+        defaultValue,
         parentId: parentId ?? undefined,
       });
 

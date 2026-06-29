@@ -6,6 +6,7 @@ import {
   list,
   remove,
   syncRoles,
+  toggleSuperAdmin,
   update,
 } from "./procedures/users.handler";
 
@@ -16,5 +17,6 @@ export const usersRouter = router({
   update,
   changePassword,
   syncRoles,
+  toggleSuperAdmin,
   remove,
 });

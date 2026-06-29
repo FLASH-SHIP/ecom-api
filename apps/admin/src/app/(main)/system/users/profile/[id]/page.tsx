@@ -1,7 +1,6 @@
 import { PageShell } from "@admin/components/layout/PageShell";
 import { auth } from "@admin/lib/auth";
 import { notFound, redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
 import ProfileContent from "./ProfileContent";
 
 interface Props {
@@ -29,10 +28,8 @@ export default async function ProfilePage({ params }: Props) {
     redirect("/login");
   }
 
-  const t = await getTranslations("users.profile");
-
   return (
-    <PageShell title={t("tabInfo")}>
+    <PageShell>
       <ProfileContent userId={userId} />
     </PageShell>
   );
