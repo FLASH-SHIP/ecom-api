@@ -1,0 +1,29 @@
+meta {
+  name: 5. Cancel Order
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{sbpBaseUrl}}/omm/v2/order_express/:orderNumber
+  body: none
+  auth: none
+}
+
+params:path {
+  orderNumber: GB00000153006
+}
+
+headers {
+  Authorization: Bearer {{sbpToken}}
+  secret: {{sbpSecret}}
+  lang: en
+}
+
+docs {
+  # 5. Cancel Order
+  
+  Hủy đơn hàng trên hệ thống SBP (chỉ được thực hiện khi đơn hàng chưa Check-in).
+  
+  Sử dụng path parameter `:orderNumber` chứa mã đơn hàng của SBP (ví dụ: `GB00000153006`).
+}
