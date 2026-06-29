@@ -53,8 +53,8 @@ export class TagRepository {
   }
 
   async findBySlug(slug: string) {
-    return this.prisma.tag.findUnique({
-      where: { slug },
+    return this.prisma.tag.findFirst({
+      where: { slug, deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -78,7 +78,7 @@ export class TagRepository {
   }) {
     const { search, where: prismaWhere, page = 1, perPage = 25, sortBy, sortDir } = options ?? {};
 
-    const conditions: Record<string, unknown>[] = [];
+    const conditions: Record<string, unknown>[] = [{ deletedAt: null }];
 
     if (prismaWhere && Object.keys(prismaWhere).length > 0) {
       conditions.push(prismaWhere);
@@ -177,7 +177,39 @@ export class TagRepository {
     });
   }
 
-  async delete(id: number) {
+  async softDelete(id: number) {
+    return this.prisma.tag.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async restore(id: number) {
+    return this.prisma.tag.update({
+      where: { id },
+      data: { deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async hardDelete(id: number) {
     return this.prisma.tag.delete({
       where: { id },
       select: { id: true },

@@ -1,4 +1,5 @@
 import { auth } from "@admin/lib/auth";
+import { defaultLocale } from "@ecom/i18n";
 import { ALL_PERMISSIONS } from "@ecom/lib/permissions";
 import { RedisCache } from "@ecom/lib/redis";
 import { prisma } from "@ecom/prisma";
@@ -91,7 +92,12 @@ const handler = async (req: Request) => {
   const userAgent = req.headers.get("user-agent");
 
   const url = new URL(req.url);
-  const locale = url.searchParams.get("ref_lang") ?? req.headers.get("x-locale") ?? null;
+  const cookieHeader = req.headers.get("cookie") ?? "";
+  const nextLocaleMatch = cookieHeader.match(/(?:^|;)\s*NEXT_LOCALE\s*=\s*([^;]+)/);
+  const nextLocale = nextLocaleMatch?.[1]?.trim() ?? null;
+
+  const locale =
+    url.searchParams.get("ref_lang") ?? req.headers.get("x-locale") ?? nextLocale ?? defaultLocale;
 
   return fetchRequestHandler({
     endpoint: "/api/trpc",

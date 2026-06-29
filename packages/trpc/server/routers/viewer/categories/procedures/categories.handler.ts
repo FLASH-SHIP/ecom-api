@@ -1,28 +1,51 @@
 import { CategoryTransformer } from "@ecom/features/blog/transformers/CategoryTransformer";
 import { getCategoryService } from "@ecom/features/di/containers/BlogService";
+import {
+  getLanguageRepository,
+  getLanguageService,
+} from "@ecom/features/di/containers/LanguageService";
+import { getTranslationService } from "@ecom/features/di/containers/TranslationService";
+import type { FilterFieldConfigMap } from "@ecom/features/shared/utils/buildPrismaWhere";
+import { buildPrismaWhere } from "@ecom/features/shared/utils/buildPrismaWhere";
 import { Permissions } from "@ecom/lib/permissions";
 import { auditLog } from "@ecom/trpc/server/middleware/auditLog";
+import { filtersInputSchema } from "@ecom/trpc/server/shared/filterSchema";
 import { authedProcedure, requirePermission } from "@ecom/trpc/server/trpc";
 import { z } from "zod";
 
 const ContentStatusEnum = z.enum(["DRAFT", "PENDING", "PUBLISHED", "ARCHIVED"]);
+
+const CATEGORY_FILTER_FIELDS: FilterFieldConfigMap = {
+  id: { prismaField: "id", type: "number" },
+  name: { prismaField: "name", type: "string" },
+  status: { prismaField: "status", type: "enum" },
+  createdAt: { prismaField: "createdAt", type: "date" },
+  order: { prismaField: "order", type: "number" },
+};
 
 export const list = authedProcedure
   .use(requirePermission(Permissions.CATEGORIES_READ))
   .input(
     z
       .object({
-        status: ContentStatusEnum.optional(),
-        parentId: z.number().int().positive().nullable().optional(),
-        includeDeleted: z.boolean().optional(),
+        filters: filtersInputSchema,
+        search: z.string().max(200).optional(),
         page: z.number().int().positive().default(1),
-        perPage: z.number().int().positive().max(500).default(50),
+        pageSize: z.number().int().positive().max(500).default(25),
+        sortBy: z.enum(["id", "name", "createdAt", "status", "order"]).optional(),
+        sortDir: z.enum(["asc", "desc"]).optional(),
       })
       .optional(),
   )
   .query(async ({ input }) => {
     const categoryService = getCategoryService();
-    const result = await categoryService.listCategories(input ?? undefined);
+    const { pageSize, filters = [], ...rest } = input ?? {};
+    const prismaWhere = buildPrismaWhere(filters, CATEGORY_FILTER_FIELDS);
+    const result = await categoryService.listCategories({
+      ...rest,
+      where: prismaWhere,
+      perPage: pageSize,
+    });
     return {
       items: new CategoryTransformer().transformCollection(result.items),
       total: result.total,
@@ -57,8 +80,8 @@ export const create = authedProcedure
       slug: z.string().max(200).optional(),
       description: z.string().max(2000).optional(),
       icon: z.string().max(100).optional(),
-      isFeatured: z.boolean().optional(),
-      isDefault: z.boolean().optional(),
+      isFeatured: z.number().int().min(0).max(1).optional(),
+      isDefault: z.number().int().min(0).max(1).optional(),
       status: ContentStatusEnum.default("PUBLISHED"),
       parentId: z.number().int().positive().optional(),
       order: z.number().int().min(0).optional(),
@@ -70,6 +93,30 @@ export const create = authedProcedure
       ...input,
       authorId: ctx.user.id,
     });
+
+    if (result) {
+      const languageRepo = getLanguageRepository();
+      let langCode = "vi";
+      if (ctx.locale) {
+        const dbLang = await languageRepo.findByLocale(ctx.locale);
+        langCode = dbLang?.code ?? ctx.locale;
+      } else {
+        const defaultLang = await languageRepo.findDefault();
+        if (defaultLang) {
+          langCode = defaultLang.code;
+        }
+      }
+
+      const languageService = getLanguageService();
+      await languageService.saveContentLanguage(result.id, "category", langCode);
+
+      const translationService = getTranslationService();
+      await translationService.saveTranslation("category", result.id, langCode, {
+        name: input.name,
+        description: input.description,
+      });
+    }
+
     return new CategoryTransformer().transformItem(result!);
   });
 
@@ -83,17 +130,41 @@ export const update = authedProcedure
       slug: z.string().max(200).optional(),
       description: z.string().max(2000).nullable().optional(),
       icon: z.string().max(100).nullable().optional(),
-      isFeatured: z.boolean().optional(),
-      isDefault: z.boolean().optional(),
+      isFeatured: z.number().int().min(0).max(1).optional(),
+      isDefault: z.number().int().min(0).max(1).optional(),
       status: ContentStatusEnum.optional(),
       parentId: z.number().int().positive().nullable().optional(),
       order: z.number().int().min(0).optional(),
     }),
   )
-  .mutation(async ({ input }) => {
+  .mutation(async ({ ctx, input }) => {
     const { id, ...data } = input;
     const categoryService = getCategoryService();
     const result = await categoryService.updateCategory(id, data);
+
+    if (ctx.locale && result) {
+      const languageRepo = getLanguageRepository();
+      const dbLang = await languageRepo.findByLocale(ctx.locale);
+      const langCode = dbLang?.code ?? ctx.locale;
+
+      const defaultLang = await languageRepo.findDefault();
+
+      if (langCode === defaultLang?.code) {
+        const languageService = getLanguageService();
+        await languageService.saveContentLanguage(id, "category", langCode);
+      } else if (data.name !== undefined || data.description !== undefined) {
+        const translationService = getTranslationService();
+        const currentCategory = await categoryService.getCategory(id);
+        await translationService.saveTranslation("category", id, langCode, {
+          name: data.name ?? currentCategory?.name,
+          description:
+            data.description !== undefined
+              ? (data.description ?? undefined)
+              : (currentCategory?.description ?? undefined),
+        });
+      }
+    }
+
     return new CategoryTransformer().transformItem(result!);
   });
 

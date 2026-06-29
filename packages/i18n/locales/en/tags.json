@@ -1,7 +1,7 @@
 {
   "title": "Tags",
   "subtitle": "Manage tags for your blog posts",
-  "createTag": "Create New",
+  "createTag": "Create",
   "newTag": "New Tag",
   "addNewTag": "Add New Tag",
   "editTag": "Edit Tag",
@@ -12,6 +12,9 @@
   "searchPlaceholder": "Search tags...",
   "creating": "Creating...",
   "addTag": "Add Tag",
+  "hideEditor": "Hide Editor",
+  "showEditor": "Show Editor",
+  "addMedia": "Add Media",
   "deleteConfirm": "Delete this tag?",
   "deleteTagConfirm": "Delete tag \"{name}\"?",
   "deleteTagSuccess": "Tag \"{name}\" deleted successfully",
@@ -28,6 +31,9 @@
   "tableColPosts": "Posts",
   "tableColCreatedAt": "Created At",
   "tableColStatus": "Status",
+  "editingVersion": "You are editing \"{language}\" version",
+  "languages": "Languages",
+  "saveAndExit": "Save & Exit",
   "status": {
     "published": "Published",
     "pending": "Pending",

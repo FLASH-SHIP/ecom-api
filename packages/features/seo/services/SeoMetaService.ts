@@ -32,6 +32,10 @@ export class SeoMetaService {
     return this.deps.seoMetaRepo.findByPageId(pageId);
   }
 
+  async getForTag(tagId: number) {
+    return this.deps.seoMetaRepo.findByTagId(tagId);
+  }
+
   async saveForPost(postId: number, data: SeoData) {
     if (!data.seoTitle && !data.seoDescription && !data.seoImage && !data.indexMode) {
       return null;
@@ -57,5 +61,14 @@ export class SeoMetaService {
 
     log.info("Saving SEO meta for page", { pageId });
     return this.deps.seoMetaRepo.upsertForPage(pageId, data);
+  }
+
+  async saveForTag(tagId: number, data: SeoData) {
+    if (!data.seoTitle && !data.seoDescription && !data.seoImage && !data.indexMode) {
+      return null;
+    }
+
+    log.info("Saving SEO meta for tag", { tagId });
+    return this.deps.seoMetaRepo.upsertForTag(tagId, data);
   }
 }

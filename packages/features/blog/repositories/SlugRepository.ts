@@ -77,4 +77,20 @@ export class SlugRepository {
       where: { referenceId, referenceType },
     });
   }
+
+  async upsertTranslation(slugId: number, langCode: string, key: string) {
+    return this.prisma.slugTranslation.upsert({
+      where: {
+        slugId_langCode: { slugId, langCode },
+      },
+      create: { slugId, langCode, key },
+      update: { key },
+    });
+  }
+
+  async deleteTranslation(slugId: number, langCode: string) {
+    return this.prisma.slugTranslation.deleteMany({
+      where: { slugId, langCode },
+    });
+  }
 }

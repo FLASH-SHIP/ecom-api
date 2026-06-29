@@ -1,8 +1,10 @@
 {
   "title": "Bài viết",
+  "languages": "Ngôn ngữ",
+  "editingVersion": "Bạn đang chỉnh sửa phiên bản \"{language}\"",
   "subtitle": "Quản lý bài viết blog",
-  "newPost": "Bài viết mới",
-  "editPost": "Sửa bài viết",
+  "newPost": "Tạo mới",
+  "editPost": "Sửa",
   "noPostsTitle": "Không tìm thấy bài viết",
   "noPostsDescription": "Bắt đầu bằng cách tạo bài viết blog đầu tiên.",
   "createPost": "Tạo bài viết",
@@ -39,6 +41,11 @@
     "restore": "Khôi phục",
     "permanentlyDelete": "Xóa vĩnh viễn",
     "delete": "Xóa",
-    "deleteConfirm": "Bạn có chắc chắn muốn xóa bài viết này?"
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa bài viết này?",
+    "bulkDeleteConfirm": "Xóa {count} bài viết đã chọn?",
+    "bulkDeleteSuccess": "Đã xóa thành công {count} bài viết",
+    "bulkDeleteError": "Xóa một số bài viết thất bại",
+    "bulkChangeSuccess": "Đã cập nhật thành công {count} bài viết",
+    "bulkChangeError": "Cập nhật một số bài viết thất bại"
   }
 }

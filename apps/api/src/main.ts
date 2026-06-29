@@ -1,3 +1,4 @@
+import "./load-env";
 import "./bootstrap-env";
 import "reflect-metadata";
 import { registerEventListeners } from "@ecom/features/events/listeners";
@@ -61,6 +62,7 @@ async function bootstrap() {
   const allowedOrigins = [
     configService.get<string>("WEB_URL"),
     configService.get<string>("CUSTOMER_APP_URL"),
+    configService.get<string>("ADMIN_URL"),
   ].filter(Boolean) as string[];
 
   app.enableCors({

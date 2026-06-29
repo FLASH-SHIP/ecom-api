@@ -87,7 +87,7 @@ describe("CategoryService", () => {
       const slugService = createMockSlugService();
       const service = new CategoryService({ categoryRepo, slugService });
 
-      categoryRepo.findById.mockResolvedValue({ id: 1, name: "Tech", isDefault: false });
+      categoryRepo.findById.mockResolvedValue({ id: 1, name: "Tech", isDefault: 0 });
       categoryRepo.softDelete.mockResolvedValue({ id: 1, deletedAt: new Date() });
 
       await service.deleteCategory(1);
@@ -100,7 +100,7 @@ describe("CategoryService", () => {
       const slugService = createMockSlugService();
       const service = new CategoryService({ categoryRepo, slugService });
 
-      categoryRepo.findById.mockResolvedValue({ id: 1, name: "General", isDefault: true });
+      categoryRepo.findById.mockResolvedValue({ id: 1, name: "General", isDefault: 1 });
 
       await expect(service.deleteCategory(1)).rejects.toThrow("Cannot delete the default category");
     });

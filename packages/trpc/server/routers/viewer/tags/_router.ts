@@ -1,5 +1,13 @@
 import { router } from "@ecom/trpc/server/trpc";
-import { create, get, list, remove, update } from "./procedures/tags.handler";
+import {
+  create,
+  get,
+  list,
+  permanentlyDelete,
+  remove,
+  restore,
+  update,
+} from "./procedures/tags.handler";
 
 export const tagsRouter = router({
   list,
@@ -7,4 +15,6 @@ export const tagsRouter = router({
   create,
   update,
   remove,
+  restore,
+  permanentlyDelete,
 });

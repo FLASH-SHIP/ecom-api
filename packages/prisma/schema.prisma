@@ -280,6 +280,8 @@ model Post {
   isFeatured    Boolean        @default(false)
   allowComments Boolean        @default(true)
   formatType    String?
+  externalSource String?
+  sponsoredBy    String?
   views         Int            @default(0)
   status        ContentStatus  @default(DRAFT)
   authorId      Int
@@ -328,8 +330,8 @@ model Category {
   slug         String                @unique
   description  String?               @db.Text
   icon         String?
-  isFeatured   Boolean               @default(false)
-  isDefault    Boolean               @default(false)
+  isFeatured   Int                   @default(0) @db.SmallInt
+  isDefault    Int                   @default(0) @db.SmallInt
   status       ContentStatus         @default(PUBLISHED)
   parentId     Int?
   parent       Category?             @relation("CategoryTree", fields: [parentId], references: [id])
@@ -372,9 +374,12 @@ model Tag {
   authorType   String           @default("User")
   posts        PostTag[]
   translations TagTranslation[]
+  seoMeta      SeoMeta?         @relation("TagSeo")
+  deletedAt    DateTime?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
+  @@index([deletedAt])
   @@map("tags")
 }
 
@@ -391,22 +396,24 @@ model TagTranslation {
 }
 
 model PostCategory {
+  id         Int      @id @default(autoincrement())
   post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId     Int
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId Int
 
-  @@id([postId, categoryId])
+  @@unique([postId, categoryId])
   @@map("post_categories")
 }
 
 model PostTag {
+  id     Int  @id @default(autoincrement())
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId Int
   tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
   tagId  Int
 
-  @@id([postId, tagId])
+  @@unique([postId, tagId])
   @@map("post_tags")
 }
 
@@ -438,6 +445,21 @@ model Page {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  // Custom Fields (Shared)
+  bannerImage   String?
+  heroBanner    String?
+  layout        String?       @default("default")
+  hideTitle     Boolean       @default(false)
+  hideBreadcrumb Boolean      @default(false)
+  hideSidebar   Boolean       @default(false)
+  hideFooter    Boolean       @default(false)
+  gallery       Json?
+
+  // Custom Fields (Default Locale)
+  subtitle      String?
+  ctaText       String?
+  ctaLink       String?
+
   @@index([authorId])
   @@index([status])
   @@index([slug])
@@ -456,6 +478,11 @@ model PageTranslation {
   slug     String?
   content  String? @db.Text
   excerpt  String? @db.Text
+
+  // Custom Fields (Translatable)
+  subtitle String?
+  ctaText  String?
+  ctaLink  String?
 
   @@unique([pageId, langCode])
   @@map("page_translations")
@@ -486,15 +513,18 @@ model Revision {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 model MediaFolder {
-  id        Int           @id @default(autoincrement())
-  name      String
-  slug      String        @unique
-  parentId  Int?
-  parent    MediaFolder?  @relation("FolderTree", fields: [parentId], references: [id])
-  children  MediaFolder[] @relation("FolderTree")
-  files     MediaFile[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id         Int           @id @default(autoincrement())
+  name       String
+  slug       String        @unique
+  parentId   Int?
+  parent     MediaFolder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children   MediaFolder[] @relation("FolderTree")
+  files      MediaFile[]
+  color      String?
+  isFavorite Boolean       @default(false)
+  deletedAt  DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
   @@index([parentId])
   @@index([slug])
@@ -516,6 +546,10 @@ model MediaFile {
   folderId    Int?
   folder      MediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   uploadedBy  Int?
+  visibility  String       @default("public")
+  accessMode  String?
+  isFavorite  Boolean      @default(false)
+  deletedAt   DateTime?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -577,6 +611,9 @@ model SeoMeta {
 
   pageId        Int?     @unique
   page          Page?    @relation("PageSeo", fields: [pageId], references: [id], onDelete: Cascade)
+
+  tagId         Int?     @unique
+  tag           Tag?     @relation("TagSeo", fields: [tagId], references: [id], onDelete: Cascade)
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

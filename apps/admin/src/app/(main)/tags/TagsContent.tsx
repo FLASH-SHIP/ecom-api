@@ -64,7 +64,7 @@ export default function TagsContent() {
 
   const { queryInput, onServerChange, tableKey, initialState } = useServerTable({
     tableId: "tags",
-    defaultSort: { key: "id", direction: "desc" },
+    defaultSort: { key: "createdAt", direction: "desc" },
     defaultPageSize: 25,
     toQueryInput,
   });
@@ -356,7 +356,12 @@ export default function TagsContent() {
         onRefresh={() => refetch()}
         headerActions={
           canCreate ? (
-            <Button id="create-tag" size="sm" onClick={() => router.push("/tags/create")}>
+            <Button
+              id="create-tag"
+              className="text-sm"
+              size="sm"
+              onClick={() => router.push("/tags/create")}
+            >
               <Plus className="mr-2 size-4" />
               {t("createTag")}
             </Button>
@@ -368,7 +373,12 @@ export default function TagsContent() {
             <p className="mb-1 text-muted-foreground">{t("noTagsTitle")}</p>
             <p className="mb-4 text-sm text-muted-foreground/60">{t("noTagsSubtitle")}</p>
             {canCreate && (
-              <Button id="create-tag-empty" size="sm" onClick={() => router.push("/tags/create")}>
+              <Button
+                id="create-tag-empty"
+                className="text-sm"
+                size="sm"
+                onClick={() => router.push("/tags/create")}
+              >
                 <Plus className="mr-2 size-4" />
                 {t("createTag")}
               </Button>

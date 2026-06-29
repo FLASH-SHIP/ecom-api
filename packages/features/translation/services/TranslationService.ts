@@ -1,3 +1,4 @@
+import type { SlugRepository } from "@ecom/features/blog/repositories/SlugRepository";
 import type { TranslationRepository } from "@ecom/features/translation/repositories/TranslationRepository";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { createLogger } from "@ecom/lib/logger";
@@ -6,6 +7,7 @@ const log = createLogger("TranslationService");
 
 export interface ITranslationServiceDeps {
   translationRepo: TranslationRepository;
+  slugRepo: SlugRepository;
 }
 
 type EntityType = "post" | "category" | "page" | "tag" | "menuItem";
@@ -54,6 +56,7 @@ export class TranslationService {
     }
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: switch-case routes to entity-specific upsert operations
   async saveTranslation(
     entityType: EntityType,
     entityId: number,
@@ -63,28 +66,48 @@ export class TranslationService {
     log.info("Saving translation", { entityType, entityId, langCode });
 
     switch (entityType) {
-      case "post":
-        return this.deps.translationRepo.upsertPostTranslation(entityId, langCode, {
+      case "post": {
+        const result = await this.deps.translationRepo.upsertPostTranslation(entityId, langCode, {
           title: data.title ?? "",
           slug: data.slug,
           excerpt: data.excerpt,
           content: data.content,
         });
+        if (data.slug) {
+          const mainSlug = await this.deps.slugRepo.findByReference(entityId, "Post");
+          if (mainSlug) {
+            await this.deps.slugRepo.upsertTranslation(mainSlug.id, langCode, data.slug);
+          }
+        }
+        return result;
+      }
       case "category":
         return this.deps.translationRepo.upsertCategoryTranslation(entityId, langCode, {
           name: data.name ?? "",
           description: data.description,
         });
-      case "page":
-        return this.deps.translationRepo.upsertPageTranslation(entityId, langCode, {
+      case "page": {
+        const result = await this.deps.translationRepo.upsertPageTranslation(entityId, langCode, {
           title: data.title ?? "",
           slug: data.slug,
           content: data.content,
           excerpt: data.excerpt,
+          subtitle: data.subtitle,
+          ctaText: data.ctaText,
+          ctaLink: data.ctaLink,
         });
+        if (data.slug) {
+          const mainSlug = await this.deps.slugRepo.findByReference(entityId, "Page");
+          if (mainSlug) {
+            await this.deps.slugRepo.upsertTranslation(mainSlug.id, langCode, data.slug);
+          }
+        }
+        return result;
+      }
       case "tag":
         return this.deps.translationRepo.upsertTagTranslation(entityId, langCode, {
           name: data.name ?? "",
+          description: data.description,
         });
       case "menuItem":
         return this.deps.translationRepo.upsertMenuItemTranslation(entityId, langCode, {
@@ -99,12 +122,22 @@ export class TranslationService {
     log.info("Deleting translation", { entityType, entityId, langCode });
 
     switch (entityType) {
-      case "post":
+      case "post": {
+        const mainSlug = await this.deps.slugRepo.findByReference(entityId, "Post");
+        if (mainSlug) {
+          await this.deps.slugRepo.deleteTranslation(mainSlug.id, langCode);
+        }
         return this.deps.translationRepo.deletePostTranslation(entityId, langCode);
+      }
       case "category":
         return this.deps.translationRepo.deleteCategoryTranslation(entityId, langCode);
-      case "page":
+      case "page": {
+        const mainSlug = await this.deps.slugRepo.findByReference(entityId, "Page");
+        if (mainSlug) {
+          await this.deps.slugRepo.deleteTranslation(mainSlug.id, langCode);
+        }
         return this.deps.translationRepo.deletePageTranslation(entityId, langCode);
+      }
       case "tag":
         return this.deps.translationRepo.deleteTagTranslation(entityId, langCode);
       case "menuItem":

@@ -102,7 +102,21 @@ export class TagService {
     const tag = await this.deps.tagRepo.findById(id);
     if (!tag) throw ErrorWithCode.Factory.NotFound("Tag not found");
 
+    return this.deps.tagRepo.softDelete(id);
+  }
+
+  async restoreTag(id: number) {
+    const tag = await this.deps.tagRepo.findById(id);
+    if (!tag) throw ErrorWithCode.Factory.NotFound("Tag not found");
+
+    return this.deps.tagRepo.restore(id);
+  }
+
+  async permanentlyDeleteTag(id: number) {
+    const tag = await this.deps.tagRepo.findById(id);
+    if (!tag) throw ErrorWithCode.Factory.NotFound("Tag not found");
+
     await this.deps.slugService.deleteSlug(id, "Tag");
-    return this.deps.tagRepo.delete(id);
+    return this.deps.tagRepo.hardDelete(id);
   }
 }

@@ -28,6 +28,8 @@ export class PostCommands {
     isFeatured?: boolean;
     allowComments?: boolean;
     formatType?: string;
+    externalSource?: string;
+    sponsoredBy?: string;
     status?: ContentStatus;
     authorId: number;
     categoryIds?: number[];
@@ -51,6 +53,16 @@ export class PostCommands {
 
       // Update the slug registry with the real post ID
       await this.deps.slugService.updateSlug(createdPost.id, "Post", data.title, slugRecord.key);
+
+      // Sync categories if provided
+      if (data.categoryIds !== undefined && data.categoryIds.length > 0) {
+        await this.deps.postRepo.updateCategories(createdPost.id, data.categoryIds);
+      }
+
+      // Sync tags if provided
+      if (data.tagIds !== undefined && data.tagIds.length > 0) {
+        await this.deps.postRepo.updateTags(createdPost.id, data.tagIds);
+      }
 
       // Save events to outbox within transaction
       await OutboxStore.publish("post.created", {
@@ -85,9 +97,12 @@ export class PostCommands {
       isFeatured?: boolean;
       allowComments?: boolean;
       formatType?: string | null;
+      externalSource?: string | null;
+      sponsoredBy?: string | null;
       status?: ContentStatus;
       categoryIds?: number[];
       tagIds?: number[];
+      authorId?: number;
     },
   ) {
     // Acquire a distributed lock to prevent race conditions during concurrent updates

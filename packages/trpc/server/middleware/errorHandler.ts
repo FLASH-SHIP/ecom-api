@@ -27,39 +27,49 @@ function mapStatusToTRPCCode(statusCode: number): TRPCError["code"] {
   }
 }
 
+function handleAndMapError(error: unknown): never {
+  if (error instanceof TRPCError) {
+    throw error;
+  }
+
+  if (error instanceof ErrorWithCode || isErrorWithCode(error)) {
+    const err = error as { code: string; message: string; statusCode?: number };
+    const statusCode = err.statusCode ?? 500;
+    if (statusCode >= 500) {
+      log.error("Server error in procedure", { code: err.code, message: err.message });
+    }
+    throw new TRPCError({
+      code: err.statusCode ? mapStatusToTRPCCode(err.statusCode) : mapErrorCodeToTRPC(err.code),
+      message: err.message,
+      cause: error,
+    });
+  }
+
+  log.error("Unexpected error in procedure", {
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  });
+  throw error;
+}
+
 /**
  * Error handler logic — factored out so trpc.ts can call it without circular deps.
  */
 export async function handleTRPCError<T>(next: () => Promise<T>): Promise<T> {
   try {
-    return await next();
-  } catch (error) {
-    if (error instanceof ErrorWithCode) {
-      if (error.statusCode >= 500) {
-        log.error("Server error in procedure", { code: error.code, message: error.message });
+    const result = await next();
+
+    if (result && typeof result === "object" && "ok" in result && !result.ok && "error" in result) {
+      const trpcError = (result as { error: TRPCError }).error;
+      const cause = trpcError.cause;
+
+      if (cause && (cause instanceof ErrorWithCode || isErrorWithCode(cause))) {
+        handleAndMapError(cause);
       }
-      throw new TRPCError({
-        code: mapStatusToTRPCCode(error.statusCode),
-        message: error.message,
-        cause: error,
-      });
     }
 
-    if (error instanceof TRPCError) {
-      throw error;
-    }
-
-    if (isErrorWithCode(error)) {
-      throw new TRPCError({
-        code: mapErrorCodeToTRPC(error.code),
-        message: error.message,
-      });
-    }
-
-    log.error("Unexpected error in procedure", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    throw error;
+    return result;
+  } catch (error) {
+    handleAndMapError(error);
   }
 }

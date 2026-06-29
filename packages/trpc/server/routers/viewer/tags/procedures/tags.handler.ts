@@ -1,4 +1,9 @@
 import { getTagService } from "@ecom/features/di/containers/BlogService";
+import {
+  getLanguageRepository,
+  getLanguageService,
+} from "@ecom/features/di/containers/LanguageService";
+import { getTranslationService } from "@ecom/features/di/containers/TranslationService";
 import type { FilterFieldConfigMap } from "@ecom/features/shared/utils/buildPrismaWhere";
 import { buildPrismaWhere } from "@ecom/features/shared/utils/buildPrismaWhere";
 import { Permissions } from "@ecom/lib/permissions";
@@ -58,11 +63,34 @@ export const create = authedProcedure
   )
   .mutation(async ({ input, ctx }) => {
     const tagService = getTagService();
-    return tagService.createTag({
+    const tag = await tagService.createTag({
       ...input,
       authorId: ctx.user.id,
       authorType: "User",
     });
+
+    const languageRepo = getLanguageRepository();
+    let langCode = "vi";
+    if (ctx.locale) {
+      const dbLang = await languageRepo.findByLocale(ctx.locale);
+      langCode = dbLang?.code ?? ctx.locale;
+    } else {
+      const defaultLang = await languageRepo.findDefault();
+      if (defaultLang) {
+        langCode = defaultLang.code;
+      }
+    }
+
+    const languageService = getLanguageService();
+    await languageService.saveContentLanguage(tag.id, "tag", langCode);
+
+    const translationService = getTranslationService();
+    await translationService.saveTranslation("tag", tag.id, langCode, {
+      name: input.name,
+      description: input.description,
+    });
+
+    return tag;
   });
 
 export const update = authedProcedure
@@ -77,10 +105,35 @@ export const update = authedProcedure
       status: contentStatusSchema.optional(),
     }),
   )
-  .mutation(async ({ input }) => {
+  .mutation(async ({ input, ctx }) => {
     const { id, ...data } = input;
     const tagService = getTagService();
-    return tagService.updateTag(id, data);
+    const tag = await tagService.updateTag(id, data);
+
+    if (ctx.locale) {
+      const languageRepo = getLanguageRepository();
+      const dbLang = await languageRepo.findByLocale(ctx.locale);
+      const langCode = dbLang?.code ?? ctx.locale;
+
+      const defaultLang = await languageRepo.findDefault();
+
+      if (langCode === defaultLang?.code) {
+        const languageService = getLanguageService();
+        await languageService.saveContentLanguage(id, "tag", langCode);
+      } else if (data.name !== undefined || data.description !== undefined) {
+        const translationService = getTranslationService();
+        const currentTag = await tagService.getTag(id);
+        await translationService.saveTranslation("tag", id, langCode, {
+          name: data.name ?? currentTag.name,
+          description:
+            data.description !== undefined
+              ? data.description
+              : (currentTag.description ?? undefined),
+        });
+      }
+    }
+
+    return tag;
   });
 
 export const remove = authedProcedure
@@ -90,4 +143,22 @@ export const remove = authedProcedure
   .mutation(async ({ input }) => {
     const tagService = getTagService();
     return tagService.deleteTag(input.id);
+  });
+
+export const restore = authedProcedure
+  .use(requirePermission(Permissions.TAGS_DELETE))
+  .use(auditLog({ module: "tags", action: "RESTORE", entityType: "Tag" }))
+  .input(z.object({ id: z.number().int().positive() }))
+  .mutation(async ({ input }) => {
+    const tagService = getTagService();
+    return tagService.restoreTag(input.id);
+  });
+
+export const permanentlyDelete = authedProcedure
+  .use(requirePermission(Permissions.TAGS_DELETE))
+  .use(auditLog({ module: "tags", action: "PERMANENT_DELETE", entityType: "Tag" }))
+  .input(z.object({ id: z.number().int().positive() }))
+  .mutation(async ({ input }) => {
+    const tagService = getTagService();
+    return tagService.permanentlyDeleteTag(input.id);
   });

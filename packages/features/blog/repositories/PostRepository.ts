@@ -21,6 +21,8 @@ export class PostRepository {
         isFeatured: true,
         allowComments: true,
         formatType: true,
+        externalSource: true,
+        sponsoredBy: true,
         views: true,
         status: true,
         authorId: true,
@@ -46,6 +48,8 @@ export class PostRepository {
         isFeatured: true,
         allowComments: true,
         formatType: true,
+        externalSource: true,
+        sponsoredBy: true,
         views: true,
         status: true,
         authorId: true,
@@ -105,6 +109,8 @@ export class PostRepository {
         featuredImage: true,
         bannerImage: true,
         isFeatured: true,
+        externalSource: true,
+        sponsoredBy: true,
         views: true,
         status: true,
         authorId: true,
@@ -140,8 +146,9 @@ export class PostRepository {
     includeDeleted?: boolean;
     page?: number;
     perPage?: number;
-    sortBy?: "createdAt" | "title" | "publishedAt" | "views";
+    sortBy?: "id" | "title" | "status" | "createdAt" | "publishedAt" | "views";
     sortOrder?: "asc" | "desc";
+    where?: Record<string, unknown>;
   }) {
     const {
       status,
@@ -152,25 +159,34 @@ export class PostRepository {
       includeDeleted = false,
       sortBy = "createdAt",
       sortOrder = "desc",
+      where: prismaWhere,
     } = options;
 
     const { page, perPage, skip } = normalizePagination(options);
 
-    const where = {
-      ...(!includeDeleted && { deletedAt: null }),
-      ...(status && { status }),
-      ...(authorId && { authorId }),
-      ...(isFeatured !== undefined && { isFeatured }),
-      ...(categoryId && {
-        categories: { some: { categoryId } },
-      }),
-      ...(search && {
+    const conditions: Record<string, unknown>[] = [
+      ...(!includeDeleted ? [{ deletedAt: null }] : []),
+    ];
+
+    if (status) conditions.push({ status });
+    if (authorId) conditions.push({ authorId });
+    if (isFeatured !== undefined) conditions.push({ isFeatured });
+    if (categoryId) conditions.push({ categories: { some: { categoryId } } });
+
+    if (prismaWhere && Object.keys(prismaWhere).length > 0) {
+      conditions.push(prismaWhere);
+    }
+
+    if (search?.trim()) {
+      conditions.push({
         OR: [
-          { title: { contains: search, mode: "insensitive" as const } },
-          { excerpt: { contains: search, mode: "insensitive" as const } },
+          { title: { contains: search.trim(), mode: "insensitive" as const } },
+          { excerpt: { contains: search.trim(), mode: "insensitive" as const } },
         ],
-      }),
-    };
+      });
+    }
+
+    const where = conditions.length > 0 ? { AND: conditions } : {};
 
     const [items, total] = await Promise.all([
       this.prisma.post.findMany({
@@ -219,6 +235,8 @@ export class PostRepository {
     isFeatured?: boolean;
     allowComments?: boolean;
     formatType?: string;
+    externalSource?: string;
+    sponsoredBy?: string;
     status?: ContentStatus;
     authorId: number;
     publishedAt?: Date;
@@ -263,8 +281,11 @@ export class PostRepository {
       isFeatured?: boolean;
       allowComments?: boolean;
       formatType?: string | null;
+      externalSource?: string | null;
+      sponsoredBy?: string | null;
       status?: ContentStatus;
       publishedAt?: Date | null;
+      authorId?: number;
     },
   ) {
     return this.prisma.post.update({

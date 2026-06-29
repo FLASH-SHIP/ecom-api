@@ -45,6 +45,19 @@ export class SeoMetaRepository {
     });
   }
 
+  async findByTagId(tagId: number) {
+    return this.prisma.seoMeta.findUnique({
+      where: { tagId },
+      select: {
+        id: true,
+        seoTitle: true,
+        seoDescription: true,
+        seoImage: true,
+        indexMode: true,
+      },
+    });
+  }
+
   async upsertForPost(
     postId: number,
     data: { seoTitle?: string; seoDescription?: string; seoImage?: string; indexMode?: string },
@@ -88,6 +101,24 @@ export class SeoMetaRepository {
     return this.prisma.seoMeta.upsert({
       where: { pageId },
       create: { pageId, ...data },
+      update: data,
+      select: {
+        id: true,
+        seoTitle: true,
+        seoDescription: true,
+        seoImage: true,
+        indexMode: true,
+      },
+    });
+  }
+
+  async upsertForTag(
+    tagId: number,
+    data: { seoTitle?: string; seoDescription?: string; seoImage?: string; indexMode?: string },
+  ) {
+    return this.prisma.seoMeta.upsert({
+      where: { tagId },
+      create: { tagId, ...data },
       update: data,
       select: {
         id: true,

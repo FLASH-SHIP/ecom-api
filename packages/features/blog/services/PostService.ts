@@ -33,8 +33,9 @@ export class PostService {
     includeDeleted?: boolean;
     page?: number;
     perPage?: number;
-    sortBy?: "createdAt" | "title" | "publishedAt" | "views";
+    sortBy?: "id" | "title" | "status" | "createdAt" | "publishedAt" | "views";
     sortOrder?: "asc" | "desc";
+    where?: Record<string, unknown>;
   }) {
     return this.queries.listPosts(options);
   }
@@ -57,6 +58,8 @@ export class PostService {
     isFeatured?: boolean;
     allowComments?: boolean;
     formatType?: string;
+    externalSource?: string;
+    sponsoredBy?: string;
     status?: ContentStatus;
     authorId: number;
     categoryIds?: number[];
@@ -77,9 +80,12 @@ export class PostService {
       isFeatured?: boolean;
       allowComments?: boolean;
       formatType?: string | null;
+      externalSource?: string | null;
+      sponsoredBy?: string | null;
       status?: ContentStatus;
       categoryIds?: number[];
       tagIds?: number[];
+      authorId?: number;
     },
   ) {
     return this.commands.updatePost(id, data);

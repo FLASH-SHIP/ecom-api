@@ -3,7 +3,7 @@ import { Permissions } from "@ecom/lib/permissions";
 import { authedProcedure, requirePermission } from "@ecom/trpc/server/trpc";
 import { z } from "zod";
 
-const entityTypeEnum = z.enum(["post", "category", "page"]);
+const entityTypeEnum = z.enum(["post", "category", "page", "tag"]);
 
 const seoDataSchema = z.object({
   seoTitle: z.string().max(200).optional(),
@@ -28,6 +28,8 @@ export const getSeoMeta = authedProcedure
         return svc.getForCategory(input.entityId);
       case "page":
         return svc.getForPage(input.entityId);
+      case "tag":
+        return svc.getForTag(input.entityId);
     }
   });
 
@@ -49,5 +51,7 @@ export const saveSeoMeta = authedProcedure
         return svc.saveForCategory(input.entityId, input.data);
       case "page":
         return svc.saveForPage(input.entityId, input.data);
+      case "tag":
+        return svc.saveForTag(input.entityId, input.data);
     }
   });

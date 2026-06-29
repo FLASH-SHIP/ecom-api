@@ -4,7 +4,14 @@ import { cn } from "@ecom/ui/lib/utils";
 import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
 import { createContext, useCallback, useContext, useState } from "react";
 
-type ToastType = "success" | "error" | "info" | "warning";
+export type ToastType = "success" | "error" | "info" | "warning";
+
+export const ToastType = {
+  SUCCESS: "success" as const,
+  ERROR: "error" as const,
+  INFO: "info" as const,
+  WARNING: "warning" as const,
+};
 
 interface Toast {
   id: string;
@@ -39,6 +46,17 @@ const toastStyles: Record<ToastType, string> = {
   info: "border-blue-500/30 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-100",
 };
 
+let staticToastFn: (message: string, type?: ToastType) => void = () => {};
+
+export function showToast(messageOrType: string, typeOrMessage?: string) {
+  const types = ["success", "error", "info", "warning"];
+  if (types.includes(messageOrType)) {
+    staticToastFn(typeOrMessage || "", messageOrType as ToastType);
+  } else {
+    staticToastFn(messageOrType, typeOrMessage as ToastType);
+  }
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -53,6 +71,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  // Save the reference
+  staticToastFn = addToast;
 
   return (
     <ToastContext.Provider value={{ toast: addToast }}>

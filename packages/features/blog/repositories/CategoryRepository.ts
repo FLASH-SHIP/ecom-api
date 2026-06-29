@@ -94,19 +94,57 @@ export class CategoryRepository {
   }
 
   async findMany(options?: {
+    search?: string;
+    where?: Record<string, unknown>;
     status?: ContentStatus;
     parentId?: number | null;
     includeDeleted?: boolean;
     page?: number;
     perPage?: number;
+    sortBy?: "id" | "name" | "createdAt" | "status" | "order";
+    sortDir?: "asc" | "desc";
   }) {
-    const { status, parentId, includeDeleted = false, page = 1, perPage = 50 } = options ?? {};
+    const {
+      search,
+      where: prismaWhere,
+      status,
+      parentId,
+      includeDeleted = false,
+      page = 1,
+      perPage = 50,
+      sortBy,
+      sortDir,
+    } = options ?? {};
 
-    const where = {
-      ...(!includeDeleted && { deletedAt: null }),
-      ...(status && { status }),
-      ...(parentId !== undefined && { parentId }),
-    };
+    const conditions: Record<string, unknown>[] = [];
+
+    if (!includeDeleted) {
+      conditions.push({ deletedAt: null });
+    }
+
+    if (status) {
+      conditions.push({ status });
+    }
+
+    if (parentId !== undefined) {
+      conditions.push({ parentId });
+    }
+
+    if (prismaWhere && Object.keys(prismaWhere).length > 0) {
+      conditions.push(prismaWhere);
+    }
+
+    if (search?.trim()) {
+      conditions.push({
+        name: { contains: search.trim(), mode: "insensitive" as const },
+      });
+    }
+
+    const where = conditions.length > 0 ? { AND: conditions } : {};
+
+    const orderBy = sortBy
+      ? { [sortBy]: sortDir ?? "asc" }
+      : [{ order: "asc" as const }, { name: "asc" as const }];
 
     const [items, total] = await Promise.all([
       this.prisma.category.findMany({
@@ -127,14 +165,21 @@ export class CategoryRepository {
             select: { posts: true, children: true },
           },
         },
-        orderBy: [{ order: "asc" }, { name: "asc" }],
+        orderBy,
         skip: (page - 1) * perPage,
         take: perPage,
       }),
       this.prisma.category.count({ where }),
     ]);
 
-    return { items, total, page, perPage, totalPages: Math.ceil(total / perPage) };
+    return {
+      items,
+      rows: items,
+      total,
+      page,
+      perPage,
+      totalPages: Math.ceil(total / perPage),
+    };
   }
 
   async findTree() {
@@ -181,8 +226,8 @@ export class CategoryRepository {
     slug: string;
     description?: string;
     icon?: string;
-    isFeatured?: boolean;
-    isDefault?: boolean;
+    isFeatured?: number;
+    isDefault?: number;
     status?: ContentStatus;
     parentId?: number;
     authorId?: number;
@@ -194,8 +239,15 @@ export class CategoryRepository {
         id: true,
         name: true,
         slug: true,
+        description: true,
+        icon: true,
+        isFeatured: true,
+        isDefault: true,
         status: true,
+        parentId: true,
+        order: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
   }
@@ -207,8 +259,8 @@ export class CategoryRepository {
       slug?: string;
       description?: string | null;
       icon?: string | null;
-      isFeatured?: boolean;
-      isDefault?: boolean;
+      isFeatured?: number;
+      isDefault?: number;
       status?: ContentStatus;
       parentId?: number | null;
       order?: number;
@@ -221,7 +273,14 @@ export class CategoryRepository {
         id: true,
         name: true,
         slug: true,
+        description: true,
+        icon: true,
+        isFeatured: true,
+        isDefault: true,
         status: true,
+        parentId: true,
+        order: true,
+        createdAt: true,
         updatedAt: true,
       },
     });
@@ -231,7 +290,20 @@ export class CategoryRepository {
     return this.prisma.category.update({
       where: { id },
       data: { deletedAt: new Date() },
-      select: { id: true, deletedAt: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        icon: true,
+        isFeatured: true,
+        isDefault: true,
+        status: true,
+        parentId: true,
+        order: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -239,7 +311,20 @@ export class CategoryRepository {
     return this.prisma.category.update({
       where: { id },
       data: { deletedAt: null },
-      select: { id: true, deletedAt: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        icon: true,
+        isFeatured: true,
+        isDefault: true,
+        status: true,
+        parentId: true,
+        order: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
