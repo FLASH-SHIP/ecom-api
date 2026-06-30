@@ -1,0 +1,31 @@
+meta {
+  name: Package Tracking
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{epicHubBaseUrl}}/v2/shipments/package-tracking?TrackingNumber=1Z99999999999
+  body: none
+  auth: none
+}
+
+params:query {
+  TrackingNumber: 1Z99999999999
+}
+
+headers {
+  Token: {{epicHubToken}}
+}
+
+docs {
+  # Package Tracking
+  
+  Tra cứu trạng thái vận chuyển thời gian thực của kiện hàng bằng mã Tracking Number.
+  
+  ## Query Parameters
+  * `TrackingNumber` (Bắt buộc): Mã số tracking cần tra cứu (ví dụ: `1Z99999999999`).
+  
+  ## Headers
+  * `Token`: `{{epicHubToken}}`
+}

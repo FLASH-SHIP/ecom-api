@@ -1,0 +1,35 @@
+meta {
+  name: 6. Confirm and Check In
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{sbpBaseUrl}}/omm/v2/external/order_express/confirm_checkin
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{sbpToken}}
+  secret: {{sbpSecret}}
+  lang: en
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "orderNumbers": [
+      "GB0000000001"
+    ]
+  }
+}
+
+docs {
+  # 6. Confirm and Check In
+  
+  Xác nhận và check in các đơn hàng vào kho SBP/SCE để chuyển tiếp sang giai đoạn đóng gói (Packaging/Boxes).
+  
+  ## Request Body:
+  * `orderNumbers`: Mảng chứa các mã vận đơn cần check in (ví dụ: `["GB0000000001"]`).
+}
