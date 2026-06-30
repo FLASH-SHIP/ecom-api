@@ -27,6 +27,7 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  --z-popover: 50;
 
   /* Sidebar */
   --sidebar-width: 260px;
@@ -61,6 +62,7 @@
   --ring: oklch(0.551 0.191 264.36);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
+  --z-popover: 50;
 
   --sidebar-bg: #0a0a0f;
   --sidebar-border: #1e293b;
@@ -90,6 +92,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --z-popover: var(--z-popover);
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;

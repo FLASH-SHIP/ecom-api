@@ -54,8 +54,8 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
   const displayName = profile?.name ?? profile?.email?.split("@")[0] ?? "Customer";
   const email = profile?.email ?? "";
 
-  const handleLogout = () => {
-    signOut({ callbackUrl: "/" });
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/auth/login" });
   };
 
   // Sidebar navigation menu items
@@ -72,7 +72,7 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
     },
   ];
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div className="flex h-full flex-col overflow-hidden bg-[var(--sidebar-bg)] text-foreground">
       {/* Brand Header */}
       <div className="flex h-12 shrink-0 items-center gap-2 px-5 md:h-16">
@@ -132,7 +132,14 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
               <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-56">
+          <DropdownMenuContent
+            align="start"
+            side="top"
+            alignOffset={0}
+            sideOffset={8}
+            className="w-56 z-[9999]"
+            style={{ zIndex: 9999 }}
+          >
             <DropdownMenuItem asChild>
               <NextLink href="/profile" className="flex items-center gap-2 cursor-pointer w-full">
                 <UserIcon className="h-4 w-4" />
@@ -166,7 +173,7 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
             marginRight: sidebarOpen ? 0 : "calc(-1 * var(--sidebar-width))",
           }}
         >
-          <SidebarContent />
+          {sidebarContent}
         </aside>
       )}
 
@@ -188,7 +195,7 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >
-          <SidebarContent />
+          {sidebarContent}
         </aside>
       )}
 
