@@ -1,21 +1,29 @@
 "use client";
 
+import { PhoneInput } from "@customer/components/ui/PhoneInput";
 import { trpc } from "@customer/lib/trpc";
 import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
 import { Breadcrumb } from "@ecom/ui/components/breadcrumb";
+import { DatePicker } from "@ecom/ui/components/date-picker";
+import { Input } from "@ecom/ui/components/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@ecom/ui/components/select";
+import { Textarea } from "@ecom/ui/components/textarea";
 import { AlertCircle, AtSign, CheckCircle } from "lucide-react";
 import NextLink from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Many form fields and state hooks naturally increase complexity metric.
 export default function CustomerProfilePage() {
   const { status } = useSession();
   const { languageId: currentLocale } = useI18n();
-
-  const getLocalizedHref = (href: string) => {
-    return href;
-  };
 
   const { data: profile, isLoading: isLoadingProfile } = trpc.customer.auth.me.useQuery(undefined, {
     enabled: status === "authenticated",
@@ -32,6 +40,11 @@ export default function CustomerProfilePage() {
   const [saved, setSaved] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Field validation error states
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [dobError, setDobError] = useState<string | null>(null);
+
   useEffect(() => {
     if (profile) {
       setUsername(profile.username ?? "");
@@ -47,37 +60,48 @@ export default function CustomerProfilePage() {
     onSuccess: () => {
       setSaved(true);
       setValidationError(null);
+      setNameError(null);
+      setPhoneError(null);
+      setDobError(null);
       setTimeout(() => setSaved(false), 3000);
     },
-    onError: () => {
+    onError: (err) => {
       setSaved(false);
+      const msg = err.message;
+      if (msg.includes("already taken") || msg.includes("USERNAME_ALREADY_EXISTS")) {
+        setValidationError(translate("errors.USERNAME_ALREADY_EXISTS", currentLocale));
+      } else if (msg.includes("already changed") || msg.includes("usernameChangeCount")) {
+        setValidationError(translate("customerProfile.usernameChangeLockedAlert", currentLocale));
+      } else {
+        setValidationError(msg);
+      }
     },
   });
 
+  const validateName = (val: string) => {
+    const err = checkNameError(val, currentLocale ?? "");
+    setNameError(err);
+    return !err;
+  };
+
+  const validatePhone = (val: string) => {
+    const err = checkPhoneError(val, currentLocale ?? "");
+    setPhoneError(err);
+    return !err;
+  };
+
+  const validateDob = (val: string) => {
+    const err = checkDobError(val, currentLocale ?? "");
+    setDobError(err);
+    return !err;
+  };
+
   if (isLoading) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
-        <p className="text-center text-sm text-muted-foreground">
-          {translate("customerProfile.loading", currentLocale)}
-        </p>
-      </div>
-    );
+    return <ProfileLoading locale={currentLocale ?? ""} />;
   }
 
   if (status === "unauthenticated" || !profile) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold">
-          {translate("customerProfile.notLoggedIn", currentLocale)}
-        </h1>
-        <NextLink
-          href={getLocalizedHref("/auth/login")}
-          className="mt-4 inline-block text-primary hover:underline"
-        >
-          {translate("customerProfile.loginButton", currentLocale)}
-        </NextLink>
-      </div>
-    );
+    return <ProfileNotLoggedIn locale={currentLocale ?? ""} />;
   }
 
   const canChangeUsername = (profile.usernameChangeCount ?? 0) < 1;
@@ -109,18 +133,11 @@ export default function CustomerProfilePage() {
           setSaved(false);
           setValidationError(null);
 
-          if (!name.trim()) {
-            setValidationError(translate("customerAuth.profileModal.nameRequired", currentLocale));
-            return;
-          }
-          if (!phone.trim()) {
-            setValidationError(translate("customerAuth.profileModal.phoneRequired", currentLocale));
-            return;
-          }
+          const isNameValid = validateName(name);
+          const isPhoneValid = validatePhone(phone);
+          const isDobValid = validateDob(dob);
 
-          const phoneClean = phone.replace(/[\s-+()]/g, "");
-          if (phoneClean.length < 8 || !/^\d+$/.test(phoneClean)) {
-            setValidationError(translate("customerAuth.profileModal.phoneInvalid", currentLocale));
+          if (!isNameValid || !isPhoneValid || !isDobValid) {
             return;
           }
 
@@ -143,12 +160,12 @@ export default function CustomerProfilePage() {
           >
             {translate("customerProfile.emailLabel", currentLocale)}
           </label>
-          <input
+          <Input
             id="profile-email"
             type="email"
             disabled
             value={profile.email}
-            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground focus-visible:outline-none"
+            className="bg-muted"
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
             {translate("customerProfile.emailLockedDesc", currentLocale)}
@@ -164,13 +181,13 @@ export default function CustomerProfilePage() {
             <AtSign className="h-4 w-4 text-muted-foreground" />
             {translate("customerProfile.usernameLabel", currentLocale)}
           </label>
-          <input
+          <Input
             id="profile-username"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value.toLowerCase())}
             disabled={!canChangeUsername}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:bg-muted disabled:text-muted-foreground transition-all"
+            className="disabled:bg-muted"
             placeholder={translate("customerProfile.usernamePlaceholder", currentLocale)}
           />
           {canChangeUsername ? (
@@ -192,15 +209,20 @@ export default function CustomerProfilePage() {
             className="mb-1.5 block text-sm font-medium text-foreground"
           >
             {translate("customerProfile.nameLabel", currentLocale)}
+            <span className="text-destructive ml-0.5">*</span>
           </label>
-          <input
+          <Input
             id="profile-name"
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
+            onChange={(e) => {
+              setName(e.target.value);
+              validateName(e.target.value);
+            }}
+            onBlur={() => validateName(name)}
             placeholder={translate("customerProfile.namePlaceholder", currentLocale)}
           />
+          {nameError && <p className="mt-1.5 text-xs text-destructive">{nameError}</p>}
         </div>
 
         {/* Phone */}
@@ -210,56 +232,62 @@ export default function CustomerProfilePage() {
             className="mb-1.5 block text-sm font-medium text-foreground"
           >
             {translate("customerProfile.phoneLabel", currentLocale)}
+            <span className="text-destructive ml-0.5">*</span>
           </label>
-          <input
+          <PhoneInput
             id="profile-phone"
-            type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
+            onChange={(val) => {
+              setPhone(val);
+              validatePhone(val);
+            }}
             placeholder={translate("customerProfile.phonePlaceholder", currentLocale)}
+            error={phoneError || undefined}
           />
         </div>
 
         {/* DOB + Gender */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label
-              htmlFor="profile-dob"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
+            <span className="mb-1.5 block text-sm font-medium text-foreground">
               {translate("customerProfile.dobLabel", currentLocale)}
-            </label>
-            <input
-              id="profile-dob"
-              type="date"
+            </span>
+            <DatePicker
               value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
+              onChange={(value) => {
+                setDob(value);
+                validateDob(value);
+              }}
+              disabledDays={(date) => {
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                return date > today;
+              }}
             />
+            {dobError && <p className="mt-1.5 text-xs text-destructive">{dobError}</p>}
           </div>
           <div>
-            <label
-              htmlFor="profile-gender"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
+            <span className="mb-1.5 block text-sm font-medium text-foreground">
               {translate("customerProfile.genderLabel", currentLocale)}
-            </label>
-            <select
-              id="profile-gender"
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
-            >
-              <option value="">{translate("customerProfile.genderSelect", currentLocale)}</option>
-              <option value="male">{translate("customerProfile.genderMale", currentLocale)}</option>
-              <option value="female">
-                {translate("customerProfile.genderFemale", currentLocale)}
-              </option>
-              <option value="other">
-                {translate("customerProfile.genderOther", currentLocale)}
-              </option>
-            </select>
+            </span>
+            <Select value={gender || undefined} onValueChange={(val) => setGender(val)}>
+              <SelectTrigger id="profile-gender">
+                <SelectValue
+                  placeholder={translate("customerProfile.genderSelect", currentLocale)}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">
+                  {translate("customerProfile.genderMale", currentLocale)}
+                </SelectItem>
+                <SelectItem value="female">
+                  {translate("customerProfile.genderFemale", currentLocale)}
+                </SelectItem>
+                <SelectItem value="other">
+                  {translate("customerProfile.genderOther", currentLocale)}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -271,13 +299,13 @@ export default function CustomerProfilePage() {
           >
             {translate("customerProfile.descriptionLabel", currentLocale)}
           </label>
-          <textarea
+          <Textarea
             id="profile-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={1000}
             rows={3}
-            className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all"
+            className="w-full resize-none transition-all"
             placeholder={translate("customerProfile.descriptionPlaceholder", currentLocale)}
           />
         </div>
@@ -308,3 +336,55 @@ export default function CustomerProfilePage() {
     </div>
   );
 }
+
+function ProfileLoading({ locale }: { locale: string }) {
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-12">
+      <p className="text-center text-sm text-muted-foreground">
+        {translate("customerProfile.loading", locale)}
+      </p>
+    </div>
+  );
+}
+
+function ProfileNotLoggedIn({ locale }: { locale: string }) {
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-12 text-center">
+      <h1 className="text-2xl font-bold">{translate("customerProfile.notLoggedIn", locale)}</h1>
+      <NextLink href="/auth/login" className="mt-4 inline-block text-primary hover:underline">
+        {translate("customerProfile.loginButton", locale)}
+      </NextLink>
+    </div>
+  );
+}
+
+const checkNameError = (val: string, locale: string) => {
+  if (!val.trim()) {
+    return translate("customerAuth.profileModal.nameRequired", locale);
+  }
+  return null;
+};
+
+const checkPhoneError = (val: string, locale: string) => {
+  if (!val.trim()) {
+    return translate("customerAuth.profileModal.phoneRequired", locale);
+  }
+  const phoneClean = val.replace(/[\s-+()]/g, "");
+  if (phoneClean.length < 8 || !/^\d+$/.test(phoneClean)) {
+    return translate("customerAuth.profileModal.phoneInvalid", locale);
+  }
+  return null;
+};
+
+const checkDobError = (val: string, locale: string) => {
+  if (!val) {
+    return null;
+  }
+  const selectedDate = new Date(val);
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  if (selectedDate > today) {
+    return translate("customerProfile.dobFuture", locale);
+  }
+  return null;
+};

@@ -7,13 +7,13 @@
   "usernamePlaceholder": "username",
   "usernameChangeLimitAlert": "You can change your username once only",
   "usernameChangeLockedAlert": "Username change privilege used. Contact admin to change.",
-  "nameLabel": "Full Name *",
+  "nameLabel": "Full Name",
   "namePlaceholder": "John Doe",
-  "phoneLabel": "Phone Number *",
+  "phoneLabel": "Phone Number",
   "phonePlaceholder": "0123 456 789",
   "dobLabel": "Date of Birth",
   "genderLabel": "Gender",
-  "genderSelect": "-- Select --",
+  "genderSelect": "Select gender",
   "genderMale": "Male",
   "genderFemale": "Female",
   "genderOther": "Other",
@@ -24,5 +24,6 @@
   "saveChanges": "Save changes",
   "loading": "Loading...",
   "notLoggedIn": "Not logged in",
-  "loginButton": "Sign In"
+  "loginButton": "Sign In",
+  "dobFuture": "Date of birth cannot be in the future"
 }

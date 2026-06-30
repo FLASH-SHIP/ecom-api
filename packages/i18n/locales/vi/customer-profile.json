@@ -7,13 +7,13 @@
   "usernamePlaceholder": "username",
   "usernameChangeLimitAlert": "Bạn có thể đổi username 1 lần duy nhất",
   "usernameChangeLockedAlert": "Đã sử dụng quyền đổi username. Liên hệ admin để thay đổi.",
-  "nameLabel": "Họ và tên *",
+  "nameLabel": "Họ và tên",
   "namePlaceholder": "Nguyễn Văn An",
-  "phoneLabel": "Số điện thoại *",
+  "phoneLabel": "Số điện thoại",
   "phonePlaceholder": "0123 456 789",
   "dobLabel": "Ngày sinh",
   "genderLabel": "Giới tính",
-  "genderSelect": "-- Chọn --",
+  "genderSelect": "Chọn giới tính",
   "genderMale": "Nam",
   "genderFemale": "Nữ",
   "genderOther": "Khác",
@@ -24,5 +24,6 @@
   "saveChanges": "Lưu thay đổi",
   "loading": "Đang tải...",
   "notLoggedIn": "Chưa đăng nhập",
-  "loginButton": "Đăng nhập"
+  "loginButton": "Đăng nhập",
+  "dobFuture": "Ngày sinh không được quá ngày hiện tại và tương lai"
 }
