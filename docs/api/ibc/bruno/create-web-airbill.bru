@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: https://api.pactrak.com/ibcairbill/production
+  url: {{ibcBaseUrl}}/ibcairbill/production
   body: json
   auth: none
 }
@@ -68,7 +68,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `POST`
-  - **URL**: `https://api.pactrak.com/ibcairbill/production`
+  - **URL**: `{{ibcBaseUrl}}/ibcairbill/production`
   
   ## Query Parameters (Tùy chọn)
   - `_test`: Đưa vào chế độ thử nghiệm (trả về dữ liệu mô phỏng không ghi nhận đơn thật).

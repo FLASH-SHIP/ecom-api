@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: https://api.pactrak.com/batch/v1/events/pt
+  url: {{ibcBaseUrl}}/batch/v1/events/pt
   body: none
   auth: none
 }
@@ -24,7 +24,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `GET`
-  - **URL**: `https://api.pactrak.com/batch/v1/events/pt`
+  - **URL**: `{{ibcBaseUrl}}/batch/v1/events/pt`
   
   ## Query Parameters
   - Xem đặc tả tham số tại request `Get Batch Events AAMS`. Khoảng thời gian tra cứu tối đa là 8 tiếng.

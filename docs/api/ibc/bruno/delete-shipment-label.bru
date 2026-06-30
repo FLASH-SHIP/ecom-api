@@ -5,7 +5,7 @@ meta {
 }
 
 delete {
-  url: https://api.pactrak.com/shiplabel/v1/:station_code/:service_code/:track_number
+  url: {{ibcBaseUrl}}/shiplabel/v1/:station_code/:service_code/:track_number
   body: none
   auth: none
 }
@@ -27,7 +27,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `DELETE`
-  - **URL**: `https://api.pactrak.com/shiplabel/v1/:station_code/:service_code/:track_number`
+  - **URL**: `{{ibcBaseUrl}}/shiplabel/v1/:station_code/:service_code/:track_number`
   
   ## Path Parameters
   - `station_code`: Mã trạm phát hành nhãn (Ví dụ: `MIA`, `NYC`).

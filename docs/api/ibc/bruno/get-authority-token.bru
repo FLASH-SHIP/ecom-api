@@ -5,7 +5,7 @@ meta {
 }
 
 head {
-  url: https://api.pactrak.com/authority/token
+  url: {{ibcBaseUrl}}/authority/token
   body: none
   auth: none
 }
@@ -21,7 +21,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `HEAD` (Bắt buộc dùng phương thức HEAD)
-  - **URL**: `https://api.pactrak.com/authority/token`
+  - **URL**: `{{ibcBaseUrl}}/authority/token`
   
   ## Headers
   - `IBCCredentials`: Chuỗi mã hóa Base64 của thông tin tài khoản theo định dạng: `EMAIL_ADDRESS|PASSWORD` (ngăn cách bởi dấu gạch đứng `|`).

@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: https://api.pactrak.com/tests/manifest
+  url: {{ibcBaseUrl}}/tests/manifest
   body: none
   auth: none
 }
@@ -21,7 +21,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `GET`
-  - **URL**: `https://api.pactrak.com/tests/manifest`
+  - **URL**: `{{ibcBaseUrl}}/tests/manifest`
   
   ## Query Parameters
   - `email`: Địa chỉ email đã dùng để gửi yêu cầu test lúc trước (Bắt buộc).

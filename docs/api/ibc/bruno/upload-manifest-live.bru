@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: https://api.pactrak.com/manifests/upload
+  url: {{ibcBaseUrl}}/manifests/upload
   body: multipartForm
   auth: none
 }
@@ -21,7 +21,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `POST`
-  - **URL**: `https://api.pactrak.com/manifests/upload`
+  - **URL**: `{{ibcBaseUrl}}/manifests/upload`
   - **Content-Type**: `multipart/form-data`
   
   ## Quy tắc đặt tên File (Bắt buộc)

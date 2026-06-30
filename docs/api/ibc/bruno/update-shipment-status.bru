@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: https://api.pactrak.com/shipment-update/record
+  url: {{ibcBaseUrl}}/shipment-update/record
   body: form-urlencoded
   auth: none
 }
@@ -26,7 +26,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `POST`
-  - **URL**: `https://api.pactrak.com/shipment-update/record`
+  - **URL**: `{{ibcBaseUrl}}/shipment-update/record`
   - **Content-Type**: `application/x-www-form-urlencoded`
   
   ## Request Body

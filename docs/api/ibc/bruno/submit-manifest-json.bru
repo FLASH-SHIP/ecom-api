@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: https://api.pactrak.com/manifest/aams
+  url: {{ibcBaseUrl}}/manifest/aams
   body: json
   auth: none
 }
@@ -39,7 +39,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `POST`
-  - **URL**: `https://api.pactrak.com/manifest/aams`
+  - **URL**: `{{ibcBaseUrl}}/manifest/aams`
   - **Headers**:
     - `Content-Type: application/json`
   

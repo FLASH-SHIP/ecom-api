@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: https://api.pactrak.com/ibcairbill/zipx/events/:track_number
+  url: {{ibcBaseUrl}}/ibcairbill/zipx/events/:track_number
   body: none
   auth: none
 }
@@ -25,7 +25,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `GET`
-  - **URL**: `https://api.pactrak.com/ibcairbill/zipx/events/:track_number`
+  - **URL**: `{{ibcBaseUrl}}/ibcairbill/zipx/events/:track_number`
   
   ## Path Parameters
   - `track_number`: Mã vận đơn Zipx cần tra cứu (ví dụ: `102030`).

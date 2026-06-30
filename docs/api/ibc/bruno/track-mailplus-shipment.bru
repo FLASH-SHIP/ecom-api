@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: https://api.pactrak.com/mailplus/track/:track_number
+  url: {{ibcBaseUrl}}/mailplus/track/:track_number
   body: none
   auth: none
 }
@@ -21,10 +21,10 @@ docs {
   
   ## HTTP Request
   - **Method**: `GET`
-  - **URL**: `https://api.pactrak.com/mailplus/track/:track_number`
+  - **URL**: `{{ibcBaseUrl}}/mailplus/track/:track_number`
   
   ## Path Parameters
   - `track_number`: Mã vận đơn MailPlus của đơn hàng (ví dụ: `MP12345678`).
   
-  *Lưu ý*: Trang tài liệu chi tiết của API này từ đối tác (`https://api.pactrak.com/mailplus/documentation.html`) tạm thời trả về lỗi 503 (Không khả dụng). Đây là cấu trúc API mẫu dựa trên các cổng tracking chuẩn của hệ thống.
+  *Lưu ý*: Trang tài liệu chi tiết của API này từ đối tác (`{{ibcBaseUrl}}/mailplus/documentation.html`) tạm thời trả về lỗi 503 (Không khả dụng). Đây là cấu trúc API mẫu dựa trên các cổng tracking chuẩn của hệ thống.
 }

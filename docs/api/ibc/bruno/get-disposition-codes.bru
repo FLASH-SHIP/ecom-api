@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: https://api.pactrak.com/v1/res/dispositioncodes
+  url: {{ibcBaseUrl}}/v1/res/dispositioncodes
   body: none
   auth: none
 }
@@ -23,12 +23,12 @@ docs {
   
   ## HTTP Request
   - **Method**: `GET`
-  - **URL**: `https://api.pactrak.com/v1/res/dispositioncodes`
+  - **URL**: `{{ibcBaseUrl}}/v1/res/dispositioncodes`
   
   ## Query Parameters (Tùy chọn)
   - `format`: Định dạng tải về (`json` hoặc `csv`).
   - `lang`: Ngôn ngữ mô tả (`en` - Tiếng Anh, `es` - Tiếng Tây Ban Nha).
   - `order`: Sắp xếp theo bảng chữ cái (`asc` - Tăng dần, `desc` - Giảm dần).
   
-  *Gợi ý:* Để tra cứu chi tiết mô tả của một mã cụ thể, bạn có thể gọi thẳng lên URL: `https://api.pactrak.com/v1/res/dispositioncodes/CODE_CẦN_TRA` (Ví dụ: `/dispositioncodes/CC` để xem mã Cleared Customs).
+  *Gợi ý:* Để tra cứu chi tiết mô tả của một mã cụ thể, bạn có thể gọi thẳng lên URL: `{{ibcBaseUrl}}/v1/res/dispositioncodes/CODE_CẦN_TRA` (Ví dụ: `/dispositioncodes/CC` để xem mã Cleared Customs).
 }

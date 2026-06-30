@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: https://api.pactrak.com/tests/manifest
+  url: {{ibcBaseUrl}}/tests/manifest
   body: json
   auth: none
 }
@@ -32,7 +32,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `POST`
-  - **URL**: `https://api.pactrak.com/tests/manifest`
+  - **URL**: `{{ibcBaseUrl}}/tests/manifest`
   - **Headers**: `Content-Type: application/json`
   
   ## Query Parameters (Optional)
