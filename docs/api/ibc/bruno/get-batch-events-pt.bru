@@ -1,0 +1,31 @@
+meta {
+  name: Get Batch Events Pactrak
+  type: http
+  seq: 6
+}
+
+get {
+  url: https://api.pactrak.com/batch/v1/events/pt
+  body: none
+  auth: none
+}
+
+params:query {
+  start_dt: 2026-06-29 08:00
+  end_dt: 2026-06-29 16:00
+  key: {{ibcBatchKey}}
+  ~as: object
+}
+
+docs {
+  # Get Batch Events (Pactrak Final Mile)
+  
+  API này dùng để tải về hàng loạt (batch) các sự kiện trạng thái chặng giao hàng cuối (Final Mile) do IBC trực tiếp vận chuyển cho các đơn hàng của bạn.
+  
+  ## HTTP Request
+  - **Method**: `GET`
+  - **URL**: `https://api.pactrak.com/batch/v1/events/pt`
+  
+  ## Query Parameters
+  - Xem đặc tả tham số tại request `Get Batch Events AAMS`. Khoảng thời gian tra cứu tối đa là 8 tiếng.
+}
