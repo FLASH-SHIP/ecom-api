@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: https://api.pactrak.com/shiplabel/v1/:station_code/:service_code
+  url: {{ibcBaseUrl}}/shiplabel/v1/:station_code/:service_code
   body: json
   auth: none
 }
@@ -73,7 +73,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `POST`
-  - **URL**: `https://api.pactrak.com/shiplabel/v1/:station_code/:service_code`
+  - **URL**: `{{ibcBaseUrl}}/shiplabel/v1/:station_code/:service_code`
   - **Headers**:
     - `Content-Type: application/json`
     - `Authorization: Bearer {{ibcToken}}` (Authority Token bảo mật)

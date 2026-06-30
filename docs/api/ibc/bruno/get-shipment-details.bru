@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: https://api.pactrak.com/shipment-update/record/:track_number
+  url: {{ibcBaseUrl}}/shipment-update/record/:track_number
   body: none
   auth: none
 }
@@ -25,7 +25,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `GET`
-  - **URL**: `https://api.pactrak.com/shipment-update/record/:track_number`
+  - **URL**: `{{ibcBaseUrl}}/shipment-update/record/:track_number`
   
   ## Path Parameters
   - `track_number`: Mã vận đơn cần tra cứu.

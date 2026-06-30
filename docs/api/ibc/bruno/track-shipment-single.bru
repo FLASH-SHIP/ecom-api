@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: https://api.pactrak.com/ibctrack/v2/:track_number
+  url: {{ibcBaseUrl}}/ibctrack/v2/:track_number
   body: none
   auth: none
 }
@@ -25,7 +25,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `GET`
-  - **URL**: `https://api.pactrak.com/ibctrack/v2/:track_number`
+  - **URL**: `{{ibcBaseUrl}}/ibctrack/v2/:track_number`
   
   ## Path Parameters
   - `track_number`: Mã HAWB/vận đơn cần kiểm tra hành trình (ví dụ: `BD202656446`).

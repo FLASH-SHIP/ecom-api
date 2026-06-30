@@ -5,7 +5,7 @@ meta {
 }
 
 get {
-  url: https://api.pactrak.com/zipx/addresses/:station_code
+  url: {{ibcBaseUrl}}/zipx/addresses/:station_code
   body: none
   auth: none
 }
@@ -27,7 +27,7 @@ docs {
   
   ## HTTP Request
   - **Method**: `GET`
-  - **URL**: `https://api.pactrak.com/zipx/addresses/:station_code`
+  - **URL**: `{{ibcBaseUrl}}/zipx/addresses/:station_code`
   
   ## Path Parameters
   - `station_code`: Mã trạm Zipx của bạn (Ví dụ: `22`).
