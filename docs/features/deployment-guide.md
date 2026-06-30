@@ -420,6 +420,7 @@ Ensure all values in the production environment variables (injected at container
 #### Shared Authentication Secrets
 
 - [ ] `AUTH_SECRET` & `NEXTAUTH_SECRET`: Set to the same cryptographically secure 32-character key (`openssl rand -base64 32`) on Admin and Customer portals.
+- [ ] `AUTH_TRUST_HOST`: Must be set to `true` when deploying to a custom server/VPS behind a reverse proxy (e.g. Nginx, Cloudflare) to trust forwarded request headers.
 - [ ] `JWT_SECRET` (Customer Portal only): Must match the API's `JWT_SECRET`.
 - [ ] `JWT_ADMIN_SECRET` (Admin Portal only): Must match the API's `JWT_ADMIN_SECRET`.
 
