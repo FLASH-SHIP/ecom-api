@@ -106,15 +106,22 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
    yarn workspace @ecom/admin build
    ```
 
-   > [!IMPORTANT]
-   > **Build-time Environment Variables for Next.js**:
-   > Next.js bakes public client variables (prefixed with `NEXT_PUBLIC_`) into the JavaScript bundle *during build time*. Before running the build commands above, you **must** load the `.env` variables into your shell session:
-   >
-   > ```bash
-   > export $(grep -v '^#' .env | xargs)
-   > ```
-   >
-   > Or copy/link the root `.env` into each application's directory (e.g., `cp .env apps/web/.env`).
+    > [!IMPORTANT]
+    > **Build-time Environment Variables for Next.js**:
+    > Next.js bakes public client variables (prefixed with `NEXT_PUBLIC_`) into the JavaScript bundle *during build time*. Before running the build commands above, you **must** load the environment variables.
+    >
+    > You can refer to the root [./.env.example](../../.env.example) as a master list, or consult the detailed, app-specific templates:
+    > - API App: [apps/api/.env.example](../../apps/api/.env.example)
+    > - Admin CMS: [apps/admin/.env.example](../../apps/admin/.env.example)
+    > - Customer App: [apps/customer/.env.example](../../apps/customer/.env.example)
+    > - Web/Marketing: [apps/web/.env.example](../../apps/web/.env.example)
+    > - Prisma migrations: [packages/prisma/.env.example](../../packages/prisma/.env.example)
+    >
+    > For local/standalone builds, you can load variables into your shell session:
+    > ```bash
+    > export $(grep -v '^#' .env | xargs)
+    > ```
+    > Or copy/link the root `.env` into each application's directory (e.g., `cp .env apps/web/.env` or use symbolic links).
 
 3. **Run with PM2**:
 
