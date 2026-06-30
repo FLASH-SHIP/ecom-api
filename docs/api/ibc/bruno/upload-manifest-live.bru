@@ -1,0 +1,52 @@
+meta {
+  name: Upload Manifest Live
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://api.pactrak.com/manifests/upload
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  data: @file()
+}
+
+docs {
+  # Upload Manifest Live (Production Injection)
+  
+  API này dùng để gửi chính thức dữ liệu manifest của bạn lên môi trường Live Production của IBC.
+  
+  ## HTTP Request
+  - **Method**: `POST`
+  - **URL**: `https://api.pactrak.com/manifests/upload`
+  - **Content-Type**: `multipart/form-data`
+  
+  ## Quy tắc đặt tên File (Bắt buộc)
+  - Khi hoàn tất onboarding với IBC, bạn sẽ nhận được các địa chỉ email nhận dữ liệu có dạng: `aams-data-XYZ@pactrak.com`.
+  - Tên file CSV/TXT tải lên **phải trùng khớp hoàn toàn** với phần trước ký tự `@` của email đó (ví dụ: `aams-data-XYZ.csv` hoặc `aams-data-XYZ.txt`).
+  
+  ## Cách gửi trong Bruno (Multipart/Form-Data)
+  1. Trong tab **Body**, chọn kiểu body là **Multipart Form**.
+  2. Thêm một trường dữ liệu:
+     - **Key**: `data` (hoặc `file`)
+     - **Type**: Chọn `File`
+     - **Value**: Chọn file CSV từ máy tính của bạn (tên file được đặt đúng quy định ở trên).
+  
+  ## Response mẫu từ API (JSON)
+  ```json
+  {
+     "response_code": 0,
+     "response_message": "...",
+     "request_url": "",
+     "entry": {
+       "msg": "..."
+     },
+     "is_error": false
+  }
+  ```
+  
+  *Chú ý*: Phản hồi JSON trên chỉ xác nhận việc nhận file thành công của cổng tiếp nhận. Xác nhận chính thức về việc dữ liệu được import thành công hay bị lỗi khi khai báo Hải quan Mỹ (US Customs) sẽ được hệ thống Air AMS gửi qua email cho bạn sau tối đa khoảng 20 phút.
+}

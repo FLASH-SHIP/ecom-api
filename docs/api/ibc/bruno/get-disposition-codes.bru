@@ -1,0 +1,34 @@
+meta {
+  name: Get Disposition Codes
+  type: http
+  seq: 18
+}
+
+get {
+  url: https://api.pactrak.com/v1/res/dispositioncodes
+  body: none
+  auth: none
+}
+
+params:query {
+  ~format: json
+  ~lang: en
+  ~order: asc
+}
+
+docs {
+  # Get Disposition Codes (Lấy danh mục mã trạng thái)
+  
+  API này dùng để lấy danh sách toàn bộ các mã sự kiện/trạng thái (disposition codes) chuẩn được hệ thống IBC sử dụng để đối chiếu dữ liệu (mapping codes) về hệ thống của bạn.
+  
+  ## HTTP Request
+  - **Method**: `GET`
+  - **URL**: `https://api.pactrak.com/v1/res/dispositioncodes`
+  
+  ## Query Parameters (Tùy chọn)
+  - `format`: Định dạng tải về (`json` hoặc `csv`).
+  - `lang`: Ngôn ngữ mô tả (`en` - Tiếng Anh, `es` - Tiếng Tây Ban Nha).
+  - `order`: Sắp xếp theo bảng chữ cái (`asc` - Tăng dần, `desc` - Giảm dần).
+  
+  *Gợi ý:* Để tra cứu chi tiết mô tả của một mã cụ thể, bạn có thể gọi thẳng lên URL: `https://api.pactrak.com/v1/res/dispositioncodes/CODE_CẦN_TRA` (Ví dụ: `/dispositioncodes/CC` để xem mã Cleared Customs).
+}
