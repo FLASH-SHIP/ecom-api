@@ -25,5 +25,15 @@
   "loading": "Đang tải...",
   "notLoggedIn": "Chưa đăng nhập",
   "loginButton": "Đăng nhập",
-  "dobFuture": "Ngày sinh không được quá ngày hiện tại và tương lai"
+  "dobFuture": "Ngày sinh không được quá ngày hiện tại và tương lai",
+  "changePasswordTitle": "Đổi mật khẩu",
+  "currentPasswordLabel": "Mật khẩu hiện tại",
+  "currentPasswordPlaceholder": "Nhập mật khẩu hiện tại",
+  "newPasswordLabel": "Mật khẩu mới",
+  "newPasswordPlaceholder": "Nhập mật khẩu mới",
+  "confirmPasswordLabel": "Xác nhận mật khẩu mới",
+  "confirmPasswordPlaceholder": "Nhập lại mật khẩu mới",
+  "updatePasswordBtn": "Cập nhật mật khẩu",
+  "passwordTab": "Đổi mật khẩu",
+  "profileTab": "Hồ sơ cá nhân"
 }

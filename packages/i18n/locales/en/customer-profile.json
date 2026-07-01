@@ -25,5 +25,15 @@
   "loading": "Loading...",
   "notLoggedIn": "Not logged in",
   "loginButton": "Sign In",
-  "dobFuture": "Date of birth cannot be in the future"
+  "dobFuture": "Date of birth cannot be in the future",
+  "changePasswordTitle": "Change Password",
+  "currentPasswordLabel": "Current Password",
+  "currentPasswordPlaceholder": "Enter current password",
+  "newPasswordLabel": "New Password",
+  "newPasswordPlaceholder": "Enter new password",
+  "confirmPasswordLabel": "Confirm New Password",
+  "confirmPasswordPlaceholder": "Re-enter new password",
+  "updatePasswordBtn": "Update Password",
+  "passwordTab": "Change Password",
+  "profileTab": "Profile Info"
 }

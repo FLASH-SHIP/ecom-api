@@ -67,7 +67,7 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
     },
     {
       label: currentLocale === "vi" ? "Hồ sơ cá nhân" : "Personal Profile",
-      href: "/profile",
+      href: "/profile/info",
       icon: UserIcon,
     },
   ];
@@ -89,7 +89,9 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
       <div className="flex-1 px-3 py-4 flex flex-col gap-6 overflow-y-auto">
         <nav className="flex flex-col gap-0.5">
           {menuItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href ||
+              (item.href === "/profile/info" && pathname.startsWith("/profile"));
             const Icon = item.icon;
 
             return (
@@ -141,7 +143,7 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
             style={{ zIndex: 9999 }}
           >
             <DropdownMenuItem asChild>
-              <NextLink href="/profile" className="flex items-center gap-2 cursor-pointer w-full">
+              <NextLink href="/profile/info" className="flex items-center gap-2 cursor-pointer w-full">
                 <UserIcon className="h-4 w-4" />
                 {currentLocale === "vi" ? "Thông tin cá nhân" : "Personal Info"}
               </NextLink>
