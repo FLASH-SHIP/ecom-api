@@ -10,6 +10,8 @@ const serverSchema = z.object({
   CUSTOMER_SESSION_IDLE_TIMEOUT_DAYS: z.coerce.number().int().positive().default(7),
   CUSTOMER_MAX_SESSIONS_PER_USER: z.coerce.number().int().positive().default(10),
   JWT_SECRET: z.string().min(8, "JWT_SECRET must be at least 8 characters long"),
+  AUTH_GOOGLE_ID: z.string().optional(),
+  AUTH_GOOGLE_SECRET: z.string().optional(),
 });
 
 // 2. Client-side validation schema (public parameters exposed to the browser)
@@ -36,6 +38,8 @@ const processEnv = {
   NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,
   NEXT_PUBLIC_CUSTOMER_URL: process.env.NEXT_PUBLIC_CUSTOMER_URL || process.env.NEXT_PUBLIC_APP_URL,
   JWT_SECRET: process.env.JWT_SECRET,
+  AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
+  AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
 };
 
 // Validate client variables on both server and browser
