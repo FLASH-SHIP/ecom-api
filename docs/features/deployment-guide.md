@@ -106,15 +106,22 @@ If deploying directly to a Virtual Private Server (VPS) without Docker, you can 
    yarn workspace @ecom/admin build
    ```
 
-   > [!IMPORTANT]
-   > **Build-time Environment Variables for Next.js**:
-   > Next.js bakes public client variables (prefixed with `NEXT_PUBLIC_`) into the JavaScript bundle *during build time*. Before running the build commands above, you **must** load the `.env` variables into your shell session:
-   >
-   > ```bash
-   > export $(grep -v '^#' .env | xargs)
-   > ```
-   >
-   > Or copy/link the root `.env` into each application's directory (e.g., `cp .env apps/web/.env`).
+    > [!IMPORTANT]
+    > **Build-time Environment Variables for Next.js**:
+    > Next.js bakes public client variables (prefixed with `NEXT_PUBLIC_`) into the JavaScript bundle *during build time*. Before running the build commands above, you **must** load the environment variables.
+    >
+    > You can refer to the root [./.env.example](../../.env.example) as a master list, or consult the detailed, app-specific templates:
+    > - API App: [apps/api/.env.example](../../apps/api/.env.example)
+    > - Admin CMS: [apps/admin/.env.example](../../apps/admin/.env.example)
+    > - Customer App: [apps/customer/.env.example](../../apps/customer/.env.example)
+    > - Web/Marketing: [apps/web/.env.example](../../apps/web/.env.example)
+    > - Prisma migrations: [packages/prisma/.env.example](../../packages/prisma/.env.example)
+    >
+    > For local/standalone builds, you can load variables into your shell session:
+    > ```bash
+    > export $(grep -v '^#' .env | xargs)
+    > ```
+    > Or copy/link the root `.env` into each application's directory (e.g., `cp .env apps/web/.env` or use symbolic links).
 
 3. **Run with PM2**:
 
@@ -413,6 +420,7 @@ Ensure all values in the production environment variables (injected at container
 #### Shared Authentication Secrets
 
 - [ ] `AUTH_SECRET` & `NEXTAUTH_SECRET`: Set to the same cryptographically secure 32-character key (`openssl rand -base64 32`) on Admin and Customer portals.
+- [ ] `AUTH_TRUST_HOST`: Must be set to `true` when deploying to a custom server/VPS behind a reverse proxy (e.g. Nginx, Cloudflare) to trust forwarded request headers.
 - [ ] `JWT_SECRET` (Customer Portal only): Must match the API's `JWT_SECRET`.
 - [ ] `JWT_ADMIN_SECRET` (Admin Portal only): Must match the API's `JWT_ADMIN_SECRET`.
 
