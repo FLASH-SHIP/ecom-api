@@ -218,7 +218,7 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
 
           <div className="flex items-center gap-0.5">
             <LanguageSwitcher />
-            <ThemeToggle />
+            <ThemeToggle storageKey="customer-theme" />
           </div>
         </header>
 
