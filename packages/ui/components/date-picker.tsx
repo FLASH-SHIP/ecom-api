@@ -18,6 +18,7 @@ interface DatePickerProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  disabledDays?: (date: Date) => boolean;
 }
 
 function DatePicker({
@@ -26,6 +27,7 @@ function DatePicker({
   placeholder = "dd/mm/yyyy",
   disabled,
   className,
+  disabledDays,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -60,6 +62,7 @@ function DatePicker({
             onChange?.(date ? format(date, "yyyy-MM-dd") : "");
             setOpen(false);
           }}
+          disabled={disabledDays}
           autoFocus
         />
       </PopoverContent>

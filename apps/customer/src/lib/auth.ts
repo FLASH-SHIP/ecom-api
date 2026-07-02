@@ -13,6 +13,8 @@ import type { User as AppUser } from "@ecom/shared/@auth/user";
 import type { NextAuthResult } from "next-auth";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Facebook from "next-auth/providers/facebook";
+import Google from "next-auth/providers/google";
 
 export const AUTH_KEYS = {
   accessToken: "customerAccessToken",
@@ -27,7 +29,7 @@ async function deleteCustomerSession(sessionId: string, cacheKey: string) {
   await invalidateCachedSession(cacheKey);
 }
 
-const customerAdapter = {
+const _customerAdapter = {
   async createSession(session: { sessionToken: string; userId: string; expires: Date }) {
     let ipAddress: string | null = null;
     let userAgent: string | null = null;
@@ -157,7 +159,7 @@ const customerAdapter = {
 };
 
 const nextAuth: NextAuthResult = NextAuth({
-  adapter: customerAdapter,
+  // adapter: customerAdapter,
   secret: env.AUTH_SECRET,
   session: { strategy: "jwt" },
   pages: {
@@ -165,6 +167,14 @@ const nextAuth: NextAuthResult = NextAuth({
   },
   debug: env.NODE_ENV === "development",
   providers: [
+    Google({
+      clientId: env.AUTH_GOOGLE_ID,
+      clientSecret: env.AUTH_GOOGLE_SECRET,
+    }),
+    Facebook({
+      clientId: env.FACEBOOK_CLIENT_ID,
+      clientSecret: env.FACEBOOK_CLIENT_SECRET,
+    }),
     Credentials({
       name: "credentials",
       credentials: {
@@ -197,8 +207,126 @@ const nextAuth: NextAuthResult = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
-      if (account?.provider === "credentials" && user) {
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Handles complex user provisioning and linking for multiple OAuth social providers.
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google" || account?.provider === "facebook") {
+        const provider = account.provider;
+        const email = profile?.email;
+        const providerId = account.providerAccountId;
+
+        log.info("🔒 NextAuth OAuth SignIn callback debug", {
+          provider,
+          email,
+          providerId,
+          profileKeys: profile ? Object.keys(profile) : [],
+          profile,
+        });
+
+        if (!email || !providerId) {
+          return false;
+        }
+
+        // Facebook avatar URL can be in profile.picture (if nested object or url string) or profile.image
+        let avatarUrl: string | null = null;
+        if (typeof profile.picture === "string") {
+          avatarUrl = profile.picture;
+        } else if (
+          profile.picture &&
+          typeof profile.picture === "object" &&
+          "data" in profile.picture
+        ) {
+          const picData = (profile.picture as { data?: { url?: string } }).data;
+          avatarUrl = picData?.url || null;
+        } else if ((profile as { image?: string }).image) {
+          avatarUrl = (profile as { image?: string }).image || null;
+        }
+
+        // 1. Check if the social link already exists
+        const existingSocial = await prisma.customerSocialAccount.findUnique({
+          where: {
+            provider_providerId: {
+              provider,
+              providerId,
+            },
+          },
+          select: { customerId: true },
+        });
+
+        if (existingSocial) {
+          await prisma.customer.update({
+            where: { id: existingSocial.customerId },
+            data: { lastLoginAt: new Date() },
+          });
+          user.id = String(existingSocial.customerId);
+          return true;
+        }
+
+        // 2. Check if a customer exists with this email address
+        let customer = await prisma.customer.findUnique({
+          where: { email },
+          select: { id: true, status: true },
+        });
+
+        if (customer) {
+          if (customer.status !== "ACTIVE") {
+            return false;
+          }
+
+          // Link social account
+          await prisma.customerSocialAccount.create({
+            data: {
+              customerId: customer.id,
+              provider,
+              providerId,
+              email,
+              name: profile.name,
+              avatarUrl,
+            },
+          });
+        } else {
+          // 3. Create a new Customer and link social account
+          const baseUsername =
+            email
+              .split("@")[0]
+              ?.toLowerCase()
+              .replace(/[^a-z0-9]/g, "") || "user";
+          const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+          const username = `${baseUsername}${randomSuffix}`;
+
+          customer = await prisma.customer.create({
+            data: {
+              email,
+              username,
+              name: profile.name || baseUsername,
+              avatarUrl,
+              emailVerified: new Date(),
+              lastLoginAt: new Date(),
+              status: "ACTIVE",
+              socialAccounts: {
+                create: {
+                  provider,
+                  providerId,
+                  email,
+                  name: profile.name,
+                  avatarUrl,
+                },
+              },
+            },
+            select: { id: true, status: true },
+          });
+        }
+
+        if (!customer) {
+          return false;
+        }
+
+        user.id = String(customer.id);
+        return true;
+      }
+      return true;
+    },
+    async jwt({ token, user }) {
+      if (user) {
         const sessionToken = crypto.randomUUID();
         const now = new Date();
         const sessionMaxAgeMs = env.CUSTOMER_SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
@@ -284,6 +412,7 @@ const nextAuth: NextAuthResult = NextAuth({
       }
       return "";
     },
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Custom session validation checks include multiple validation steps.
     async decode(params) {
       if (!params.token) return {};
 

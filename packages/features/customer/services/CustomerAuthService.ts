@@ -183,7 +183,12 @@ export class CustomerAuthService {
     };
   }
 
-  async changePassword(customerId: number, oldPassword: string, newPassword: string) {
+  async changePassword(
+    customerId: number,
+    oldPassword: string,
+    newPassword: string,
+    currentSessionToken?: string,
+  ) {
     const customer = await this.deps.customerRepo.findByIdWithPassword(customerId);
     if (!customer?.hashedPassword) {
       throw ErrorWithCode.Factory.NotFound("Customer not found");
@@ -202,7 +207,7 @@ export class CustomerAuthService {
 
     // Revoke all existing customer tokens and NextAuth sessions on password change
     await new CustomerTokenService().revokeAllTokens(customerId);
-    await this.deps.customerRepo.deleteSessions(customerId);
+    await this.deps.customerRepo.deleteSessions(customerId, currentSessionToken);
   }
 
   async sendVerificationEmail(customerId: number) {

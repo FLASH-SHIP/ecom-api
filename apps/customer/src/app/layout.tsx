@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
 import { SessionProvider } from "next-auth/react";
 import { CustomerLayout } from "../components/CustomerLayout";
+import { ToastProvider } from "../components/toast-provider";
 import { CustomerThemeProvider } from "../lib/CustomerThemeProvider";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../lib/i18n";
 import { TRPCProvider } from "../lib/trpc";
@@ -43,9 +44,11 @@ export default async function RootLayout({
           <SessionProvider>
             <TRPCProvider>
               <I18nProvider initialLocale={lang}>
-                <div className="flex min-h-screen flex-col">
-                  <CustomerLayout>{children}</CustomerLayout>
-                </div>
+                <ToastProvider>
+                  <div className="flex min-h-screen flex-col">
+                    <CustomerLayout>{children}</CustomerLayout>
+                  </div>
+                </ToastProvider>
               </I18nProvider>
             </TRPCProvider>
           </SessionProvider>

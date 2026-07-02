@@ -27,7 +27,7 @@ import { trpc } from "../../lib/trpc";
 
 const QUICK_LINKS = [
   {
-    href: "/profile",
+    href: "/profile/info",
     icon: User,
     title: "Hồ sơ cá nhân",
     desc: "Cập nhật thông tin của bạn",
