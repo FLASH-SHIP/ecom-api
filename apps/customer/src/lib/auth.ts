@@ -13,6 +13,7 @@ import type { User as AppUser } from "@ecom/shared/@auth/user";
 import type { NextAuthResult } from "next-auth";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Facebook from "next-auth/providers/facebook";
 import Google from "next-auth/providers/google";
 
 export const AUTH_KEYS = {
@@ -170,6 +171,10 @@ const nextAuth: NextAuthResult = NextAuth({
       clientId: env.AUTH_GOOGLE_ID,
       clientSecret: env.AUTH_GOOGLE_SECRET,
     }),
+    Facebook({
+      clientId: env.FACEBOOK_CLIENT_ID,
+      clientSecret: env.FACEBOOK_CLIENT_SECRET,
+    }),
     Credentials({
       name: "credentials",
       credentials: {
@@ -202,20 +207,45 @@ const nextAuth: NextAuthResult = NextAuth({
     }),
   ],
   callbacks: {
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Handles complex user provisioning and linking for multiple OAuth social providers.
     async signIn({ user, account, profile }) {
-      if (account?.provider === "google") {
+      if (account?.provider === "google" || account?.provider === "facebook") {
+        const provider = account.provider;
         const email = profile?.email;
-        const providerId = profile?.sub;
+        const providerId = account.providerAccountId;
+
+        log.info("🔒 NextAuth OAuth SignIn callback debug", {
+          provider,
+          email,
+          providerId,
+          profileKeys: profile ? Object.keys(profile) : [],
+          profile,
+        });
 
         if (!email || !providerId) {
           return false;
+        }
+
+        // Facebook avatar URL can be in profile.picture (if nested object or url string) or profile.image
+        let avatarUrl: string | null = null;
+        if (typeof profile.picture === "string") {
+          avatarUrl = profile.picture;
+        } else if (
+          profile.picture &&
+          typeof profile.picture === "object" &&
+          "data" in profile.picture
+        ) {
+          const picData = (profile.picture as { data?: { url?: string } }).data;
+          avatarUrl = picData?.url || null;
+        } else if ((profile as { image?: string }).image) {
+          avatarUrl = (profile as { image?: string }).image || null;
         }
 
         // 1. Check if the social link already exists
         const existingSocial = await prisma.customerSocialAccount.findUnique({
           where: {
             provider_providerId: {
-              provider: "google",
+              provider,
               providerId,
             },
           },
@@ -242,15 +272,15 @@ const nextAuth: NextAuthResult = NextAuth({
             return false;
           }
 
-          // Link Google account
+          // Link social account
           await prisma.customerSocialAccount.create({
             data: {
               customerId: customer.id,
-              provider: "google",
+              provider,
               providerId,
               email,
               name: profile.name,
-              avatarUrl: profile.picture,
+              avatarUrl,
             },
           });
         } else {
@@ -268,17 +298,17 @@ const nextAuth: NextAuthResult = NextAuth({
               email,
               username,
               name: profile.name || baseUsername,
-              avatarUrl: profile.picture,
+              avatarUrl,
               emailVerified: new Date(),
               lastLoginAt: new Date(),
               status: "ACTIVE",
               socialAccounts: {
                 create: {
-                  provider: "google",
+                  provider,
                   providerId,
                   email,
                   name: profile.name,
-                  avatarUrl: profile.picture,
+                  avatarUrl,
                 },
               },
             },

@@ -1,6 +1,5 @@
+import OAuthFacebook from "@customer/components/auth/OAuthFacebook";
 import OAuthGoogle from "@customer/components/auth/OAuthGoogle";
-import { Button } from "@ecom/ui/components/button";
-import { AppleIcon } from "@ecom/ui/components/icons";
 
 export function AuthSocialLogins() {
   return (
@@ -15,13 +14,7 @@ export function AuthSocialLogins() {
       {/* Grid of buttons */}
       <div className="grid grid-cols-2 gap-3">
         <OAuthGoogle />
-        <Button
-          type="button"
-          variant="outline"
-          className="flex items-center justify-center h-10 rounded-xl bg-background/50 hover:bg-muted text-xs font-bold text-foreground transition-all border-border"
-        >
-          <AppleIcon /> Apple
-        </Button>
+        <OAuthFacebook />
       </div>
     </div>
   );
