@@ -323,9 +323,12 @@ export class CustomerRepository {
     });
   }
 
-  async deleteSessions(customerId: number): Promise<void> {
+  async deleteSessions(customerId: number, excludeSessionToken?: string): Promise<void> {
     await this.prisma.customerSession.deleteMany({
-      where: { customerId },
+      where: {
+        customerId,
+        ...(excludeSessionToken ? { sessionToken: { not: excludeSessionToken } } : {}),
+      },
     });
   }
 

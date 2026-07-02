@@ -35,5 +35,14 @@
   "confirmPasswordPlaceholder": "Re-enter new password",
   "updatePasswordBtn": "Update Password",
   "passwordTab": "Change Password",
-  "profileTab": "Profile Info"
+  "profileTab": "Profile Info",
+  "fieldsRequired": "Please fill in all required fields",
+  "passwordMismatch": "New password and confirmation do not match",
+  "passwordRequirementError": "New password must be at least 8 characters long, containing at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character",
+  "passwordUpdateSuccess": "Password updated successfully!",
+  "ruleMinLength": "Password must be at least 8 characters",
+  "ruleUppercase": "Password must contain at least 1 uppercase letter",
+  "ruleLowercase": "Password must contain at least 1 lowercase letter",
+  "ruleNumber": "Password must contain at least 1 number",
+  "ruleSpecialChar": "Password must contain at least 1 special character"
 }
