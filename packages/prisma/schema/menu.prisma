@@ -3,13 +3,13 @@
 model AdminMenuItem {
   id              Int                        @id @default(autoincrement())
   key             String                     @unique // e.g. "cms-core-dashboard"
-  name            String                     // Default display name (English)
+  name            String // Default display name (English)
   description     String?                    @db.Text
-  icon            String?                    // e.g. "ti ti-home"
-  route           String?                    // Frontend route path, null = parent-only
-  permissions     Json?                      // String[] of permission names for access control
+  icon            String? // e.g. "ti ti-home"
+  route           String? // Frontend route path, null = parent-only
+  permissions     Json? // String[] of permission names for access control
   childrenDisplay String?                    @default("sidebar") // "sidebar" | "panel"
-  section         String?                    // Section grouping for panel display
+  section         String? // Section grouping for panel display
   priority        Int                        @default(0)
   isActive        Boolean                    @default(true)
   parentId        Int?

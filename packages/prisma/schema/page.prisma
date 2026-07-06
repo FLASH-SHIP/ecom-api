@@ -1,43 +1,43 @@
 // Ecom — Page Module
 
 model Page {
-  id             Int           @id @default(autoincrement())
-  title          String
-  slug           String        @unique
-  content        String?       @db.Text
-  excerpt        String?       @db.Text
-  featuredImage  String?
-  template       String?       @default("default")
-  order          Int           @default(0)
-  parentId       Int?
-  parent         Page?         @relation("PageTree", fields: [parentId], references: [id])
-  children       Page[]        @relation("PageTree")
-  status         ContentStatus @default(DRAFT)
-  authorId       Int
-  author         User          @relation(fields: [authorId], references: [id])
-  translations   PageTranslation[]
-  seoMeta        SeoMeta?      @relation("PageSeo")
-  comments       Comment[]
-  publishedAt    DateTime?
-  scheduledAt    DateTime?
-  deletedAt      DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id            Int               @id @default(autoincrement())
+  title         String
+  slug          String            @unique
+  content       String?           @db.Text
+  excerpt       String?           @db.Text
+  featuredImage String?
+  template      String?           @default("default")
+  order         Int               @default(0)
+  parentId      Int?
+  parent        Page?             @relation("PageTree", fields: [parentId], references: [id])
+  children      Page[]            @relation("PageTree")
+  status        ContentStatus     @default(DRAFT)
+  authorId      Int
+  author        User              @relation(fields: [authorId], references: [id])
+  translations  PageTranslation[]
+  seoMeta       SeoMeta?          @relation("PageSeo")
+  comments      Comment[]
+  publishedAt   DateTime?
+  scheduledAt   DateTime?
+  deletedAt     DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   // Custom Fields (Shared)
   bannerImage    String?
   heroBanner     String?
-  layout         String?       @default("default")
-  hideTitle      Boolean       @default(false)
-  hideBreadcrumb Boolean       @default(false)
-  hideSidebar    Boolean       @default(false)
-  hideFooter     Boolean       @default(false)
+  layout         String? @default("default")
+  hideTitle      Boolean @default(false)
+  hideBreadcrumb Boolean @default(false)
+  hideSidebar    Boolean @default(false)
+  hideFooter     Boolean @default(false)
   gallery        Json?
 
   // Custom Fields (Default Locale)
-  subtitle       String?
-  ctaText        String?
-  ctaLink        String?
+  subtitle String?
+  ctaText  String?
+  ctaLink  String?
 
   @@index([authorId])
   @@index([status])
@@ -49,9 +49,9 @@ model Page {
 }
 
 model PageTranslation {
-  id       Int    @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   pageId   Int
-  page     Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  page     Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
   langCode String
   title    String
   slug     String?
