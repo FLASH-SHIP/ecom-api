@@ -132,10 +132,13 @@ export class CustomerAuthService {
 
       const hashedPwd = await hashPassword(data.password);
 
+      const defaultGroup = await this.deps.customerRepo.findOrCreateDefaultGroup();
+
       const created = await this.deps.customerRepo.createWithPassword({
         email: data.email,
         username,
         hashedPassword: hashedPwd,
+        groupId: defaultGroup.id,
       });
 
       await this.deps.customerRepo.verifyEmail(created.id);

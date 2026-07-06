@@ -124,5 +124,63 @@ describe("CustomerGroupService", () => {
         ),
       );
     });
+
+    it("should throw error if trying to delete default group", async () => {
+      const repo = createMockRepo();
+      const service = new CustomerGroupService({ customerGroupRepo: repo });
+
+      repo.findById.mockResolvedValue({
+        id: 10,
+        name: "Default Group",
+        code: "default",
+        _count: { customers: 0, rateCards: 0 },
+      });
+
+      await expect(service.deleteCustomerGroup(10)).rejects.toThrowError(
+        new ErrorWithCode(
+          ErrorCode.CustomerGroupConflict,
+          "Không thể xóa nhóm khách hàng mặc định của hệ thống.",
+          400,
+        ),
+      );
+    });
+  });
+
+  describe("updateCustomerGroup", () => {
+    it("should update a group successfully", async () => {
+      const repo = createMockRepo();
+      const service = new CustomerGroupService({ customerGroupRepo: repo });
+
+      repo.findById.mockResolvedValue({
+        id: 1,
+        name: "Tier 1",
+        code: "tier1",
+        _count: { customers: 0, rateCards: 0 },
+      });
+      repo.update.mockResolvedValue({ id: 1, name: "New Name", code: "tier1" });
+
+      const result = await service.updateCustomerGroup(1, { name: "New Name" });
+      expect(result.name).toBe("New Name");
+    });
+
+    it("should throw error if trying to update default group", async () => {
+      const repo = createMockRepo();
+      const service = new CustomerGroupService({ customerGroupRepo: repo });
+
+      repo.findById.mockResolvedValue({
+        id: 10,
+        name: "Default Group",
+        code: "default",
+        _count: { customers: 0, rateCards: 0 },
+      });
+
+      await expect(service.updateCustomerGroup(10, { name: "New Name" })).rejects.toThrowError(
+        new ErrorWithCode(
+          ErrorCode.CustomerGroupConflict,
+          "Không thể chỉnh sửa hoặc cập nhật nhóm khách hàng mặc định của hệ thống.",
+          400,
+        ),
+      );
+    });
   });
 });

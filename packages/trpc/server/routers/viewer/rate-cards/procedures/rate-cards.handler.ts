@@ -20,6 +20,8 @@ const rateCardTypeSchema = z.nativeEnum(RateCardType);
 type RateCardRepo = ReturnType<typeof getRateCardRepository>;
 type RateCardService = ReturnType<typeof getRateCardService>;
 
+const DEFAULT_RATE_CARD_CODES = ["epacket.default.us", "express.default.us"];
+
 async function checkDuplicateCode(
   rateRepo: RateCardRepo,
   code: string | undefined,
@@ -232,6 +234,46 @@ export const update = authedProcedure
       throw new TRPCError({ code: "NOT_FOUND", message: "Bảng giá cước không tồn tại." });
     }
 
+    const isDefaultCard = DEFAULT_RATE_CARD_CODES.includes(card.code);
+    if (isDefaultCard) {
+      const isOriginChanged = data.origin !== undefined && data.origin !== card.origin;
+      const isStartDateChanged = data.startDate !== undefined && (
+        (data.startDate === null && card.startDate !== null) ||
+        (data.startDate !== null && card.startDate === null) ||
+        (data.startDate && card.startDate && new Date(data.startDate).getTime() !== new Date(card.startDate).getTime())
+      );
+      const isEndDateChanged = data.endDate !== undefined && (
+        (data.endDate === null && card.endDate !== null) ||
+        (data.endDate !== null && card.endDate === null) ||
+        (data.endDate && card.endDate && new Date(data.endDate).getTime() !== new Date(card.endDate).getTime())
+      );
+      const currentGroupIds = card.groups.map(g => g.customerGroupId);
+      const isGroupsChanged = data.customerGroupIds !== undefined && (
+        data.customerGroupIds.length !== currentGroupIds.length ||
+        data.customerGroupIds.some(id => !currentGroupIds.includes(id))
+      );
+
+      if (
+        (data.code !== undefined && data.code !== card.code) ||
+        (data.status !== undefined && data.status !== card.status) ||
+        (data.shippingMethod !== undefined && data.shippingMethod !== card.shippingMethod) ||
+        (data.country !== undefined && data.country !== card.country) ||
+        isOriginChanged ||
+        (data.currency !== undefined && data.currency !== card.currency) ||
+        (data.weightStep !== undefined && Number(data.weightStep) !== Number(card.weightStep)) ||
+        (data.minWeight !== undefined && Number(data.minWeight) !== Number(card.minWeight)) ||
+        (data.maxWeight !== undefined && Number(data.maxWeight) !== Number(card.maxWeight)) ||
+        isStartDateChanged ||
+        isEndDateChanged ||
+        isGroupsChanged
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Không thể chỉnh sửa các cấu hình cốt lõi của bảng giá cước mặc định (chỉ cho phép đổi tên hoặc cập nhật các nấc cước).",
+        });
+      }
+    }
+
     if (data.code && data.code !== card.code && card.status !== "DRAFT") {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -263,6 +305,14 @@ export const remove = authedProcedure
     const card = await rateRepo.findById(input.id);
     if (!card) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Bảng giá cước không tồn tại." });
+    }
+
+    const isDefaultCard = DEFAULT_RATE_CARD_CODES.includes(card.code);
+    if (isDefaultCard) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Không thể xóa bảng giá cước mặc định của hệ thống.",
+      });
     }
 
     // Invalidate cache first

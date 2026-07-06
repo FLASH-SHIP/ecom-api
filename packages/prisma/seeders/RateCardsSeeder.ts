@@ -5,7 +5,19 @@ export const RateCardsSeeder: Seeder = {
   name: "Rate Cards & Customer Groups",
 
   async run(prisma: PrismaClient) {
-    // 1. Create Tier 1, Tier 2, and Tier 3 Customer Groups
+    // 1. Create Default, Tier 1, Tier 2, and Tier 3 Customer Groups
+    const defaultGroup = await prisma.customerGroup.upsert({
+      where: { code: "default" },
+      update: {
+        description: "Nhóm khách hàng mặc định của hệ thống",
+      },
+      create: {
+        code: "default",
+        name: "Nhóm mặc định (Default)",
+        description: "Nhóm khách hàng mặc định của hệ thống",
+      },
+    });
+
     const tier1Group = await prisma.customerGroup.upsert({
       where: { code: "tier1" },
       update: {
@@ -42,20 +54,24 @@ export const RateCardsSeeder: Seeder = {
       },
     });
 
-    // 2. Assign any existing customers with no groupId to the tier1 group
+    // 2. Assign any existing customers with no groupId to the default group
     await prisma.customer.updateMany({
       where: { groupId: null },
-      data: { groupId: tier1Group.id },
+      data: { groupId: defaultGroup.id },
     });
 
-    // 3. Seed Default Epacket Rate Card for Tier 1
-    const epacketTier1Code = "epacket.tier1.us";
-    const epacketCard = await prisma.rateCard.upsert({
-      where: { code: epacketTier1Code },
+    // ==========================================
+    // DEFAULT TIER (Baseline) - ID: 1, 2
+    // ==========================================
+
+    // 3. Seed Default Epacket Rate Card (linked ONLY to default group) -> ID: 1
+    const epacketDefaultCode = "epacket.default.us";
+    const epacketDefaultCard = await prisma.rateCard.upsert({
+      where: { code: epacketDefaultCode },
       update: {},
       create: {
-        code: epacketTier1Code,
-        name: "Bảng giá Epacket Mặc định Tier 1",
+        code: epacketDefaultCode,
+        name: "Bảng giá Epacket Mặc định",
         status: "PUBLISHED",
         shippingMethod: "EPACKET",
         country: "US",
@@ -67,34 +83,34 @@ export const RateCardsSeeder: Seeder = {
       },
     });
 
-    // Link epacketCard to tier1 group
+    // Link epacketDefaultCard to default group
     await prisma.rateCardGroup.upsert({
       where: {
         rateCardId_customerGroupId: {
-          rateCardId: epacketCard.id,
-          customerGroupId: tier1Group.id,
+          rateCardId: epacketDefaultCard.id,
+          customerGroupId: defaultGroup.id,
         },
       },
       update: {},
       create: {
-        rateCardId: epacketCard.id,
-        customerGroupId: tier1Group.id,
+        rateCardId: epacketDefaultCard.id,
+        customerGroupId: defaultGroup.id,
       },
     });
 
-    // Generate Epacket Slabs (0.05kg step, base $3.50 + $0.15 per 0.05kg)
+    // Generate Epacket Slabs for Default (0.05kg step, base $3.80 + $0.20 per 0.05kg)
     await prisma.rateCardItem.deleteMany({
-      where: { rateCardId: epacketCard.id },
+      where: { rateCardId: epacketDefaultCard.id },
     });
 
-    const epacketItems = [];
+    const epacketDefaultItems = [];
     let prevWeight = 0;
     for (let weightGram = 50; weightGram <= 5000; weightGram += 50) {
       const currentWeight = weightGram / 1000;
       const stepIndex = (weightGram - 50) / 50;
-      const amount = 3.5 + stepIndex * 0.15; // e.g. 0.05 = $3.50, 0.10 = $3.65, ..., 5.00 = $18.35
-      epacketItems.push({
-        rateCardId: epacketCard.id,
+      const amount = 3.8 + stepIndex * 0.2; // e.g. 0.05 = $3.80, 0.10 = $4.00, ..., 5.00 = $23.60
+      epacketDefaultItems.push({
+        rateCardId: epacketDefaultCard.id,
         startWeight: prevWeight,
         endWeight: currentWeight,
         rateType: "STEP_FIXED" as const,
@@ -103,9 +119,156 @@ export const RateCardsSeeder: Seeder = {
       prevWeight = currentWeight;
     }
 
-    // Add Epacket Heavy Cargo Custom Range (5.00kg to 20.00kg -> $9.50/kg)
-    epacketItems.push({
-      rateCardId: epacketCard.id,
+    // Add Epacket Heavy Cargo Custom Range for Default (5.00kg to 20.00kg -> $10.50/kg)
+    epacketDefaultItems.push({
+      rateCardId: epacketDefaultCard.id,
+      startWeight: 5.0,
+      endWeight: 20.0,
+      rateType: "RANGE_PER_KG" as const,
+      amount: 10.5,
+    });
+
+    await prisma.rateCardItem.createMany({
+      data: epacketDefaultItems,
+    });
+
+    // 4. Seed Default Express Rate Card (linked ONLY to default group) -> ID: 2
+    const expressDefaultCode = "express.default.us";
+    const expressDefaultCard = await prisma.rateCard.upsert({
+      where: { code: expressDefaultCode },
+      update: {},
+      create: {
+        code: expressDefaultCode,
+        name: "Bảng giá Express Mặc định",
+        status: "PUBLISHED",
+        shippingMethod: "EXPRESS",
+        country: "US",
+        origin: null,
+        currency: "USD",
+        weightStep: 0.5,
+        minWeight: 0.5,
+        maxWeight: 20.0,
+      },
+    });
+
+    // Link expressDefaultCard to default group
+    await prisma.rateCardGroup.upsert({
+      where: {
+        rateCardId_customerGroupId: {
+          rateCardId: expressDefaultCard.id,
+          customerGroupId: defaultGroup.id,
+        },
+      },
+      update: {},
+      create: {
+        rateCardId: expressDefaultCard.id,
+        customerGroupId: defaultGroup.id,
+      },
+    });
+
+    // Generate Express Slabs for Default (0.5kg step, base $15.00 + $2.00 per 0.5kg)
+    await prisma.rateCardItem.deleteMany({
+      where: { rateCardId: expressDefaultCard.id },
+    });
+
+    const expressDefaultItems = [];
+    prevWeight = 0;
+    for (let weightGram = 500; weightGram <= 20000; weightGram += 500) {
+      const currentWeight = weightGram / 1000;
+      const stepIndex = (weightGram - 500) / 500;
+      const amount = 15.0 + stepIndex * 2.0; // e.g. 0.5 = $15.00, 1.0 = $17.00, ..., 20.0 = $93.00
+      expressDefaultItems.push({
+        rateCardId: expressDefaultCard.id,
+        startWeight: prevWeight,
+        endWeight: currentWeight,
+        rateType: "STEP_FIXED" as const,
+        amount: Number(amount.toFixed(2)),
+      });
+      prevWeight = currentWeight;
+    }
+
+    // Add Express Custom Heavy Cargo Ranges for Default
+    expressDefaultItems.push({
+      rateCardId: expressDefaultCard.id,
+      startWeight: 20.0,
+      endWeight: 44.0,
+      rateType: "RANGE_PER_KG" as const,
+      amount: 11.99,
+    });
+    expressDefaultItems.push({
+      rateCardId: expressDefaultCard.id,
+      startWeight: 44.0,
+      endWeight: 100.0,
+      rateType: "RANGE_PER_KG" as const,
+      amount: 10.99,
+    });
+
+    await prisma.rateCardItem.createMany({
+      data: expressDefaultItems,
+    });
+
+    // ==========================================
+    // TIER 1 - ID: 3, 4
+    // ==========================================
+
+    // 5. Seed Tier 1 Epacket Rate Card (linked ONLY to tier1 group) -> ID: 3
+    const epacketTier1Code = "epacket.tier1.us";
+    const epacketTier1Card = await prisma.rateCard.upsert({
+      where: { code: epacketTier1Code },
+      update: {},
+      create: {
+        code: epacketTier1Code,
+        name: "Bảng giá Epacket Tier 1",
+        status: "PUBLISHED",
+        shippingMethod: "EPACKET",
+        country: "US",
+        origin: null,
+        currency: "USD",
+        weightStep: 0.05,
+        minWeight: 0.05,
+        maxWeight: 5.0,
+      },
+    });
+
+    // Link epacketTier1Card to tier1 group
+    await prisma.rateCardGroup.upsert({
+      where: {
+        rateCardId_customerGroupId: {
+          rateCardId: epacketTier1Card.id,
+          customerGroupId: tier1Group.id,
+        },
+      },
+      update: {},
+      create: {
+        rateCardId: epacketTier1Card.id,
+        customerGroupId: tier1Group.id,
+      },
+    });
+
+    // Generate Epacket Slabs for Tier 1 (0.05kg step, base $3.50 + $0.15 per 0.05kg)
+    await prisma.rateCardItem.deleteMany({
+      where: { rateCardId: epacketTier1Card.id },
+    });
+
+    const epacketTier1Items = [];
+    prevWeight = 0;
+    for (let weightGram = 50; weightGram <= 5000; weightGram += 50) {
+      const currentWeight = weightGram / 1000;
+      const stepIndex = (weightGram - 50) / 50;
+      const amount = 3.5 + stepIndex * 0.15; // e.g. 0.05 = $3.50, 0.10 = $3.65, ..., 5.00 = $18.35
+      epacketTier1Items.push({
+        rateCardId: epacketTier1Card.id,
+        startWeight: prevWeight,
+        endWeight: currentWeight,
+        rateType: "STEP_FIXED" as const,
+        amount: Number(amount.toFixed(2)),
+      });
+      prevWeight = currentWeight;
+    }
+
+    // Add Epacket Heavy Cargo Custom Range for Tier 1 (5.00kg to 20.00kg -> $9.50/kg)
+    epacketTier1Items.push({
+      rateCardId: epacketTier1Card.id,
       startWeight: 5.0,
       endWeight: 20.0,
       rateType: "RANGE_PER_KG" as const,
@@ -113,10 +276,157 @@ export const RateCardsSeeder: Seeder = {
     });
 
     await prisma.rateCardItem.createMany({
-      data: epacketItems,
+      data: epacketTier1Items,
     });
 
-    // 4. Seed VIP Silver Express Rate Card for Tier 2
+    // 6. Seed Tier 1 Express Rate Card (linked ONLY to tier1 group) -> ID: 4
+    const expressTier1Code = "express.tier1.us";
+    const expressTier1Card = await prisma.rateCard.upsert({
+      where: { code: expressTier1Code },
+      update: {},
+      create: {
+        code: expressTier1Code,
+        name: "Bảng giá Express Tier 1",
+        status: "PUBLISHED",
+        shippingMethod: "EXPRESS",
+        country: "US",
+        origin: null,
+        currency: "USD",
+        weightStep: 0.5,
+        minWeight: 0.5,
+        maxWeight: 20.0,
+      },
+    });
+
+    // Link expressTier1Card to tier1 group
+    await prisma.rateCardGroup.upsert({
+      where: {
+        rateCardId_customerGroupId: {
+          rateCardId: expressTier1Card.id,
+          customerGroupId: tier1Group.id,
+        },
+      },
+      update: {},
+      create: {
+        rateCardId: expressTier1Card.id,
+        customerGroupId: tier1Group.id,
+      },
+    });
+
+    // Generate Express Slabs for Tier 1 (0.5kg step, base $13.50 + $1.75 per 0.5kg)
+    await prisma.rateCardItem.deleteMany({
+      where: { rateCardId: expressTier1Card.id },
+    });
+
+    const expressTier1Items = [];
+    prevWeight = 0;
+    for (let weightGram = 500; weightGram <= 20000; weightGram += 500) {
+      const currentWeight = weightGram / 1000;
+      const stepIndex = (weightGram - 500) / 500;
+      const amount = 13.5 + stepIndex * 1.75; // e.g. 0.5 = $13.50, 1.0 = $15.25, ..., 20.0 = $81.75
+      expressTier1Items.push({
+        rateCardId: expressTier1Card.id,
+        startWeight: prevWeight,
+        endWeight: currentWeight,
+        rateType: "STEP_FIXED" as const,
+        amount: Number(amount.toFixed(2)),
+      });
+      prevWeight = currentWeight;
+    }
+
+    // Add Express Custom Heavy Cargo Ranges for Tier 1
+    expressTier1Items.push({
+      rateCardId: expressTier1Card.id,
+      startWeight: 20.0,
+      endWeight: 44.0,
+      rateType: "RANGE_PER_KG" as const,
+      amount: 10.99,
+    });
+    expressTier1Items.push({
+      rateCardId: expressTier1Card.id,
+      startWeight: 44.0,
+      endWeight: 100.0,
+      rateType: "RANGE_PER_KG" as const,
+      amount: 9.99,
+    });
+
+    await prisma.rateCardItem.createMany({
+      data: expressTier1Items,
+    });
+
+    // ==========================================
+    // TIER 2 - ID: 5, 6
+    // ==========================================
+
+    // 7. Seed Tier 2 Epacket Rate Card (linked ONLY to tier2 group) -> ID: 5
+    const epacketTier2Code = "epacket.tier2.us";
+    const epacketTier2Card = await prisma.rateCard.upsert({
+      where: { code: epacketTier2Code },
+      update: {},
+      create: {
+        code: epacketTier2Code,
+        name: "Bảng giá Epacket Tier 2",
+        status: "PUBLISHED",
+        shippingMethod: "EPACKET",
+        country: "US",
+        origin: null,
+        currency: "USD",
+        weightStep: 0.05,
+        minWeight: 0.05,
+        maxWeight: 5.0,
+      },
+    });
+
+    // Link epacketTier2Card to tier2 group
+    await prisma.rateCardGroup.upsert({
+      where: {
+        rateCardId_customerGroupId: {
+          rateCardId: epacketTier2Card.id,
+          customerGroupId: tier2Group.id,
+        },
+      },
+      update: {},
+      create: {
+        rateCardId: epacketTier2Card.id,
+        customerGroupId: tier2Group.id,
+      },
+    });
+
+    // Generate Epacket Slabs for Tier 2 (0.05kg step, base $3.20 + $0.12 per 0.05kg)
+    await prisma.rateCardItem.deleteMany({
+      where: { rateCardId: epacketTier2Card.id },
+    });
+
+    const epacketTier2Items = [];
+    prevWeight = 0;
+    for (let weightGram = 50; weightGram <= 5000; weightGram += 50) {
+      const currentWeight = weightGram / 1000;
+      const stepIndex = (weightGram - 50) / 50;
+      const amount = 3.2 + stepIndex * 0.12; // e.g. 0.05 = $3.20, 0.10 = $3.32, ..., 5.00 = $15.08
+      epacketTier2Items.push({
+        rateCardId: epacketTier2Card.id,
+        startWeight: prevWeight,
+        endWeight: currentWeight,
+        rateType: "STEP_FIXED" as const,
+        amount: Number(amount.toFixed(2)),
+      });
+      prevWeight = currentWeight;
+    }
+
+    // Add Epacket Heavy Cargo Custom Range for Tier 2 (5.00kg to 20.00kg -> $8.50/kg)
+    epacketTier2Items.push({
+      rateCardId: epacketTier2Card.id,
+      startWeight: 5.0,
+      endWeight: 20.0,
+      rateType: "RANGE_PER_KG" as const,
+      amount: 8.5,
+    });
+
+    await prisma.rateCardItem.createMany({
+      data: epacketTier2Items,
+    });
+
+    // 8. Seed Tier 2 Express Rate Card (linked ONLY to tier2 group) -> ID: 6
     const expressTier2Code = "express.tier2.us";
     const expressCard2 = await prisma.rateCard.upsert({
       where: { code: expressTier2Code },
@@ -191,7 +501,79 @@ export const RateCardsSeeder: Seeder = {
       data: expressItems2,
     });
 
-    // 5. Seed VIP Gold Express Rate Card for Tier 3
+    // ==========================================
+    // TIER 3 - ID: 7, 8
+    // ==========================================
+
+    // 9. Seed Tier 3 Epacket Rate Card (linked ONLY to tier3 group) -> ID: 7
+    const epacketTier3Code = "epacket.tier3.us";
+    const epacketTier3Card = await prisma.rateCard.upsert({
+      where: { code: epacketTier3Code },
+      update: {},
+      create: {
+        code: epacketTier3Code,
+        name: "Bảng giá Epacket Tier 3",
+        status: "PUBLISHED",
+        shippingMethod: "EPACKET",
+        country: "US",
+        origin: null,
+        currency: "USD",
+        weightStep: 0.05,
+        minWeight: 0.05,
+        maxWeight: 5.0,
+      },
+    });
+
+    // Link epacketTier3Card to tier3 group
+    await prisma.rateCardGroup.upsert({
+      where: {
+        rateCardId_customerGroupId: {
+          rateCardId: epacketTier3Card.id,
+          customerGroupId: tier3Group.id,
+        },
+      },
+      update: {},
+      create: {
+        rateCardId: epacketTier3Card.id,
+        customerGroupId: tier3Group.id,
+      },
+    });
+
+    // Generate Epacket Slabs for Tier 3 (0.05kg step, base $2.90 + $0.10 per 0.05kg)
+    await prisma.rateCardItem.deleteMany({
+      where: { rateCardId: epacketTier3Card.id },
+    });
+
+    const epacketTier3Items = [];
+    prevWeight = 0;
+    for (let weightGram = 50; weightGram <= 5000; weightGram += 50) {
+      const currentWeight = weightGram / 1000;
+      const stepIndex = (weightGram - 50) / 50;
+      const amount = 2.9 + stepIndex * 0.1; // e.g. 0.05 = $2.90, 0.10 = $3.00, ..., 5.00 = $12.80
+      epacketTier3Items.push({
+        rateCardId: epacketTier3Card.id,
+        startWeight: prevWeight,
+        endWeight: currentWeight,
+        rateType: "STEP_FIXED" as const,
+        amount: Number(amount.toFixed(2)),
+      });
+      prevWeight = currentWeight;
+    }
+
+    // Add Epacket Heavy Cargo Custom Range for Tier 3 (5.00kg to 20.00kg -> $7.50/kg)
+    epacketTier3Items.push({
+      rateCardId: epacketTier3Card.id,
+      startWeight: 5.0,
+      endWeight: 20.0,
+      rateType: "RANGE_PER_KG" as const,
+      amount: 7.5,
+    });
+
+    await prisma.rateCardItem.createMany({
+      data: epacketTier3Items,
+    });
+
+    // 10. Seed Tier 3 Express Rate Card (linked ONLY to tier3 group) -> ID: 8
     const expressTier3Code = "express.tier3.us";
     const expressCard3 = await prisma.rateCard.upsert({
       where: { code: expressTier3Code },
@@ -266,9 +648,26 @@ export const RateCardsSeeder: Seeder = {
       data: expressItems3,
     });
 
-    console.log(`    → Created 3 Customer Groups ("tier1", "tier2", "tier3")`);
-    console.log(`    → Created Rate Card "${epacketTier1Code}" with ${epacketItems.length} slabs`);
+    console.log(`    → Created 4 Customer Groups ("default", "tier1", "tier2", "tier3")`);
+    console.log(
+      `    → Created Rate Card "${epacketDefaultCode}" with ${epacketDefaultItems.length} slabs`,
+    );
+    console.log(
+      `    → Created Rate Card "${expressDefaultCode}" with ${expressDefaultItems.length} slabs`,
+    );
+    console.log(
+      `    → Created Rate Card "${epacketTier1Code}" with ${epacketTier1Items.length} slabs`,
+    );
+    console.log(
+      `    → Created Rate Card "${expressTier1Code}" with ${expressTier1Items.length} slabs`,
+    );
+    console.log(
+      `    → Created Rate Card "${epacketTier2Code}" with ${epacketTier2Items.length} slabs`,
+    );
     console.log(`    → Created Rate Card "${expressTier2Code}" with ${expressItems2.length} slabs`);
+    console.log(
+      `    → Created Rate Card "${epacketTier3Code}" with ${epacketTier3Items.length} slabs`,
+    );
     console.log(
       `    → Created Rate Card "${expressTier3Code}" (VIP Gold) with ${expressItems3.length} slabs`,
     );

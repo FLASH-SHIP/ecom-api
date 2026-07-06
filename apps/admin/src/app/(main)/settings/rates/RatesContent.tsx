@@ -286,6 +286,7 @@ export default function RatesContent() {
             onConfirm: () => deleteMut.mutate({ id: row.id }),
           });
         },
+        hidden: (row) => ["epacket.default.us", "express.default.us"].includes(row.code),
       },
     ],
     [openEdit, askConfirm, deleteMut, duplicateMut, t],

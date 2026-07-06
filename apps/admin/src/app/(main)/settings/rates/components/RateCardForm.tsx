@@ -338,6 +338,8 @@ function GeneralInfoTab({
 }: GeneralInfoTabProps) {
   const shippingMethod = watch("shippingMethod");
   const customerGroupIds = watch("customerGroupIds");
+  const code = watch("code");
+  const isDefaultRateCard = ["epacket.default.us", "express.default.us"].includes(code);
 
   const getErrorMessage = (field: keyof typeof INITIAL_FORM_STATE) => {
     const err = errors[field];
@@ -362,7 +364,7 @@ function GeneralInfoTab({
               });
             }}
             placeholder={tSettings("rates.placeholderCode")}
-            disabled={!isCreate && status !== "DRAFT"}
+            disabled={isDefaultRateCard || (!isCreate && status !== "DRAFT")}
             className={errors.code ? "border-destructive focus-visible:ring-destructive" : ""}
           />
           {errors.code && (
@@ -400,6 +402,7 @@ function GeneralInfoTab({
             render={({ field }) => (
               <Select
                 value={field.value}
+                disabled={isDefaultRateCard}
                 onValueChange={(v) => {
                   field.onChange(v);
                   const defaultStep = v === "EPACKET" ? 0.05 : 0.5;
@@ -423,7 +426,11 @@ function GeneralInfoTab({
             control={control}
             name="status"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select
+                value={field.value}
+                disabled={isDefaultRateCard}
+                onValueChange={field.onChange}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -447,7 +454,11 @@ function GeneralInfoTab({
             control={control}
             name="weightStep"
             render={({ field }) => (
-              <Select value={String(field.value)} onValueChange={(v) => field.onChange(Number(v))}>
+              <Select
+                value={String(field.value)}
+                disabled={isDefaultRateCard}
+                onValueChange={(v) => field.onChange(Number(v))}
+              >
                 <SelectTrigger
                   className={errors.weightStep ? "border-destructive focus:ring-destructive" : ""}
                 >
@@ -483,6 +494,7 @@ function GeneralInfoTab({
             type="number"
             step={0.01}
             {...register("minWeight", { valueAsNumber: true })}
+            disabled={isDefaultRateCard}
             className={errors.minWeight ? "border-destructive focus-visible:ring-destructive" : ""}
           />
           {errors.minWeight && (
@@ -499,6 +511,7 @@ function GeneralInfoTab({
             type="number"
             step={0.01}
             {...register("maxWeight", { valueAsNumber: true })}
+            disabled={isDefaultRateCard}
             className={errors.maxWeight ? "border-destructive focus-visible:ring-destructive" : ""}
           />
           {errors.maxWeight && (
@@ -520,6 +533,7 @@ function GeneralInfoTab({
                 value={field.value ?? ""}
                 onChange={field.onChange}
                 placeholder="dd/mm/yyyy"
+                disabled={isDefaultRateCard}
               />
             )}
           />
@@ -534,6 +548,7 @@ function GeneralInfoTab({
                 value={field.value ?? ""}
                 onChange={field.onChange}
                 placeholder="dd/mm/yyyy"
+                disabled={isDefaultRateCard}
               />
             )}
           />
@@ -559,6 +574,7 @@ function GeneralInfoTab({
                 <input
                   type="checkbox"
                   checked={checked}
+                  disabled={isDefaultRateCard}
                   onChange={() => {
                     const next = checked
                       ? customerGroupIds.filter((id) => id !== group.id)

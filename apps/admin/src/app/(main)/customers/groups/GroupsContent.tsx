@@ -104,18 +104,25 @@ export default function GroupsContent() {
         size: 250,
         cell: ({ row }) => {
           const m = row.original;
+          const isDefault = m.code === "default";
           return (
             <div className="flex items-center gap-2">
               <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
                 {m.name.charAt(0).toUpperCase()}
               </div>
-              <button
-                type="button"
-                className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary whitespace-nowrap"
-                onClick={() => setEditId(m.id)}
-              >
-                {m.name}
-              </button>
+              {isDefault ? (
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                  {m.name}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="cursor-pointer bg-transparent p-0 text-left text-sm font-medium text-foreground hover:text-primary whitespace-nowrap"
+                  onClick={() => setEditId(m.id)}
+                >
+                  {m.name}
+                </button>
+              )}
             </div>
           );
         },
@@ -188,6 +195,7 @@ export default function GroupsContent() {
         icon: <Pencil size={16} />,
         color: "primary",
         onClick: (row) => setEditId(row.id),
+        hidden: (row) => row.code === "default",
       },
       {
         key: "delete",
@@ -200,6 +208,7 @@ export default function GroupsContent() {
             onConfirm: () => deleteMut.mutate({ id: row.id }),
           });
         },
+        hidden: (row) => row.code === "default",
       },
     ],
     [t, askConfirm, deleteMut],
@@ -209,12 +218,18 @@ export default function GroupsContent() {
   const bulkActionConfig: BulkActionConfig<GroupRow> = useMemo(
     () => ({
       onBulkDelete: (selected, clearSelection) => {
+        const deletable = selected.filter((r) => r.code !== "default");
+        if (deletable.length === 0) {
+          toast("Không có nhóm khách hàng nào có thể xóa.", "warning");
+          clearSelection();
+          return;
+        }
         askConfirm({
           message: t("messages.confirmDelete"),
           onConfirm: async () => {
             isBulkRef.current = true;
             try {
-              await Promise.all(selected.map((r) => deleteMut.mutateAsync({ id: r.id })));
+              await Promise.all(deletable.map((r) => deleteMut.mutateAsync({ id: r.id })));
               toast(t("messages.deleteSuccess") ?? "Deleted", "success");
               clearSelection();
             } catch (err: unknown) {
