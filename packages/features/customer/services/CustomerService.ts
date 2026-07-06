@@ -15,7 +15,7 @@ export class CustomerService {
   }
 
   async listCustomers(
-    filters: { status?: CustomerStatus; search?: string },
+    filters: { status?: CustomerStatus; search?: string; groupId?: number; rateCardId?: number },
     page?: number,
     perPage?: number,
   ) {
@@ -35,6 +35,7 @@ export class CustomerService {
     gender?: string;
     description?: string;
     hashedPassword?: string;
+    groupId?: number | null;
   }) {
     const existing = await this.deps.customerRepo.findByEmail(data.email);
     if (existing) {
@@ -68,6 +69,7 @@ export class CustomerService {
       gender?: string | null;
       description?: string | null;
       status?: CustomerStatus;
+      groupId?: number | null;
     },
     options?: { bypassUsernameLimit?: boolean },
   ) {

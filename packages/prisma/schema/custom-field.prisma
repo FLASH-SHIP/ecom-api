@@ -1,0 +1,54 @@
+// Ecom — Custom Field Module
+
+model FieldGroup {
+  id        Int         @id @default(autoincrement())
+  title     String
+  order     Int         @default(0)
+  rules     Json?       // Matching conditions: page_template, category, model_name, etc.
+  status    String      @default("published") // "published" | "draft"
+  items     FieldItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([status])
+  @@map("field_groups")
+}
+
+model FieldItem {
+  id           Int         @id @default(autoincrement())
+  groupId      Int
+  group        FieldGroup  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  parentId     Int?
+  parent       FieldItem?  @relation("FieldItemTree", fields: [parentId], references: [id])
+  children     FieldItem[] @relation("FieldItemTree")
+  slug         String
+  title        String
+  type         String      // text, number, email, textarea, select, checkbox, radio, image, file, wysiwyg, repeater, color, date, url
+  placeholder  String?
+  instructions String?     @db.Text
+  options      Json?       // For select/checkbox/radio: [{label, value}]
+  defaultValue String?
+  order        Int         @default(0)
+  values       CustomFieldValue[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([groupId, slug])
+  @@index([parentId])
+  @@map("field_items")
+}
+
+model CustomFieldValue {
+  id          Int       @id @default(autoincrement())
+  fieldItemId Int
+  fieldItem   FieldItem @relation(fields: [fieldItemId], references: [id], onDelete: Cascade)
+  useFor      String    // "post" | "page" | "category"
+  useForId    Int
+  value       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([fieldItemId, useFor, useForId])
+  @@index([useFor, useForId])
+  @@map("custom_field_values")
+}

@@ -2,7 +2,7 @@
 
 import { cn } from "@ecom/ui/lib/utils";
 import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -57,15 +57,62 @@ export function showToast(messageOrType: string, typeOrMessage?: string) {
   }
 }
 
+interface ToastItemProps {
+  toast: Toast;
+  onClose: (id: string) => void;
+}
+
+function ToastItem({ toast, onClose }: ToastItemProps) {
+  const Icon = toastIcons[toast.type];
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startTimer = useCallback(() => {
+    timeoutRef.current = setTimeout(() => {
+      onClose(toast.id);
+    }, 5000);
+  }, [toast.id, onClose]);
+
+  const clearTimer = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    startTimer();
+    return () => clearTimer();
+  }, [startTimer, clearTimer]);
+
+  return (
+    <div
+      className={cn(
+        "flex min-w-[280px] max-w-[420px] items-start gap-3 rounded-lg border px-4 py-3 shadow-lg animate-in slide-in-from-right-full duration-300",
+        toastStyles[toast.type],
+      )}
+      role="alert"
+      onMouseEnter={clearTimer}
+      onMouseLeave={startTimer}
+    >
+      <Icon className="mt-0.5 size-5 shrink-0" strokeWidth={1.8} />
+      <p className="flex-1 text-sm font-medium">{toast.message}</p>
+      <button
+        type="button"
+        onClick={() => onClose(toast.id)}
+        className="shrink-0 rounded-sm p-0.5 opacity-60 transition-opacity hover:opacity-100"
+      >
+        <X className="size-4" />
+      </button>
+    </div>
+  );
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = useCallback((message: string, type: ToastType = "info") => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 5000);
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -79,29 +126,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
       <div className="fixed bottom-4 right-4 z-toast flex flex-col-reverse gap-2">
-        {toasts.map((t) => {
-          const Icon = toastIcons[t.type];
-          return (
-            <div
-              key={t.id}
-              className={cn(
-                "flex min-w-[280px] max-w-[420px] items-start gap-3 rounded-lg border px-4 py-3 shadow-lg animate-in slide-in-from-right-full duration-300",
-                toastStyles[t.type],
-              )}
-              role="alert"
-            >
-              <Icon className="mt-0.5 size-5 shrink-0" strokeWidth={1.8} />
-              <p className="flex-1 text-sm font-medium">{t.message}</p>
-              <button
-                type="button"
-                onClick={() => removeToast(t.id)}
-                className="shrink-0 rounded-sm p-0.5 opacity-60 transition-opacity hover:opacity-100"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-          );
-        })}
+        {toasts.map((t) => (
+          <ToastItem key={t.id} toast={t} onClose={removeToast} />
+        ))}
       </div>
     </ToastContext.Provider>
   );

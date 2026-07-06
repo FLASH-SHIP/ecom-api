@@ -63,9 +63,11 @@
     "users": "Thành viên",
     "roles": "Vai trò & Quyền",
     "customers": "Khách hàng",
+    "customer-groups": "Nhóm khách hàng",
     "custom-fields": "Trường tùy chỉnh",
     "admin-menus": "Menu hệ thống",
     "settings": "Cấu hình chung",
+    "rates": "Bảng giá cước",
     "audit-logs": "Nhật ký hệ thống",
     "system": "Hệ thống",
     "tools": "Công cụ đồng bộ",
@@ -146,6 +148,12 @@
       "update": "Cập nhật khách hàng",
       "delete": "Xóa khách hàng"
     },
+    "customer-groups": {
+      "read": "Xem nhóm khách hàng",
+      "create": "Tạo nhóm khách hàng mới",
+      "update": "Cập nhật nhóm khách hàng",
+      "delete": "Xóa nhóm khách hàng"
+    },
     "audit-logs": {
       "read": "Xem nhật ký hệ thống",
       "purge": "Xóa nhật ký cũ"
@@ -163,6 +171,12 @@
     "settings": {
       "read": "Xem cấu hình",
       "update": "Cập nhật cấu hình"
+    },
+    "rates": {
+      "read": "Xem bảng giá cước",
+      "create": "Tạo bảng giá cước mới",
+      "update": "Cập nhật bảng giá cước",
+      "delete": "Xóa bảng giá cước"
     },
     "tools": {
       "export": "Xuất dữ liệu",
