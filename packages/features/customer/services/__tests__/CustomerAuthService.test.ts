@@ -45,6 +45,7 @@ function createMockDeps() {
       findByEmail: vi.fn(),
       isUsernameAvailable: vi.fn(),
       generateUniqueUsername: vi.fn(),
+      findOrCreateDefaultGroup: vi.fn(),
       createWithPassword: vi.fn(),
       findById: vi.fn(),
       findByEmailOrUsername: vi.fn(),
@@ -106,6 +107,11 @@ describe("CustomerAuthService", () => {
     });
     deps.customerRepo.findByEmail.mockResolvedValue(null);
     deps.customerRepo.generateUniqueUsername.mockResolvedValue("johndoe");
+    deps.customerRepo.findOrCreateDefaultGroup.mockResolvedValue({
+      id: 10,
+      code: "default",
+      name: "Default Group",
+    });
     deps.customerRepo.createWithPassword.mockResolvedValue({
       id: 42,
       email: "john@example.com",

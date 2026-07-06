@@ -61,6 +61,14 @@ export class CustomerGroupService {
       );
     }
 
+    if (group.code === "default") {
+      throw new ErrorWithCode(
+        ErrorCode.CustomerGroupConflict,
+        "Không thể chỉnh sửa hoặc cập nhật nhóm khách hàng mặc định của hệ thống.",
+        400,
+      );
+    }
+
     if (data.code && data.code.toLowerCase() !== group.code) {
       const existing = await this.deps.customerGroupRepo.findByCode(data.code);
       if (existing) {
@@ -82,6 +90,14 @@ export class CustomerGroupService {
         ErrorCode.CustomerGroupNotFound,
         `Không tìm thấy nhóm khách hàng để xóa.`,
         404,
+      );
+    }
+
+    if (group.code === "default") {
+      throw new ErrorWithCode(
+        ErrorCode.CustomerGroupConflict,
+        "Không thể xóa nhóm khách hàng mặc định của hệ thống.",
+        400,
       );
     }
 
