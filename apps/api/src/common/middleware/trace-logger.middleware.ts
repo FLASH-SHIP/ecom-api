@@ -9,7 +9,10 @@ export class TraceLoggerMiddleware implements NestMiddleware {
     const traceId = (req.headers["x-trace-id"] as string) || randomUUID();
     res.setHeader("x-trace-id", traceId);
 
-    loggerContext.run({ traceId }, () => {
+    const ipAddress = (req.headers["x-forwarded-for"] as string) || req.socket.remoteAddress;
+    const userAgent = req.headers["user-agent"];
+
+    loggerContext.run({ traceId, ipAddress, userAgent }, () => {
       next();
     });
   }

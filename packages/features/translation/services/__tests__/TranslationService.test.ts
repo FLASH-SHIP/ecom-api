@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SlugRepository } from "../../../blog/repositories/SlugRepository";
+import type { SlugRepository } from "@ecom/features/blog/repositories/SlugRepository";
 import type { TranslationRepository } from "../../repositories/TranslationRepository";
 import { TranslationService } from "../TranslationService";
 
@@ -22,7 +22,7 @@ function createMockRepo() {
     deleteCategoryTranslation: vi.fn(),
     deletePageTranslation: vi.fn(),
     deleteTagTranslation: vi.fn(),
-  } as unknown as TranslationRepository & Record<string, ReturnType<typeof vi.fn>>;
+  } as any;
 }
 
 function createMockSlugRepo() {
@@ -30,21 +30,15 @@ function createMockSlugRepo() {
     findByReference: vi.fn(),
     upsertTranslation: vi.fn(),
     deleteTranslation: vi.fn(),
-  } as unknown as SlugRepository & Record<string, ReturnType<typeof vi.fn>>;
-}
-
-function createService(repo = createMockRepo(), slugRepo = createMockSlugRepo()) {
-  return {
-    service: new TranslationService({ translationRepo: repo, slugRepo }),
-    repo,
-    slugRepo,
-  };
+  } as any;
 }
 
 describe("TranslationService", () => {
   describe("getLanguages", () => {
     it("should return active languages", async () => {
-      const { service, repo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       repo.findActiveLanguages.mockResolvedValue([
         { code: "en", name: "English" },
@@ -58,7 +52,9 @@ describe("TranslationService", () => {
 
   describe("getTranslation", () => {
     it("should get post translation", async () => {
-      const { service, repo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       repo.findPostTranslation.mockResolvedValue({ title: "Hello", langCode: "en" });
 
@@ -67,7 +63,9 @@ describe("TranslationService", () => {
     });
 
     it("should get category translation", async () => {
-      const { service, repo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       repo.findCategoryTranslation.mockResolvedValue({ name: "Tech" });
 
@@ -76,7 +74,9 @@ describe("TranslationService", () => {
     });
 
     it("should get page translation", async () => {
-      const { service, repo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       repo.findPageTranslation.mockResolvedValue({ title: "About" });
 
@@ -85,7 +85,9 @@ describe("TranslationService", () => {
     });
 
     it("should get tag translation", async () => {
-      const { service, repo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       repo.findTagTranslation.mockResolvedValue({ name: "JavaScript" });
 
@@ -96,7 +98,9 @@ describe("TranslationService", () => {
 
   describe("saveTranslation", () => {
     it("should save post translation", async () => {
-      const { service, repo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       repo.upsertPostTranslation.mockResolvedValue({ id: 1 });
 
@@ -114,7 +118,9 @@ describe("TranslationService", () => {
     });
 
     it("should save category translation", async () => {
-      const { service, repo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       repo.upsertCategoryTranslation.mockResolvedValue({ id: 1 });
 
@@ -127,7 +133,9 @@ describe("TranslationService", () => {
     });
 
     it("should save tag translation", async () => {
-      const { service, repo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       repo.upsertTagTranslation.mockResolvedValue({ id: 1 });
 
@@ -139,29 +147,37 @@ describe("TranslationService", () => {
 
   describe("deleteTranslation", () => {
     it("should delete post translation", async () => {
-      const { service, repo, slugRepo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
-      slugRepo.findByReference.mockResolvedValue(null);
       repo.deletePostTranslation.mockResolvedValue({ id: 1 });
+      slugRepo.findByReference.mockResolvedValue({ id: 123 });
 
       await service.deleteTranslation("post", 1, "vi");
       expect(repo.deletePostTranslation).toHaveBeenCalledWith(1, "vi");
+      expect(slugRepo.deleteTranslation).toHaveBeenCalledWith(123, "vi");
     });
 
     it("should delete page translation", async () => {
-      const { service, repo, slugRepo } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
-      slugRepo.findByReference.mockResolvedValue(null);
       repo.deletePageTranslation.mockResolvedValue({ id: 1 });
+      slugRepo.findByReference.mockResolvedValue({ id: 456 });
 
       await service.deleteTranslation("page", 1, "vi");
       expect(repo.deletePageTranslation).toHaveBeenCalledWith(1, "vi");
+      expect(slugRepo.deleteTranslation).toHaveBeenCalledWith(456, "vi");
     });
   });
 
   describe("unsupported entity type", () => {
     it("should throw BadRequest for unsupported entity in getTranslation", async () => {
-      const { service } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       await expect(service.getTranslation("unknown" as never, 1, "en")).rejects.toThrow(
         "Unsupported entity type",
@@ -169,7 +185,9 @@ describe("TranslationService", () => {
     });
 
     it("should throw BadRequest for unsupported entity in saveTranslation", async () => {
-      const { service } = createService();
+      const repo = createMockRepo();
+      const slugRepo = createMockSlugRepo();
+      const service = new TranslationService({ translationRepo: repo, slugRepo });
 
       await expect(service.saveTranslation("unknown" as never, 1, "en", {})).rejects.toThrow(
         "Unsupported entity type",

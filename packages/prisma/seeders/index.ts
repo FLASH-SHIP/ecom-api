@@ -9,13 +9,15 @@
  *  SEED_ONLY=CustomFields yarn prisma:seed
  */
 
-import { PermissionsSeeder } from "./01-permissions.seeder";
-import { RolesSeeder } from "./02-roles.seeder";
-import { AdminUserSeeder } from "./03-admin-user.seeder";
-import { SettingsSeeder } from "./04-settings.seeder";
-import { LanguagesSeeder } from "./05-languages.seeder";
-import { CustomFieldsSeeder } from "./06-custom-fields.seeder";
-import { AdminMenuSeeder } from "./07-admin-menu.seeder";
+import { AdminMenuSeeder } from "./AdminMenuSeeder";
+import { AdminUserSeeder } from "./AdminUserSeeder";
+import { CustomersSeeder } from "./CustomersSeeder";
+import { CustomFieldsSeeder } from "./CustomFieldsSeeder";
+import { LanguagesSeeder } from "./LanguagesSeeder";
+import { PermissionsSeeder } from "./PermissionsSeeder";
+import { RateCardsSeeder } from "./RateCardsSeeder";
+import { RolesSeeder } from "./RolesSeeder";
+import { SettingsSeeder } from "./SettingsSeeder";
 import { CountriesSeeder } from "./08-countries.seeder";
 import { TransportModesSeeder } from "./09-transport-modes.seeder";
 import type { Seeder } from "./seeder.interface";
@@ -32,6 +34,8 @@ export const SEEDERS: Seeder[] = [
   LanguagesSeeder, // 05 — no dependencies
   CustomFieldsSeeder, // 06 — no dependencies
   AdminMenuSeeder, // 07 — no dependencies
+  RateCardsSeeder, // 11 — depends on: Customer
+  CustomersSeeder, // 12 — depends on: RateCardsSeeder (for CustomerGroups)
   CountriesSeeder, // 08 — no dependencies
   TransportModesSeeder, // 09 — no dependencies
 ];

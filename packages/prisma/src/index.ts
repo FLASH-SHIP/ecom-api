@@ -9,6 +9,8 @@ import {
   CustomerStatus,
   Prisma,
   PrismaClient,
+  RateCardType,
+  ShippingMethod,
   UserStatus,
   VerificationCodeStatus,
 } from "./generated/prisma/client";
@@ -99,7 +101,8 @@ const prismaWithReplicas = hasReplicas
 const extendedPrisma = prismaWithReplicas.$extends({
   query: {
     $allModels: {
-      async create({ model, args, query }) {
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic hook arguments
+      async create({ model, args, query }: any) {
         if (AUDIT_EXEMPT_MODELS.includes(model)) {
           return query(args);
         }
@@ -119,6 +122,8 @@ const extendedPrisma = prismaWithReplicas.$extends({
               entityId,
               entityType: model,
               newValues: result ? JSON.parse(JSON.stringify(result)) : null,
+              ipAddress: store?.ipAddress || null,
+              userAgent: store?.userAgent || null,
               metadata: { source: "prisma-extension" },
             },
           });
@@ -128,7 +133,9 @@ const extendedPrisma = prismaWithReplicas.$extends({
 
         return result;
       },
-      async update({ model, args, query }) {
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic hook arguments
+      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: auditing hooks have dynamic logic
+      async update({ model, args, query }: any) {
         if (AUDIT_EXEMPT_MODELS.includes(model)) {
           return query(args);
         }
@@ -137,12 +144,12 @@ const extendedPrisma = prismaWithReplicas.$extends({
         try {
           const delegateName = getPrismaDelegateName(model);
           if (args.where) {
-            const delegate = (
-              basePrisma as unknown as Record<
-                string,
-                { findUnique?: (args: unknown) => Promise<unknown> }
-              >
-            )[delegateName];
+            const tx = txStorage.getStore();
+            const client = (tx || basePrisma) as Record<
+              string,
+              { findUnique?: (args: unknown) => Promise<unknown> }
+            >;
+            const delegate = client[delegateName];
             if (delegate && typeof delegate.findUnique === "function") {
               oldRecord = await delegate.findUnique({
                 where: args.where,
@@ -154,6 +161,26 @@ const extendedPrisma = prismaWithReplicas.$extends({
         }
 
         const result = await query(args);
+
+        let newRecord: unknown = null;
+        try {
+          const delegateName = getPrismaDelegateName(model);
+          if (args.where) {
+            const tx = txStorage.getStore();
+            const client = (tx || basePrisma) as Record<
+              string,
+              { findUnique?: (args: unknown) => Promise<unknown> }
+            >;
+            const delegate = client[delegateName];
+            if (delegate && typeof delegate.findUnique === "function") {
+              newRecord = await delegate.findUnique({
+                where: args.where,
+              });
+            }
+          }
+        } catch {
+          // ignore
+        }
 
         try {
           const store = loggerContext.getStore();
@@ -168,7 +195,13 @@ const extendedPrisma = prismaWithReplicas.$extends({
               entityId,
               entityType: model,
               oldValues: oldRecord ? JSON.parse(JSON.stringify(oldRecord)) : null,
-              newValues: result ? JSON.parse(JSON.stringify(result)) : null,
+              newValues: newRecord
+                ? JSON.parse(JSON.stringify(newRecord))
+                : result
+                  ? JSON.parse(JSON.stringify(result))
+                  : null,
+              ipAddress: store?.ipAddress || null,
+              userAgent: store?.userAgent || null,
               metadata: { source: "prisma-extension" },
             },
           });
@@ -178,7 +211,8 @@ const extendedPrisma = prismaWithReplicas.$extends({
 
         return result;
       },
-      async delete({ model, args, query }) {
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic hook arguments
+      async delete({ model, args, query }: any) {
         if (AUDIT_EXEMPT_MODELS.includes(model)) {
           return query(args);
         }
@@ -187,12 +221,12 @@ const extendedPrisma = prismaWithReplicas.$extends({
         try {
           const delegateName = getPrismaDelegateName(model);
           if (args.where) {
-            const delegate = (
-              basePrisma as unknown as Record<
-                string,
-                { findUnique?: (args: unknown) => Promise<unknown> }
-              >
-            )[delegateName];
+            const tx = txStorage.getStore();
+            const client = (tx || basePrisma) as Record<
+              string,
+              { findUnique?: (args: unknown) => Promise<unknown> }
+            >;
+            const delegate = client[delegateName];
             if (delegate && typeof delegate.findUnique === "function") {
               oldRecord = await delegate.findUnique({
                 where: args.where,
@@ -218,6 +252,8 @@ const extendedPrisma = prismaWithReplicas.$extends({
               entityId,
               entityType: model,
               oldValues: oldRecord ? JSON.parse(JSON.stringify(oldRecord)) : null,
+              ipAddress: store?.ipAddress || null,
+              userAgent: store?.userAgent || null,
               metadata: { source: "prisma-extension" },
             },
           });
@@ -238,6 +274,26 @@ export const prisma: PrismaClient =
   (globalForPrisma.prisma as PrismaClient | undefined) ??
   (new Proxy(extendedPrisma as unknown as Record<string, unknown>, {
     get(target, prop) {
+      if (prop === "$transaction") {
+        const originalTransaction = Reflect.get(target, prop, target) as (
+          ...args: unknown[]
+        ) => unknown;
+        return (
+          // biome-ignore lint/suspicious/noExplicitAny: proxy args
+          ...args: any[]
+        ) => {
+          if (typeof args[0] === "function") {
+            const callback = args[0];
+            args[0] = async (
+              // biome-ignore lint/suspicious/noExplicitAny: prisma transaction client
+              tx: any,
+            ) => {
+              return txStorage.run(tx, () => callback(tx));
+            };
+          }
+          return originalTransaction.apply(target, args);
+        };
+      }
       const tx = txStorage.getStore();
       const activeTarget = (tx ?? target) as Record<string | symbol, unknown>;
       const value = Reflect.get(activeTarget, prop, activeTarget);
@@ -278,6 +334,8 @@ export {
   PostFactory,
   Prisma,
   PrismaClient,
+  RateCardType,
+  ShippingMethod,
   UserFactory,
   UserStatus,
   VerificationCodeStatus,

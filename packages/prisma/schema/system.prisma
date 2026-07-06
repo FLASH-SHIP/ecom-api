@@ -1,0 +1,359 @@
+// Ecom — System Modules (Utilities, SEO, Webhook, Forms, Logs)
+
+model Language {
+  id        Int      @id @default(autoincrement())
+  name      String
+  locale    String   @unique
+  code      String   @unique
+  flag      String?
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  isRtl     Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  meta LanguageMeta[]
+
+  @@map("languages")
+}
+
+model LanguageMeta {
+  id            Int      @id @default(autoincrement())
+  langCode      String
+  origin        String
+  referenceId   Int
+  referenceType String
+  language      Language @relation(fields: [langCode], references: [code], onDelete: Cascade)
+
+  @@unique([referenceId, referenceType])
+  @@index([langCode])
+  @@index([origin])
+  @@index([referenceId, referenceType])
+  @@map("language_meta")
+}
+
+model Slug {
+  id            Int               @id @default(autoincrement())
+  key           String
+  referenceId   Int
+  referenceType String
+  prefix        String            @default("")
+  translations  SlugTranslation[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([key, prefix])
+  @@unique([referenceId, referenceType])
+  @@map("slugs")
+}
+
+model SlugTranslation {
+  id       Int    @id @default(autoincrement())
+  slugId   Int
+  slug     Slug   @relation(fields: [slugId], references: [id], onDelete: Cascade)
+  langCode String
+  key      String
+
+  @@unique([slugId, langCode])
+  @@map("slug_translations")
+}
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  module     String // posts, categories, users, roles, settings, etc.
+  entityId   String? // ID of the affected entity
+  entityType String? // Model name (Post, Category, User, etc.)
+  oldValues  Json? // Previous values (for UPDATE)
+  newValues  Json? // New values (for CREATE, UPDATE)
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  metadata   Json? // Extra context
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([module])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model RequestLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  method     String // GET, POST, PUT, DELETE, etc.
+  url        String   @db.Text
+  statusCode Int?
+  duration   Int? // Response time in ms
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  referer    String?  @db.Text
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([method])
+  @@index([statusCode])
+  @@index([createdAt])
+  @@map("request_logs")
+}
+
+model Webhook {
+  id        Int      @id @default(autoincrement())
+  name      String
+  url       String
+  secret    String? // SEC-10: TODO — hash like API keys when scaling to external webhook consumers
+  events    String[] // e.g. ["post.published", "customer.registered"]
+  isActive  Boolean  @default(true)
+  retries   Int      @default(3)
+  timeout   Int      @default(30) // seconds
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logs WebhookLog[]
+
+  @@map("webhooks")
+}
+
+model WebhookLog {
+  id         Int      @id @default(autoincrement())
+  webhookId  Int
+  webhook    Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  event      String
+  payload    Json?
+  response   String?  @db.Text
+  statusCode Int?
+  success    Boolean  @default(false)
+  attempts   Int      @default(1)
+  error      String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([webhookId])
+  @@index([event])
+  @@index([createdAt])
+  @@map("webhook_logs")
+}
+
+model ContactSubmission {
+  id         Int       @id @default(autoincrement())
+  formSlug   String    @default("default")
+  name       String
+  email      String
+  phone      String?
+  subject    String?
+  message    String    @db.Text
+  metadata   Json? // extra fields from custom forms
+  status     String    @default("new") // new, read, replied, archived
+  assigneeId Int?
+  assignee   User?     @relation("ContactAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  repliedAt  DateTime?
+  ipAddress  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([formSlug])
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_submissions")
+}
+
+model Notification {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type          String // comment, contact, system, webhook
+  title         String
+  message       String   @db.Text
+  link          String? // URL to navigate to
+  referenceId   Int? // Related entity ID
+  referenceType String? // Related entity type
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model Redirect {
+  id         Int      @id @default(autoincrement())
+  fromPath   String   @unique
+  toPath     String
+  statusCode Int      @default(301) // 301 = permanent, 302 = temporary
+  isActive   Boolean  @default(true)
+  hitCount   Int      @default(0)
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([fromPath])
+  @@index([isActive])
+  @@map("redirects")
+}
+
+model Taxonomy {
+  id          Int        @id @default(autoincrement())
+  name        String
+  slug        String
+  type        String // e.g., "category", "tag", "topic", "series", "product_type"
+  description String?
+  parentId    Int?
+  parent      Taxonomy?  @relation("TaxonomyTree", fields: [parentId], references: [id])
+  children    Taxonomy[] @relation("TaxonomyTree")
+  order       Int        @default(0)
+  metadata    Json? // Extensible key-value metadata
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([slug, type])
+  @@index([type])
+  @@index([parentId])
+  @@map("taxonomies")
+}
+
+model ContentTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  type      String // "post", "page", "email"
+  content   String?  @db.Text
+  structure Json? // JSON layout/block structure
+  thumbnail String?
+  isActive  Boolean  @default(true)
+  createdBy Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@map("content_templates")
+}
+
+model Form {
+  id              Int              @id @default(autoincrement())
+  name            String
+  slug            String           @unique
+  description     String?          @db.Text
+  successMessage  String?          @db.Text
+  redirectUrl     String?
+  isActive        Boolean          @default(true)
+  notifyEmail     String?
+  fields          FormField[]
+  submissions     FormSubmission[]
+  submissionCount Int              @default(0)
+  createdBy       Int?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([isActive])
+  @@map("forms")
+}
+
+model FormField {
+  id           Int      @id @default(autoincrement())
+  formId       Int
+  form         Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  name         String
+  label        String
+  type         String   @default("text")
+  placeholder  String?
+  helpText     String?
+  defaultValue String?
+  options      Json?
+  validations  Json?
+  isRequired   Boolean  @default(false)
+  position     Int      @default(0)
+  width        String?  @default("full")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([formId])
+  @@index([position])
+  @@map("form_fields")
+}
+
+model FormSubmission {
+  id        Int      @id @default(autoincrement())
+  formId    Int
+  form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  data      Json
+  ipAddress String?
+  userAgent String?  @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([formId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("form_submissions")
+}
+
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  event       String
+  payload     Json
+  status      String    @default("PENDING") // PENDING, SENT, FAILED
+  attempts    Int       @default(0)
+  error       String?   @db.Text
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([status])
+  @@index([status, createdAt]) // PERF-07: Composite index for worker query (WHERE status ORDER BY createdAt)
+  @@map("outbox_events")
+}
+
+model Revision {
+  id            Int      @id @default(autoincrement())
+  referenceId   Int
+  referenceType String // "post" | "page"
+  title         String
+  content       String?  @db.Text
+  authorId      Int
+  author        User     @relation(fields: [authorId], references: [id])
+  note          String?
+  createdAt     DateTime @default(now())
+
+  @@index([referenceId, referenceType])
+  @@index([authorId])
+  @@map("revisions")
+}
+
+model SeoMeta {
+  id             Int     @id @default(autoincrement())
+  seoTitle       String?
+  seoDescription String? @db.Text
+  seoImage       String?
+  indexMode      String? @default("index")
+
+  postId Int?  @unique
+  post   Post? @relation("PostSeo", fields: [postId], references: [id], onDelete: Cascade)
+
+  categoryId Int?      @unique
+  category   Category? @relation("CategorySeo", fields: [categoryId], references: [id], onDelete: Cascade)
+
+  pageId Int?  @unique
+  page   Page? @relation("PageSeo", fields: [pageId], references: [id], onDelete: Cascade)
+
+  tagId Int? @unique
+  tag   Tag? @relation("TagSeo", fields: [tagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("seo_meta")
+}

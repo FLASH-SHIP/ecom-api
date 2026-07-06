@@ -1,0 +1,46 @@
+model MediaFolder {
+  id         Int           @id @default(autoincrement())
+  name       String
+  slug       String        @unique
+  parentId   Int?
+  parent     MediaFolder?  @relation("FolderTree", fields: [parentId], references: [id])
+  children   MediaFolder[] @relation("FolderTree")
+  files      MediaFile[]
+  color      String?
+  isFavorite Boolean       @default(false)
+  deletedAt  DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([parentId])
+  @@index([slug])
+  @@map("media_folders")
+}
+
+model MediaFile {
+  id          Int          @id @default(autoincrement())
+  name        String
+  fileName    String
+  mimeType    String
+  size        Int
+  url         String
+  disk        String       @default("local")
+  width       Int?
+  height      Int?
+  alt         String?
+  description String?      @db.Text
+  folderId    Int?
+  folder      MediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  uploadedBy  Int?
+  visibility  String       @default("public")
+  accessMode  String?
+  isFavorite  Boolean      @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([folderId])
+  @@index([mimeType])
+  @@index([uploadedBy])
+  @@map("media_files")
+}

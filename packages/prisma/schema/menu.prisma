@@ -1,0 +1,92 @@
+// Ecom — Menu Module
+
+model AdminMenuItem {
+  id              Int                        @id @default(autoincrement())
+  key             String                     @unique // e.g. "cms-core-dashboard"
+  name            String // Default display name (English)
+  description     String?                    @db.Text
+  icon            String? // e.g. "ti ti-home"
+  route           String? // Frontend route path, null = parent-only
+  permissions     Json? // String[] of permission names for access control
+  childrenDisplay String?                    @default("sidebar") // "sidebar" | "panel"
+  section         String? // Section grouping for panel display
+  priority        Int                        @default(0)
+  isActive        Boolean                    @default(true)
+  parentId        Int?
+  parent          AdminMenuItem?             @relation("MenuTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children        AdminMenuItem[]            @relation("MenuTree")
+  translations    AdminMenuItemTranslation[]
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@index([parentId])
+  @@index([priority])
+  @@index([isActive])
+  @@map("admin_menu_items")
+}
+
+model AdminMenuItemTranslation {
+  id          Int           @id @default(autoincrement())
+  menuItemId  Int
+  menuItem    AdminMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  langCode    String
+  name        String
+  description String?       @db.Text
+  section     String?
+
+  @@unique([menuItemId, langCode])
+  @@map("admin_menu_item_translations")
+}
+
+model Menu {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  slug      String     @unique
+  location  String?
+  isActive  Boolean    @default(true)
+  items     MenuItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([location])
+  @@index([isActive])
+  @@map("menus")
+}
+
+model MenuItem {
+  id            Int                   @id @default(autoincrement())
+  menuId        Int
+  menu          Menu                  @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  label         String
+  url           String?
+  target        String?               @default("_self")
+  linkType      String                @default("custom")
+  referenceId   Int?
+  referenceType String?
+  icon          String?
+  cssClass      String?
+  parentId      Int?
+  parent        MenuItem?             @relation("MenuItemTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children      MenuItem[]            @relation("MenuItemTree")
+  translations  MenuItemTranslation[]
+  position      Int                   @default(0)
+  isActive      Boolean               @default(true)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([menuId])
+  @@index([parentId])
+  @@index([position])
+  @@map("menu_items")
+}
+
+model MenuItemTranslation {
+  id         Int      @id @default(autoincrement())
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  langCode   String
+  label      String
+
+  @@unique([menuItemId, langCode])
+  @@map("menu_item_translations")
+}

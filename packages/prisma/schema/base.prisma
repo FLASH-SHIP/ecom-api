@@ -1,0 +1,19 @@
+// Ecom — Base Schema Config
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+  output          = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ContentStatus {
+  DRAFT
+  PENDING // Submitted for review
+  REVIEW // Under review by editor
+  REJECTED // Rejected with feedback
+  PUBLISHED
+  ARCHIVED
+}
