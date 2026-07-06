@@ -143,7 +143,10 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
             style={{ zIndex: 9999 }}
           >
             <DropdownMenuItem asChild>
-              <NextLink href="/profile/info" className="flex items-center gap-2 cursor-pointer w-full">
+              <NextLink
+                href="/profile/info"
+                className="flex items-center gap-2 cursor-pointer w-full"
+              >
                 <UserIcon className="h-4 w-4" />
                 {currentLocale === "vi" ? "Thông tin cá nhân" : "Personal Info"}
               </NextLink>

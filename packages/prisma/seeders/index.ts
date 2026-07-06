@@ -16,6 +16,8 @@ import { SettingsSeeder } from "./04-settings.seeder";
 import { LanguagesSeeder } from "./05-languages.seeder";
 import { CustomFieldsSeeder } from "./06-custom-fields.seeder";
 import { AdminMenuSeeder } from "./07-admin-menu.seeder";
+import { CountriesSeeder } from "./08-countries.seeder";
+import { TransportModesSeeder } from "./09-transport-modes.seeder";
 import type { Seeder } from "./seeder.interface";
 
 /**
@@ -30,4 +32,6 @@ export const SEEDERS: Seeder[] = [
   LanguagesSeeder, // 05 — no dependencies
   CustomFieldsSeeder, // 06 — no dependencies
   AdminMenuSeeder, // 07 — no dependencies
+  CountriesSeeder, // 08 — no dependencies
+  TransportModesSeeder, // 09 — no dependencies
 ];

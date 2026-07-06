@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type PostStatus = "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED";
