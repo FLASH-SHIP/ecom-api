@@ -13,6 +13,8 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { useContainer } from "class-validator";
 import compression from "compression";
 import helmet from "helmet";
+import type { NestExpressApplication } from "@nestjs/platform-express";
+import { join } from "node:path";
 import { AppModule } from "./app.module";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { ErrorWithCodeExceptionFilter } from "./common/filters/error-with-code-exception.filter";
@@ -30,8 +32,12 @@ async function bootstrap() {
   outboxWorker.start();
   console.log("📦 Transactional Outbox worker started");
 
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: new NestLogger(),
+  });
+
+  app.useStaticAssets(join(process.cwd(), "public"), {
+    prefix: "/public/",
   });
 
   app.use(helmet());

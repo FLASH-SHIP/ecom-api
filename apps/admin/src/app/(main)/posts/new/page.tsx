@@ -19,7 +19,7 @@ export default function NewPostPage() {
           </p>
         </div>
 
-        <PostForm mode="create"/>
+        <PostForm mode="create" />
       </div>
     </PermissionGuard>
   );

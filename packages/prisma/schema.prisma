@@ -1191,3 +1191,48 @@ model OutboxEvent {
   @@map("outbox_events")
 }
 
+model CrawlHsCode {
+  no                     Int     @id
+  portOfClearance        String? @map("port_of_clearance") @db.VarChar
+  hsCode                 String? @map("hs_code") @db.VarChar
+  articleDescription     String? @map("article_description")
+  generalRateOfDuty      String? @map("general_rate_of_duty") @db.VarChar
+  section301TariffsRate  String? @map("section_301_tariffs_rate") @db.VarChar
+  additionalTariffsRate  String? @map("additional_tariffs_rate") @db.VarChar
+  antidumpingDutyRate    String? @map("antidumping_duty_rate") @db.VarChar
+  countervailingDutyRate String? @map("countervailing_duty_rate") @db.VarChar
+  notes                  String? @db.Text
+
+  @@map("crawl_hscode")
+}
+
+model HsCodeFlexport {
+  code            String  @id @db.VarChar
+  description     String?
+  generalRate     String? @map("general_rate")
+  column2Rate     String? @map("column2_rate")
+  specialRate     String? @map("special_rate")
+  unitsofQuantity String? @map("unitsof_quantity") @db.VarChar
+
+  @@map("hscode_flexport")
+}
+
+model Country {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar
+  code      String   @unique @db.VarChar
+  flag      String?  @db.VarChar
+  createdAt DateTime @default(now())
+
+  @@map("countries")
+}
+
+model TransportMode {
+  id        String   @id @db.VarChar
+  name      String   @db.VarChar
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("transport_modes")
+}
+

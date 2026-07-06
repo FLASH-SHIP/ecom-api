@@ -2,6 +2,7 @@ import { router } from "@ecom/trpc/server/trpc";
 import { customerAuthRouter } from "./customer/auth/_router";
 import { blogRouter } from "./public/blog/_router";
 import { healthRouter } from "./public/health/_router";
+import { publicHsCodeRouter } from "./public/hscode/_router";
 import { publicLanguagesRouter } from "./public/languages/_router";
 import { publicPagesRouter } from "./public/pages/_router";
 import { adminMenusRouter } from "./viewer/admin-menus/_router";
@@ -78,11 +79,13 @@ export const appRouter = router({
       blog: blogRouter,
       pages: publicPagesRouter,
       languages: publicLanguagesRouter,
+      hscode: publicHsCodeRouter,
     }),
     blog: blogRouter,
     pages: publicPagesRouter,
     languages: publicLanguagesRouter,
     health: healthRouter,
+    hscode: publicHsCodeRouter,
   }),
 
   customer: router({
