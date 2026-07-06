@@ -1,0 +1,77 @@
+// Ecom — Rate Card (Bảng giá cước) Module
+
+enum ShippingMethod {
+  EXPRESS
+  EPACKET
+}
+
+enum RateCardType {
+  STEP_FIXED
+  RANGE_FIXED
+  RANGE_PER_KG
+}
+
+model RateCard {
+  id             Int             @id @default(autoincrement())
+  code           String          @unique
+  name           String
+  status         ContentStatus   @default(DRAFT)
+  shippingMethod ShippingMethod
+  country        String          @default("US")
+  origin         String?
+  currency       String          @default("USD")
+  weightStep     Decimal         @db.Decimal(10, 3)
+  minWeight      Decimal         @db.Decimal(10, 3)
+  maxWeight      Decimal         @db.Decimal(10, 3)
+  startDate      DateTime?       @map("start_date")
+  endDate        DateTime?       @map("end_date")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  groups         RateCardGroup[]
+  items          RateCardItem[]
+
+  @@index([shippingMethod, country, origin, status])
+  @@map("rate_cards")
+}
+
+model CustomerGroup {
+  id          Int             @id @default(autoincrement())
+  code        String          @unique
+  name        String
+  description String?         @db.Text
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  customers Customer[]
+  rateCards RateCardGroup[]
+
+  @@map("customer_groups")
+}
+
+model RateCardGroup {
+  id              Int           @id @default(autoincrement())
+  rateCardId      Int           @map("rate_card_id")
+  rateCard        RateCard      @relation(fields: [rateCardId], references: [id], onDelete: Cascade)
+  customerGroupId Int           @map("customer_group_id")
+  customerGroup   CustomerGroup @relation(fields: [customerGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([rateCardId, customerGroupId])
+  @@index([customerGroupId])
+  @@map("rate_card_groups")
+}
+
+model RateCardItem {
+  id          Int          @id @default(autoincrement())
+  rateCardId  Int          @map("rate_card_id")
+  rateCard    RateCard     @relation(fields: [rateCardId], references: [id], onDelete: Cascade)
+  startWeight Decimal      @db.Decimal(10, 3)
+  endWeight   Decimal      @db.Decimal(10, 3)
+  rateType    RateCardType @default(STEP_FIXED)
+  amount      Decimal      @db.Decimal(12, 2)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@index([rateCardId])
+  @@map("rate_card_items")
+}

@@ -1,0 +1,45 @@
+meta {
+  name: 10. Create Shipment
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{sbpBaseUrl}}/tmm/v2/external/shipments
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{sbpToken}}
+  secret: {{sbpSecret}}
+  lang: en
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "hubCode": "SGN",
+    "boxCodes": [
+      "VIR13251226005"
+    ],
+    "MAWB": "111-22223333",
+    "refNo": "TRACKCODE",
+    "flightCode": "VJ185",
+    "departureDate": "2025-12-06",
+    "arrivalDate": "2025-12-08",
+    "description": "This is a shipment"
+  }
+}
+
+docs {
+  # 10. Create Shipment
+  
+  Tạo lô hàng tổng (Shipment Consolidation) bằng cách gom một hoặc nhiều kiện hàng (Box codes) vào một số vận đơn hàng không chủ (MAWB - Master Air Waybill).
+  
+  ## Các tham số lưu ý:
+  * `hubCode`: Mã hub xử lý (Ví dụ `"SGN"` cho Hồ Chí Minh Hub).
+  * `boxCodes`: Mảng chứa các mã thùng hàng (Box codes).
+  * `MAWB`: Số vận đơn Master Air Waybill (định dạng `XXX-XXXXXXXX`).
+  * `departureDate` / `arrivalDate`: Ngày cất cánh và dự kiến hạ cánh của chuyến bay (định dạng `YYYY-MM-DD`).
+}

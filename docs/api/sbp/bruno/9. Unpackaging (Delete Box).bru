@@ -1,0 +1,30 @@
+meta {
+  name: 9. Unpackaging (Delete Box)
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{sbpBaseUrl}}/tmm/v2/external/boxes/:boxCode
+  body: none
+  auth: none
+}
+
+params:path {
+  boxCode: VIR13251226005
+}
+
+headers {
+  Authorization: Bearer {{sbpToken}}
+  secret: {{sbpSecret}}
+  lang: en
+}
+
+docs {
+  # 9. Unpackaging (Delete Box)
+  
+  Hủy đóng gói kiện hàng (Xóa thùng hàng / Box).
+  Các đơn hàng bên trong thùng hàng sẽ được giải phóng quay trở lại trạng thái "Đã check-in vào kho" và có thể gom nhóm vào các thùng hàng khác.
+  
+  Sử dụng path parameter `:boxCode` chứa mã Box của SBP cần xóa (ví dụ: `VIR13251226005`).
+}

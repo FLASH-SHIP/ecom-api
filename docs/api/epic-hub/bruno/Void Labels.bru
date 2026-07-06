@@ -1,0 +1,33 @@
+meta {
+  name: Void Labels
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{epicHubBaseUrl}}/v2/shipments/void
+  body: json
+  auth: none
+}
+
+headers {
+  Token: {{epicHubToken}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "TrackingNumber": "1Z000000000000"
+  }
+}
+
+docs {
+  # Void Labels
+  
+  Hủy nhãn vận chuyển đã khởi tạo.
+  
+  > ⚠️ Lưu ý quan trọng: Nhãn vận chuyển chỉ có thể hủy thành công khi trạng thái của nó ở dạng `"Created"` (chưa giao hàng cho bưu tá hoặc chưa có cập nhật trạng thái khác như `In transit`).
+  
+  ## Request Body
+  * `TrackingNumber` (Bắt buộc): Mã số tracking của kiện hàng cần hủy.
+}

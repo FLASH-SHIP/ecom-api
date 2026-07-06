@@ -1,0 +1,37 @@
+meta {
+  name: 13. Add Package into Shipment
+  type: http
+  seq: 13
+}
+
+put {
+  url: {{sbpBaseUrl}}/tmm/v2/external/shipments/package
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{sbpToken}}
+  secret: {{sbpSecret}}
+  lang: en
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "shipmentCode": "SIN02HCMC21102700001080",
+    "boxCodes": [
+      "VIR13251226006"
+    ]
+  }
+}
+
+docs {
+  # 13. Add Package into Shipment
+  
+  Thêm (append) thêm một hoặc nhiều thùng hàng (Box codes) vào một mã lô hàng tổng (Shipment Code) đã tạo sẵn.
+  
+  ## Request Body:
+  * `shipmentCode`: Mã định danh lô hàng tổng hiện tại.
+  * `boxCodes`: Mảng chứa danh sách mã thùng hàng bổ sung.
+}

@@ -1,0 +1,30 @@
+meta {
+  name: Track MailPlus Shipment
+  type: http
+  seq: 16
+}
+
+get {
+  url: {{ibcBaseUrl}}/mailplus/track/:track_number
+  body: none
+  auth: none
+}
+
+params:path {
+  track_number: MP12345678
+}
+
+docs {
+  # Track MailPlus Shipment (Tra cứu đơn hàng MailPlus)
+  
+  API này dùng để tra cứu hành trình các gói hàng Thương mại điện tử (e-Commerce) gửi qua dịch vụ MailPlus của IBC.
+  
+  ## HTTP Request
+  - **Method**: `GET`
+  - **URL**: `{{ibcBaseUrl}}/mailplus/track/:track_number`
+  
+  ## Path Parameters
+  - `track_number`: Mã vận đơn MailPlus của đơn hàng (ví dụ: `MP12345678`).
+  
+  *Lưu ý*: Trang tài liệu chi tiết của API này từ đối tác (`{{ibcBaseUrl}}/mailplus/documentation.html`) tạm thời trả về lỗi 503 (Không khả dụng). Đây là cấu trúc API mẫu dựa trên các cổng tracking chuẩn của hệ thống.
+}

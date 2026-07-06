@@ -1,0 +1,35 @@
+{
+  "title": "Customer Groups",
+  "subtitle": "Manage client tiers and member assignments",
+  "createNew": "Create Group",
+  "editGroup": "Edit Group",
+  "deleteGroup": "Delete Group",
+  "searchPlaceholder": "Search groups...",
+  "noGroups": "No groups found.",
+  "table": {
+    "code": "Group Code",
+    "name": "Group Name",
+    "description": "Description",
+    "members": "Members Count",
+    "createdAt": "Created At",
+    "actions": "Actions"
+  },
+  "form": {
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. VIP Silver",
+    "codeLabel": "Code",
+    "codePlaceholder": "e.g. vip.silver",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "e.g. Standard customer tier with base rates"
+  },
+  "messages": {
+    "createSuccess": "Customer group created successfully.",
+    "updateSuccess": "Customer group updated successfully.",
+    "deleteSuccess": "Customer group deleted successfully.",
+    "confirmDelete": "Are you sure you want to delete this group?"
+  },
+  "validation": {
+    "nameRequired": "Group name is required",
+    "codeRequired": "Group code is required"
+  }
+}

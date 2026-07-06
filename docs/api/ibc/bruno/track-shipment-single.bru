@@ -1,0 +1,37 @@
+meta {
+  name: Track Shipment Single
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{ibcBaseUrl}}/ibctrack/v2/:track_number
+  body: none
+  auth: none
+}
+
+params:query {
+  ~account: ####
+}
+
+params:path {
+  track_number: BD202656446
+}
+
+docs {
+  # Track Shipment Single (Tra cứu 1 vận đơn)
+  
+  API này dùng để tra cứu toàn bộ lịch sử hành trình và trạng thái thông quan chi tiết của 1 mã vận đơn đơn lẻ (HAWB).
+  
+  ## HTTP Request
+  - **Method**: `GET`
+  - **URL**: `{{ibcBaseUrl}}/ibctrack/v2/:track_number`
+  
+  ## Path Parameters
+  - `track_number`: Mã HAWB/vận đơn cần kiểm tra hành trình (ví dụ: `BD202656446`).
+  
+  ## Query Parameters
+  - `account` (Khuyên dùng): Mã tài khoản gồm 4 chữ số do IBC cấp cho bạn.
+  
+  *Chú ý*: Nếu bạn cần kiểm tra định kỳ trạng thái của nhiều mã vận đơn cùng một lúc, hãy sử dụng `Get Batch Events (AAMS/Pactrak)` thay vì gọi API đơn lẻ này nhiều lần để tối ưu hóa hiệu năng.
+}

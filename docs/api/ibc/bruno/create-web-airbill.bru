@@ -1,0 +1,85 @@
+meta {
+  name: Create Web Airbill
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{ibcBaseUrl}}/ibcairbill/production
+  body: json
+  auth: none
+}
+
+params:query {
+  ~_test: 
+  ~_zpl: 
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "shipper": {
+      "name": "Test Shipper Name",
+      "company_name": "IBC",
+      "phone": "305 597 5327",
+      "address": "8401 NW 17th St",
+      "city": "Miami",
+      "state": "FL",
+      "zip": "33126",
+      "country": "US",
+      "account": "8040"
+    },
+    "consignee": {
+      "name": "Test Recipient",
+      "company_name": "Test Co.",
+      "phone": "718 526 5300",
+      "address": "1465 Test Avenue",
+      "city": "Test City",
+      "state": "TX",
+      "zip": "11644",
+      "country": "US"
+    },
+    "shipment": {
+      "contents": "APX",
+      "description": "Test Shipment",
+      "pieces": "1",
+      "packaging": "P",
+      "weight": "1",
+      "weight_qualifier": "lbs",
+      "value": "10",
+      "service": "ST",
+      "bill_to": "P",
+      "platinum_service": "",
+      "insurance_amount": "",
+      "dimensions": "",
+      "dimensions_qualifier": "inch",
+      "tracking": ""
+    }
+  }
+}
+
+docs {
+  # Create Web Airbill (Tạo vận đơn Web Airbill)
+  
+  API này dùng để gửi thông tin vận đơn lẻ (Airwaybill data) của bạn lên hệ thống của IBC để khởi tạo vận đơn trước khi hàng cập kho.
+  
+  ## HTTP Request
+  - **Method**: `POST`
+  - **URL**: `{{ibcBaseUrl}}/ibcairbill/production`
+  
+  ## Query Parameters (Tùy chọn)
+  - `_test`: Đưa vào chế độ thử nghiệm (trả về dữ liệu mô phỏng không ghi nhận đơn thật).
+  - `_zpl`: Yêu cầu trả về chuỗi nhãn dán định dạng ZPL (kích thước 4x6, được mã hóa Base64 ở trường `labelData` trong JSON phản hồi).
+  
+  ## Request Body
+  - `shipper`: Thông tin người gửi (Bắt buộc tên, SĐT, địa chỉ, thành phố, quốc gia ISO, mã tài khoản `account`).
+  - `consignee`: Thông tin người nhận (Bắt buộc tên, SĐT, địa chỉ, thành phố, quốc gia ISO).
+  - `shipment`: Thông tin chi tiết gói hàng.
+    - `contents`: Loại hàng (`DOC` hoặc `APX`).
+    - `packaging`: Đóng gói (`P` - Package, `L` - Letter, `B` - Box, `O` - Other).
+    - `weight_qualifier`: Đơn vị cân nặng (`lbs` hoặc `kgs`).
+    - `service`: Loại dịch vụ (`ST` - Standard courier, `GD` - Ground, `P1`, `DS`, `MH`, `XF`).
+}

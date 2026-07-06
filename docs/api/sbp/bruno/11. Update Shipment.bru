@@ -1,0 +1,47 @@
+meta {
+  name: 11. Update Shipment
+  type: http
+  seq: 11
+}
+
+put {
+  url: {{sbpBaseUrl}}/tmm/v2/external/shipments/package/:shipmentCode
+  body: json
+  auth: none
+}
+
+params:path {
+  shipmentCode: SIN02HCMC21102700001080
+}
+
+headers {
+  Authorization: Bearer {{sbpToken}}
+  secret: {{sbpSecret}}
+  lang: en
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "hubCode": "SGN",
+    "boxCodes": [
+      "VIR13251226005"
+    ],
+    "MAWB": "111-22223334",
+    "refNo": "TRACKCODE UPDATED",
+    "flightCode": "VJ85",
+    "departureDate": "2025-12-07",
+    "arrivalDate": "2025-12-08",
+    "description": "This is a shipment updated"
+  }
+}
+
+docs {
+  # 11. Update Shipment
+  
+  Cập nhật thông tin chi tiết của lô hàng tổng (Shipment Code) như thông tin chuyến bay, mã MAWB, ngày bay, ngày hạ cánh.
+  
+  Sử dụng path parameter `:shipmentCode` đại diện cho mã Shipment của SBP cần cập nhật (ví dụ: `SIN02HCMC21102700001080`).
+  
+  > ⚠️ Lưu ý: Chỉ cập nhật được khi các đơn hàng bên trong chưa được khai báo trên hệ thống thông quan (Clearance System) của đối tác.
+}

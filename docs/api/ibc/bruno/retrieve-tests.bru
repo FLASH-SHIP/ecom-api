@@ -1,0 +1,51 @@
+meta {
+  name: Retrieve Tests
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{ibcBaseUrl}}/tests/manifest
+  body: none
+  auth: none
+}
+
+params:query {
+  email: your_email@domain.com
+}
+
+docs {
+  # Retrieve a List of Manifest Tests
+  
+  API này dùng để xem lại danh sách lịch sử các yêu cầu kiểm tra manifest đã thực hiện bằng email của bạn.
+  
+  ## HTTP Request
+  - **Method**: `GET`
+  - **URL**: `{{ibcBaseUrl}}/tests/manifest`
+  
+  ## Query Parameters
+  - `email`: Địa chỉ email đã dùng để gửi yêu cầu test lúc trước (Bắt buộc).
+  
+  ## Response 200 OK
+  ```json
+  {
+      "response_code": 0,
+      "response_message": "Transaction retrieved",
+      "request_url": "/v1/tests/manifest/",
+      "entry": [
+          {
+              "_id": "UNIQUE_ID",
+              "transaction_type": "manifest",
+              "transaction_id": "your_email@domain.com",
+              "transaction_msg": "Result: ",
+              "transaction_record": "YOUR DATA INPUT",
+              "transaction_result": "YOUR TEST RESULT",
+              "created_date": "TIMESTAMP",
+              "completed_date": "TIMESTAMP",
+              "__v": 0
+          }
+      ],
+      "is_error": false
+  }
+  ```
+}

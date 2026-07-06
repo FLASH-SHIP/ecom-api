@@ -1,0 +1,47 @@
+meta {
+  name: 8. Update Packaging (Box)
+  type: http
+  seq: 8
+}
+
+put {
+  url: {{sbpBaseUrl}}/tmm/v2/external/boxes/:boxCode
+  body: json
+  auth: none
+}
+
+params:path {
+  boxCode: VIR13251226005
+}
+
+headers {
+  Authorization: Bearer {{sbpToken}}
+  secret: {{sbpSecret}}
+  lang: en
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "boxNumber": "no.1",
+    "orderNumbers": [
+      "GB00000126130",
+      "GB00000171901"
+    ],
+    "weight": 2.5,
+    "unitOfMass": "kg",
+    "long": 20,
+    "width": 30.5,
+    "height": 12,
+    "unitOfLength": "cm",
+    "description": "This is description for updation a the package"
+  }
+}
+
+docs {
+  # 8. Update Packaging (Box)
+  
+  Cập nhật thông tin kiện hàng (Box) như kích thước, khối lượng, hoặc thêm/bớt danh sách các mã đơn hàng gom bên trong.
+  
+  Sử dụng path parameter `:boxCode` chứa mã định danh kiện hàng do SBP cấp khi đóng gói thành công (ví dụ: `VIR13251226005`).
+}

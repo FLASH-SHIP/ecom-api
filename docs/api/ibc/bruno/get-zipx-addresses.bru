@@ -1,0 +1,39 @@
+meta {
+  name: Get Zipx Addresses
+  type: http
+  seq: 12
+}
+
+get {
+  url: {{ibcBaseUrl}}/zipx/addresses/:station_code
+  body: none
+  auth: none
+}
+
+params:query {
+  token: {{ibcToken}}
+  ~limit: 500
+  ~offset: 0
+}
+
+params:path {
+  station_code: 22
+}
+
+docs {
+  # Get Zipx Addresses (Lấy danh sách địa chỉ Zipx)
+  
+  API này dùng để lấy danh sách các bản ghi khách hàng/địa chỉ thuộc trạm Zipx chỉ định (tối đa 500 bản ghi/lần).
+  
+  ## HTTP Request
+  - **Method**: `GET`
+  - **URL**: `{{ibcBaseUrl}}/zipx/addresses/:station_code`
+  
+  ## Path Parameters
+  - `station_code`: Mã trạm Zipx của bạn (Ví dụ: `22`).
+  
+  ## Query Parameters
+  - `token`: Zipx Authority Token (Bắt buộc, lấy từ API `/authority/token?_zipx`).
+  - `limit`: Số bản ghi tối đa lấy về (mặc định 500).
+  - `offset`: Vị trí bắt đầu lấy bản ghi (dùng cho phân trang).
+}

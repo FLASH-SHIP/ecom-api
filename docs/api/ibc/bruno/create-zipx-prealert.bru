@@ -1,0 +1,46 @@
+meta {
+  name: Create Zipx Prealert
+  type: http
+  seq: 19
+}
+
+post {
+  url: {{ibcBaseUrl}}/v1/zipxalerts
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "zipx_number": "22-12345",
+    "zipx_carrier": "UPS",
+    "seller_name": "Amazon",
+    "carrier_bill_number": "1Z123456789",
+    "description": "Books",
+    "value": 25.50
+  }
+}
+
+docs {
+  # Create Zipx Prealert (Tạo báo trước hàng về kho Zipx)
+  
+  API này dùng để gửi thông tin báo nhận hàng trước (pre-alert) cho các gói hàng chuẩn bị được chuyển tới địa chỉ kho Zipx của bạn tại Mỹ để kho chuẩn bị phân loại.
+  
+  ## HTTP Request
+  - **Method**: `POST`
+  - **URL**: `{{ibcBaseUrl}}/v1/zipxalerts`
+  - **Headers**:
+    - `Content-Type: application/json`
+  
+  ## Request Body
+  - `zipx_number`: Mã số tài khoản Zipx của bạn (định dạng `mã_trạm-mã_tài_khoản` như `22-12345`).
+  - `zipx_carrier`: Hãng vận chuyển gửi gói hàng tới kho (Chọn trong các mã: `DHL`, `DRP`, `FDX` (Fedex), `IBC`, `TNT`, `UPS`, `USP` (USPS), `LAS`, `OTH` (Khác)).
+  - `seller_name`: Nơi mua hàng (Ví dụ: `Ebay`, `Amazon`).
+  - `carrier_bill_number`: Số tracking của hãng vận chuyển nội địa giao tới kho.
+  - `description`: Mô tả sơ bộ hàng hóa.
+  - `value`: Giá trị bằng số của gói hàng.
+}

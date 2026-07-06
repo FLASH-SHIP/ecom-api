@@ -1,0 +1,35 @@
+meta {
+  name: Track Zipx Shipment
+  type: http
+  seq: 15
+}
+
+get {
+  url: {{ibcBaseUrl}}/ibcairbill/zipx/events/:track_number
+  body: none
+  auth: none
+}
+
+params:query {
+  ~account: ####
+}
+
+params:path {
+  track_number: 102030
+}
+
+docs {
+  # Track Zipx Shipment (Tra cứu đơn hàng Zipx xuất khẩu)
+  
+  API này dùng để tra cứu hành trình của các lô hàng Zipx xuất khẩu (outbound zipx shipments).
+  
+  ## HTTP Request
+  - **Method**: `GET`
+  - **URL**: `{{ibcBaseUrl}}/ibcairbill/zipx/events/:track_number`
+  
+  ## Path Parameters
+  - `track_number`: Mã vận đơn Zipx cần tra cứu (ví dụ: `102030`).
+  
+  ## Query Parameters
+  - `account` (Tùy chọn): Giới hạn kết quả theo mã tài khoản 4 chữ số của bạn.
+}

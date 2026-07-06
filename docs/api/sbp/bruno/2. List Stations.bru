@@ -1,0 +1,28 @@
+meta {
+  name: 2. List Stations
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{sbpBaseUrl}}/tmm/v2/external/stations
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{sbpToken}}
+  secret: {{sbpSecret}}
+  lang: en
+}
+
+docs {
+  # 2. List Stations
+  
+  Lấy danh sách các bưu cục (stations) khả dụng của SBP cùng mã bưu cục (`code` của station) để truyền vào lúc tạo Order.
+  
+  ## Headers
+  * `Authorization`: `Bearer {{sbpToken}}`
+  * `secret`: `{{sbpSecret}}`
+  * `lang`: `en` hoặc `vi`
+}

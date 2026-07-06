@@ -1,7 +1,7 @@
 "use client";
 
-import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { SearchEngineOptimize } from "@admin/components/blog/SearchEngineOptimize";
+import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { useToast } from "@admin/components/toast-provider";
 import { trpc } from "@admin/lib/trpc";
 import { Button } from "@ecom/ui/components/button";
@@ -20,8 +20,8 @@ import { Textarea } from "@ecom/ui/components/textarea";
 import { cn } from "@ecom/ui/lib/utils";
 import { ExternalLink, Globe, Info, Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTranslations, useLocale } from "next-intl";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const PERMALINK_PREFIX = "/category/";
 
@@ -582,30 +582,30 @@ export function CategoryForm({
                   </Select>
                 </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="cat-parent">Parent Category</Label>
-                <Select
-                  value={formData.parentId?.toString() ?? ""}
-                  onValueChange={(v) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      parentId: v ? Number(v) : null,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="cat-parent">
-                    <SelectValue placeholder="None (Root)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None (Root)</SelectItem>
-                    {flatCategories.map((cat) => (
-                      <SelectItem key={cat.id} value={String(cat.id)}>
-                        {"—".repeat(cat.depth)} {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="cat-parent">Parent Category</Label>
+                  <Select
+                    value={formData.parentId?.toString() ?? ""}
+                    onValueChange={(v) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        parentId: v ? Number(v) : null,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="cat-parent">
+                      <SelectValue placeholder="None (Root)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None (Root)</SelectItem>
+                      {flatCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={String(cat.id)}>
+                          {"—".repeat(cat.depth)} {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <div className="flex items-center justify-between">
                   <Label htmlFor="cat-featured" className="cursor-pointer text-sm">
