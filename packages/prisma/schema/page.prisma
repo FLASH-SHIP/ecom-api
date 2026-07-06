@@ -1,0 +1,68 @@
+// Ecom — Page Module
+
+model Page {
+  id             Int           @id @default(autoincrement())
+  title          String
+  slug           String        @unique
+  content        String?       @db.Text
+  excerpt        String?       @db.Text
+  featuredImage  String?
+  template       String?       @default("default")
+  order          Int           @default(0)
+  parentId       Int?
+  parent         Page?         @relation("PageTree", fields: [parentId], references: [id])
+  children       Page[]        @relation("PageTree")
+  status         ContentStatus @default(DRAFT)
+  authorId       Int
+  author         User          @relation(fields: [authorId], references: [id])
+  translations   PageTranslation[]
+  seoMeta        SeoMeta?      @relation("PageSeo")
+  comments       Comment[]
+  publishedAt    DateTime?
+  scheduledAt    DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Custom Fields (Shared)
+  bannerImage    String?
+  heroBanner     String?
+  layout         String?       @default("default")
+  hideTitle      Boolean       @default(false)
+  hideBreadcrumb Boolean       @default(false)
+  hideSidebar    Boolean       @default(false)
+  hideFooter     Boolean       @default(false)
+  gallery        Json?
+
+  // Custom Fields (Default Locale)
+  subtitle       String?
+  ctaText        String?
+  ctaLink        String?
+
+  @@index([authorId])
+  @@index([status])
+  @@index([slug])
+  @@index([parentId])
+  @@index([deletedAt])
+  @@index([status, deletedAt, order])
+  @@map("pages")
+}
+
+model PageTranslation {
+  id       Int    @id @default(autoincrement())
+  pageId   Int
+  page     Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  langCode String
+  title    String
+  slug     String?
+  content  String? @db.Text
+  excerpt  String? @db.Text
+
+  // Custom Fields (Translatable)
+  subtitle String?
+  ctaText  String?
+  ctaLink  String?
+
+  @@unique([pageId, langCode])
+  @@map("page_translations")
+}

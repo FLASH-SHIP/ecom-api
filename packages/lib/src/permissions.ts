@@ -51,6 +51,12 @@ export const Permissions = {
   CUSTOMERS_UPDATE: "customers.update",
   CUSTOMERS_DELETE: "customers.delete",
 
+  // Customer Groups
+  CUSTOMER_GROUPS_READ: "customer-groups.read",
+  CUSTOMER_GROUPS_CREATE: "customer-groups.create",
+  CUSTOMER_GROUPS_UPDATE: "customer-groups.update",
+  CUSTOMER_GROUPS_DELETE: "customer-groups.delete",
+
   // Custom Fields
   CUSTOM_FIELDS_READ: "custom-fields.read",
   CUSTOM_FIELDS_CREATE: "custom-fields.create",
@@ -66,6 +72,12 @@ export const Permissions = {
   // Settings
   SETTINGS_READ: "settings.read",
   SETTINGS_UPDATE: "settings.update",
+
+  // Rates
+  RATES_READ: "rates.read",
+  RATES_CREATE: "rates.create",
+  RATES_UPDATE: "rates.update",
+  RATES_DELETE: "rates.delete",
 
   // Audit Logs
   AUDIT_LOGS_READ: "audit-logs.read",
@@ -493,6 +505,39 @@ export const ALL_PERMISSIONS: SystemPermission[] = [
     parent: Permissions.CUSTOMERS_READ,
   },
 
+  // Customer Groups
+  {
+    name: Permissions.CUSTOMER_GROUPS_READ,
+    displayName: "View Customer Groups",
+    group: "customers",
+    section: "system",
+    module: "customer-groups",
+  },
+  {
+    name: Permissions.CUSTOMER_GROUPS_CREATE,
+    displayName: "Create Customer Groups",
+    group: "customers",
+    section: "system",
+    module: "customer-groups",
+    parent: Permissions.CUSTOMER_GROUPS_READ,
+  },
+  {
+    name: Permissions.CUSTOMER_GROUPS_UPDATE,
+    displayName: "Update Customer Groups",
+    group: "customers",
+    section: "system",
+    module: "customer-groups",
+    parent: Permissions.CUSTOMER_GROUPS_READ,
+  },
+  {
+    name: Permissions.CUSTOMER_GROUPS_DELETE,
+    displayName: "Delete Customer Groups",
+    group: "customers",
+    section: "system",
+    module: "customer-groups",
+    parent: Permissions.CUSTOMER_GROUPS_READ,
+  },
+
   // Audit Logs
   {
     name: Permissions.AUDIT_LOGS_READ,
@@ -575,6 +620,39 @@ export const ALL_PERMISSIONS: SystemPermission[] = [
     section: "settings",
     module: "settings",
     parent: Permissions.SETTINGS_READ,
+  },
+
+  // Rates
+  {
+    name: Permissions.RATES_READ,
+    displayName: "View Shipping Rates",
+    group: "rates",
+    section: "settings",
+    module: "rates",
+  },
+  {
+    name: Permissions.RATES_CREATE,
+    displayName: "Create Shipping Rates",
+    group: "rates",
+    section: "settings",
+    module: "rates",
+    parent: Permissions.RATES_READ,
+  },
+  {
+    name: Permissions.RATES_UPDATE,
+    displayName: "Update Shipping Rates",
+    group: "rates",
+    section: "settings",
+    module: "rates",
+    parent: Permissions.RATES_READ,
+  },
+  {
+    name: Permissions.RATES_DELETE,
+    displayName: "Delete Shipping Rates",
+    group: "rates",
+    section: "settings",
+    module: "rates",
+    parent: Permissions.RATES_READ,
   },
 
   // ── Tools Section ─────────────────────────────────────────────────────────

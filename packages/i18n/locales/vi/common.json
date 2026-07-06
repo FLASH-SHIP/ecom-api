@@ -96,6 +96,7 @@
     "media": "Thư viện",
     "engagement": "Tương tác",
     "customers": "Khách hàng",
+    "customerGroups": "Nhóm khách hàng",
     "verificationCodes": "Lịch sử gửi mã",
     "comments": "Bình luận",
     "contacts": "Liên hệ",
@@ -406,6 +407,8 @@
       "mediaDesc": "Xem và cập nhật cài đặt media",
       "languagesTitle": "Ngôn ngữ",
       "languagesDesc": "Xem và cập nhật ngôn ngữ trang web của bạn",
+      "ratesTitle": "Bảng giá cước",
+      "ratesDesc": "Quản lý bảng giá cước vận chuyển, giá theo nhóm khách hàng và nấc cân nặng",
       "trackingTitle": "Theo dõi trang web",
       "trackingDesc": "Chọn phương thức phân tích và theo dõi ưa thích của bạn. Chỉ có thể kích hoạt một tùy chọn tại một thời điểm."
     },

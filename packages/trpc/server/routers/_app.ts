@@ -12,12 +12,14 @@ import { commentsRouter } from "./viewer/comments/_router";
 import { contactsRouter } from "./viewer/contacts/_router";
 import { contentLocksRouter } from "./viewer/content-locks/_router";
 import { customFieldsRouter } from "./viewer/custom-fields/_router";
+import { customerGroupsRouter } from "./viewer/customer-groups/_router";
 import { customersRouter } from "./viewer/customers/_router";
 import { languagesRouter } from "./viewer/languages/_router";
 import { mediaRouter } from "./viewer/media/_router";
 import { notificationsRouter } from "./viewer/notifications/_router";
 import { pagesRouter } from "./viewer/pages/_router";
 import { postsRouter } from "./viewer/posts/_router";
+import { rateCardsRouter } from "./viewer/rate-cards/_router";
 import { redirectsRouter } from "./viewer/redirects/_router";
 import { revisionsRouter } from "./viewer/revisions/_router";
 import { rolesRouter } from "./viewer/roles/_router";
@@ -57,6 +59,7 @@ export const appRouter = router({
     auditLogs: auditLogsRouter,
     system: systemRouter,
     customers: customersRouter,
+    customerGroups: customerGroupsRouter,
     tools: toolsRouter,
     seo: seoRouter,
     revisions: revisionsRouter,
@@ -69,6 +72,7 @@ export const appRouter = router({
     taxonomies: taxonomiesRouter,
     templates: templatesRouter,
     contentLocks: contentLocksRouter,
+    rateCards: rateCardsRouter,
   }),
 
   // Public (publicProcedure — no auth required)

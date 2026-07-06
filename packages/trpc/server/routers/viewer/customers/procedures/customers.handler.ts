@@ -18,12 +18,19 @@ export const list = authedProcedure
       search: z.string().optional(),
       page: z.number().int().min(1).default(1),
       perPage: z.number().int().min(1).max(500).default(50),
+      groupId: z.number().int().positive().optional(),
+      rateCardId: z.number().int().positive().optional(),
     }),
   )
   .query(async ({ input }) => {
     const service = getCustomerService();
     return service.listCustomers(
-      { status: input.status, search: input.search },
+      {
+        status: input.status,
+        search: input.search,
+        groupId: input.groupId,
+        rateCardId: input.rateCardId,
+      },
       input.page,
       input.perPage,
     );
@@ -53,6 +60,7 @@ export const create = authedProcedure
       gender: z.enum(["male", "female", "other"]).optional(),
       description: z.string().max(1000).optional(),
       password: z.string().min(8).max(100).optional(),
+      groupId: z.number().int().positive().nullable().optional(),
     }),
   )
   .mutation(async ({ input }) => {
@@ -83,6 +91,7 @@ export const update = authedProcedure
       gender: z.enum(["male", "female", "other"]).nullable().optional(),
       description: z.string().max(1000).nullable().optional(),
       status: customerStatusEnum.optional(),
+      groupId: z.number().int().positive().nullable().optional(),
     }),
   )
   .mutation(async ({ input }) => {

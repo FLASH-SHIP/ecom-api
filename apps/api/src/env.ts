@@ -43,6 +43,15 @@ export const apiEnvSchema = z.object({
   LOG_PURGE_REQUEST_DAYS: z.coerce.number().int().positive().default(30),
   LOG_PURGE_AUDIT_DAYS: z.coerce.number().int().positive().default(90),
   LOG_PURGE_CRON: z.string().default("0 2 * * *"),
+  LOG_PURGE_AUDIT_KEEP_LATEST: z
+    .preprocess(
+      (val) => {
+        if (typeof val === "string") return val.toLowerCase();
+        return val;
+      },
+      z.enum(["true", "false"]).default("true"),
+    )
+    .transform((val) => val === "true"),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().int().positive().optional(),
   SMTP_USER: z.string().optional(),

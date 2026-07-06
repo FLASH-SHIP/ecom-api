@@ -39,6 +39,7 @@ const _schemaShape = z.object({
   dob: z.string().optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
   description: z.string().max(1000).optional(),
+  groupId: z.number().int().positive().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof _schemaShape>;
@@ -54,6 +55,7 @@ const defaultValues: FormValues = {
   dob: "",
   gender: undefined,
   description: "",
+  groupId: null,
 };
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -88,6 +90,10 @@ export function CustomerFormDrawer({
     { enabled: open && isEdit },
   );
 
+  const { data: customerGroups } = trpc.viewer.customerGroups.listAll.useQuery(undefined, {
+    enabled: open,
+  });
+
   // ── Schema built inside component to access t() and isEdit ──────────────────
   const schema = z
     .object({
@@ -101,6 +107,7 @@ export function CustomerFormDrawer({
       dob: z.string().optional(),
       gender: z.enum(["male", "female", "other"]).optional(),
       description: z.string().max(1000).optional(),
+      groupId: z.number().int().positive().nullable().optional(),
     })
     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: superRefine contains conditional password check complexity
     .superRefine((data, ctx) => {
@@ -195,6 +202,7 @@ export function CustomerFormDrawer({
             password: "",
             confirmPassword: "",
             changePassword: false,
+            groupId: customerData.groupId ?? null,
           });
         }
       } else {
@@ -252,6 +260,7 @@ export function CustomerFormDrawer({
           dob: data.dob || null,
           gender: data.gender || null,
           description: data.description?.trim() || null,
+          groupId: data.groupId || null,
         });
 
         if (data.changePassword && data.password) {
@@ -273,6 +282,7 @@ export function CustomerFormDrawer({
         gender: data.gender,
         description: data.description?.trim() || undefined,
         password: data.password || undefined,
+        groupId: data.groupId || undefined,
       });
     }
   }
@@ -397,6 +407,39 @@ export function CustomerFormDrawer({
                       placeholder="dd/mm/yyyy"
                       disabled={field.disabled}
                     />
+                    {fieldState.error && (
+                      <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                    )}
+                  </div>
+                )}
+              />
+              {/* Customer Group */}
+              <Controller
+                name="groupId"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="customer-group">Nhóm khách hàng</Label>
+                    <Select
+                      value={field.value ? String(field.value) : "none"}
+                      onValueChange={(val) => field.onChange(val === "none" ? null : Number(val))}
+                    >
+                      <SelectTrigger
+                        id="customer-group"
+                        className={cn(fieldState.error && "border-destructive")}
+                        disabled={field.disabled}
+                      >
+                        <SelectValue placeholder="Chọn nhóm khách hàng..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Không phân nhóm</SelectItem>
+                        {customerGroups?.map((group) => (
+                          <SelectItem key={group.id} value={String(group.id)}>
+                            {group.name} ({group.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     {fieldState.error && (
                       <p className="text-xs text-destructive">{fieldState.error.message}</p>
                     )}

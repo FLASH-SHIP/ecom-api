@@ -63,9 +63,11 @@
     "users": "Users",
     "roles": "Roles & Permissions",
     "customers": "Customers",
+    "customer-groups": "Customer Groups",
     "custom-fields": "Custom Fields",
     "admin-menus": "Admin Menus",
     "settings": "General Settings",
+    "rates": "Shipping Rates",
     "audit-logs": "Audit Logs",
     "system": "System Info",
     "tools": "Sync Tools",
@@ -146,6 +148,12 @@
       "update": "Update Customer Info",
       "delete": "Delete Customer"
     },
+    "customer-groups": {
+      "read": "View Customer Groups List",
+      "create": "Create New Customer Group",
+      "update": "Update Customer Group Info",
+      "delete": "Delete Customer Group"
+    },
     "audit-logs": {
       "read": "View System Audit Logs",
       "purge": "Purge Old Logs"
@@ -163,6 +171,12 @@
     "settings": {
       "read": "View Global Settings",
       "update": "Update Global Settings"
+    },
+    "rates": {
+      "read": "View Shipping Rates List",
+      "create": "Create New Shipping Rate",
+      "update": "Update Shipping Rate Info",
+      "delete": "Delete Shipping Rate"
     },
     "tools": {
       "export": "Export System Data",

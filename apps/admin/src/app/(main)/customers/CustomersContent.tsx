@@ -1,7 +1,7 @@
 "use client";
 
 import type { BulkActionConfig, RowAction } from "@admin/components/data-table";
-import { DataTable, toFilterInput } from "@admin/components/data-table";
+import { DataTable } from "@admin/components/data-table";
 import { CopyCell } from "@admin/components/data-table/CopyCell";
 import { useServerTable } from "@admin/components/data-table/hooks/useServerTable";
 import type { DataTableServerParams, FilterFieldDef } from "@admin/components/data-table/types";
@@ -29,6 +29,11 @@ type CustomerRow = {
   phone: string | null;
   status: string;
   createdAt: string;
+  group?: {
+    id: number;
+    name: string;
+    code: string;
+  } | null;
 };
 
 const STATUS_BADGE_CONFIG: Record<string, string> = {
@@ -40,13 +45,21 @@ const STATUS_BADGE_CONFIG: Record<string, string> = {
 function toQueryInput(params: DataTableServerParams) {
   const { search, filters, sort, page, pageSize } = params;
 
+  const statusFilter = filters.find((f) => f.fieldKey === "status");
+  const groupIdFilter = filters.find((f) => f.fieldKey === "groupId");
+  const rateCardIdFilter = filters.find((f) => f.fieldKey === "rateCardId");
+
   return {
     page,
     perPage: pageSize,
-    filters: toFilterInput(filters),
     search: search.trim() || undefined,
     sortBy: sort.direction ? (sort.key as "id" | "email" | "createdAt" | "status") : undefined,
     sortDir: sort.direction ?? undefined,
+    status: statusFilter?.value
+      ? (statusFilter.value as "ACTIVE" | "INACTIVE" | "BANNED")
+      : undefined,
+    groupId: groupIdFilter?.value ? Number(groupIdFilter.value) : undefined,
+    rateCardId: rateCardIdFilter?.value ? Number(rateCardIdFilter.value) : undefined,
   };
 }
 
@@ -68,6 +81,15 @@ export default function CustomersContent() {
     defaultPageSize: 25,
     toQueryInput,
   });
+
+  const { data: groupsData } = trpc.viewer.customerGroups.listAll.useQuery(undefined, {
+    staleTime: 30_000,
+  });
+
+  const { data: rateCardsData } = trpc.viewer.rateCards.list.useQuery(
+    { perPage: 100 },
+    { staleTime: 30_000 },
+  );
 
   const utils = trpc.useUtils();
 
@@ -166,6 +188,21 @@ export default function CustomersContent() {
         },
       },
       {
+        id: "groupId",
+        accessorKey: "group",
+        header: "Nhóm khách hàng",
+        size: 150,
+        cell: ({ row }) => {
+          const group = row.original.group;
+          if (!group) return <span className="text-sm text-muted-foreground">—</span>;
+          return (
+            <span className="inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              {group.name}
+            </span>
+          );
+        },
+      },
+      {
         accessorKey: "status",
         header: t("fields.status"),
         size: 130,
@@ -232,6 +269,26 @@ export default function CustomersContent() {
         ],
       },
       {
+        key: "groupId",
+        label: "Nhóm khách hàng",
+        type: "select",
+        operators: [{ value: "equals", label: "equals" }],
+        options: (groupsData ?? []).map((g) => ({
+          value: String(g.id),
+          label: g.name,
+        })),
+      },
+      {
+        key: "rateCardId",
+        label: "Bảng giá cước",
+        type: "select",
+        operators: [{ value: "equals", label: "equals" }],
+        options: (rateCardsData?.data ?? []).map((r) => ({
+          value: String(r.id),
+          label: r.name,
+        })),
+      },
+      {
         key: "createdAt",
         label: tCommon("createdAt"),
         type: "date",
@@ -241,7 +298,7 @@ export default function CustomersContent() {
         ],
       },
     ],
-    [t, tCommon],
+    [t, tCommon, groupsData, rateCardsData],
   );
 
   // ── Row actions ────────────────────────────────────────────────────────

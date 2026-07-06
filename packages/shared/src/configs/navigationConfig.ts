@@ -104,6 +104,15 @@ const navigationConfig: NavItemType[] = [
         auth: [Permissions.CUSTOMERS_READ],
       },
       {
+        id: "customer-groups",
+        title: "Nhóm khách hàng",
+        translate: "nav.customerGroups",
+        type: "item",
+        icon: "lucide:users",
+        url: "/customers/groups",
+        auth: [Permissions.CUSTOMER_GROUPS_READ],
+      },
+      {
         id: "verification-codes",
         title: "Lịch sử gửi mã",
         translate: "nav.verificationCodes",

@@ -96,11 +96,46 @@ export class AuditLogRepository {
     return this.prisma.auditLog.delete({ where: { id } });
   }
 
-  async deleteAll() {
+  async deleteAll(keepLatest = true) {
+    if (keepLatest) {
+      const count = await this.prisma.$executeRaw`
+        DELETE FROM "audit_logs" a
+        WHERE (
+          (a."entityType" IS NULL OR a."entityId" IS NULL)
+          OR EXISTS (
+            SELECT 1
+            FROM "audit_logs" b
+            WHERE b."entityType" = a."entityType"
+              AND b."entityId" = a."entityId"
+              AND b."createdAt" > a."createdAt"
+          )
+        )
+      `;
+      return { count };
+    }
+
     return this.prisma.auditLog.deleteMany({});
   }
 
-  async deleteOlderThan(date: Date) {
+  async deleteOlderThan(date: Date, keepLatest = true) {
+    if (keepLatest) {
+      const count = await this.prisma.$executeRaw`
+        DELETE FROM "audit_logs" a
+        WHERE a."createdAt" < ${date}
+          AND (
+            (a."entityType" IS NULL OR a."entityId" IS NULL)
+            OR EXISTS (
+              SELECT 1
+              FROM "audit_logs" b
+              WHERE b."entityType" = a."entityType"
+                AND b."entityId" = a."entityId"
+                AND b."createdAt" > a."createdAt"
+            )
+          )
+      `;
+      return { count };
+    }
+
     return this.prisma.auditLog.deleteMany({
       where: { createdAt: { lt: date } },
     });

@@ -103,6 +103,12 @@ export function CustomerDetailDrawer({
                 {/* Info rows */}
                 {[
                   { label: tUsers("fields.username"), value: `@${detail.username}` },
+                  {
+                    label: "Nhóm khách hàng",
+                    value: detail.group
+                      ? `${detail.group.name} (${detail.group.code})`
+                      : "Không phân nhóm",
+                  },
                   { label: t("fields.phone"), value: detail.phone ?? "—" },
                   {
                     label: t("form.genderLabel"),

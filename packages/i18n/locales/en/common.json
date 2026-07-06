@@ -96,6 +96,7 @@
     "media": "Media",
     "engagement": "Engagement",
     "customers": "Customers",
+    "customerGroups": "Customer Groups",
     "verificationCodes": "Verification Code Logs",
     "comments": "Comments",
     "contacts": "Contacts",
@@ -406,6 +407,8 @@
       "mediaDesc": "View and update media settings",
       "languagesTitle": "Languages",
       "languagesDesc": "View and update your website languages",
+      "ratesTitle": "Shipping Rates",
+      "ratesDesc": "Manage shipping rate cards, customer group prices, and weight slabs",
       "trackingTitle": "Web Tracking",
       "trackingDesc": "Choose your preferred analytics and tracking method. Only one option can be activated at a time."
     },

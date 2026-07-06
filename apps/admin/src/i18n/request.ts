@@ -51,6 +51,7 @@ export default getRequestConfig(async () => {
           tools: (await import("@ecom/i18n/locales/vi/tools.json")).default,
           seo: (await import("@ecom/i18n/locales/vi/seo.json")).default,
           dataTable: (await import("@ecom/i18n/locales/vi/data-table.json")).default,
+          "customer-groups": (await import("@ecom/i18n/locales/vi/customer-groups.json")).default,
         }
       : {
           ...(await import("@ecom/i18n/locales/en/common.json")).default,
@@ -78,6 +79,7 @@ export default getRequestConfig(async () => {
           tools: (await import("@ecom/i18n/locales/en/tools.json")).default,
           seo: (await import("@ecom/i18n/locales/en/seo.json")).default,
           dataTable: (await import("@ecom/i18n/locales/en/data-table.json")).default,
+          "customer-groups": (await import("@ecom/i18n/locales/en/customer-groups.json")).default,
         };
 
   return {

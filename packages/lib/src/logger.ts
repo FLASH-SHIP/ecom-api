@@ -4,7 +4,22 @@ import * as path from "node:path";
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
-export const loggerContext = new AsyncLocalStorage<{ traceId: string; userId?: number }>();
+interface LoggerStore {
+  traceId: string;
+  userId?: number;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+const globalForLogger = globalThis as unknown as {
+  loggerContext: AsyncLocalStorage<LoggerStore> | undefined;
+};
+
+export const loggerContext = globalForLogger.loggerContext ?? new AsyncLocalStorage<LoggerStore>();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForLogger.loggerContext = loggerContext;
+}
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,

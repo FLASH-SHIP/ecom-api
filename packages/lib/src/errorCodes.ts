@@ -32,12 +32,21 @@ export const ErrorCode = {
   TagNotFound: "TAG_NOT_FOUND",
   SlugAlreadyExists: "SLUG_ALREADY_EXISTS",
 
+  // Shipping Rates / Rate Cards
+  RateCardNotFound: "RATE_CARD_NOT_FOUND",
+  RateCardConflict: "RATE_CARD_CONFLICT",
+  RateCardValidationError: "RATE_CARD_VALIDATION_ERROR",
+
   // Generic
   NotFound: "NOT_FOUND",
   BadRequest: "BAD_REQUEST",
   Conflict: "CONFLICT",
   InternalError: "INTERNAL_ERROR",
   ValidationError: "VALIDATION_ERROR",
+
+  // Customer Group
+  CustomerGroupNotFound: "CUSTOMER_GROUP_NOT_FOUND",
+  CustomerGroupConflict: "CUSTOMER_GROUP_CONFLICT",
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
