@@ -30,117 +30,18 @@ export class HsCodeService {
   }
 
   /**
-   * Retrieves the full tree of chapters and their 4-digit headings.
+   * Retrieves the tree of chapters (level 1) with notesHtml.
    */
   async getTree() {
-    const [rawData, flexportItems] = await Promise.all([
-      this.deps.hsCodeRepo.getTreeRawData(),
-      this.deps.hsCodeRepo.getAllFlexportItems(),
-    ]);
-
-    // Group flexport items by heading (first 4 digits)
-    const itemsByHeading = new Map<string, any[]>();
-    for (const item of flexportItems) {
-      const cleanCode = item.code.replace(/\./g, "");
-      const headingCode = cleanCode.substring(0, 4);
-      if (!itemsByHeading.has(headingCode)) {
-        itemsByHeading.set(headingCode, []);
-      }
-      itemsByHeading.get(headingCode)!.push(item);
-    }
-
-    const chaptersMap = new Map<
-      string,
-      {
-        code: string;
-        description: string;
-        headings: Map<string, { code: string; description: string; children: any[] }>;
-      }
-    >();
-
-    for (const row of rawData) {
-      const descParts = row.article_description.split(/[：:]+/).map((s) => s.trim());
-      const chapterCode = row.chapter_code;
-      const chapterDesc = descParts[0] || `Chapter ${chapterCode}`;
-      const headingCode = row.heading_code;
-      const headingDesc = descParts[1] || `Heading ${headingCode}`;
-
-      if (!chaptersMap.has(chapterCode)) {
-        chaptersMap.set(chapterCode, {
-          code: chapterCode,
-          description: chapterDesc,
-          headings: new Map(),
-        });
-      }
-
-      const chapterObj = chaptersMap.get(chapterCode);
-      if (chapterObj && !chapterObj.headings.has(headingCode)) {
-        const rawHeadingItems = itemsByHeading.get(headingCode) || [];
-
-        // Build sub-tree hierarchy from dot counts
-        const childrenRoot: any[] = [];
-        const stack: any[] = [];
-        for (const item of rawHeadingItems) {
-          const rawDesc = item.description ?? "";
-          const dotCount = (rawDesc.match(/·/g) || []).length;
-
-          let cleanDesc = rawDesc.replace(/^[·\s]+/, "").trim();
-          const midpoint = Math.floor(cleanDesc.length / 2);
-          const firstHalf = cleanDesc.substring(0, midpoint).trim();
-          const secondHalf = cleanDesc.substring(midpoint).trim();
-          if (firstHalf === secondHalf && firstHalf.length > 0) {
-            cleanDesc = firstHalf;
-          }
-
-          const node = {
-            code: item.code,
-            description: cleanDesc,
-            generalRate: item.generalRate || null,
-            specialRate: item.specialRate || null,
-            unit: item.unitsofQuantity || null,
-            children: [] as any[],
-          };
-
-          if (dotCount === 0) {
-            childrenRoot.push(node);
-            stack[0] = node;
-            stack.length = 1;
-          } else {
-            let parentIdx = dotCount - 1;
-            while (parentIdx >= 0 && !stack[parentIdx]) {
-              parentIdx--;
-            }
-
-            if (parentIdx >= 0 && stack[parentIdx]) {
-              stack[parentIdx].children.push(node);
-              stack[dotCount] = node;
-              stack.length = dotCount + 1;
-            } else {
-              childrenRoot.push(node);
-              stack[dotCount] = node;
-              stack.length = dotCount + 1;
-            }
-          }
-        }
-
-        chapterObj.headings.set(headingCode, {
-          code: headingCode,
-          description: headingDesc,
-          children: childrenRoot,
-        });
-      }
-    }
-
-    // Convert map to array and sort
-    const tree = Array.from(chaptersMap.values())
-      .map((ch) => ({
+    const chapters = await this.deps.hsCodeRepo.getChapters();
+    return chapters.map((ch) => {
+      const desc = ch.description || "";
+      const capitalizedDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
+      return {
         code: ch.code,
-        description: ch.description,
-        headings: Array.from(ch.headings.values()).sort((a, b) => a.code.localeCompare(b.code)),
-      }))
-      .sort((a, b) => a.code.localeCompare(b.code));
-
-    return tree;
+        description: capitalizedDesc,
+      };
+    });
   }
 
   /**
