@@ -40,7 +40,7 @@ async function bootstrap() {
     prefix: "/public/",
   });
 
-  app.useStaticAssets(join(process.cwd(), "../admin/uploads"), {
+  app.useStaticAssets(join(process.cwd(), "uploads"), {
     prefix: "/uploads/",
   });
 

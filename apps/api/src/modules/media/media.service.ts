@@ -32,7 +32,7 @@ export class MediaService {
   }
 
   private getUploadsDir() {
-    return join(__dirname, "../../../../admin/uploads");
+    return join(process.cwd(), "uploads");
   }
 
   private formatBytes(bytes: number, decimals = 2) {
@@ -259,6 +259,7 @@ export class MediaService {
     folderIdStr?: string | number,
     visibility = "public",
     accessMode?: string,
+    baseUrl?: string,
   ) {
     const folderId =
       folderIdStr && folderIdStr !== "0" && folderIdStr !== 0 ? Number(folderIdStr) : null;
@@ -293,7 +294,7 @@ export class MediaService {
       },
     });
 
-    return { data: this.mapFileToItem(created, this.getAdminUrl()) };
+    return { data: this.mapFileToItem(created, baseUrl || this.getAdminUrl()) };
   }
 
   private downloadRemoteBuffer(
@@ -341,6 +342,7 @@ export class MediaService {
     folderIdStr?: string | number,
     visibility = "public",
     accessMode?: string,
+    baseUrl?: string,
   ) {
     const folderId =
       folderIdStr && folderIdStr !== "0" && folderIdStr !== 0 ? Number(folderIdStr) : null;
@@ -377,7 +379,7 @@ export class MediaService {
       },
     });
 
-    return { data: this.mapFileToItem(created, this.getAdminUrl()) };
+    return { data: this.mapFileToItem(created, baseUrl || this.getAdminUrl()) };
   }
 
   async performAction(
