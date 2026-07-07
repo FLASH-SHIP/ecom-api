@@ -199,6 +199,7 @@ export class HsCodeRepository {
       },
       select: {
         id: true,
+        code: true,
         name: true,
       },
       orderBy: {

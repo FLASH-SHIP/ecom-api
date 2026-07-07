@@ -9,7 +9,8 @@ model Country {
 }
 
 model TransportMode {
-  id        String   @id @db.VarChar
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar
   name      String   @db.VarChar
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
