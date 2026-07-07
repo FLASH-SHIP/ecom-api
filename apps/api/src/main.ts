@@ -40,6 +40,10 @@ async function bootstrap() {
     prefix: "/public/",
   });
 
+  app.useStaticAssets(join(process.cwd(), "../admin/uploads"), {
+    prefix: "/uploads/",
+  });
+
   app.use(helmet());
   app.use(compression());
 

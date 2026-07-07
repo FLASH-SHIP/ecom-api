@@ -64,7 +64,7 @@ export const uploadMediaFile = async (
   // Required: file
   formData.append("file", params.file);
 
-  if (params.folder_id !== undefined) formData.append("folder_id", params.folder_id);
+  if (params.folderId !== undefined) formData.append("folderId", params.folderId);
   if (params.visibility !== undefined) formData.append("visibility", params.visibility);
   if (params.access_mode !== undefined) formData.append("access_mode", params.access_mode);
   if (params.filename !== undefined) formData.append("filename", params.filename);

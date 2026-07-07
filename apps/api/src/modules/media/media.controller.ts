@@ -62,11 +62,15 @@ export class MediaController {
   @UseInterceptors(FileInterceptor("file"))
   async upload(
     @UploadedFile() file: any,
-    @Body("folder_id") folderIdStr?: string | number,
-    @Body("visibility") visibility?: string,
-    @Body("access_mode") accessMode?: string,
+    @Body() body: any,
   ) {
-    return this.mediaService.uploadFile(file, folderIdStr, visibility, accessMode);
+    const folderIdStr = body.folderId;
+    return this.mediaService.uploadFile(
+      file,
+      folderIdStr,
+      body.visibility,
+      body.accessMode,
+    );
   }
 
   @Post("files/download-url")

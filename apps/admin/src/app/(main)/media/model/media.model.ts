@@ -107,7 +107,7 @@ export interface ParamsUploadMediaFile {
   /** The file to upload */
   file: File;
   /** Folder id to upload into */
-  folder_id?: string;
+  folderId?: string;
   /** Visibility: public | private */
   visibility?: string;
   /** Access mode: signed, etc. */

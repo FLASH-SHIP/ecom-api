@@ -64,10 +64,11 @@ const StatusIcon = ({ status }: { status: UploadFileStatus }): ReactNode => {
 interface UploadProgressPanelProps {
   /** Giới hạn loại file cho phép. Mặc định accept all. */
   acceptTypes?: MediaFileType[];
+  folderId?: string | number;
 }
 
 const UploadProgressPanel = forwardRef<UploadProgressPanelHandle, UploadProgressPanelProps>(
-  ({ acceptTypes }, ref) => {
+  ({ acceptTypes, folderId }, ref) => {
     const t = useTranslations();
     const inputRef = useRef<HTMLInputElement>(null);
     const acceptString = getAcceptExtensions(acceptTypes);
@@ -117,7 +118,7 @@ const UploadProgressPanel = forwardRef<UploadProgressPanelHandle, UploadProgress
 
             await uploadMutation.mutateAsync({
               file: item.file,
-              folder_id: "0",
+              folderId: folderId !== undefined ? String(folderId) : "0",
               visibility: "public",
               filename: nameWithoutExt,
             });
