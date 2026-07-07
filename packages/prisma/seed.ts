@@ -19,9 +19,6 @@ const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
 });
 const prisma = new PrismaClient({ adapter });
-console.log("DEBUG: prisma keys =", Object.keys(prisma));
-console.log("DEBUG: typeof prisma.customerGroup =", typeof prisma.customerGroup);
-console.log("DEBUG: typeof prisma.rateCard =", typeof prisma.rateCard);
 
 // ── Production guard ──────────────────────────────────────────────────────────
 
