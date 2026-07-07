@@ -1,0 +1,35 @@
+{
+  "title": "Nhóm khách hàng",
+  "subtitle": "Quản lý cấp bậc khách hàng và phân nhóm thành viên",
+  "createNew": "Tạo nhóm",
+  "editGroup": "Sửa nhóm",
+  "deleteGroup": "Xóa nhóm",
+  "searchPlaceholder": "Tìm kiếm nhóm...",
+  "noGroups": "Không tìm thấy nhóm nào.",
+  "table": {
+    "code": "Mã nhóm",
+    "name": "Tên nhóm",
+    "description": "Mô tả / Ghi chú",
+    "members": "Số thành viên",
+    "createdAt": "Ngày tạo",
+    "actions": "Thao tác"
+  },
+  "form": {
+    "nameLabel": "Tên nhóm",
+    "namePlaceholder": "Ví dụ: VIP Silver",
+    "codeLabel": "Mã nhóm",
+    "codePlaceholder": "Ví dụ: vip.silver",
+    "descriptionLabel": "Mô tả / Ghi chú",
+    "descriptionPlaceholder": "Ví dụ: Nhóm khách hàng tiêu chuẩn hưởng bảng giá cơ bản"
+  },
+  "messages": {
+    "createSuccess": "Đã tạo nhóm khách hàng thành công.",
+    "updateSuccess": "Đã cập nhật nhóm khách hàng thành công.",
+    "deleteSuccess": "Đã xóa nhóm khách hàng thành công.",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa nhóm khách hàng này?"
+  },
+  "validation": {
+    "nameRequired": "Tên nhóm không được để trống",
+    "codeRequired": "Mã nhóm không được để trống"
+  }
+}

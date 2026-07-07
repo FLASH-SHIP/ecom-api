@@ -499,5 +499,14 @@ input:disabled,
   outline: none !important;
 }
 
+/* Align calendar picker indicator in type="date" inputs to the far right */
+input[type="date"] {
+  display: block !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
 
 

@@ -75,13 +75,15 @@ export class AuditService {
   }
 
   async purgeAllAuditLogs() {
-    return this.deps.auditLogRepo.deleteAll();
+    const keepLatest = process.env.LOG_PURGE_AUDIT_KEEP_LATEST !== "false";
+    return this.deps.auditLogRepo.deleteAll(keepLatest);
   }
 
   async purgeAuditLogs(olderThanDays: number) {
     const date = new Date();
     date.setDate(date.getDate() - olderThanDays);
-    return this.deps.auditLogRepo.deleteOlderThan(date);
+    const keepLatest = process.env.LOG_PURGE_AUDIT_KEEP_LATEST !== "false";
+    return this.deps.auditLogRepo.deleteOlderThan(date, keepLatest);
   }
 
   // ─── Request Logs ─────────────────────────────────

@@ -1,0 +1,52 @@
+meta {
+  name: Update Shipment Status
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{ibcBaseUrl}}/shipment-update/record
+  body: form-urlencoded
+  auth: none
+}
+
+params:query {
+  ~token: {{ibcToken}}
+  ~_test: 
+}
+
+body:form-urlencoded {
+  status: { "report": [ { "serial": "20406080", "tracking": "465446665", "user_name": "usera", "disposition": { "date": "20260712", "time": "16:22", "code": "OF" } } ] }
+}
+
+docs {
+  # Update Shipment Status (Cập nhật POD/Disposition/Comments)
+  
+  API này dùng để gửi thông tin cập nhật trạng thái đơn hàng (POD, Sự cố giao hàng - Dispositions, hoặc Ghi chú) lên hệ thống của IBC.
+  
+  ## HTTP Request
+  - **Method**: `POST`
+  - **URL**: `{{ibcBaseUrl}}/shipment-update/record`
+  - **Content-Type**: `application/x-www-form-urlencoded`
+  
+  ## Request Body
+  - `status`: Chuỗi JSON đặc tả báo cáo trạng thái đơn hàng.
+  
+  *Cấu trúc JSON trong biến `status`:*
+  ```json
+  {
+    "report": [
+      {
+        "serial": "20406080", // Lấy từ API Get Shipment Details
+        "tracking": "465446665",
+        "user_name": "usera",
+        "disposition": { // Hoặc dùng "pod" hoặc "comments"
+          "date": "20260712",
+          "time": "16:22",
+          "code": "OF" // Mã trạng thái (Ví dụ: OF = Out for Delivery, CC = Cleared Customs)
+        }
+      }
+    ]
+  }
+  ```
+}

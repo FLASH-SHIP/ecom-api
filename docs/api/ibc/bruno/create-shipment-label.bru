@@ -1,0 +1,91 @@
+meta {
+  name: Create Shipment Label
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{ibcBaseUrl}}/shiplabel/v1/:station_code/:service_code
+  body: json
+  auth: none
+}
+
+params:query {
+  ~_test: 
+  ~label_size: STOCK_4X6
+  ~label_type: ZPLII
+}
+
+params:path {
+  station_code: MIA
+  service_code: G
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{ibcToken}}
+}
+
+body:json {
+  {
+    "customer": {
+      "name": "Jon Test",
+      "company": "Test Inc",
+      "phone": "305 591 8080",
+      "address1": "1755 West Plantation Road",
+      "city": "Miami",
+      "state": "FL",
+      "postalCode": "33122",
+      "countryCode": "US"
+    },
+    "shipper": {
+      "ibc_account": "8040",
+      "name": "Mike Bello",
+      "company": "IBC",
+      "phone": "305 591 8080",
+      "address1": "8401 NW 17th St",
+      "city": "Miami",
+      "state": "FL",
+      "postalCode": "33191",
+      "countryCode": "US"
+    },
+    "items": [
+      {
+        "weight": 1.35,
+        "weight_unit": "LB",
+        "packaging": "BOX",
+        "description": "magazines",
+        "length": 10,
+        "width": 20,
+        "height": 10,
+        "value": 1,
+        "dim_unit": "IN"
+      }
+    ],
+    "reference": "165432423"
+  }
+}
+
+docs {
+  # Create Shipment Label (Tạo nhãn dán FedEx/UNI)
+  
+  API này dùng để tạo nhãn vận chuyển (ZPLII, PDF, PNG,...) cho các đơn hàng chặng cuối (Final Mile) qua FedEx (SmartPost, Ground, Ground Home, Express) hoặc dịch vụ UNI.
+  
+  ## HTTP Request
+  - **Method**: `POST`
+  - **URL**: `{{ibcBaseUrl}}/shiplabel/v1/:station_code/:service_code`
+  - **Headers**:
+    - `Content-Type: application/json`
+    - `Authorization: Bearer {{ibcToken}}` (Authority Token bảo mật)
+  
+  ## Path Parameters
+  - `station_code`: Mã trạm (Ví dụ: `MIA`, `NYC`, `LAX`, `DFW`, `ORD`).
+  - `service_code`: Mã dịch vụ.
+    - FedEx: `S` (SmartPost), `G` (Ground), `GH` (Ground Home), `E` (Express).
+    - UNI: `U` (UNI Service).
+  
+  ## Query Parameters (Tùy chọn)
+  - `_test`: Thêm tham số này để chạy ở chế độ thử nghiệm (không tạo đơn thật).
+  - `label_size`: Kích thước nhãn (Ví dụ: `STOCK_4X6`, `PAPER_LETTER`).
+  - `label_type`: Định dạng nhãn (Ví dụ: `ZPLII`, `PDF`, `PNG`).
+}

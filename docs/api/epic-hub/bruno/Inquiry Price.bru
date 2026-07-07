@@ -1,0 +1,67 @@
+meta {
+  name: Inquiry Price
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{epicHubBaseUrl}}/v2/shipments/price-inquiry
+  body: json
+  auth: none
+}
+
+headers {
+  Token: {{epicHubToken}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "ServiceCode": null,
+    "ShipFrom": {
+      "Address": {
+        "AddressLine1": "1234 Sender Address Ave",
+        "City": "Los Angeles",
+        "StateProvinceCode": "CA",
+        "StateCode": "CA",
+        "PostalCode": "92231",
+        "CountryCode": "US"
+      }
+    },
+    "ShipTo": {
+      "Address": {
+        "AddressLine1": "6789 Receiver Address Ave",
+        "AddressLine2": "Apt 15",
+        "City": "Doral",
+        "StateProvinceCode": "FL",
+        "StateCode": "FL",
+        "PostalCode": "27000",
+        "CountryCode": "US"
+      }
+    },
+    "Package": [
+      {
+        "PackageWeight": {
+          "Weight": 5.0,
+          "UnitOfMeasurement": "LBS"
+        },
+        "Dimensions": {
+          "Length": 7.0,
+          "Width": 8.0,
+          "Height": 9.0,
+          "UnitOfMeasurement": "IN"
+        }
+      }
+    ]
+  }
+}
+
+docs {
+  # Inquiry Price
+  
+  Tra cứu giá/ước tính chi phí vận chuyển trước khi tạo nhãn chính thức.
+  
+  ## Cấu hình nổi bật
+  * `ServiceCode`: Nếu để `null` hoặc không truyền, API sẽ tự động trả về báo giá của **tất cả** các dịch vụ khả dụng của nhà vận chuyển để hệ thống tự so sánh lựa chọn. Truyền mã cụ thể (như `"03"`) để lấy báo giá dịch vụ đó.
+  * Các trường địa chỉ (`ShipFrom`, `ShipTo`) chỉ yêu cầu thông tin địa chỉ (`Address`) mà không yêu cầu thông tin cá nhân (`Name`, `Phone`, `EmailAddress`).
+}

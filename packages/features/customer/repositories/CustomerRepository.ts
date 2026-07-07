@@ -8,6 +8,8 @@ import type { CustomerStatus, Prisma, PrismaClient } from "@ecom/prisma";
 export interface CustomerFilters {
   status?: CustomerStatus;
   search?: string;
+  groupId?: number;
+  rateCardId?: number;
 }
 
 export class CustomerRepository {
@@ -32,6 +34,10 @@ export class CustomerRepository {
           emailVerified: true,
           lastLoginAt: true,
           createdAt: true,
+          groupId: true,
+          group: {
+            select: { id: true, name: true, code: true },
+          },
           _count: { select: { activityLogs: true, socialAccounts: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -64,6 +70,10 @@ export class CustomerRepository {
         metadata: true,
         createdAt: true,
         updatedAt: true,
+        groupId: true,
+        group: {
+          select: { id: true, name: true, code: true },
+        },
         socialAccounts: {
           select: { id: true, provider: true, email: true, name: true, createdAt: true },
         },
@@ -157,6 +167,7 @@ export class CustomerRepository {
     gender?: string;
     description?: string;
     hashedPassword?: string;
+    groupId?: number | null;
   }) {
     return this.prisma.customer.create({
       data: {
@@ -185,6 +196,7 @@ export class CustomerRepository {
       gender?: string | null;
       description?: string | null;
       status?: CustomerStatus;
+      groupId?: number | null;
     },
   ) {
     const updateData = { ...data };
@@ -401,8 +413,18 @@ export class CustomerRepository {
   }
 
   private buildWhere(filters: CustomerFilters) {
-    const where: Record<string, unknown> = { deletedAt: null };
+    const where: Record<string, any> = { deletedAt: null };
     if (filters.status) where.status = filters.status;
+    if (filters.groupId) where.groupId = filters.groupId;
+    if (filters.rateCardId) {
+      where.group = {
+        rateCards: {
+          some: {
+            rateCardId: filters.rateCardId,
+          },
+        },
+      };
+    }
     if (filters.search) {
       where.OR = [
         { email: { contains: filters.search, mode: "insensitive" } },

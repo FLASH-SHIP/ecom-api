@@ -1,0 +1,49 @@
+meta {
+  name: Get Authority Token
+  type: http
+  seq: 4
+}
+
+head {
+  url: {{ibcBaseUrl}}/authority/token
+  body: none
+  auth: none
+}
+
+headers {
+  IBCCredentials: {{ibcCredentials}}
+}
+
+docs {
+  # Get Authority Token (Lấy Token Xác Thực)
+  
+  API này dùng để lấy mã thông báo xác thực (Authority Token). Token này sau đó sẽ được đính kèm vào các dịch vụ được bảo mật khác của IBC.
+  
+  ## HTTP Request
+  - **Method**: `HEAD` (Bắt buộc dùng phương thức HEAD)
+  - **URL**: `{{ibcBaseUrl}}/authority/token`
+  
+  ## Headers
+  - `IBCCredentials`: Chuỗi mã hóa Base64 của thông tin tài khoản theo định dạng: `EMAIL_ADDRESS|PASSWORD` (ngăn cách bởi dấu gạch đứng `|`).
+  
+  *Ví dụ:*
+  Nếu thông tin đăng nhập của bạn là `me@myemail.com` và mật khẩu là `mypassword`:
+  1. Chuỗi kết hợp: `me@myemail.com|mypassword`
+  2. Mã hóa sang Base64: `bWVAbXllbWFpbC5jb218bXlwYXNzd29yZA==`
+  3. Đưa vào header: `IBCCredentials: bWVAbXllbWFpbC5jb218bXlwYXNzd29yZA==`
+  
+  ## Response 200 OK (Headers)
+  Khi xác thực thành công, API sẽ phản hồi thành công và trả về mã token nằm trong Header có tên là **`Authority`**:
+  ```http
+  HTTP/1.1 200 OK
+  Authority: NmIzY2Y1OWV8SmFoMnc4Rk1doOGVyWHV0a282RWtEV1hlRlBvbDhTOExRPT0=
+  ```
+  
+  Nếu sai thông tin xác thực, API trả về `401 Unauthorized` và header:
+  ```http
+  HTTP/1.1 401 Unauthorized
+  Authority: Not Authorized
+  ```
+  
+  *Chú ý*: Token này có thời hạn sử dụng. Bạn có thể tái sử dụng token này để gọi nhiều dịch vụ bảo mật khác của IBC cho đến khi hết hạn mà không cần phải gọi lại API lấy token liên tục.
+}

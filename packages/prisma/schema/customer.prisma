@@ -1,0 +1,116 @@
+// Ecom — Customer Domain Module
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
+
+enum VerificationCodeStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+}
+
+model Customer {
+  id                  Int            @id @default(autoincrement())
+  email               String         @unique
+  username            String         @unique
+  usernameChangeCount Int            @default(0)
+  usernameChangedAt   DateTime?
+  name                String?
+  phone               String?
+  avatarUrl           String?
+  hashedPassword      String?
+  status              CustomerStatus @default(ACTIVE)
+  emailVerified       DateTime?
+  lastLoginAt         DateTime?
+  dob                 DateTime?      @db.Date
+  gender              String?
+  description         String?        @db.Text
+  metadata            Json?
+  deletedAt           DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  groupId             Int?           @map("group_id")
+  group               CustomerGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  socialAccounts CustomerSocialAccount[]
+  activityLogs   CustomerActivityLog[]
+  comments       Comment[]
+  sessions       CustomerSession[]
+
+  @@index([status])
+  @@index([email])
+  @@index([username])
+  @@index([deletedAt])
+  @@index([groupId])
+  @@index([status, deletedAt, createdAt])
+  @@map("customers")
+}
+
+model CustomerSession {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  customerId   Int
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  expires      DateTime
+  loginAt      DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([customerId])
+  @@map("customer_sessions")
+}
+
+model CustomerSocialAccount {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  provider   String
+  providerId String
+  email      String?
+  name       String?
+  avatarUrl  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@unique([provider, providerId])
+  @@index([customerId])
+  @@map("customer_social_accounts")
+}
+
+model CustomerActivityLog {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  action     String
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("customer_activity_logs")
+}
+
+model CustomerVerificationCode {
+  id        Int                    @id @default(autoincrement())
+  email     String
+  code      String
+  attempts  Int                    @default(0)
+  status    VerificationCodeStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@map("customer_verification_codes")
+}
