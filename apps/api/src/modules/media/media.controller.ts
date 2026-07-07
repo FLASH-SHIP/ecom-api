@@ -10,6 +10,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { ConfigService } from "@nestjs/config";
 import { type MediaAction, MediaService } from "./media.service";
 
 @Controller({
@@ -17,13 +18,10 @@ import { type MediaAction, MediaService } from "./media.service";
   version: "2",
 })
 export class MediaController {
-  constructor(@Inject(MediaService) private readonly mediaService: MediaService) {}
-
-  private getBaseUrl(req: any): string {
-    const protocol = req.protocol || "http";
-    const host = req.get ? req.get("host") : "localhost:4000";
-    return `${protocol}://${host}`;
-  }
+  constructor(
+    @Inject(MediaService) private readonly mediaService: MediaService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
+  ) {}
 
   @Get("list")
   async list(
@@ -34,9 +32,9 @@ export class MediaController {
     @Query("sort_by") sortBy = "name-asc",
     @Query("filter") filter = "everything",
     @Query("search") search = "",
-    @Req() req: any,
   ) {
-    const baseUrl = this.getBaseUrl(req);
+    const adminUrl = this.configService.get<string>("ADMIN_URL") || "http://localhost:4001";
+    const baseUrl = adminUrl.replace(/\/$/, "");
     return this.mediaService.getMediaList(
       folderIdStr,
       viewIn,
