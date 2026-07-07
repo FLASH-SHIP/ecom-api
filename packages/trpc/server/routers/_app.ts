@@ -4,6 +4,7 @@ import { blogRouter } from "./public/blog/_router";
 import { healthRouter } from "./public/health/_router";
 import { publicLanguagesRouter } from "./public/languages/_router";
 import { publicPagesRouter } from "./public/pages/_router";
+import { publicHsCodeRouter } from "./public/hscodes/_router";
 import { adminMenusRouter } from "./viewer/admin-menus/_router";
 import { auditLogsRouter } from "./viewer/audit-logs/_router";
 import { authRouter } from "./viewer/auth/_router";
@@ -78,10 +79,12 @@ export const appRouter = router({
       blog: blogRouter,
       pages: publicPagesRouter,
       languages: publicLanguagesRouter,
+      hscode: publicHsCodeRouter,
     }),
     blog: blogRouter,
     pages: publicPagesRouter,
     languages: publicLanguagesRouter,
+    hscode: publicHsCodeRouter,
     health: healthRouter,
   }),
 

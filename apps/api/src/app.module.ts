@@ -27,6 +27,7 @@ import { QueuesModule } from "./modules/queues/queues.module";
 // import { MemberAuthModule } from "./modules/member-auth/member-auth.module";
 import { RequestLoggerMiddleware } from "./modules/request-logger/request-logger.middleware";
 import { UsersModule } from "./modules/users/users.module";
+import { HscodesModule } from "./modules/hscodes/hscodes.module";
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { UsersModule } from "./modules/users/users.module";
     UsersModule,
     QueuesModule,
     HttpClientModule,
+    HscodesModule,
   ],
   providers: [
     {
