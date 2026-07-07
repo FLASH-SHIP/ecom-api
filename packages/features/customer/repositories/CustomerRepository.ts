@@ -291,11 +291,28 @@ export class CustomerRepository {
     });
   }
 
+  async findOrCreateDefaultGroup() {
+    let group = await this.prisma.customerGroup.findUnique({
+      where: { code: "default" },
+    });
+    if (!group) {
+      group = await this.prisma.customerGroup.create({
+        data: {
+          code: "default",
+          name: "Default Group",
+          description: "Nhóm khách hàng mặc định của hệ thống",
+        },
+      });
+    }
+    return group;
+  }
+
   async createWithPassword(data: {
     email: string;
     username: string;
     name?: string;
     hashedPassword: string;
+    groupId?: number | null;
   }) {
     return this.prisma.customer.create({
       data: {
@@ -416,7 +433,7 @@ export class CustomerRepository {
   }
 
   private buildWhere(filters: CustomerFilters) {
-    const where: Record<string, any> = { deletedAt: null };
+    const where: Prisma.CustomerWhereInput = { deletedAt: null };
     if (filters.status) where.status = filters.status;
     if (filters.groupId) where.groupId = filters.groupId;
     if (filters.rateCardId) {
