@@ -23,6 +23,12 @@ export class MediaController {
     @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
+  private getBaseUrl(req: any): string {
+    const protocol = req.protocol || "http";
+    const host = req.get ? req.get("host") : "localhost:4000";
+    return `${protocol}://${host}`;
+  }
+
   @Get("list")
   async list(
     @Query("folder_id") folderIdStr: string,
@@ -32,9 +38,9 @@ export class MediaController {
     @Query("sort_by") sortBy = "name-asc",
     @Query("filter") filter = "everything",
     @Query("search") search = "",
+    @Req() req: any,
   ) {
-    const adminUrl = this.configService.get<string>("ADMIN_URL") || "http://localhost:4001";
-    const baseUrl = adminUrl.replace(/\/$/, "");
+    const baseUrl = this.getBaseUrl(req);
     return this.mediaService.getMediaList(
       folderIdStr,
       viewIn,
@@ -61,24 +67,29 @@ export class MediaController {
   async upload(
     @UploadedFile() file: any,
     @Body() body: any,
+    @Req() req: any,
   ) {
     const folderIdStr = body.folderId;
+    const baseUrl = this.getBaseUrl(req);
     return this.mediaService.uploadFile(
       file,
       folderIdStr,
       body.visibility,
       body.accessMode,
+      baseUrl,
     );
   }
 
   @Post("files/download-url")
   async downloadUrl(
     @Body("url") url: string,
-    @Body("folder_id") folderIdStr?: string | number,
-    @Body("visibility") visibility?: string,
-    @Body("access_mode") accessMode?: string,
+    @Body("folder_id") folderIdStr: string | number | undefined,
+    @Body("visibility") visibility: string | undefined,
+    @Body("access_mode") accessMode: string | undefined,
+    @Req() req: any,
   ) {
-    return this.mediaService.downloadUrl(url, folderIdStr, visibility, accessMode);
+    const baseUrl = this.getBaseUrl(req);
+    return this.mediaService.downloadUrl(url, folderIdStr, visibility, accessMode, baseUrl);
   }
 
   @Post("actions")
