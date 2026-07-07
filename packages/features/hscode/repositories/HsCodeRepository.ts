@@ -32,6 +32,40 @@ export class HsCodeRepository {
     return result;
   }
 
+  async getChapters() {
+    return this.prisma.$queryRaw<
+      Array<{
+        code: string;
+        description: string;
+        notes: string | null;
+      }>
+    >`
+      SELECT 
+        hs_code as code, 
+        article_description as description, 
+        notes 
+      FROM crawl_hscode 
+      WHERE hs_code IS NOT NULL AND LENGTH(hs_code) = 2 
+      ORDER BY hs_code;
+    `;
+  }
+
+  async getHeadingsByChapter(chapterCode: string) {
+    return this.prisma.$queryRaw<
+      Array<{
+        code: string;
+        description: string;
+      }>
+    >`
+      SELECT DISTINCT ON (SUBSTRING(hs_code, 1, 4))
+        SUBSTRING(hs_code, 1, 4) as code,
+        article_description as description
+      FROM crawl_hscode
+      WHERE hs_code IS NOT NULL AND LENGTH(hs_code) >= 4 AND hs_code LIKE ${chapterCode + '%'}
+      ORDER BY SUBSTRING(hs_code, 1, 4), hs_code;
+    `;
+  }
+
   /**
    * Queries all tariff rate records from hscode_flexport that belong to a 4-digit heading.
    */

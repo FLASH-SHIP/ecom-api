@@ -30,117 +30,18 @@ export class HsCodeService {
   }
 
   /**
-   * Retrieves the full tree of chapters and their 4-digit headings.
+   * Retrieves the tree of chapters (level 1) with notesHtml.
    */
   async getTree() {
-    const [rawData, flexportItems] = await Promise.all([
-      this.deps.hsCodeRepo.getTreeRawData(),
-      this.deps.hsCodeRepo.getAllFlexportItems(),
-    ]);
-
-    // Group flexport items by heading (first 4 digits)
-    const itemsByHeading = new Map<string, any[]>();
-    for (const item of flexportItems) {
-      const cleanCode = item.code.replace(/\./g, "");
-      const headingCode = cleanCode.substring(0, 4);
-      if (!itemsByHeading.has(headingCode)) {
-        itemsByHeading.set(headingCode, []);
-      }
-      itemsByHeading.get(headingCode)!.push(item);
-    }
-
-    const chaptersMap = new Map<
-      string,
-      {
-        code: string;
-        description: string;
-        headings: Map<string, { code: string; description: string; children: any[] }>;
-      }
-    >();
-
-    for (const row of rawData) {
-      const descParts = row.article_description.split(/[：:]+/).map((s) => s.trim());
-      const chapterCode = row.chapter_code;
-      const chapterDesc = descParts[0] || `Chapter ${chapterCode}`;
-      const headingCode = row.heading_code;
-      const headingDesc = descParts[1] || `Heading ${headingCode}`;
-
-      if (!chaptersMap.has(chapterCode)) {
-        chaptersMap.set(chapterCode, {
-          code: chapterCode,
-          description: chapterDesc,
-          headings: new Map(),
-        });
-      }
-
-      const chapterObj = chaptersMap.get(chapterCode);
-      if (chapterObj && !chapterObj.headings.has(headingCode)) {
-        const rawHeadingItems = itemsByHeading.get(headingCode) || [];
-
-        // Build sub-tree hierarchy from dot counts
-        const childrenRoot: any[] = [];
-        const stack: any[] = [];
-        for (const item of rawHeadingItems) {
-          const rawDesc = item.description ?? "";
-          const dotCount = (rawDesc.match(/·/g) || []).length;
-
-          let cleanDesc = rawDesc.replace(/^[·\s]+/, "").trim();
-          const midpoint = Math.floor(cleanDesc.length / 2);
-          const firstHalf = cleanDesc.substring(0, midpoint).trim();
-          const secondHalf = cleanDesc.substring(midpoint).trim();
-          if (firstHalf === secondHalf && firstHalf.length > 0) {
-            cleanDesc = firstHalf;
-          }
-
-          const node = {
-            code: item.code,
-            description: cleanDesc,
-            generalRate: item.generalRate || null,
-            specialRate: item.specialRate || null,
-            unit: item.unitsofQuantity || null,
-            children: [] as any[],
-          };
-
-          if (dotCount === 0) {
-            childrenRoot.push(node);
-            stack[0] = node;
-            stack.length = 1;
-          } else {
-            let parentIdx = dotCount - 1;
-            while (parentIdx >= 0 && !stack[parentIdx]) {
-              parentIdx--;
-            }
-
-            if (parentIdx >= 0 && stack[parentIdx]) {
-              stack[parentIdx].children.push(node);
-              stack[dotCount] = node;
-              stack.length = dotCount + 1;
-            } else {
-              childrenRoot.push(node);
-              stack[dotCount] = node;
-              stack.length = dotCount + 1;
-            }
-          }
-        }
-
-        chapterObj.headings.set(headingCode, {
-          code: headingCode,
-          description: headingDesc,
-          children: childrenRoot,
-        });
-      }
-    }
-
-    // Convert map to array and sort
-    const tree = Array.from(chaptersMap.values())
-      .map((ch) => ({
+    const chapters = await this.deps.hsCodeRepo.getChapters();
+    return chapters.map((ch) => {
+      const desc = ch.description || "";
+      const capitalizedDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
+      return {
         code: ch.code,
-        description: ch.description,
-        headings: Array.from(ch.headings.values()).sort((a, b) => a.code.localeCompare(b.code)),
-      }))
-      .sort((a, b) => a.code.localeCompare(b.code));
-
-    return tree;
+        description: capitalizedDesc,
+      };
+    });
   }
 
   /**
@@ -152,6 +53,8 @@ export class HsCodeService {
     }
 
     const cleanCode = inputCode.replace(/\./g, "").trim();
+    const isChapter = cleanCode.length === 2;
+
     let headingCode = "0101";
     if (cleanCode.length >= 4) {
       headingCode = cleanCode.substring(0, 4);
@@ -161,21 +64,62 @@ export class HsCodeService {
 
     const chapterCode = headingCode.substring(0, 2);
 
-    // 1. Resolve Chapter and Heading names from crawl_hscode description hierarchy
+    // 1. Fetch chapter level notes HTML container from database
+    const chapterData = await this.deps.hsCodeRepo.getChapterData(chapterCode);
+    let dbChapterName = chapterData?.articleDescription || `Chapter ${chapterCode}`;
+    if (dbChapterName) {
+      dbChapterName = dbChapterName.charAt(0).toUpperCase() + dbChapterName.slice(1);
+    }
+
+    // Only return notesHtml for Level 1 Parent Chapter (length === 2)
+    const notesHtml = isChapter ? (chapterData?.notes || null) : null;
+
+    // 2. Resolve Heading names from database
     const articleDescription = await this.deps.hsCodeRepo.getHeadingDescription(headingCode);
     const descParts = articleDescription
       ? articleDescription.split(/[：:]+/).map((s) => s.trim())
       : [];
-    const chapterName = descParts[0] || `Chapter ${chapterCode}`;
-    const headingName = descParts[1] || `Heading ${headingCode}`;
+    const headingName = descParts[1] || descParts[0] || `Heading ${headingCode}`;
 
-    // 2. Fetch chapter level notes HTML container from database
-    const chapterData = await this.deps.hsCodeRepo.getChapterData(chapterCode);
-    const notesHtml = chapterData?.notes || null;
-    const dbChapterName = chapterData?.articleDescription || chapterName;
+    // 3. Build children tree array depending on code level
+    let children: any[] = [];
+    if (isChapter) {
+      const headings = await this.deps.hsCodeRepo.getHeadingsByChapter(chapterCode);
+      children = await Promise.all(
+        headings.map(async (h) => {
+          const parts = h.description.split(/[：:]+/).map((s) => s.trim());
+          let desc = parts[1] || parts[0] || h.description;
+          desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+          // Recursively fetch children tree for each heading
+          const headingChildren = await this.getHeadingTree(h.code);
+          return {
+            code: h.code,
+            description: desc,
+            children: headingChildren,
+          };
+        })
+      );
+    } else if (cleanCode.length === 4) {
+      children = await this.getHeadingTree(cleanCode);
+    } else {
+      const headingTree = await this.getHeadingTree(headingCode);
+      const findNodeInTree = (nodes: any[], target: string): any | null => {
+        for (const n of nodes) {
+          if (n.code.replace(/\./g, "") === target) return n;
+          if (n.children && n.children.length > 0) {
+            const found = findNodeInTree(n.children, target);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const matchedNode = findNodeInTree(headingTree, cleanCode);
+      children = matchedNode ? matchedNode.children : [];
+    }
 
-    // 3. Query tariff rates list from hscode_flexport
-    const rawRates = await this.deps.hsCodeRepo.getFlexportItemsByHeading(headingCode);
+    // 4. Query tariff rates list from hscode_flexport
+    const rateQueryCode = isChapter ? chapterCode : headingCode;
+    const rawRates = await this.deps.hsCodeRepo.getFlexportItemsByHeading(rateQueryCode);
 
     const rates = rawRates.map((rate) => {
       let cleanDesc = rate.description ?? "";
@@ -194,7 +138,8 @@ export class HsCodeService {
       return {
         code: rate.code,
         description: cleanDesc,
-        indent: dotCount,
+        chapterCode: rate.code.replace(/\./g, "").substring(0, 2),
+        headingCode: rate.code.replace(/\./g, "").substring(0, 4),
         unit: rate.unitsofQuantity || null,
         generalRate: rate.generalRate || null,
         specialRate: rate.specialRate || null,
@@ -203,7 +148,6 @@ export class HsCodeService {
 
     const selectedRate = rates.find((r) => r.code.replace(/\./g, "") === cleanCode) || null;
 
-    // Filter rates to only return matching prefix if queried code is more specific than heading (length > 4)
     const filteredRates =
       cleanCode.length > 4
         ? rates.filter((r) => r.code.replace(/\./g, "").startsWith(cleanCode))
@@ -215,12 +159,15 @@ export class HsCodeService {
         name: dbChapterName,
         notesHtml,
       },
-      heading: {
-        code: headingCode,
-        name: headingName,
-      },
+      heading: isChapter
+        ? null
+        : {
+            code: headingCode,
+            name: headingName,
+          },
       selectedRate,
       rates: filteredRates,
+      children,
     };
   }
 

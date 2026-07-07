@@ -5,6 +5,7 @@ import type { HsCodeRepository } from "../repositories/HsCodeRepository";
 function createMockRepo() {
   return {
     getTreeRawData: vi.fn(),
+    getChapters: vi.fn(),
     getAllFlexportItems: vi.fn(),
     getFlexportItemsByHeading: vi.fn(),
     searchFlexportItems: vi.fn(),
@@ -161,30 +162,21 @@ describe("HsCodeService", () => {
   });
 
   describe("getTree", () => {
-    it("should build the chapters and headings tree correctly", async () => {
+    it("should return the list of level 1 chapters with capitalized description", async () => {
       const { service, repo } = createService();
-      repo.getTreeRawData.mockResolvedValue([
+      repo.getChapters.mockResolvedValue([
         {
-          chapter_code: "22",
-          heading_code: "2203",
-          article_description: "Chapter 22: Beverages, spirits and vinegar : Beer made from malt",
-        },
-      ]);
-      repo.getAllFlexportItems.mockResolvedValue([
-        {
-          code: "2203.00.00.60",
-          description: "···Beer made from malt",
-          generalRate: "Free",
-          specialRate: null,
-          unitsofQuantity: "bbl",
+          code: "22",
+          description: "chapter 22: beverages, spirits and vinegar",
+          notes: "<p>These are chapter 22 notes</p>",
         },
       ]);
 
       const result = await service.getTree();
       expect(result).toHaveLength(1);
       expect(result[0].code).toBe("22");
-      expect(result[0].headings).toHaveLength(1);
-      expect(result[0].headings[0].code).toBe("2203");
+      expect(result[0].description).toBe("Chapter 22: beverages, spirits and vinegar");
+      expect(result[0]).not.toHaveProperty("notesHtml");
     });
   });
 });
