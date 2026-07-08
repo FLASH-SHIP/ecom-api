@@ -5,7 +5,9 @@ import { SearchEngineOptimize } from "@admin/components/blog/SearchEngineOptimiz
 import { CustomFieldsPanel } from "@admin/components/custom-fields/CustomFieldsPanel";
 import { StickyPublishBar } from "@admin/components/layout/StickyPublishBar";
 import { useToast } from "@admin/components/toast-provider";
+import { AddFromUrlDialog } from "@admin/components/ui/AddFromUrlDialog";
 import { RichTextEditor } from "@admin/components/ui/RichTextEditor";
+import { useAddFromUrl } from "@admin/components/ui/useAddFromUrl";
 import { trpc } from "@admin/lib/trpc";
 import useUser from "@auth/useUser";
 import { Badge } from "@ecom/ui/components/badge";
@@ -104,6 +106,7 @@ export function PostForm({
   const tPost = useTranslations("posts");
   const locale = useLocale();
   const { data: currentUser } = useUser();
+  const { dialogProps: addFromUrlProps, askUrl } = useAddFromUrl();
 
   const { data: activeLanguages } = trpc.viewer.languages.getActive.useQuery();
 
@@ -1178,9 +1181,17 @@ export function PostForm({
                   <CardTitle className="text-sm font-semibold">Image</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3 p-4">
-                  <button
-                    type="button"
+                  {/* biome-ignore lint/a11y/useSemanticElements: can't use <button> here because the inner trash <Button> would create invalid button-in-button nesting */}
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setMediaPickerTarget("featured")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setMediaPickerTarget("featured");
+                      }
+                    }}
                     className="w-full text-left group relative border border-dashed border-input rounded-md flex flex-col items-center justify-center bg-muted/5 h-36 overflow-hidden transition-all hover:bg-muted/10 cursor-pointer"
                   >
                     {formData.featuredImage ? (
@@ -1210,7 +1221,7 @@ export function PostForm({
                         <span className="text-xs text-center block">No image selected</span>
                       </div>
                     )}
-                  </button>
+                  </div>
 
                   <div className="flex items-center justify-center gap-1.5 text-xs">
                     <button
@@ -1224,8 +1235,10 @@ export function PostForm({
                     <button
                       type="button"
                       onClick={() => {
-                        const url = prompt("Enter Image URL:");
-                        if (url) setFormData((prev) => ({ ...prev, featuredImage: url }));
+                        askUrl({
+                          onSubmit: (url) =>
+                            setFormData((prev) => ({ ...prev, featuredImage: url })),
+                        });
                       }}
                       className="text-primary hover:underline font-semibold"
                     >
@@ -1241,9 +1254,17 @@ export function PostForm({
                   <CardTitle className="text-sm font-semibold">Banner image (1920×170px)</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3 p-4">
-                  <button
-                    type="button"
+                  {/* biome-ignore lint/a11y/useSemanticElements: can't use <button> here because the inner trash <Button> would create invalid button-in-button nesting */}
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setMediaPickerTarget("banner")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setMediaPickerTarget("banner");
+                      }
+                    }}
                     className="w-full text-left group relative border border-dashed border-input rounded-md flex flex-col items-center justify-center bg-muted/5 h-28 overflow-hidden transition-all hover:bg-muted/10 cursor-pointer"
                   >
                     {formData.bannerImage ? (
@@ -1273,7 +1294,7 @@ export function PostForm({
                         <span className="text-xs text-center block">No banner image selected</span>
                       </div>
                     )}
-                  </button>
+                  </div>
 
                   <div className="flex items-center justify-center gap-1.5 text-xs">
                     <button
@@ -1287,8 +1308,9 @@ export function PostForm({
                     <button
                       type="button"
                       onClick={() => {
-                        const url = prompt("Enter Banner Image URL:");
-                        if (url) setFormData((prev) => ({ ...prev, bannerImage: url }));
+                        askUrl({
+                          onSubmit: (url) => setFormData((prev) => ({ ...prev, bannerImage: url })),
+                        });
                       }}
                       className="text-primary hover:underline font-semibold"
                     >
@@ -1405,6 +1427,8 @@ export function PostForm({
           setMediaPickerTarget(null);
         }}
       />
+
+      <AddFromUrlDialog {...addFromUrlProps} />
     </div>
   );
 }
