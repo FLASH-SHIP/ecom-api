@@ -291,21 +291,7 @@ export class CustomerRepository {
     });
   }
 
-  async findOrCreateDefaultGroup() {
-    let group = await this.prisma.customerGroup.findUnique({
-      where: { code: "default" },
-    });
-    if (!group) {
-      group = await this.prisma.customerGroup.create({
-        data: {
-          code: "default",
-          name: "Default Group",
-          description: "Nhóm khách hàng mặc định của hệ thống",
-        },
-      });
-    }
-    return group;
-  }
+
 
   async createWithPassword(data: {
     email: string;

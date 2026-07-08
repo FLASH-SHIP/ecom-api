@@ -561,44 +561,49 @@ function GeneralInfoTab({
       </div>
 
       {/* Multi-select for customer groups */}
-      <div className="flex flex-col gap-1.5">
-        <Label className="font-semibold text-xs">{tSettings("rates.lblCustomerGroups")}</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-input rounded-md p-3 max-h-36 overflow-y-auto bg-muted/10">
-          {customerGroups?.map((group) => {
-            const checked = customerGroupIds.includes(group.id);
-            return (
-              <label
-                key={group.id}
-                className="flex items-center gap-2 text-sm cursor-pointer select-none"
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  disabled={isDefaultRateCard}
-                  onChange={() => {
-                    const next = checked
-                      ? customerGroupIds.filter((id) => id !== group.id)
-                      : [...customerGroupIds, group.id];
-                    setValue("customerGroupIds", next, { shouldDirty: true, shouldValidate: true });
-                  }}
-                  className="rounded border-input text-primary focus:ring-primary size-4"
-                />
-                <span>
-                  {group.name} ({group.code})
-                </span>
-              </label>
-            );
-          })}
-          {(!customerGroups || customerGroups.length === 0) && (
-            <span className="text-xs text-muted-foreground italic col-span-2">
-              {tSettings("rates.noGroupsFound")}
-            </span>
-          )}
+      {!isDefaultRateCard && (
+        <div className="flex flex-col gap-1.5">
+          <Label className="font-semibold text-xs">{tSettings("rates.lblCustomerGroups")}</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-input rounded-md p-3 max-h-36 overflow-y-auto bg-muted/10">
+            {customerGroups?.map((group) => {
+              const checked = customerGroupIds.includes(group.id);
+              return (
+                <label
+                  key={group.id}
+                  className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={isDefaultRateCard}
+                    onChange={() => {
+                      const next = checked
+                        ? customerGroupIds.filter((id) => id !== group.id)
+                        : [...customerGroupIds, group.id];
+                      setValue("customerGroupIds", next, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }}
+                    className="rounded border-input text-primary focus:ring-primary size-4"
+                  />
+                  <span>
+                    {group.name} ({group.code})
+                  </span>
+                </label>
+              );
+            })}
+            {(!customerGroups || customerGroups.length === 0) && (
+              <span className="text-xs text-muted-foreground italic col-span-2">
+                {tSettings("rates.noGroupsFound")}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {tSettings("rates.customerGroupsHelper")}
+          </p>
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          {tSettings("rates.customerGroupsHelper")}
-        </p>
-      </div>
+      )}
     </div>
   );
 }
