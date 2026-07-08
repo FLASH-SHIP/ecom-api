@@ -62,7 +62,12 @@
     "optional": "tùy chọn",
     "socialAccounts": "Tài khoản mạng xã hội",
     "recentActivity": "Hoạt động gần đây",
-    "publish": "Xuất bản"
+    "publish": "Xuất bản",
+    "addFromUrlTitle": "Thêm từ URL",
+    "addFromUrlLabel": "URL hình ảnh",
+    "addFromUrlDescription": "Nhập URL của hình ảnh bạn muốn thêm.",
+    "addFromUrlPlaceholder": "https://example.com/image.jpg",
+    "addFromUrlAdd": "Thêm"
   },
   "auth": {
     "login": "Đăng nhập",

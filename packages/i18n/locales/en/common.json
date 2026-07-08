@@ -62,7 +62,12 @@
     "optional": "optional",
     "socialAccounts": "Social Accounts",
     "recentActivity": "Recent Activity",
-    "publish": "Publish"
+    "publish": "Publish",
+    "addFromUrlTitle": "Add from URL",
+    "addFromUrlLabel": "Image URL",
+    "addFromUrlDescription": "Enter the URL of the image you want to add.",
+    "addFromUrlPlaceholder": "https://example.com/image.jpg",
+    "addFromUrlAdd": "Add"
   },
   "auth": {
     "login": "Sign in",
