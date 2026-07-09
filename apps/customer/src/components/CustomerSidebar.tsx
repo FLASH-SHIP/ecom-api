@@ -38,8 +38,10 @@ function SidebarNavItem({ item, pathname, isCollapsed }: SidebarNavItemProps) {
     <NextLink
       href={item.href}
       className={cn(
-        "group flex items-center rounded-lg transition-all duration-150 cursor-pointer",
-        isCollapsed ? "justify-center h-10 w-10 mx-auto" : "gap-3 px-4 py-3 text-sm font-medium",
+        "group flex items-center rounded-lg transition-all duration-300 cursor-pointer overflow-hidden whitespace-nowrap",
+        isCollapsed
+          ? "px-0 py-2.5 justify-center h-10 w-10 mx-auto"
+          : "px-4 py-3 text-sm font-medium gap-3 w-full h-11",
         isActive
           ? "bg-[#0F798C]/12 text-[#0F798C] dark:bg-[#0F798C]/20 dark:text-cyan-400"
           : "text-[#7B7B7B] hover:bg-accent hover:text-foreground",
@@ -54,7 +56,14 @@ function SidebarNavItem({ item, pathname, isCollapsed }: SidebarNavItemProps) {
             : "text-[#7B7B7B] group-hover:text-foreground",
         )}
       />
-      {!isCollapsed && <span className="truncate">{item.label}</span>}
+      <span
+        className={cn(
+          "truncate transition-all duration-300 ease-in-out",
+          isCollapsed ? "w-0 opacity-0 invisible" : "w-auto opacity-100 visible",
+        )}
+      >
+        {item.label}
+      </span>
     </NextLink>
   );
 }
@@ -77,21 +86,24 @@ function LanguageSelector({
   return (
     <div
       className={cn(
-        "border-t border-[var(--sidebar-border)] p-4 flex items-center justify-between gap-3 text-sm",
-        isCollapsed && "justify-center p-3",
+        "border-t border-[var(--sidebar-border)] p-4 flex items-center justify-center gap-3 text-sm transition-all duration-300",
+        isCollapsed && "p-3",
       )}
     >
-      {!isCollapsed && (
-        <span className="text-muted-foreground font-medium">
-          {translate("customerDashboard.sidebar.language", currentLocale)}
-        </span>
-      )}
+      <span
+        className={cn(
+          "text-muted-foreground font-medium transition-all duration-300 ease-in-out truncate",
+          isCollapsed ? "w-0 opacity-0 invisible mr-0" : "mr-auto w-auto opacity-100 visible",
+        )}
+      >
+        {translate("customerDashboard.sidebar.language", currentLocale)}
+      </span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
             className={cn(
-              "flex items-center rounded-[10px] border border-border bg-card text-xs font-semibold text-foreground hover:bg-accent shadow-[0_1px_2px_rgba(0,0,0,0.1)] focus:outline-none cursor-pointer",
+              "flex items-center rounded-[10px] border border-border bg-card text-xs font-semibold text-foreground hover:bg-accent shadow-[0_1px_2px_rgba(0,0,0,0.1)] focus:outline-none cursor-pointer transition-all duration-300",
               isCollapsed ? "p-2 justify-center" : "gap-1.5 px-3 py-1.5",
             )}
             title={
@@ -101,7 +113,12 @@ function LanguageSelector({
             }
           >
             <span className="uppercase">{language?.id === "en" ? "ENG" : language?.id}</span>
-            {!isCollapsed && <ChevronDown className="size-3.5 text-muted-foreground" />}
+            <ChevronDown
+              className={cn(
+                "size-3.5 text-muted-foreground transition-all duration-300",
+                isCollapsed ? "w-0 opacity-0 scale-0 ml-0" : "w-3.5 opacity-100 scale-100 ml-1.5",
+              )}
+            />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -196,13 +213,25 @@ export function CustomerSidebar({ isCollapsed = false }: { isCollapsed?: boolean
       <div className="flex-1 px-4 py-6 flex flex-col gap-6 overflow-y-auto">
         {menuGroups.map((group, index) => (
           <div key={group.title} className="flex flex-col gap-2">
-            {/* Group Title or Separator */}
-            {!isCollapsed ? (
-              <span className="px-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                {group.title}
-              </span>
-            ) : (
-              index > 0 && <div className="h-px bg-border/60 my-2 mx-1" />
+            {/* Group Title */}
+            <span
+              className={cn(
+                "px-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase transition-all duration-300 ease-in-out overflow-hidden block whitespace-nowrap",
+                isCollapsed
+                  ? "h-0 opacity-0 scale-95 pointer-events-none"
+                  : "h-4 opacity-100 scale-100",
+              )}
+            >
+              {group.title}
+            </span>
+            {/* Separator line when collapsed */}
+            {index > 0 && (
+              <div
+                className={cn(
+                  "h-px bg-border/60 transition-all duration-300 ease-in-out mx-1",
+                  isCollapsed ? "my-2 opacity-100" : "h-0 my-0 opacity-0 overflow-hidden",
+                )}
+              />
             )}
 
             {/* Group Items */}

@@ -165,116 +165,15 @@ export default function CustomerDashboardPage() {
     );
   }
 
-  const displayName =
-    profile.name ?? profile.email ?? translate("customerDashboard.customerFallback", currentLocale);
   const canChangeUsername = (profile.usernameChangeCount ?? 0) < 1;
-
-  const welcomeMessage = translate("customerDashboard.welcome", currentLocale).replace(
-    "{name}",
-    displayName,
-  );
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
       {/* Welcome */}
-      <div className="mb-10 flex items-center gap-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2563EB] to-[#7C3AED] text-2xl font-bold text-white">
-          {displayName.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <h1 className="text-2xl font-extrabold">{welcomeMessage}</h1>
-          <p className="text-sm text-muted-foreground">
-            <AtSign className="mr-1 inline h-3.5 w-3.5" />
-            {profile.username}
-          </p>
-        </div>
+      <div className={'title-page-content'}>
+        {translate('customerDashboard.customer', currentLocale)}
       </div>
 
-      {/* Stats Cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-border p-4">
-          <div className="mb-1 flex items-center gap-2">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Email</span>
-          </div>
-          <p className="break-all font-semibold">{profile.email}</p>
-          {profile.emailVerified ? (
-            <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-              {translate("customerDashboard.verified", currentLocale)}
-            </span>
-          ) : (
-            <span className="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-              {translate("customerDashboard.unverified", currentLocale)}
-            </span>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-border p-4">
-          <p className="mb-1 text-sm text-muted-foreground">
-            {translate("customerDashboard.status", currentLocale)}
-          </p>
-          <span
-            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              profile.status === "ACTIVE"
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-amber-100 text-amber-700"
-            }`}
-          >
-            {profile.status === "ACTIVE"
-              ? translate("customerDashboard.statusActive", currentLocale)
-              : profile.status}
-          </span>
-        </div>
-
-        <div className="rounded-xl border border-border p-4">
-          <p className="mb-1 text-sm text-muted-foreground">
-            {translate("customerDashboard.joinedDate", currentLocale)}
-          </p>
-          <p className="font-semibold">
-            {new Date(profile.createdAt).toLocaleDateString(
-              currentLocale === "vi" ? "vi-VN" : "en-US",
-              {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              },
-            )}
-          </p>
-        </div>
-      </div>
-
-      <hr className="mb-8 border-border" />
-
-      {/* Quick Links */}
-      <h2 className="mb-4 text-lg font-bold">
-        {translate("customerDashboard.quickLinks", currentLocale)}
-      </h2>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {QUICK_LINKS.map((link) => {
-          const Icon = link.icon;
-          return (
-            <NextLink
-              key={link.href}
-              href={getLocalizedHref(link.href)}
-              className="group flex items-center gap-4 rounded-xl border border-border p-5 transition-colors hover:bg-muted/50"
-            >
-              <Icon className={`h-8 w-8 ${link.color}`} />
-              <div>
-                <p className="font-bold group-hover:text-primary">
-                  {link.href === "/profile"
-                    ? translate("customerDashboard.profileTitle", currentLocale)
-                    : translate("customerDashboard.blogTitle", currentLocale)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {link.href === "/profile"
-                    ? translate("customerDashboard.profileDesc", currentLocale)
-                    : translate("customerDashboard.blogDesc", currentLocale)}
-                </p>
-              </div>
-            </NextLink>
-          );
-        })}
-      </div>
 
       {/* Profile completion modal dialog */}
       <Dialog open={showModal}>
