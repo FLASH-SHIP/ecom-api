@@ -16,7 +16,7 @@ import { WalletSolidIcon } from "@ecom/ui/components/icon-component/WalletSolidI
 import { cn } from "@ecom/ui/lib/utils";
 import { Bell, ChevronDown, LogOut, PanelLeft, User as UserIcon } from "lucide-react";
 import NextLink from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { type ReactNode, useEffect, useState } from "react";
 import { trpc } from "../lib/trpc";
@@ -28,6 +28,7 @@ interface CustomerDashboardLayoutProps {
 
 export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutProps) {
   const _pathname = usePathname();
+  const router = useRouter();
   const { status } = useSession();
   const { languageId: currentLocale } = useI18n();
 
@@ -54,6 +55,15 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
   const { data: profile } = trpc.customer.auth.me.useQuery(undefined, {
     enabled: status === "authenticated",
   });
+
+  // Handle expired sessions / tokens by signing out and redirecting to login page
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/auth/login");
+    } else if (status === "authenticated" && profile === null) {
+      signOut({ callbackUrl: "/auth/login" });
+    }
+  }, [status, profile, router]);
 
   const displayName = profile?.name ?? profile?.email?.split("@")[0] ?? "Customer";
 

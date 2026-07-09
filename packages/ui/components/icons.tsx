@@ -1,3 +1,5 @@
+import {TopupIcon} from "./icon-component/TopupIcon";
+
 export { AppleIcon } from "./icon-component/AppleIcon";
 export { FacebookIcon } from "./icon-component/FacebookIcon";
 export { GoogleIcon } from "./icon-component/GoogleIcon";
@@ -12,3 +14,6 @@ export { CirclePlusIcon } from "./icon-component/CirclePlusIcon";
 export { FileInputIcon } from "./icon-component/FileInputIcon";
 export { ServerCogIcon } from "./icon-component/ServerCogIcon";
 export { SidebarToggleIcon } from "./icon-component/SidebarToggleIcon";
+export { PlusCircleIcon } from "./icon-component/PlusCircleIcon";
+export { ImportFileIcon } from "./icon-component/ImportFileIcon";
+export { TopupIcon } from "./icon-component/TopupIcon";
