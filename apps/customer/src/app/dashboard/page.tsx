@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@ecom/ui/components/dialog";
+import { ImportFileIcon, PlusCircleIcon, TopupIcon } from "@ecom/ui/components/icons";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
 import {
@@ -19,13 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
-import { AtSign, FileText, LayoutDashboard, Mail, User } from "lucide-react";
+import clsx from "clsx";
+import { FileText, LayoutDashboard, User } from "lucide-react";
 import NextLink from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { trpc } from "../../lib/trpc";
 
-const QUICK_LINKS = [
+const _QUICK_LINKS = [
   {
     href: "/profile/info",
     icon: User,
@@ -168,12 +170,51 @@ export default function CustomerDashboardPage() {
   const canChangeUsername = (profile.usernameChangeCount ?? 0) < 1;
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 w-full">
       {/* Welcome */}
-      <div className={'title-page-content'}>
-        {translate('customerDashboard.customer', currentLocale)}
+      <div className={"title-page-content"}>
+        {translate("customerDashboard.customer", currentLocale)}
       </div>
 
+      <div className={"w-full grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6"}>
+        <div
+          className={clsx(
+            "border border-[#0F798C] text-[#0F798C] rounded-lg cursor-pointer",
+            "flex flex-col items-center justify-center gap-2 xl:gap-4 px-8 py-4",
+            "transition-all duration-300 ease-in-out hover:bg-[#0F798C] hover:text-white",
+            "hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(15,121,140,0.25)] 2xl:h-[160px]",
+          )}
+        >
+          <PlusCircleIcon />
+          <span className={"font-medium text-2xl xl:text-3xl 2xl:text-[32px]"}>
+            Create Single Order
+          </span>
+        </div>
+        <div
+          className={clsx(
+            "border border-[#0042D0] text-[#0042D0] rounded-lg cursor-pointer",
+            "flex flex-col items-center justify-center gap-2 xl:gap-4 px-8 py-4",
+            "transition-all duration-300 ease-in-out hover:bg-[#0042D0] hover:text-white",
+            "hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,66,208,0.25)] 2xl:h-[160px]",
+          )}
+        >
+          <ImportFileIcon />
+          <span className={"font-medium text-2xl xl:text-3xl 2xl:text-[32px]"}>
+            Import Order File
+          </span>
+        </div>
+        <div
+          className={clsx(
+            "border border-[#144D22] text-[#144D22] rounded-lg cursor-pointer",
+            "flex flex-col items-center justify-center gap-2 xl:gap-4 px-8 py-4",
+            "transition-all duration-300 ease-in-out hover:bg-[#144D22] hover:text-white",
+            "hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(20,77,34,0.25)] 2xl:h-[160px]",
+          )}
+        >
+          <TopupIcon />
+          <span className={"font-medium text-2xl xl:text-3xl 2xl:text-[32px]"}>Top-up</span>
+        </div>
+      </div>
 
       {/* Profile completion modal dialog */}
       <Dialog open={showModal}>
