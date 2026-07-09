@@ -20,11 +20,24 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Ecom — Your all-in-one platform",
-    template: "%s | Ecom",
+    default: "Ecom Express",
+    template: "%s | Ecom Express",
   },
-  description: "Discover articles, guides, and resources on Ecom.",
+  description: "Discover articles, guides, and resources on Ecom Express.",
   metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
+  // Khai báo favicon cho các thiết bị và kích thước
+  icons: {
+    icon: [
+      { url: "/favicons/favicon.ico" },
+      { url: "/favicons/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicons/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+    ],
+    apple: [
+      { url: "/favicons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  // Khai báo file manifest cho Android/PWA
+  manifest: "/favicons/site.webmanifest",
 };
 
 export default async function RootLayout({

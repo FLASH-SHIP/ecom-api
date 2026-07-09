@@ -193,4 +193,13 @@
 .dark .thin-scrollbar::-webkit-scrollbar-thumb {
   background: #334155 !important;
 }
+.title-page-content {
+  color: #22252A;
+  font-weight: 600;
+  font-size: 24px;
+
+  @media screen and (max-width: 992px) {
+    font-size: 18px;
+  }
+}
 

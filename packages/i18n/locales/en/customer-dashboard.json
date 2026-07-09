@@ -17,6 +17,7 @@
   "overview": "Overview",
   "changePassword": "Change password",
   "logout": "Logout",
+  "customer": "Customer",
   "sidebar": {
     "general": "GENERAL",
     "orderInformation": "ORDER INFORMATION",
