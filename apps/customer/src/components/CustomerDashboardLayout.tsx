@@ -1,7 +1,7 @@
 "use client";
 
+import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
-import { LanguageSwitcher } from "@ecom/shared/components/LanguageSwitcher";
 import { ThemeToggle } from "@ecom/shared/components/ThemeToggle";
 import {
   DropdownMenu,
@@ -10,20 +10,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@ecom/ui/components/dropdown-menu";
+import { SidebarToggleIcon } from "@ecom/ui/components/icon-component/SidebarToggleIcon";
+import { UserAvatarIcon } from "@ecom/ui/components/icon-component/UserAvatarIcon";
+import { WalletSolidIcon } from "@ecom/ui/components/icon-component/WalletSolidIcon";
 import { cn } from "@ecom/ui/lib/utils";
-import { ChevronDown, LayoutDashboard, LogOut, PanelLeft, User as UserIcon } from "lucide-react";
+import { Bell, ChevronDown, LogOut, PanelLeft, User as UserIcon } from "lucide-react";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { type ReactNode, useEffect, useState } from "react";
 import { trpc } from "../lib/trpc";
+import { CustomerSidebar } from "./CustomerSidebar";
 
 interface CustomerDashboardLayoutProps {
   children: ReactNode;
 }
 
 export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutProps) {
-  const pathname = usePathname();
+  const _pathname = usePathname();
   const { status } = useSession();
   const { languageId: currentLocale } = useI18n();
 
@@ -52,183 +56,149 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
   });
 
   const displayName = profile?.name ?? profile?.email?.split("@")[0] ?? "Customer";
-  const email = profile?.email ?? "";
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/auth/login" });
   };
 
-  // Sidebar navigation menu items
-  const menuItems = [
-    {
-      label: currentLocale === "vi" ? "Tổng quan" : "Overview",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      label: currentLocale === "vi" ? "Hồ sơ cá nhân" : "Personal Profile",
-      href: "/profile/info",
-      icon: UserIcon,
-    },
-  ];
-
-  const sidebarContent = (
-    <div className="flex h-full flex-col overflow-hidden bg-[var(--sidebar-bg)] text-foreground">
-      {/* Brand Header */}
-      <div className="flex h-12 shrink-0 items-center gap-2 px-5 md:h-16">
-        <span className="text-xl">⚡</span>
-        <div className="flex flex-col gap-0.5 text-left">
-          <span className="text-sm font-semibold leading-none tracking-tight">Ecom</span>
-          <span className="text-[12px] font-semibold leading-none text-muted-foreground">
-            Customer
-          </span>
-        </div>
-      </div>
-
-      {/* Navigation list */}
-      <div className="flex-1 px-3 py-4 flex flex-col gap-6 overflow-y-auto">
-        <nav className="flex flex-col gap-0.5">
-          {menuItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href === "/profile/info" && pathname.startsWith("/profile"));
-            const Icon = item.icon;
-
-            return (
-              <NextLink
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
-                  isActive
-                    ? "bg-[var(--sidebar-item-active)] text-[var(--sidebar-item-active-text)]"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                )}
-              >
-                <Icon
-                  className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-primary")}
-                  strokeWidth={1.8}
-                />
-                <span className="truncate">{item.label}</span>
-              </NextLink>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Bottom Profile dropdown */}
-      <div className="border-t border-[var(--sidebar-border)] p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent text-left focus:outline-none"
-            >
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-muted-foreground">
-                {displayName[0]?.toUpperCase()}
-              </div>
-              <div className="flex min-w-0 flex-col">
-                <span className="truncate text-sm font-semibold">{displayName}</span>
-                <span className="truncate text-xs text-muted-foreground">{email}</span>
-              </div>
-              <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            side="top"
-            alignOffset={0}
-            sideOffset={8}
-            className="w-56 z-[9999]"
-            style={{ zIndex: 9999 }}
-          >
-            <DropdownMenuItem asChild>
-              <NextLink
-                href="/profile/info"
-                className="flex items-center gap-2 cursor-pointer w-full"
-              >
-                <UserIcon className="h-4 w-4" />
-                {currentLocale === "vi" ? "Thông tin cá nhân" : "Personal Info"}
-              </NextLink>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="text-destructive focus:text-destructive cursor-pointer"
-            >
-              <LogOut className="h-4 w-4" />
-              {currentLocale === "vi" ? "Đăng xuất" : "Logout"}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="flex w-full min-h-screen bg-background">
-      {/* Desktop Sidebar */}
-      {!isMobile && (
-        <aside
-          className={cn(
-            "sticky top-0 z-40 h-screen w-[var(--sidebar-width)] shrink-0 border-r border-[var(--sidebar-border)] bg-[var(--sidebar-bg)] transition-transform duration-300 ease-out",
-            sidebarOpen ? "translate-x-0" : "-translate-x-full",
-          )}
-          style={{
-            marginRight: sidebarOpen ? 0 : "calc(-1 * var(--sidebar-width))",
-          }}
-        >
-          {sidebarContent}
-        </aside>
-      )}
+    <div className="flex flex-col w-full min-h-screen bg-background">
+      {/* Toolbar Header */}
+      <header className="sticky top-0 z-30 flex h-[72px] shrink-0 items-center justify-between border-b border-border bg-background px-6">
+        {/* Left Branding & Toggle */}
+        <div className="flex items-center gap-4">
+          <NextLink href="/dashboard" className="flex items-center">
+            {/* biome-ignore lint/performance/noImgElement: static brand logo */}
+            <img
+              src="/assets/images/logo/ecom-express-long.svg"
+              alt="EcomExpress"
+              className="h-9.5 w-auto object-contain"
+            />
+          </NextLink>
 
-      {/* Mobile Sidebar backdrop */}
-      {isMobile && mobileOpen && (
-        <button
-          type="button"
-          aria-label="Close sidebar"
-          className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm transition-opacity duration-300 cursor-default"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+          <div className="hidden lg:hidden h-6 w-px bg-border mx-2" />
 
-      {/* Mobile Drawer Sidebar */}
-      {isMobile && (
-        <aside
-          className={cn(
-            "fixed inset-y-0 left-0 z-50 w-[var(--sidebar-width)] shadow-xl transition-transform duration-300 ease-out bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)]",
-            mobileOpen ? "translate-x-0" : "-translate-x-full",
-          )}
-        >
-          {sidebarContent}
-        </aside>
-      )}
+          <button
+            type="button"
+            onClick={() => (isMobile ? setMobileOpen(!mobileOpen) : setSidebarOpen(!sidebarOpen))}
+            className="flex lg:hidden cursor-pointer size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            title="Toggle sidebar"
+          >
+            <PanelLeft className="h-[18px] w-[18px]" strokeWidth={1.8} />
+          </button>
+        </div>
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 flex-col min-w-0 relative">
-        {/* Toolbar Header */}
-        <header className="sticky top-0 z-30 flex h-12 md:h-16 items-center bg-background px-2 md:px-4">
-          <div className="flex flex-1 items-center gap-3">
-            <button
-              type="button"
-              onClick={() => (isMobile ? setMobileOpen(!mobileOpen) : setSidebarOpen(!sidebarOpen))}
-              className="flex cursor-pointer size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              title="Toggle sidebar"
-            >
-              <PanelLeft className="h-[18px] w-[18px]" strokeWidth={1.8} />
-            </button>
+        {/* Right Tools (Theme, Wallet, Notification, Account Dropdown) */}
+        <div className="flex items-center gap-3">
+          <ThemeToggle storageKey="customer-theme" />
 
-            <div className="hidden lg:block h-6 w-px bg-border" />
+          {/* Wallet */}
+          <div className="flex items-center gap-2 rounded-md bg-[#CFFEF9] dark:bg-teal-950/40 px-3 py-[7px] text-sm font-semibold text-[#0F798C] dark:text-teal-200 border border-transparent dark:border-teal-800/30 cursor-pointer">
+            <WalletSolidIcon />
+            <span>$164,250</span>
           </div>
 
-          <div className="flex items-center gap-0.5">
-            <LanguageSwitcher />
-            <ThemeToggle storageKey="customer-theme" />
-          </div>
-        </header>
+          {/* Notification */}
+          <button
+            type="button"
+            className="relative flex size-9 items-center justify-center rounded-md bg-[#CFFEF9] dark:bg-teal-950/40 text-[#0F798C] dark:text-teal-200 border border-transparent dark:border-teal-800/30 hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            <Bell className="size-4 shrink-0" strokeWidth={2} />
+            <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-background dark:ring-teal-950" />
+          </button>
 
-        {/* Content Body */}
-        <main className="flex flex-1 flex-col p-4 md:p-6">{children}</main>
+          {/* User Account Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-2 rounded-md bg-[#CFFEF9] dark:bg-teal-950/40 px-3 py-[7px] text-sm font-semibold text-[#0F798C] dark:text-teal-200 border border-transparent dark:border-teal-800/30 hover:opacity-90 transition-opacity focus:outline-none cursor-pointer text-left"
+              >
+                <UserAvatarIcon />
+                <span className="truncate max-w-[120px] text-[#22252A] dark:text-teal-200 font-medium">
+                  {displayName}
+                </span>
+                <ChevronDown className="size-3.5 text-[#0F798C] dark:text-teal-200 shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 mt-1 z-[9999]">
+              <DropdownMenuItem asChild>
+                <NextLink
+                  href="/profile/change-password"
+                  className="flex items-center gap-2 cursor-pointer w-full text-sm"
+                >
+                  <UserIcon className="h-4 w-4" />
+                  {translate("customerDashboard.changePassword", currentLocale)}
+                </NextLink>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive focus:text-destructive cursor-pointer text-sm"
+              >
+                <LogOut className="h-4 w-4" />
+                {translate("customerDashboard.logout", currentLocale)}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      {/* Main body (Sidebar + Content) */}
+      <div className="flex flex-1 w-full relative">
+        {/* Desktop Sidebar */}
+        {!isMobile && (
+          <aside
+            className={cn(
+              "sticky top-[72px] z-40 h-[calc(100vh-72px)] shrink-0 border-r border-[#DADADA] dark:border-zinc-800 bg-[var(--sidebar-bg)] shadow-[1px_0_8px_rgba(0,0,0,0.05)] dark:shadow-none transition-all duration-300 ease-out",
+              sidebarOpen ? "w-[var(--sidebar-width)]" : "w-18",
+            )}
+          >
+            <CustomerSidebar isCollapsed={!sidebarOpen} />
+          </aside>
+        )}
+
+        {/* Floating Sidebar Toggle Button for Desktop */}
+        {!isMobile && (
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={cn(
+              "absolute top-6 z-50 transition-all duration-300 ease-out focus:outline-none hover:scale-105 active:scale-95 cursor-pointer",
+              sidebarOpen ? "left-[calc(var(--sidebar-width)-12px)]" : "left-[60px]",
+            )}
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            <SidebarToggleIcon isOpen={sidebarOpen} className="size-6 drop-shadow-sm" />
+          </button>
+        )}
+
+        {/* Mobile Sidebar backdrop */}
+        {isMobile && mobileOpen && (
+          <button
+            type="button"
+            aria-label="Close sidebar"
+            className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm transition-opacity duration-300 cursor-default"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+
+        {/* Mobile Drawer Sidebar */}
+        {isMobile && (
+          <aside
+            className={cn(
+              "fixed inset-y-0 left-0 z-50 w-[var(--sidebar-width)] shadow-xl transition-transform duration-300 ease-out bg-[var(--sidebar-bg)] border-r border-[#DADADA] dark:border-zinc-800",
+              mobileOpen ? "translate-x-0" : "-translate-x-full",
+            )}
+          >
+            <CustomerSidebar isCollapsed={false} />
+          </aside>
+        )}
+
+        {/* Content Area */}
+        <div className="flex flex-1 flex-col min-w-0 relative">
+          <main className="flex flex-1 flex-col p-4 md:p-6">{children}</main>
+        </div>
       </div>
     </div>
   );

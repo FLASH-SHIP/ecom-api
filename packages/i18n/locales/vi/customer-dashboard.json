@@ -13,5 +13,21 @@
   "blogDesc": "Đọc bài viết mới nhất",
   "notLoggedIn": "Chưa đăng nhập",
   "pleaseLogin": "Vui lòng đăng nhập để xem trang này.",
-  "login": "Đăng nhập"
+  "login": "Đăng nhập",
+  "overview": "Tổng quan",
+  "changePassword": "Đổi mật khẩu",
+  "logout": "Đăng xuất",
+  "sidebar": {
+    "general": "CHUNG",
+    "orderInformation": "THÔNG TIN ĐƠN HÀNG",
+    "inboundOrders": "ĐƠN GỬI ĐẾN",
+    "home": "Trang chủ",
+    "orderList": "Danh sách đơn",
+    "labelPrinting": "In nhãn",
+    "singleOrder": "Tạo đơn lẻ",
+    "importOrder": "Nhập excel",
+    "api": "API",
+    "language": "Ngôn ngữ:",
+    "changeLanguage": "Đổi ngôn ngữ"
+  }
 }
