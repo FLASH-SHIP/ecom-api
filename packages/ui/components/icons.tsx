@@ -17,3 +17,5 @@ export { SidebarToggleIcon } from "./icon-component/SidebarToggleIcon";
 export { PlusCircleIcon } from "./icon-component/PlusCircleIcon";
 export { ImportFileIcon } from "./icon-component/ImportFileIcon";
 export { TopupIcon } from "./icon-component/TopupIcon";
+export { MenuIcon } from "./icon-component/MenuIcon";
+export { CloseIcon } from "./icon-component/CloseIcon";

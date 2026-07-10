@@ -2,6 +2,7 @@
 
 import { translate } from "@ecom/i18n";
 import { type LanguageType, useI18n } from "@ecom/shared/@i18n";
+import { Button } from "@ecom/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@ecom/ui/components/dropdown-menu";
 import { CirclePlusIcon } from "@ecom/ui/components/icon-component/CirclePlusIcon";
+import { CloseIcon } from "@ecom/ui/components/icon-component/CloseIcon";
 import { FileInputIcon } from "@ecom/ui/components/icon-component/FileInputIcon";
 import { LayoutDashboardIcon } from "@ecom/ui/components/icon-component/LayoutDashboardIcon";
 import { NotepadTextIcon } from "@ecom/ui/components/icon-component/NotepadTextIcon";
@@ -86,7 +88,7 @@ function LanguageSelector({
   return (
     <div
       className={cn(
-        "border-t border-[var(--sidebar-border)] p-4 flex items-center justify-center gap-3 text-sm transition-all duration-300",
+        "border-t border-[#DADADA] dark:border-zinc-800 p-4 flex items-center justify-center gap-3 text-sm transition-all duration-300",
         isCollapsed && "p-3",
       )}
     >
@@ -100,10 +102,11 @@ function LanguageSelector({
       </span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button
+          <Button
+            variant="outline"
             type="button"
             className={cn(
-              "flex items-center rounded-[10px] border border-border bg-card text-xs font-semibold text-foreground hover:bg-accent shadow-[0_1px_2px_rgba(0,0,0,0.1)] focus:outline-none cursor-pointer transition-all duration-300",
+              "flex items-center rounded-[10px] border border-border bg-card text-xs font-semibold text-foreground hover:bg-accent shadow-[0_1px_2px_rgba(0,0,0,0.1)] focus:outline-none cursor-pointer transition-all duration-300 h-auto",
               isCollapsed ? "p-2 justify-center" : "gap-1.5 px-3 py-1.5",
             )}
             title={
@@ -119,7 +122,7 @@ function LanguageSelector({
                 isCollapsed ? "w-0 opacity-0 scale-0 ml-0" : "w-3.5 opacity-100 scale-100 ml-1.5",
               )}
             />
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align={isCollapsed ? "center" : "end"}
@@ -154,7 +157,15 @@ function LanguageSelector({
   );
 }
 
-export function CustomerSidebar({ isCollapsed = false }: { isCollapsed?: boolean }) {
+export function CustomerSidebar({
+  isCollapsed = false,
+  isDrawer = false,
+  onClose,
+}: {
+  isCollapsed?: boolean;
+  isDrawer?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
   const { languageId: currentLocale, language, languages, changeLanguage } = useI18n();
 
@@ -206,6 +217,57 @@ export function CustomerSidebar({ isCollapsed = false }: { isCollapsed?: boolean
       ],
     },
   ];
+
+  if (isDrawer) {
+    return (
+      <div className="flex h-full w-full flex-col overflow-hidden bg-[var(--sidebar-bg)] text-foreground">
+        {/* Header (chứa icon close ở bên phải) */}
+        <div className="flex items-center justify-end px-6 py-4 border-b border-[#DADADA] dark:border-zinc-800 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            onClick={onClose}
+            className="cursor-pointer h-8 w-8 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <CloseIcon className="size-5" />
+          </Button>
+        </div>
+
+        {/* Content ở giữa chứa Menu */}
+        <div className="flex-1 px-4 py-6 flex flex-col gap-6 overflow-y-auto">
+          {menuGroups.map((group) => (
+            <div key={group.title} className="flex flex-col gap-2">
+              <span className="px-3 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                {group.title}
+              </span>
+              <nav className="flex flex-col gap-1">
+                {group.items.map((item) => (
+                  <SidebarNavItem
+                    key={item.href}
+                    item={item}
+                    pathname={pathname}
+                    isCollapsed={false}
+                  />
+                ))}
+              </nav>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer (Chứa button đa ngôn ngữ) */}
+        <div className="shrink-0">
+          <LanguageSelector
+            isCollapsed={false}
+            currentLocale={currentLocale}
+            language={language}
+            languages={languages}
+            changeLanguage={changeLanguage}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-[var(--sidebar-bg)] text-foreground">
