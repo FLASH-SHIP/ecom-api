@@ -46,7 +46,9 @@
     "ratesTitle": "Bảng giá cước",
     "ratesDesc": "Quản lý bảng giá cước vận chuyển, giá theo nhóm khách hàng và nấc cân nặng",
     "trackingTitle": "Theo dõi trang web",
-    "trackingDesc": "Chọn phương thức phân tích và theo dõi ưa thích của bạn. Chỉ có thể kích hoạt một tùy chọn tại một thời điểm."
+    "trackingDesc": "Chọn phương thức phân tích và theo dõi ưa thích của bạn. Chỉ có thể kích hoạt một tùy chọn tại một thời điểm.",
+    "packingTitle": "Loại đóng gói",
+    "packingDesc": "Quản lý các loại đóng gói (Thùng carton, Túi đóng gói, v.v.) dùng để vận chuyển"
   },
   "fields": {
     "siteName": "Tên trang web",
@@ -156,5 +158,40 @@
     "validationMaxWeight": "Cân nặng tối đa phải lớn hơn cân nặng tối thiểu.",
     "validationWeightStep": "Nấc cân nặng bước nhảy phải lớn hơn 0.",
     "validationDateRange": "Ngày kết thúc hiệu lực không được nhỏ hơn ngày bắt đầu."
+  },
+  "packing": {
+    "title": "Loại đóng gói (Type of Packing)",
+    "image": "Hình ảnh",
+    "name": "Tên",
+    "description": "Mô tả",
+    "status": "Trạng thái",
+    "createdAt": "Ngày tạo",
+    "actions": "Thao tác",
+    "edit": "Chỉnh sửa",
+    "delete": "Xóa",
+    "addBtn": "Thêm loại đóng gói",
+    "noItems": "Không tìm thấy loại đóng gói nào.",
+    "editTitle": "Cập nhật loại đóng gói",
+    "createTitle": "Thêm loại đóng gói mới",
+    "lblName": "Tên loại đóng gói",
+    "lblImage": "Hình ảnh",
+    "lblStatus": "Trạng thái sử dụng",
+    "lblDescription": "Mô tả chi tiết",
+    "selectImage": "Chọn từ thư viện",
+    "removeImage": "Xóa ảnh",
+    "imageHint": "Hỗ trợ các định dạng SVG, PNG, WebP",
+    "statusActive": "Active (Cho phép sử dụng)",
+    "statusInactive": "Inactive (Tạm khóa/Ẩn đi)",
+    "cancel": "Hủy",
+    "save": "Lưu lại",
+    "toastCreateSuccess": "Đã tạo loại đóng gói thành công",
+    "toastUpdateSuccess": "Đã cập nhật loại đóng gói thành công",
+    "toastDeleteSuccess": "Đã xóa loại đóng gói thành công",
+    "toastLoadError": "Không thể tải thông tin loại đóng gói",
+    "validationName": "Vui lòng nhập tên loại đóng gói",
+    "deleteConfirmTitle": "Xóa loại đóng gói",
+    "deleteConfirmMsg": "Bạn có chắc chắn muốn xóa loại đóng gói này? Hành động này sẽ thực hiện soft delete.",
+    "placeholderName": "Nhập tên đóng gói (ví dụ: Cardboard box)",
+    "placeholderDescription": "Nhập mô tả chi tiết về loại đóng gói này..."
   }
 }
