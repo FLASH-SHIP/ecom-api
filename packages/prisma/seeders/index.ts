@@ -21,6 +21,7 @@ import { SettingsSeeder } from "./SettingsSeeder";
 import { CountriesSeeder } from "./08-countries.seeder";
 import { TransportModesSeeder } from "./09-transport-modes.seeder";
 import { PackingTypesSeeder } from "./12-packing.seeder";
+import { AdministrativeDivisionsSeeder } from "./13-administrative.seeder";
 import type { Seeder } from "./seeder.interface";
 
 /**
@@ -40,4 +41,5 @@ export const SEEDERS: Seeder[] = [
   CountriesSeeder, // 08 — no dependencies
   TransportModesSeeder, // 09 — no dependencies
   PackingTypesSeeder, // 12 — no dependencies
+  AdministrativeDivisionsSeeder, // 13 — depends on: none (or countries)
 ];
