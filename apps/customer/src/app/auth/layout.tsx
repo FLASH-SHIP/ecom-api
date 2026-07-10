@@ -15,7 +15,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[1px]" />
 
       {/* Theme Toggle Button */}
-      <ThemeToggle className="absolute top-4 right-4 z-50 md:top-6 md:right-6" />
+      <ThemeToggle
+        className="absolute top-4 right-4 z-50 md:top-6 md:right-6"
+        storageKey="customer-theme"
+      />
 
       {/* Container for the form card */}
       <div className="relative z-10 w-full max-w-[480px] flex flex-col items-center">

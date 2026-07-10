@@ -312,7 +312,7 @@ const ListButtonActionMedia = ({
       </div>
 
       {/* Upload progress panel (floating bottom-right) */}
-      <UploadProgressPanel ref={uploadPanelRef} />
+      <UploadProgressPanel ref={uploadPanelRef} folderId={currentFolderId} />
 
       {/* Download from URL dialog */}
       <DownloadUrlDialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen} />

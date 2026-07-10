@@ -22,7 +22,7 @@ function createMockRepo() {
     deleteCategoryTranslation: vi.fn(),
     deletePageTranslation: vi.fn(),
     deleteTagTranslation: vi.fn(),
-  } as unknown as TranslationRepository & Record<string, ReturnType<typeof vi.fn>>;
+  } as any;
 }
 
 function createMockSlugRepo() {
@@ -30,7 +30,7 @@ function createMockSlugRepo() {
     findByReference: vi.fn(),
     upsertTranslation: vi.fn(),
     deleteTranslation: vi.fn(),
-  } as unknown as SlugRepository & Record<string, ReturnType<typeof vi.fn>>;
+  } as any;
 }
 
 describe("TranslationService", () => {

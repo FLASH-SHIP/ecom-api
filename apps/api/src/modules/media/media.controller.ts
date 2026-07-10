@@ -10,6 +10,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { ConfigService } from "@nestjs/config";
 import { type MediaAction, MediaService } from "./media.service";
 
 @Controller({
@@ -17,7 +18,10 @@ import { type MediaAction, MediaService } from "./media.service";
   version: "2",
 })
 export class MediaController {
-  constructor(@Inject(MediaService) private readonly mediaService: MediaService) {}
+  constructor(
+    @Inject(MediaService) private readonly mediaService: MediaService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
+  ) {}
 
   private getBaseUrl(req: any): string {
     const protocol = req.protocol || "http";
@@ -62,21 +66,30 @@ export class MediaController {
   @UseInterceptors(FileInterceptor("file"))
   async upload(
     @UploadedFile() file: any,
-    @Body("folder_id") folderIdStr?: string | number,
-    @Body("visibility") visibility?: string,
-    @Body("access_mode") accessMode?: string,
+    @Body() body: any,
+    @Req() req: any,
   ) {
-    return this.mediaService.uploadFile(file, folderIdStr, visibility, accessMode);
+    const folderIdStr = body.folderId;
+    const baseUrl = this.getBaseUrl(req);
+    return this.mediaService.uploadFile(
+      file,
+      folderIdStr,
+      body.visibility,
+      body.accessMode,
+      baseUrl,
+    );
   }
 
   @Post("files/download-url")
   async downloadUrl(
     @Body("url") url: string,
-    @Body("folder_id") folderIdStr?: string | number,
-    @Body("visibility") visibility?: string,
-    @Body("access_mode") accessMode?: string,
+    @Body("folder_id") folderIdStr: string | number | undefined,
+    @Body("visibility") visibility: string | undefined,
+    @Body("access_mode") accessMode: string | undefined,
+    @Req() req: any,
   ) {
-    return this.mediaService.downloadUrl(url, folderIdStr, visibility, accessMode);
+    const baseUrl = this.getBaseUrl(req);
+    return this.mediaService.downloadUrl(url, folderIdStr, visibility, accessMode, baseUrl);
   }
 
   @Post("actions")

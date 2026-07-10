@@ -26,6 +26,15 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+
+  /* Custom Design System Tokens */
+  --brand: #0F798C;
+  --brand-bg: #CFFEF9;
+  --sys-primary: #232323;
+  --sys-secondary: #7B7B7B;
+  --sys-info: #0042D0;
+  --sys-dangerous: #F5222D;
+  --sys-border: #DADADA;
 }
 
 .dark {
@@ -48,6 +57,15 @@
   --ring: oklch(0.551 0.191 264.36);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
+
+  /* Custom Design System Tokens */
+  --brand: #0F798C;
+  --brand-bg: rgba(15, 121, 140, 0.2);
+  --sys-primary: #E6E6E6;
+  --sys-secondary: #A3A3A3;
+  --sys-info: #3B82F6;
+  --sys-dangerous: #FF4D4F;
+  --sys-border: #334155;
 }
 
 /* Tailwind v4 theme — maps CSS custom properties to utility classes */
@@ -75,6 +93,15 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+
+  /* Custom Color Tokens */
+  --color-brand: var(--brand);
+  --color-brand-bg: var(--brand-bg);
+  --color-sys-primary: var(--sys-primary);
+  --color-sys-secondary: var(--sys-secondary);
+  --color-sys-info: var(--sys-info);
+  --color-sys-dangerous: var(--sys-dangerous);
+  --color-sys-border: var(--sys-border);}
 }
 
 @layer base {

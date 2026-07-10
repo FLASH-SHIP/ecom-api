@@ -17,10 +17,23 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Ecom",
-    default: "Ecom",
+    template: "%s | Ecom Express",
+    default: "Ecom Express",
   },
-  description: "Ecom Content Management System",
+  description: "Ecom Express Content Management System",
+  // Khai báo favicon cho các thiết bị và kích thước
+  icons: {
+    icon: [
+      { url: "/favicons/favicon.ico" },
+      { url: "/favicons/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicons/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+    ],
+    apple: [
+      { url: "/favicons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  // Khai báo file manifest cho Android/PWA
+  manifest: "/favicons/site.webmanifest",
 };
 
 export default async function RootLayout({

@@ -1,0 +1,21 @@
+import {TopupIcon} from "./icon-component/TopupIcon";
+
+export { AppleIcon } from "./icon-component/AppleIcon";
+export { FacebookIcon } from "./icon-component/FacebookIcon";
+export { GoogleIcon } from "./icon-component/GoogleIcon";
+export { TelegramIcon } from "./icon-component/TelegramIcon";
+export { WhatsappIcon } from "./icon-component/WhatsappIcon";
+export { WalletSolidIcon } from "./icon-component/WalletSolidIcon";
+export { UserAvatarIcon } from "./icon-component/UserAvatarIcon";
+export { LayoutDashboardIcon } from "./icon-component/LayoutDashboardIcon";
+export { NotepadTextIcon } from "./icon-component/NotepadTextIcon";
+export { PrinterIcon } from "./icon-component/PrinterIcon";
+export { CirclePlusIcon } from "./icon-component/CirclePlusIcon";
+export { FileInputIcon } from "./icon-component/FileInputIcon";
+export { ServerCogIcon } from "./icon-component/ServerCogIcon";
+export { SidebarToggleIcon } from "./icon-component/SidebarToggleIcon";
+export { PlusCircleIcon } from "./icon-component/PlusCircleIcon";
+export { ImportFileIcon } from "./icon-component/ImportFileIcon";
+export { TopupIcon } from "./icon-component/TopupIcon";
+export { MenuIcon } from "./icon-component/MenuIcon";
+export { CloseIcon } from "./icon-component/CloseIcon";

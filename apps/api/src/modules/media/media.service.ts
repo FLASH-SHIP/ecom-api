@@ -3,7 +3,8 @@ import * as http from "node:http";
 import * as https from "node:https";
 import { extname, join } from "node:path";
 import { prisma } from "@ecom/prisma";
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 export enum MediaAction {
   TRASH = "trash",
@@ -23,8 +24,15 @@ export enum MediaAction {
 
 @Injectable()
 export class MediaService {
+  constructor(@Inject(ConfigService) private readonly configService: ConfigService) {}
+
+  private getAdminUrl(): string {
+    const adminUrl = this.configService.get<string>("ADMIN_URL") || "http://localhost:4001";
+    return adminUrl.replace(/\/$/, "");
+  }
+
   private getUploadsDir() {
-    return join(__dirname, "../../../../admin/uploads");
+    return join(process.cwd(), "uploads");
   }
 
   private formatBytes(bytes: number, decimals = 2) {
@@ -89,7 +97,7 @@ export class MediaService {
     sortBy = "name-asc",
     filter = "everything",
     search = "",
-    baseUrl = "http://localhost:4000",
+    baseUrl?: string,
   ) {
     const folderId =
       folderIdStr && folderIdStr !== "0" && folderIdStr !== 0 ? Number(folderIdStr) : null;
@@ -195,7 +203,7 @@ export class MediaService {
       prisma.mediaFile.count({ where: fileWhere }),
     ]);
 
-    const fileResults = files.map((f) => this.mapFileToItem(f, baseUrl || "http://localhost:4000"));
+    const fileResults = files.map((f) => this.mapFileToItem(f, baseUrl || this.getAdminUrl()));
 
     // ─── Breadcrumbs ─────────────────────────────────────
     const breadcrumbs = [{ id: 0, name: "All media" }];
@@ -251,6 +259,7 @@ export class MediaService {
     folderIdStr?: string | number,
     visibility = "public",
     accessMode?: string,
+    baseUrl?: string,
   ) {
     const folderId =
       folderIdStr && folderIdStr !== "0" && folderIdStr !== 0 ? Number(folderIdStr) : null;
@@ -285,7 +294,7 @@ export class MediaService {
       },
     });
 
-    return { data: this.mapFileToItem(created, "http://localhost:4000") };
+    return { data: this.mapFileToItem(created, baseUrl || this.getAdminUrl()) };
   }
 
   private downloadRemoteBuffer(
@@ -333,6 +342,7 @@ export class MediaService {
     folderIdStr?: string | number,
     visibility = "public",
     accessMode?: string,
+    baseUrl?: string,
   ) {
     const folderId =
       folderIdStr && folderIdStr !== "0" && folderIdStr !== 0 ? Number(folderIdStr) : null;
@@ -369,7 +379,7 @@ export class MediaService {
       },
     });
 
-    return { data: this.mapFileToItem(created, "http://localhost:4000") };
+    return { data: this.mapFileToItem(created, baseUrl || this.getAdminUrl()) };
   }
 
   async performAction(

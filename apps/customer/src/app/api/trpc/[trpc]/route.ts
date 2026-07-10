@@ -43,6 +43,11 @@ const handler = async (req: Request) => {
   const nextLocaleMatch = cookieHeader.match(/(?:^|;)\s*NEXT_LOCALE\s*=\s*([^;]+)/);
   const nextLocale = nextLocaleMatch?.[1]?.trim() ?? null;
 
+  const sessionTokenMatch =
+    cookieHeader.match(/(?:^|;)\s*__Secure-authjs\.session-token\s*=\s*([^;]+)/) ||
+    cookieHeader.match(/(?:^|;)\s*authjs\.session-token\s*=\s*([^;]+)/);
+  const sessionToken = sessionTokenMatch?.[1]?.trim() ?? null;
+
   const locale =
     url.searchParams.get("ref_lang") ?? req.headers.get("x-locale") ?? nextLocale ?? defaultLocale;
 
@@ -50,7 +55,7 @@ const handler = async (req: Request) => {
     endpoint: "/api/trpc",
     req,
     router: appRouter,
-    createContext: () => createContext({ user, ip, userAgent, locale }),
+    createContext: () => createContext({ user, ip, userAgent, locale, sessionToken }),
   });
 };
 

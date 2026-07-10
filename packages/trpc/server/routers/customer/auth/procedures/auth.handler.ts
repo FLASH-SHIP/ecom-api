@@ -202,7 +202,12 @@ export const changePassword = publicProcedure
     }
 
     const authService = getCustomerAuthService();
-    await authService.changePassword(customerId, input.oldPassword, input.newPassword);
+    await authService.changePassword(
+      customerId,
+      input.oldPassword,
+      input.newPassword,
+      ctx.sessionToken || undefined,
+    );
     return { success: true };
   });
 

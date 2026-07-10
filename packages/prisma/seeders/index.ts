@@ -18,6 +18,8 @@ import { PermissionsSeeder } from "./PermissionsSeeder";
 import { RateCardsSeeder } from "./RateCardsSeeder";
 import { RolesSeeder } from "./RolesSeeder";
 import { SettingsSeeder } from "./SettingsSeeder";
+import { CountriesSeeder } from "./08-countries.seeder";
+import { TransportModesSeeder } from "./09-transport-modes.seeder";
 import type { Seeder } from "./seeder.interface";
 
 /**
@@ -34,4 +36,6 @@ export const SEEDERS: Seeder[] = [
   AdminMenuSeeder, // 07 — no dependencies
   RateCardsSeeder, // 11 — depends on: Customer
   CustomersSeeder, // 12 — depends on: RateCardsSeeder (for CustomerGroups)
+  CountriesSeeder, // 08 — no dependencies
+  TransportModesSeeder, // 09 — no dependencies
 ];

@@ -59,8 +59,8 @@ model UserMeta {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  key       String   // e.g. "theme"
-  value     String   // e.g. "dark" | "light"
+  key       String // e.g. "theme"
+  value     String // e.g. "dark" | "light"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -166,7 +166,7 @@ model Permission {
   id          String           @id @default(cuid())
   name        String           @unique // e.g. "blog.posts.create"
   displayName String?
-  group       String?                  // e.g. "blog"
+  group       String? // e.g. "blog"
   roles       RolePermission[]
 
   @@map("permissions")

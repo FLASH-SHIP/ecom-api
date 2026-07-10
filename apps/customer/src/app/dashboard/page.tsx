@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@ecom/ui/components/dialog";
+import { ImportFileIcon, PlusCircleIcon, TopupIcon } from "@ecom/ui/components/icons";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
 import {
@@ -19,15 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
-import { AtSign, FileText, LayoutDashboard, Mail, User } from "lucide-react";
+import clsx from "clsx";
+import { FileText, LayoutDashboard, User } from "lucide-react";
 import NextLink from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { trpc } from "../../lib/trpc";
 
-const QUICK_LINKS = [
+const _QUICK_LINKS = [
   {
-    href: "/profile",
+    href: "/profile/info",
     icon: User,
     title: "Hồ sơ cá nhân",
     desc: "Cập nhật thông tin của bạn",
@@ -165,115 +167,53 @@ export default function CustomerDashboardPage() {
     );
   }
 
-  const displayName =
-    profile.name ?? profile.email ?? translate("customerDashboard.customerFallback", currentLocale);
   const canChangeUsername = (profile.usernameChangeCount ?? 0) < 1;
 
-  const welcomeMessage = translate("customerDashboard.welcome", currentLocale).replace(
-    "{name}",
-    displayName,
-  );
-
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6 w-full">
       {/* Welcome */}
-      <div className="mb-10 flex items-center gap-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2563EB] to-[#7C3AED] text-2xl font-bold text-white">
-          {displayName.charAt(0).toUpperCase()}
-        </div>
-        <div>
-          <h1 className="text-2xl font-extrabold">{welcomeMessage}</h1>
-          <p className="text-sm text-muted-foreground">
-            <AtSign className="mr-1 inline h-3.5 w-3.5" />
-            {profile.username}
-          </p>
-        </div>
+      <div className={"title-page-content"}>
+        {translate("customerDashboard.customer", currentLocale)}
       </div>
 
-      {/* Stats Cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-border p-4">
-          <div className="mb-1 flex items-center gap-2">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Email</span>
-          </div>
-          <p className="break-all font-semibold">{profile.email}</p>
-          {profile.emailVerified ? (
-            <span className="mt-1 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-              {translate("customerDashboard.verified", currentLocale)}
-            </span>
-          ) : (
-            <span className="mt-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-              {translate("customerDashboard.unverified", currentLocale)}
-            </span>
+      <div className={"w-full grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6"}>
+        <div
+          className={clsx(
+            "border border-[#0F798C] text-[#0F798C] rounded-lg cursor-pointer",
+            "flex flex-col items-center justify-center gap-2 xl:gap-4 px-8 py-4",
+            "transition-all duration-300 ease-in-out hover:bg-[#0F798C] hover:text-white",
+            "hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(15,121,140,0.25)] 2xl:h-[160px]",
           )}
-        </div>
-
-        <div className="rounded-xl border border-border p-4">
-          <p className="mb-1 text-sm text-muted-foreground">
-            {translate("customerDashboard.status", currentLocale)}
-          </p>
-          <span
-            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              profile.status === "ACTIVE"
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-amber-100 text-amber-700"
-            }`}
-          >
-            {profile.status === "ACTIVE"
-              ? translate("customerDashboard.statusActive", currentLocale)
-              : profile.status}
+        >
+          <PlusCircleIcon />
+          <span className={"font-medium text-2xl xl:text-3xl 2xl:text-[32px]"}>
+            Create Single Order
           </span>
         </div>
-
-        <div className="rounded-xl border border-border p-4">
-          <p className="mb-1 text-sm text-muted-foreground">
-            {translate("customerDashboard.joinedDate", currentLocale)}
-          </p>
-          <p className="font-semibold">
-            {new Date(profile.createdAt).toLocaleDateString(
-              currentLocale === "vi" ? "vi-VN" : "en-US",
-              {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              },
-            )}
-          </p>
+        <div
+          className={clsx(
+            "border border-[#0042D0] text-[#0042D0] rounded-lg cursor-pointer",
+            "flex flex-col items-center justify-center gap-2 xl:gap-4 px-8 py-4",
+            "transition-all duration-300 ease-in-out hover:bg-[#0042D0] hover:text-white",
+            "hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,66,208,0.25)] 2xl:h-[160px]",
+          )}
+        >
+          <ImportFileIcon />
+          <span className={"font-medium text-2xl xl:text-3xl 2xl:text-[32px]"}>
+            Import Order File
+          </span>
         </div>
-      </div>
-
-      <hr className="mb-8 border-border" />
-
-      {/* Quick Links */}
-      <h2 className="mb-4 text-lg font-bold">
-        {translate("customerDashboard.quickLinks", currentLocale)}
-      </h2>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {QUICK_LINKS.map((link) => {
-          const Icon = link.icon;
-          return (
-            <NextLink
-              key={link.href}
-              href={getLocalizedHref(link.href)}
-              className="group flex items-center gap-4 rounded-xl border border-border p-5 transition-colors hover:bg-muted/50"
-            >
-              <Icon className={`h-8 w-8 ${link.color}`} />
-              <div>
-                <p className="font-bold group-hover:text-primary">
-                  {link.href === "/profile"
-                    ? translate("customerDashboard.profileTitle", currentLocale)
-                    : translate("customerDashboard.blogTitle", currentLocale)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {link.href === "/profile"
-                    ? translate("customerDashboard.profileDesc", currentLocale)
-                    : translate("customerDashboard.blogDesc", currentLocale)}
-                </p>
-              </div>
-            </NextLink>
-          );
-        })}
+        <div
+          className={clsx(
+            "border border-[#144D22] text-[#144D22] rounded-lg cursor-pointer",
+            "flex flex-col items-center justify-center gap-2 xl:gap-4 px-8 py-4",
+            "transition-all duration-300 ease-in-out hover:bg-[#144D22] hover:text-white",
+            "hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(20,77,34,0.25)] 2xl:h-[160px]",
+          )}
+        >
+          <TopupIcon />
+          <span className={"font-medium text-2xl xl:text-3xl 2xl:text-[32px]"}>Top-up</span>
+        </div>
       </div>
 
       {/* Profile completion modal dialog */}

@@ -12,36 +12,36 @@ enum RateCardType {
 }
 
 model RateCard {
-  id             Int             @id @default(autoincrement())
-  code           String          @unique
+  id             Int            @id @default(autoincrement())
+  code           String         @unique
   name           String
-  status         ContentStatus   @default(DRAFT)
+  status         ContentStatus  @default(DRAFT)
   shippingMethod ShippingMethod
-  country        String          @default("US")
+  country        String         @default("US")
   origin         String?
-  currency       String          @default("USD")
-  weightStep     Decimal         @db.Decimal(10, 3)
-  minWeight      Decimal         @db.Decimal(10, 3)
-  maxWeight      Decimal         @db.Decimal(10, 3)
-  startDate      DateTime?       @map("start_date")
-  endDate        DateTime?       @map("end_date")
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
+  currency       String         @default("USD")
+  weightStep     Decimal        @db.Decimal(10, 3)
+  minWeight      Decimal        @db.Decimal(10, 3)
+  maxWeight      Decimal        @db.Decimal(10, 3)
+  startDate      DateTime?      @map("start_date")
+  endDate        DateTime?      @map("end_date")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
 
-  groups         RateCardGroup[]
-  items          RateCardItem[]
+  groups RateCardGroup[]
+  items  RateCardItem[]
 
   @@index([shippingMethod, country, origin, status])
   @@map("rate_cards")
 }
 
 model CustomerGroup {
-  id          Int             @id @default(autoincrement())
-  code        String          @unique
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
   name        String
-  description String?         @db.Text
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   customers Customer[]
   rateCards RateCardGroup[]

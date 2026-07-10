@@ -6,6 +6,7 @@ export interface Context {
   userAgent: string | null;
   /** Resolved locale code for the request (ref_lang > X-Locale > default) */
   locale: string | null;
+  sessionToken: string | null;
 }
 
 /**
@@ -17,11 +18,13 @@ export function createContext(opts: {
   ip?: string | null;
   userAgent?: string | null;
   locale?: string | null;
+  sessionToken?: string | null;
 }): Context {
   return {
     user: opts.user,
     ip: opts.ip ?? null,
     userAgent: opts.userAgent ?? null,
     locale: opts.locale ?? null,
+    sessionToken: opts.sessionToken ?? null,
   };
 }

@@ -13,5 +13,22 @@
   "blogDesc": "Read the latest posts",
   "notLoggedIn": "Not logged in",
   "pleaseLogin": "Please sign in to view this page.",
-  "login": "Sign In"
+  "login": "Sign In",
+  "overview": "Overview",
+  "changePassword": "Change password",
+  "logout": "Logout",
+  "customer": "Customer",
+  "sidebar": {
+    "general": "GENERAL",
+    "orderInformation": "ORDER INFORMATION",
+    "inboundOrders": "INBOUND ORDERS",
+    "home": "Home",
+    "orderList": "Order List",
+    "labelPrinting": "Label Printing",
+    "singleOrder": "Single Order",
+    "importOrder": "Import Order",
+    "api": "API",
+    "language": "Language:",
+    "changeLanguage": "Change language"
+  }
 }

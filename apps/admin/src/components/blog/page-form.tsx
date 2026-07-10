@@ -3,7 +3,9 @@
 import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
 import { SearchEngineOptimize } from "@admin/components/blog/SearchEngineOptimize";
 import { useToast } from "@admin/components/toast-provider";
+import { AddFromUrlDialog } from "@admin/components/ui/AddFromUrlDialog";
 import { RichTextEditor } from "@admin/components/ui/RichTextEditor";
+import { useAddFromUrl } from "@admin/components/ui/useAddFromUrl";
 import { trpc } from "@admin/lib/trpc";
 import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ecom/ui/components/card";
@@ -96,6 +98,7 @@ export function PageForm({
   const tPage = useTranslations("pages");
   const t = useTranslations("common");
   const locale = useLocale();
+  const { dialogProps: addFromUrlProps, askUrl } = useAddFromUrl();
 
   const { data: activeLanguages } = trpc.viewer.languages.getActive.useQuery();
 
@@ -379,12 +382,13 @@ export function PageForm({
   }
 
   const handleAddFromUrl = (target: "featured" | "banner" | "hero") => {
-    const url = prompt("Enter image URL:");
-    if (url) {
-      if (target === "featured") setFormData((p) => ({ ...p, featuredImage: url }));
-      if (target === "banner") setFormData((p) => ({ ...p, bannerImage: url }));
-      if (target === "hero") setFormData((p) => ({ ...p, heroBanner: url }));
-    }
+    askUrl({
+      onSubmit: (url) => {
+        if (target === "featured") setFormData((p) => ({ ...p, featuredImage: url }));
+        if (target === "banner") setFormData((p) => ({ ...p, bannerImage: url }));
+        if (target === "hero") setFormData((p) => ({ ...p, heroBanner: url }));
+      },
+    });
   };
 
   const renderImagePicker = (
@@ -395,9 +399,17 @@ export function PageForm({
   ) => {
     return (
       <div className="flex flex-col gap-3">
-        <button
-          type="button"
+        {/* biome-ignore lint/a11y/useSemanticElements: can't use <button> here because the inner trash <Button> would create invalid button-in-button nesting */}
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => setMediaPickerTarget(target)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setMediaPickerTarget(target);
+            }
+          }}
           className="w-full text-left group relative border border-dashed border-input rounded-md flex flex-col items-center justify-center bg-muted/5 h-36 overflow-hidden transition-all hover:bg-muted/10 cursor-pointer"
         >
           {value ? (
@@ -423,7 +435,7 @@ export function PageForm({
               <span className="text-xs text-center block">No image selected</span>
             </div>
           )}
-        </button>
+        </div>
         <div className="flex items-center justify-center gap-1.5 text-xs">
           <button
             type="button"
@@ -984,6 +996,8 @@ export function PageForm({
           setMediaPickerTarget(null);
         }}
       />
+
+      <AddFromUrlDialog {...addFromUrlProps} />
     </form>
   );
 }

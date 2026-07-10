@@ -13,7 +13,7 @@ model Language {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  meta      LanguageMeta[]
+  meta LanguageMeta[]
 
   @@map("languages")
 }
@@ -73,15 +73,15 @@ model AuditLog {
   id         Int      @id @default(autoincrement())
   userId     Int?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action     String   // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
-  module     String   // posts, categories, users, roles, settings, etc.
-  entityId   String?  // ID of the affected entity
-  entityType String?  // Model name (Post, Category, User, etc.)
-  oldValues  Json?    // Previous values (for UPDATE)
-  newValues  Json?    // New values (for CREATE, UPDATE)
+  action     String // CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+  module     String // posts, categories, users, roles, settings, etc.
+  entityId   String? // ID of the affected entity
+  entityType String? // Model name (Post, Category, User, etc.)
+  oldValues  Json? // Previous values (for UPDATE)
+  newValues  Json? // New values (for CREATE, UPDATE)
   ipAddress  String?
   userAgent  String?  @db.Text
-  metadata   Json?    // Extra context
+  metadata   Json? // Extra context
   createdAt  DateTime @default(now())
 
   @@index([userId])
@@ -96,10 +96,10 @@ model RequestLog {
   id         Int      @id @default(autoincrement())
   userId     Int?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  method     String   // GET, POST, PUT, DELETE, etc.
+  method     String // GET, POST, PUT, DELETE, etc.
   url        String   @db.Text
   statusCode Int?
-  duration   Int?     // Response time in ms
+  duration   Int? // Response time in ms
   ipAddress  String?
   userAgent  String?  @db.Text
   referer    String?  @db.Text
@@ -117,7 +117,7 @@ model Webhook {
   id        Int      @id @default(autoincrement())
   name      String
   url       String
-  secret    String?  // SEC-10: TODO — hash like API keys when scaling to external webhook consumers
+  secret    String? // SEC-10: TODO — hash like API keys when scaling to external webhook consumers
   events    String[] // e.g. ["post.published", "customer.registered"]
   isActive  Boolean  @default(true)
   retries   Int      @default(3)
@@ -150,21 +150,21 @@ model WebhookLog {
 }
 
 model ContactSubmission {
-  id         Int      @id @default(autoincrement())
-  formSlug   String   @default("default")
+  id         Int       @id @default(autoincrement())
+  formSlug   String    @default("default")
   name       String
   email      String
   phone      String?
   subject    String?
-  message    String   @db.Text
-  metadata   Json?    // extra fields from custom forms
-  status     String   @default("new") // new, read, replied, archived
+  message    String    @db.Text
+  metadata   Json? // extra fields from custom forms
+  status     String    @default("new") // new, read, replied, archived
   assigneeId Int?
-  assignee   User?    @relation("ContactAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  assignee   User?     @relation("ContactAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   repliedAt  DateTime?
   ipAddress  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([formSlug])
   @@index([status])
@@ -176,12 +176,12 @@ model Notification {
   id            Int      @id @default(autoincrement())
   userId        Int
   user          User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-  type          String   // comment, contact, system, webhook
+  type          String // comment, contact, system, webhook
   title         String
   message       String   @db.Text
-  link          String?  // URL to navigate to
-  referenceId   Int?     // Related entity ID
-  referenceType String?  // Related entity type
+  link          String? // URL to navigate to
+  referenceId   Int? // Related entity ID
+  referenceType String? // Related entity type
   isRead        Boolean  @default(false)
   createdAt     DateTime @default(now())
 
@@ -191,15 +191,15 @@ model Notification {
 }
 
 model Redirect {
-  id          Int      @id @default(autoincrement())
-  fromPath    String   @unique
-  toPath      String
-  statusCode  Int      @default(301) // 301 = permanent, 302 = temporary
-  isActive    Boolean  @default(true)
-  hitCount    Int      @default(0)
-  note        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  fromPath   String   @unique
+  toPath     String
+  statusCode Int      @default(301) // 301 = permanent, 302 = temporary
+  isActive   Boolean  @default(true)
+  hitCount   Int      @default(0)
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([fromPath])
   @@index([isActive])
@@ -210,13 +210,13 @@ model Taxonomy {
   id          Int        @id @default(autoincrement())
   name        String
   slug        String
-  type        String     // e.g., "category", "tag", "topic", "series", "product_type"
+  type        String // e.g., "category", "tag", "topic", "series", "product_type"
   description String?
   parentId    Int?
   parent      Taxonomy?  @relation("TaxonomyTree", fields: [parentId], references: [id])
   children    Taxonomy[] @relation("TaxonomyTree")
   order       Int        @default(0)
-  metadata    Json?      // Extensible key-value metadata
+  metadata    Json? // Extensible key-value metadata
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -227,17 +227,17 @@ model Taxonomy {
 }
 
 model ContentTemplate {
-  id          Int      @id @default(autoincrement())
-  name        String
-  slug        String   @unique
-  type        String   // "post", "page", "email"
-  content     String?  @db.Text
-  structure   Json?    // JSON layout/block structure
-  thumbnail   String?
-  isActive    Boolean  @default(true)
-  createdBy   Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  type      String // "post", "page", "email"
+  content   String?  @db.Text
+  structure Json? // JSON layout/block structure
+  thumbnail String?
+  isActive  Boolean  @default(true)
+  createdBy Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([type])
   @@map("content_templates")
@@ -320,7 +320,7 @@ model OutboxEvent {
 model Revision {
   id            Int      @id @default(autoincrement())
   referenceId   Int
-  referenceType String   // "post" | "page"
+  referenceType String // "post" | "page"
   title         String
   content       String?  @db.Text
   authorId      Int
@@ -334,26 +334,26 @@ model Revision {
 }
 
 model SeoMeta {
-  id            Int      @id @default(autoincrement())
-  seoTitle      String?
+  id             Int     @id @default(autoincrement())
+  seoTitle       String?
   seoDescription String? @db.Text
-  seoImage      String?
-  indexMode     String?  @default("index")
+  seoImage       String?
+  indexMode      String? @default("index")
 
-  postId        Int?     @unique
-  post          Post?    @relation("PostSeo", fields: [postId], references: [id], onDelete: Cascade)
+  postId Int?  @unique
+  post   Post? @relation("PostSeo", fields: [postId], references: [id], onDelete: Cascade)
 
-  categoryId    Int?     @unique
-  category      Category? @relation("CategorySeo", fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId Int?      @unique
+  category   Category? @relation("CategorySeo", fields: [categoryId], references: [id], onDelete: Cascade)
 
-  pageId        Int?     @unique
-  page          Page?    @relation("PageSeo", fields: [pageId], references: [id], onDelete: Cascade)
+  pageId Int?  @unique
+  page   Page? @relation("PageSeo", fields: [pageId], references: [id], onDelete: Cascade)
 
-  tagId         Int?     @unique
-  tag           Tag?     @relation("TagSeo", fields: [tagId], references: [id], onDelete: Cascade)
+  tagId Int? @unique
+  tag   Tag? @relation("TagSeo", fields: [tagId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("seo_meta")
 }

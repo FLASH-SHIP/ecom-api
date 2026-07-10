@@ -5,16 +5,17 @@ import { useEffect, useState, useCallback } from "react";
 
 interface ThemeToggleProps {
   className?: string;
+  storageKey?: string;
 }
 
-export function ThemeToggle({ className = "" }: ThemeToggleProps) {
+export function ThemeToggle({ className = "", storageKey = "theme" }: ThemeToggleProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     try {
-      const saved = localStorage.getItem("theme");
+      const saved = localStorage.getItem(storageKey);
       if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
         setTheme("dark");
         document.documentElement.classList.add("dark");
@@ -25,7 +26,7 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps) {
     } catch {
       // Fallback
     }
-  }, []);
+  }, [storageKey]);
 
   const toggleTheme = useCallback(() => {
     const html = document.documentElement;
@@ -37,11 +38,11 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps) {
     }
     setTheme(nextTheme);
     try {
-      localStorage.setItem("theme", nextTheme);
+      localStorage.setItem(storageKey, nextTheme);
     } catch {
       // Ignore
     }
-  }, [theme]);
+  }, [theme, storageKey]);
 
   if (!mounted) {
     return <div className={`w-9 h-9 rounded-lg ${className}`} />;
