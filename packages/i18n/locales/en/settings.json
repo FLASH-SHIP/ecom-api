@@ -46,7 +46,9 @@
     "ratesTitle": "Shipping Rates",
     "ratesDesc": "Manage shipping rates, rates by customer groups and weight slabs",
     "trackingTitle": "Web Tracking",
-    "trackingDesc": "Choose your preferred analytics and tracking method. Only one option can be activated at a time."
+    "trackingDesc": "Choose your preferred analytics and tracking method. Only one option can be activated at a time.",
+    "packingTitle": "Packing Types",
+    "packingDesc": "Manage types of packing (Cardboard boxes, Package bags, etc.) used for shipping"
   },
   "fields": {
     "siteName": "Site Name",
@@ -232,5 +234,40 @@
       "testingConnection": "Testing connection...",
       "noServices": "No carrier services configured for this partner yet."
     }
+  },
+  "packing": {
+    "title": "Type of Packing",
+    "image": "Image",
+    "name": "Name",
+    "description": "Description",
+    "status": "Status",
+    "createdAt": "Created At",
+    "actions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "addBtn": "Add Packing Type",
+    "noItems": "No packing types found.",
+    "editTitle": "Update Packing Type",
+    "createTitle": "Add New Packing Type",
+    "lblName": "Packing Type Name",
+    "lblImage": "Image",
+    "lblStatus": "Status",
+    "lblDescription": "Detailed Description",
+    "selectImage": "Select from library",
+    "removeImage": "Remove Image",
+    "imageHint": "Supports SVG, PNG, WebP formats",
+    "statusActive": "Active (Allow use)",
+    "statusInactive": "Inactive (Temporarily locked/Hidden)",
+    "cancel": "Cancel",
+    "save": "Save",
+    "toastCreateSuccess": "Packing type created successfully",
+    "toastUpdateSuccess": "Packing type updated successfully",
+    "toastDeleteSuccess": "Packing type deleted successfully",
+    "toastLoadError": "Failed to load packing type details",
+    "validationName": "Please enter packing type name",
+    "deleteConfirmTitle": "Delete Packing Type",
+    "deleteConfirmMsg": "Are you sure you want to delete this packing type? This will perform a soft delete.",
+    "placeholderName": "Enter packing name (e.g. Cardboard box)",
+    "placeholderDescription": "Enter detailed description for this packing type..."
   }
 }

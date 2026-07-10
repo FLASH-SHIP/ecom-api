@@ -5,7 +5,7 @@ import PageBreadcrumb from "@admin/components/PageBreadcrumb";
 import { Permissions } from "@ecom/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@ecom/ui/components/card";
 import { cn } from "@ecom/ui/lib/utils";
-import { BarChart3, DollarSign, Globe, ImageIcon, Phone, Settings } from "lucide-react";
+import { BarChart3, DollarSign, Globe, ImageIcon, Package, Phone, Settings } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
@@ -55,6 +55,12 @@ const SETTING_SECTIONS: { groupKey: string; items: SettingCard[] }[] = [
         descKey: "overview.trackingDesc",
         href: "/settings/tracking",
         icon: BarChart3,
+      },
+      {
+        titleKey: "overview.packingTitle",
+        descKey: "overview.packingDesc",
+        href: "/settings/packing",
+        icon: Package,
       },
     ],
   },

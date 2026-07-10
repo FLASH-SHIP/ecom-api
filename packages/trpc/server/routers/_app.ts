@@ -22,6 +22,7 @@ import { pagesRouter } from "./viewer/pages/_router";
 import { partnersRouter } from "./viewer/partners/_router";
 import { postsRouter } from "./viewer/posts/_router";
 import { rateCardsRouter } from "./viewer/rate-cards/_router";
+import { packingRouter } from "./viewer/packing/_router";
 import { redirectsRouter } from "./viewer/redirects/_router";
 import { revisionsRouter } from "./viewer/revisions/_router";
 import { rolesRouter } from "./viewer/roles/_router";
@@ -76,6 +77,7 @@ export const appRouter = router({
     contentLocks: contentLocksRouter,
     rateCards: rateCardsRouter,
     partners: partnersRouter,
+    packing: packingRouter,
   }),
 
   // Public (publicProcedure — no auth required)

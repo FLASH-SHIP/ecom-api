@@ -21,6 +21,7 @@ import { PermissionsSeeder } from "./PermissionsSeeder";
 import { RateCardsSeeder } from "./RateCardsSeeder";
 import { RolesSeeder } from "./RolesSeeder";
 import { SettingsSeeder } from "./SettingsSeeder";
+import { PackingTypesSeeder } from "./12-packing.seeder";
 import type { Seeder } from "./seeder.interface";
 
 /**
@@ -40,4 +41,5 @@ export const SEEDERS: Seeder[] = [
   CountriesSeeder, // 08 — no dependencies
   TransportModesSeeder, // 09 — no dependencies
   PartnersSeeder, // 10 — no dependencies
+  PackingTypesSeeder, // 12 — no dependencies
 ];
