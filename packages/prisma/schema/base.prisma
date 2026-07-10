@@ -1,7 +1,6 @@
 // Ecom — Base Schema Config
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["prismaSchemaFolder"]
   output          = "../src/generated/prisma"
 }
 
