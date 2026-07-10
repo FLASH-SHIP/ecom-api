@@ -21,6 +21,7 @@ import { notificationsRouter } from "./viewer/notifications/_router";
 import { pagesRouter } from "./viewer/pages/_router";
 import { postsRouter } from "./viewer/posts/_router";
 import { rateCardsRouter } from "./viewer/rate-cards/_router";
+import { packingRouter } from "./viewer/packing/_router";
 import { redirectsRouter } from "./viewer/redirects/_router";
 import { revisionsRouter } from "./viewer/revisions/_router";
 import { rolesRouter } from "./viewer/roles/_router";
@@ -74,6 +75,7 @@ export const appRouter = router({
     templates: templatesRouter,
     contentLocks: contentLocksRouter,
     rateCards: rateCardsRouter,
+    packing: packingRouter,
   }),
 
   // Public (publicProcedure — no auth required)

@@ -1,0 +1,14 @@
+// Ecom — Packing Schema
+
+model PackingType {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  image       String?
+  description String?       @db.Text
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  deletedAt   DateTime?
+
+  @@map("packing_types")
+}
