@@ -291,8 +291,6 @@ export class CustomerRepository {
     });
   }
 
-
-
   async createWithPassword(data: {
     email: string;
     username: string;

@@ -65,8 +65,6 @@ export const RateCardsSeeder: Seeder = {
       },
     });
 
-
-
     // Generate Epacket Slabs for Default (0.05kg step, base $3.80 + $0.20 per 0.05kg)
     await prisma.rateCardItem.deleteMany({
       where: { rateCardId: epacketDefaultCard.id },
@@ -119,8 +117,6 @@ export const RateCardsSeeder: Seeder = {
         maxWeight: 20.0,
       },
     });
-
-
 
     // Generate Express Slabs for Default (0.5kg step, base $15.00 + $2.00 per 0.5kg)
     await prisma.rateCardItem.deleteMany({

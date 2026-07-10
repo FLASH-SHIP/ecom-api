@@ -292,7 +292,15 @@ export class RateCardRepository {
     customerGroupId?: number;
     page?: number;
     perPage?: number;
-    sortBy?: "id" | "code" | "name" | "status" | "createdAt" | "updatedAt" | "startDate" | "endDate";
+    sortBy?:
+      | "id"
+      | "code"
+      | "name"
+      | "status"
+      | "createdAt"
+      | "updatedAt"
+      | "startDate"
+      | "endDate";
     sortOrder?: "asc" | "desc";
   }) {
     const {

@@ -19,6 +19,7 @@ import { languagesRouter } from "./viewer/languages/_router";
 import { mediaRouter } from "./viewer/media/_router";
 import { notificationsRouter } from "./viewer/notifications/_router";
 import { pagesRouter } from "./viewer/pages/_router";
+import { partnersRouter } from "./viewer/partners/_router";
 import { postsRouter } from "./viewer/posts/_router";
 import { rateCardsRouter } from "./viewer/rate-cards/_router";
 import { redirectsRouter } from "./viewer/redirects/_router";
@@ -74,6 +75,7 @@ export const appRouter = router({
     templates: templatesRouter,
     contentLocks: contentLocksRouter,
     rateCards: rateCardsRouter,
+    partners: partnersRouter,
   }),
 
   // Public (publicProcedure — no auth required)

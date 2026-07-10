@@ -282,6 +282,17 @@ const MENU_ITEMS: SeedItem[] = [
     section: "General",
     parentKey: "cms-core-settings",
   },
+  {
+    key: "cms-settings-partners",
+    name: "Partners",
+    description: "Manage shipping partners, dynamic services and integration configurations",
+    icon: "ti ti-truck",
+    route: "/settings/partners",
+    priority: 80,
+    permissions: ["settings.partners.read"],
+    section: "Logistics",
+    parentKey: "cms-core-settings",
+  },
 
   // ─── System children (panel) ───────────────────────
   {

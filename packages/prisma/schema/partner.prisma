@@ -1,0 +1,55 @@
+// Ecom — Partner & Services Module
+
+enum PartnerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ServiceType {
+  PICKUP
+  EXPORT
+  IMPORT
+  LASTMILE
+}
+
+model Partner {
+  id           Int           @id @default(autoincrement())
+  code         String        @unique @map("partner_code")
+  name         String        @map("partner_name")
+  contactName  String?       @map("contact_name")
+  contactEmail String?       @map("contact_email")
+  contactPhone String?       @map("contact_phone")
+  status       PartnerStatus @default(ACTIVE)
+  description  String?       @db.Text
+  deletedAt    DateTime?     @map("deleted_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  services     PartnerService[]
+
+  @@index([deletedAt])
+  @@map("partners")
+}
+
+model PartnerService {
+  id                 String      @id @default(cuid())
+  partnerId          Int         @map("partner_id")
+  partner            Partner     @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  code               String      @map("service_code") // E.g. "usps_first_class"
+  name               String      @map("service_name") // E.g. "USPS First-Class"
+  type               ServiceType @map("service_type")
+  apiConfig          Json?       @map("api_config")
+  statusMapping      Json?       @map("status_mapping")
+  isSandbox          Boolean     @default(true) @map("is_sandbox")
+  isActive           Boolean     @default(true) @map("is_active")
+  webhookSecret      String?     @map("webhook_secret")
+  timeoutMs          Int         @default(10000) @map("timeout_ms")
+  rateLimitPerMinute Int         @default(60) @map("rate_limit_per_minute")
+  deletedAt          DateTime?   @map("deleted_at")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  @@unique([partnerId, code])
+  @@index([deletedAt])
+  @@map("partner_services")
+}
