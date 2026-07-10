@@ -147,7 +147,7 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
                   className="flex items-center gap-2 rounded-md bg-[#CFFEF9] dark:bg-teal-950/40 px-3 py-[7px] text-sm font-semibold text-[#0F798C] dark:text-teal-200 border border-transparent dark:border-teal-800/30 hover:opacity-90 transition-opacity focus:outline-none cursor-pointer text-left"
                 >
                   <UserAvatarIcon />
-                  <span className="truncate max-w-[120px] text-[#22252A] dark:text-teal-200 font-medium">
+                  <span className="truncate max-w-[120px] text-sys-primary dark:text-teal-200 font-medium">
                     {displayName}
                   </span>
                   <ChevronDown className="size-3.5 text-[#0F798C] dark:text-teal-200 shrink-0" />
@@ -180,7 +180,7 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
             size="icon"
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="flex items-center justify-center lg:hidden cursor-pointer h-9 w-9 text-muted-foreground hover:text-foreground"
+            className="border border-sys-border rounded-md flex items-center justify-center lg:hidden cursor-pointer h-9 w-9 text-muted-foreground hover:text-foreground"
           >
             <MenuIcon />
           </Button>
@@ -193,7 +193,7 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
         {!isMobile && (
           <aside
             className={cn(
-              "sticky top-[72px] z-40 h-[calc(100vh-72px)] shrink-0 border-r border-[#DADADA] dark:border-zinc-800 bg-[var(--sidebar-bg)] shadow-[1px_0_8px_rgba(0,0,0,0.05)] dark:shadow-none transition-all duration-300 ease-out",
+              "sticky top-[72px] z-40 h-[calc(100vh-72px)] shrink-0 border-r border-sys-border dark:border-zinc-800 bg-[var(--sidebar-bg)] shadow-[1px_0_8px_rgba(0,0,0,0.05)] dark:shadow-none transition-all duration-300 ease-out",
               sidebarOpen ? "w-[var(--sidebar-width)]" : "w-18",
             )}
           >
