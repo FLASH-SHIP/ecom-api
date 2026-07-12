@@ -59,7 +59,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   contacts: Mail,
   "custom-fields": Wrench,
   taxonomies: FolderTree,
-  "admin-menus": Menu,
   settings: Settings,
   system: Activity,
   "audit-logs": ScrollText,

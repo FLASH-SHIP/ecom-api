@@ -1,3 +1,4 @@
+export { generateEntityCode, generateRandomString } from "./codeGenerator";
 export type { ErrorCodeType } from "./errorCodes";
 export { ErrorCode } from "./errorCodes";
 export { ErrorWithCode } from "./errors";

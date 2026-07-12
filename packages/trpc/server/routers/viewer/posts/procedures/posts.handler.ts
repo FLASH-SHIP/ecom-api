@@ -32,7 +32,7 @@ export const list = authedProcedure
       .object({
         filters: filtersInputSchema.optional(),
         status: ContentStatusEnum.optional(),
-        authorId: z.number().int().positive().optional(),
+        authorId: z.string().min(1).optional(),
         categoryId: z.number().int().positive().optional(),
         isFeatured: z.boolean().optional(),
         search: z.string().max(200).optional(),
@@ -92,7 +92,7 @@ export const create = authedProcedure
       expiresAt: z.string().datetime().nullable().optional(),
       categoryIds: z.array(z.number().int().positive()).optional(),
       tagIds: z.array(z.number().int().positive()).optional(),
-      authorId: z.number().int().positive().optional(),
+      authorId: z.string().min(1).optional(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -152,7 +152,7 @@ export const update = authedProcedure
       expiresAt: z.string().datetime().nullable().optional(),
       categoryIds: z.array(z.number().int().positive()).optional(),
       tagIds: z.array(z.number().int().positive()).optional(),
-      authorId: z.number().int().positive().optional(),
+      authorId: z.string().min(1).optional(),
     }),
   )
   .use(requirePostPolicy("canUpdate"))

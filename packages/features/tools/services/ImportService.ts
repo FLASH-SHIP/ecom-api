@@ -23,7 +23,7 @@ export class ImportService {
       excerpt?: string;
       status?: string;
       isFeatured?: boolean;
-      authorId: number;
+      authorId: string;
     }>,
   ): Promise<ImportResult> {
     return this.processBatch(data, async (item, index) => {
@@ -85,7 +85,7 @@ export class ImportService {
       slug?: string;
       content?: string;
       template?: string;
-      authorId: number;
+      authorId: string;
     }>,
   ): Promise<ImportResult> {
     return this.processBatch(data, async (item, index) => {

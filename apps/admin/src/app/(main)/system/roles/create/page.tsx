@@ -24,7 +24,7 @@ export default function CreateRolePage() {
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDisplay, setNewRoleDisplay] = useState("");
   const [newRoleDesc, setNewRoleDesc] = useState("");
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
 
   const publishCardRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +39,7 @@ export default function CreateRolePage() {
   const dbPermissions = useMemo(() => {
     if (!allPermissions) return [];
     return Object.values(allPermissions).flat() as {
-      id: string;
+      id: number;
       name: string;
       displayName: string | null;
     }[];

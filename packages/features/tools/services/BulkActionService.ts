@@ -3,10 +3,10 @@ import type { PrismaClient } from "@ecom/prisma";
 
 const log = createLogger("BulkActionService");
 
-export interface BulkResult {
+export interface BulkResult<T = number | string> {
   success: number;
   failed: number;
-  errors: Array<{ id: number; error: string }>;
+  errors: Array<{ id: T; error: string }>;
 }
 
 export class BulkActionService {
@@ -15,7 +15,7 @@ export class BulkActionService {
     this.prisma = prisma;
   }
 
-  async bulkDeletePosts(ids: number[]): Promise<BulkResult> {
+  async bulkDeletePosts(ids: number[]): Promise<BulkResult<number>> {
     return this.processBulk(ids, async (id) => {
       await this.prisma.post.update({
         where: { id },
@@ -27,7 +27,7 @@ export class BulkActionService {
   async bulkStatusPosts(
     ids: number[],
     status: "PUBLISHED" | "DRAFT" | "ARCHIVED",
-  ): Promise<BulkResult> {
+  ): Promise<BulkResult<number>> {
     return this.processBulk(ids, async (id) => {
       const data: Record<string, unknown> = { status };
       if (status === "PUBLISHED") {
@@ -37,7 +37,7 @@ export class BulkActionService {
     });
   }
 
-  async bulkCategoryAssign(postIds: number[], categoryIds: number[]): Promise<BulkResult> {
+  async bulkCategoryAssign(postIds: number[], categoryIds: number[]): Promise<BulkResult<number>> {
     return this.processBulk(postIds, async (postId) => {
       const records = categoryIds.map((categoryId) => ({
         postId,
@@ -50,7 +50,7 @@ export class BulkActionService {
     });
   }
 
-  async bulkDeleteCategories(ids: number[]): Promise<BulkResult> {
+  async bulkDeleteCategories(ids: number[]): Promise<BulkResult<number>> {
     return this.processBulk(ids, async (id) => {
       await this.prisma.category.update({
         where: { id },
@@ -59,13 +59,13 @@ export class BulkActionService {
     });
   }
 
-  async bulkDeleteTags(ids: number[]): Promise<BulkResult> {
+  async bulkDeleteTags(ids: number[]): Promise<BulkResult<number>> {
     return this.processBulk(ids, async (id) => {
       await this.prisma.tag.delete({ where: { id } });
     });
   }
 
-  async bulkDeletePages(ids: number[]): Promise<BulkResult> {
+  async bulkDeletePages(ids: number[]): Promise<BulkResult<number>> {
     return this.processBulk(ids, async (id) => {
       await this.prisma.page.update({
         where: { id },
@@ -75,19 +75,19 @@ export class BulkActionService {
   }
 
   async bulkStatusCustomers(
-    ids: number[],
+    ids: string[],
     status: "ACTIVE" | "INACTIVE" | "BANNED",
-  ): Promise<BulkResult> {
+  ): Promise<BulkResult<string>> {
     return this.processBulk(ids, async (id) => {
       await this.prisma.customer.update({ where: { id }, data: { status } });
     });
   }
 
-  private async processBulk(
-    ids: number[],
-    processor: (id: number) => Promise<void>,
-  ): Promise<BulkResult> {
-    const result: BulkResult = { success: 0, failed: 0, errors: [] };
+  private async processBulk<T>(
+    ids: T[],
+    processor: (id: T) => Promise<void>,
+  ): Promise<BulkResult<T>> {
+    const result: BulkResult<T> = { success: 0, failed: 0, errors: [] };
 
     for (const id of ids) {
       try {

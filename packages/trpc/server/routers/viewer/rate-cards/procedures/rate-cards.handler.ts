@@ -75,7 +75,7 @@ export const calculate = publicProcedure
       country: z.string().min(2).max(10),
       weight: z.number().positive(),
       origin: z.string().min(2).max(10).optional().nullable(),
-      customerId: z.number().int().positive(),
+      customerId: z.string().min(1),
       calculationDate: z.coerce.date().optional(),
     }),
   )
@@ -237,21 +237,25 @@ export const update = authedProcedure
     const isDefaultCard = DEFAULT_RATE_CARD_CODES.includes(card.code);
     if (isDefaultCard) {
       const isOriginChanged = data.origin !== undefined && data.origin !== card.origin;
-      const isStartDateChanged = data.startDate !== undefined && (
-        (data.startDate === null && card.startDate !== null) ||
-        (data.startDate !== null && card.startDate === null) ||
-        (data.startDate && card.startDate && new Date(data.startDate).getTime() !== new Date(card.startDate).getTime())
-      );
-      const isEndDateChanged = data.endDate !== undefined && (
-        (data.endDate === null && card.endDate !== null) ||
-        (data.endDate !== null && card.endDate === null) ||
-        (data.endDate && card.endDate && new Date(data.endDate).getTime() !== new Date(card.endDate).getTime())
-      );
-      const currentGroupIds = card.groups.map(g => g.customerGroupId);
-      const isGroupsChanged = data.customerGroupIds !== undefined && (
-        data.customerGroupIds.length !== currentGroupIds.length ||
-        data.customerGroupIds.some(id => !currentGroupIds.includes(id))
-      );
+      const isStartDateChanged =
+        data.startDate !== undefined &&
+        ((data.startDate === null && card.startDate !== null) ||
+          (data.startDate !== null && card.startDate === null) ||
+          (data.startDate &&
+            card.startDate &&
+            new Date(data.startDate).getTime() !== new Date(card.startDate).getTime()));
+      const isEndDateChanged =
+        data.endDate !== undefined &&
+        ((data.endDate === null && card.endDate !== null) ||
+          (data.endDate !== null && card.endDate === null) ||
+          (data.endDate &&
+            card.endDate &&
+            new Date(data.endDate).getTime() !== new Date(card.endDate).getTime()));
+      const currentGroupIds = card.groups.map((g) => g.customerGroupId);
+      const isGroupsChanged =
+        data.customerGroupIds !== undefined &&
+        (data.customerGroupIds.length !== currentGroupIds.length ||
+          data.customerGroupIds.some((id) => !currentGroupIds.includes(id)));
 
       if (
         (data.code !== undefined && data.code !== card.code) ||
@@ -269,7 +273,8 @@ export const update = authedProcedure
       ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Không thể chỉnh sửa các cấu hình cốt lõi của bảng giá cước mặc định (chỉ cho phép đổi tên hoặc cập nhật các nấc cước).",
+          message:
+            "Không thể chỉnh sửa các cấu hình cốt lõi của bảng giá cước mặc định (chỉ cho phép đổi tên hoặc cập nhật các nấc cước).",
         });
       }
     }
@@ -312,6 +317,17 @@ export const remove = authedProcedure
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Không thể xóa bảng giá cước mặc định của hệ thống.",
+      });
+    }
+
+    const orderCount = await prisma.order.count({
+      where: { rateCardId: input.id },
+    });
+    if (orderCount > 0) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Không thể xóa bảng giá cước này vì đã có đơn hàng sử dụng. Bạn chỉ có thể chuyển trạng thái bảng cước sang ARCHIVED.",
       });
     }
 

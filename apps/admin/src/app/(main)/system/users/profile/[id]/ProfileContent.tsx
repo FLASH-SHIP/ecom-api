@@ -94,7 +94,7 @@ function ProfileHeader({ targetUser, displayName, userInitials }: ProfileHeaderP
 }
 
 interface ProfileContentProps {
-  userId: number;
+  userId: string;
 }
 
 export default function ProfileContent({ userId }: ProfileContentProps) {

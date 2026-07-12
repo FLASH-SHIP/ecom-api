@@ -30,6 +30,7 @@ model RateCard {
 
   groups RateCardGroup[]
   items  RateCardItem[]
+  orders Order[]
 
   @@index([shippingMethod, country, origin, status])
   @@map("rate_cards")
@@ -62,15 +63,16 @@ model RateCardGroup {
 }
 
 model RateCardItem {
-  id          Int          @id @default(autoincrement())
-  rateCardId  Int          @map("rate_card_id")
-  rateCard    RateCard     @relation(fields: [rateCardId], references: [id], onDelete: Cascade)
-  startWeight Decimal      @db.Decimal(10, 3)
-  endWeight   Decimal      @db.Decimal(10, 3)
-  rateType    RateCardType @default(STEP_FIXED)
-  amount      Decimal      @db.Decimal(12, 2)
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  id            Int            @id @default(autoincrement())
+  rateCardId    Int            @map("rate_card_id")
+  rateCard      RateCard       @relation(fields: [rateCardId], references: [id], onDelete: Cascade)
+  startWeight   Decimal        @db.Decimal(10, 3)
+  endWeight     Decimal        @db.Decimal(10, 3)
+  rateType      RateCardType   @default(STEP_FIXED)
+  amount        Decimal        @db.Decimal(12, 2)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  orderFeeItems OrderFeeItem[]
 
   @@index([rateCardId])
   @@map("rate_card_items")

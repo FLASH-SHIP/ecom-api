@@ -61,7 +61,7 @@ export class HsCodeRepository {
         SUBSTRING(hs_code, 1, 4) as code,
         article_description as description
       FROM crawl_hscode
-      WHERE hs_code IS NOT NULL AND LENGTH(hs_code) >= 4 AND hs_code LIKE ${chapterCode + '%'}
+      WHERE hs_code IS NOT NULL AND LENGTH(hs_code) >= 4 AND hs_code LIKE ${chapterCode + "%"}
       ORDER BY SUBSTRING(hs_code, 1, 4), hs_code;
     `;
   }

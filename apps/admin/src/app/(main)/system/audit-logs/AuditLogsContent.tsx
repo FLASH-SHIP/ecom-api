@@ -615,7 +615,7 @@ interface AuditLogDetailSheetProps {
         userAgent?: string | null;
         metadata?: unknown;
         createdAt?: Date | string;
-        user?: { id: number; name: string | null; email: string; avatarUrl: string | null } | null;
+        user?: { id: string; name: string | null; email: string; avatarUrl: string | null } | null;
       }
     | null
     | undefined;

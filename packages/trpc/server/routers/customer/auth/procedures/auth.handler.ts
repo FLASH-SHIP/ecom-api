@@ -81,7 +81,7 @@ export const me = publicProcedure
   .query(async ({ input, ctx }) => {
     const { getCustomerRepository } = await import("@ecom/features/di/containers/CustomerService");
 
-    let customerId: number | null = null;
+    let customerId: string | null = null;
     if (ctx.user?.id) {
       customerId = ctx.user.id;
     } else if (input?.accessToken) {
@@ -122,7 +122,7 @@ export const updateProfile = publicProcedure
     }),
   )
   .mutation(async ({ input, ctx }) => {
-    let customerId: number | null = null;
+    let customerId: string | null = null;
     if (ctx.user?.id) {
       customerId = ctx.user.id;
     } else if (input.accessToken) {
@@ -188,7 +188,7 @@ export const changePassword = publicProcedure
     }),
   )
   .mutation(async ({ input, ctx }) => {
-    let customerId: number | null = null;
+    let customerId: string | null = null;
     if (ctx.user?.id) {
       customerId = ctx.user.id;
     } else if (input.accessToken) {

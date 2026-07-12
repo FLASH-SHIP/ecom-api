@@ -104,6 +104,15 @@ const navigationConfig: NavItemType[] = [
         auth: [Permissions.CUSTOMERS_READ],
       },
       {
+        id: "orders",
+        title: "Đơn hàng",
+        translate: "nav.orders",
+        type: "item",
+        icon: "lucide:shopping-bag",
+        url: "/orders",
+        auth: [Permissions.CUSTOMERS_READ],
+      },
+      {
         id: "customer-groups",
         title: "Nhóm khách hàng",
         translate: "nav.customerGroups",
@@ -157,15 +166,6 @@ const navigationConfig: NavItemType[] = [
         icon: "lucide:sliders-horizontal",
         url: "/custom-fields",
         auth: [Permissions.CUSTOM_FIELDS_READ],
-      },
-      {
-        id: "menus",
-        title: "Menu",
-        translate: "nav.menus",
-        type: "item",
-        icon: "lucide:menu",
-        url: "/admin-menus",
-        auth: [Permissions.ADMIN_MENUS_READ],
       },
       {
         id: "tools",

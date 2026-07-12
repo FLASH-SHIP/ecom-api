@@ -20,12 +20,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
+import { zodResolver } from "@hookform/resolvers/zod";
 import clsx from "clsx";
 import { FileText, LayoutDashboard, User } from "lucide-react";
 import NextLink from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 import { trpc } from "../../lib/trpc";
+
+const profileModalSchema = z.object({
+  username: z.string().optional(),
+  name: z.string().min(1, "Vui lòng nhập họ và tên."),
+  phone: z.string().min(1, "Vui lòng nhập số điện thoại."),
+  dob: z.string().optional().nullable(),
+  gender: z.enum(["male", "female", "other"]).optional().nullable(),
+});
+
+type ProfileModalFormValues = z.infer<typeof profileModalSchema>;
 
 const _QUICK_LINKS = [
   {
@@ -64,12 +77,24 @@ export default function CustomerDashboardPage() {
 
   // Enforce profile modal states
   const [showModal, setShowModal] = useState(false);
-  const [username, setUsername] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [dob, setDob] = useState("");
-  const [gender, setGender] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<ProfileModalFormValues>({
+    resolver: zodResolver(profileModalSchema),
+    defaultValues: {
+      username: "",
+      name: "",
+      phone: "",
+      dob: "",
+      gender: null,
+    },
+  });
 
   useEffect(() => {
     if (profile) {
@@ -77,13 +102,15 @@ export default function CustomerDashboardPage() {
       setShowModal(hasMissingInfo);
 
       // Pre-fill form values
-      setUsername(profile.username ?? "");
-      setName(profile.name ?? "");
-      setPhone(profile.phone ?? "");
-      setDob(profile.dob ? (new Date(profile.dob).toISOString().split("T")[0] ?? "") : "");
-      setGender(profile.gender ?? "");
+      reset({
+        username: profile.username ?? "",
+        name: profile.name ?? "",
+        phone: profile.phone ?? "",
+        dob: profile.dob ? (new Date(profile.dob).toISOString().split("T")[0] ?? "") : "",
+        gender: (profile.gender as "male" | "female" | "other") || null,
+      });
     }
-  }, [profile]);
+  }, [profile, reset]);
 
   const updateProfileMutation = trpc.customer.auth.updateProfile.useMutation({
     onSuccess: () => {
@@ -95,26 +122,18 @@ export default function CustomerDashboardPage() {
     },
   });
 
-  const handleModalSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setFormError(translate("customerAuth.profileModal.nameRequired", currentLocale));
-      return;
-    }
-    if (!phone.trim()) {
-      setFormError(translate("customerAuth.profileModal.phoneRequired", currentLocale));
-      return;
-    }
-
+  const handleModalSubmit = (data: ProfileModalFormValues) => {
     const usernameToSend =
-      username !== profile?.username && username.trim() !== "" ? username : undefined;
+      data.username !== profile?.username && data.username?.trim() !== ""
+        ? data.username
+        : undefined;
 
     updateProfileMutation.mutate({
       username: usernameToSend,
-      name: name.trim(),
-      phone: phone.trim(),
-      dob: dob || null,
-      gender: (gender as "male" | "female" | "other") || null,
+      name: data.name.trim(),
+      phone: data.phone.trim(),
+      dob: data.dob || null,
+      gender: data.gender || null,
     });
   };
 
@@ -238,7 +257,7 @@ export default function CustomerDashboardPage() {
             </div>
           )}
 
-          <form onSubmit={handleModalSubmit} className="flex flex-col gap-4 mt-2">
+          <form onSubmit={handleSubmit(handleModalSubmit)} className="flex flex-col gap-4 mt-2">
             {/* Username */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="modal-username" className="text-xs font-bold text-muted-foreground">
@@ -248,10 +267,11 @@ export default function CustomerDashboardPage() {
                 id="modal-username"
                 type="text"
                 disabled={!canChangeUsername}
-                value={username}
-                onChange={(e) =>
-                  setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ""))
-                }
+                {...register("username", {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, "");
+                  },
+                })}
                 placeholder={translate(
                   "customerAuth.profileModal.usernamePlaceholder",
                   currentLocale,
@@ -263,33 +283,39 @@ export default function CustomerDashboardPage() {
             {/* Họ và tên */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="modal-name" className="text-xs font-bold text-muted-foreground">
-                {translate("customerAuth.profileModal.nameLabel", currentLocale)} *
+                {translate("customerAuth.profileModal.nameLabel", currentLocale)}
+                <span className="text-destructive ml-0.5">*</span>
               </Label>
               <Input
                 id="modal-name"
                 type="text"
                 required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                {...register("name")}
                 placeholder={translate("customerAuth.profileModal.namePlaceholder", currentLocale)}
                 className="w-full bg-background/50"
               />
+              {errors.name && (
+                <p className="text-xs text-destructive mt-0.5">{errors.name.message}</p>
+              )}
             </div>
 
             {/* Số điện thoại */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="modal-phone" className="text-xs font-bold text-muted-foreground">
-                {translate("customerAuth.profileModal.phoneLabel", currentLocale)} *
+                {translate("customerAuth.profileModal.phoneLabel", currentLocale)}
+                <span className="text-destructive ml-0.5">*</span>
               </Label>
               <Input
                 id="modal-phone"
                 type="tel"
                 required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                {...register("phone")}
                 placeholder={translate("customerAuth.profileModal.phonePlaceholder", currentLocale)}
                 className="w-full bg-background/50"
               />
+              {errors.phone && (
+                <p className="text-xs text-destructive mt-0.5">{errors.phone.message}</p>
+              )}
             </div>
 
             {/* DOB & Gender (Optional) */}
@@ -301,8 +327,7 @@ export default function CustomerDashboardPage() {
                 <Input
                   id="modal-dob"
                   type="date"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
+                  {...register("dob")}
                   className="w-full bg-background/50"
                 />
               </div>
@@ -311,34 +336,40 @@ export default function CustomerDashboardPage() {
                 <Label htmlFor="modal-gender" className="text-xs font-bold text-muted-foreground">
                   {translate("customerAuth.profileModal.genderLabel", currentLocale)}
                 </Label>
-                <Select value={gender} onValueChange={setGender}>
-                  <SelectTrigger className="w-full bg-background/50 border-input">
-                    <SelectValue
-                      placeholder={translate(
-                        "customerAuth.profileModal.genderPlaceholder",
-                        currentLocale,
-                      )}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">
-                      {translate("customerProfile.genderMale", currentLocale)}
-                    </SelectItem>
-                    <SelectItem value="female">
-                      {translate("customerProfile.genderFemale", currentLocale)}
-                    </SelectItem>
-                    <SelectItem value="other">
-                      {translate("customerProfile.genderOther", currentLocale)}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="gender"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full bg-background/50 border-input">
+                        <SelectValue
+                          placeholder={translate(
+                            "customerAuth.profileModal.genderPlaceholder",
+                            currentLocale,
+                          )}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">
+                          {translate("customerProfile.genderMale", currentLocale)}
+                        </SelectItem>
+                        <SelectItem value="female">
+                          {translate("customerProfile.genderFemale", currentLocale)}
+                        </SelectItem>
+                        <SelectItem value="other">
+                          {translate("customerProfile.genderOther", currentLocale)}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
 
             {/* Submit */}
             <Button
               type="submit"
-              disabled={updateProfileMutation.isPending || !name.trim() || !phone.trim()}
+              disabled={updateProfileMutation.isPending}
               className="w-full mt-4"
               size="lg"
             >

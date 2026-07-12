@@ -3,25 +3,56 @@
 import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
 import { Input } from "@ecom/ui/components/input";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, X } from "lucide-react";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
 import { trpc } from "../../../lib/trpc";
 
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại."),
+    newPassword: z
+      .string()
+      .min(8, "Mật khẩu phải chứa ít nhất 8 ký tự.")
+      .refine((val) => /[A-Z]/.test(val), "Mật khẩu phải chứa ít nhất 1 chữ hoa.")
+      .refine((val) => /[a-z]/.test(val), "Mật khẩu phải chứa ít nhất 1 chữ thường.")
+      .refine((val) => /[0-9]/.test(val), "Mật khẩu phải chứa ít nhất 1 chữ số.")
+      .refine((val) => /[^A-Za-z0-9]/.test(val), "Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt."),
+    confirmPassword: z.string().min(1, "Vui lòng xác nhận mật khẩu mới."),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Mật khẩu xác nhận không khớp.",
+    path: ["confirmPassword"],
+  });
+
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: password change validation complexity
 export default function ChangePasswordPage() {
   const { languageId: currentLocale } = useI18n();
   const { toast } = useToast();
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
 
   const changePasswordMutation = trpc.customer.auth.changePassword.useMutation({
     onSuccess: () => {
       toast(translate("customerProfile.passwordUpdateSuccess", currentLocale), "success");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      reset();
     },
     onError: (err) => {
       toast(err.message || "An error occurred", "error");
@@ -30,6 +61,7 @@ export default function ChangePasswordPage() {
 
   const isPending = changePasswordMutation.isPending;
 
+  const newPassword = watch("newPassword", "");
   const hasMinLength = newPassword.length >= 8;
   const hasUppercase = /[A-Z]/.test(newPassword);
   const hasLowercase = /[a-z]/.test(newPassword);
@@ -38,40 +70,15 @@ export default function ChangePasswordPage() {
   const isPasswordValid =
     hasMinLength && hasUppercase && hasLowercase && hasNumber && hasSpecialChar;
 
+  const onSubmit = (data: ChangePasswordFormValues) => {
+    changePasswordMutation.mutate({
+      oldPassword: data.currentPassword,
+      newPassword: data.newPassword,
+    });
+  };
+
   return (
-    <form
-      autoComplete="off"
-      onSubmit={(e) => {
-        e.preventDefault();
-
-        if (!currentPassword || !newPassword || !confirmPassword) {
-          toast(translate("customerProfile.fieldsRequired", currentLocale), "warning");
-          return;
-        }
-
-        const hasMinLength = newPassword.length >= 8;
-        const hasUppercase = /[A-Z]/.test(newPassword);
-        const hasLowercase = /[a-z]/.test(newPassword);
-        const hasNumber = /[0-9]/.test(newPassword);
-        const hasSpecialChar = /[^A-Za-z0-9]/.test(newPassword);
-
-        if (!hasMinLength || !hasUppercase || !hasLowercase || !hasNumber || !hasSpecialChar) {
-          toast(translate("customerProfile.passwordRequirementError", currentLocale), "warning");
-          return;
-        }
-
-        if (newPassword !== confirmPassword) {
-          toast(translate("customerProfile.passwordMismatch", currentLocale), "warning");
-          return;
-        }
-
-        changePasswordMutation.mutate({
-          oldPassword: currentPassword,
-          newPassword: newPassword,
-        });
-      }}
-      className="space-y-6 w-full"
-    >
+    <form autoComplete="off" onSubmit={handleSubmit(onSubmit)} className="space-y-6 w-full">
       <h2 className="text-lg font-bold text-foreground">
         {translate("customerProfile.changePasswordTitle", currentLocale)}
       </h2>
@@ -89,10 +96,12 @@ export default function ChangePasswordPage() {
           id="current-password"
           type="password"
           autoComplete="new-password"
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
+          {...register("currentPassword")}
           placeholder={translate("customerProfile.currentPasswordPlaceholder", currentLocale)}
         />
+        {errors.currentPassword && (
+          <p className="text-xs text-destructive mt-1">{errors.currentPassword.message}</p>
+        )}
       </div>
 
       {/* New Password */}
@@ -105,10 +114,12 @@ export default function ChangePasswordPage() {
           id="new-password"
           type="password"
           autoComplete="new-password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
+          {...register("newPassword")}
           placeholder={translate("customerProfile.newPasswordPlaceholder", currentLocale)}
         />
+        {errors.newPassword && (
+          <p className="text-xs text-destructive mt-1">{errors.newPassword.message}</p>
+        )}
 
         {/* Password Rules Checklist */}
         <div className="mt-3 space-y-1.5 border border-border/40 rounded-xl p-3 bg-muted/20 select-none">
@@ -190,10 +201,12 @@ export default function ChangePasswordPage() {
           id="confirm-password"
           type="password"
           autoComplete="new-password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
+          {...register("confirmPassword")}
           placeholder={translate("customerProfile.confirmPasswordPlaceholder", currentLocale)}
         />
+        {errors.confirmPassword && (
+          <p className="text-xs text-destructive mt-1">{errors.confirmPassword.message}</p>
+        )}
       </div>
 
       <button

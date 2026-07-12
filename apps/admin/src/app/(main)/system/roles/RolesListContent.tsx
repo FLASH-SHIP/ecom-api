@@ -19,7 +19,7 @@ import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 type RoleRow = {
-  id: string;
+  id: number;
   name: string;
   displayName: string | null;
   description: string | null;

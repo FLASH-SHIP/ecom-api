@@ -144,7 +144,7 @@ export class PageRepository {
     order?: number;
     parentId?: number;
     status?: ContentStatus;
-    authorId: number;
+    authorId: string;
     bannerImage?: string;
     heroBanner?: string;
     layout?: string;

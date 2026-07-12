@@ -24,6 +24,7 @@ export const CustomersSeeder: Seeder = {
 
     const customersData = [
       {
+        id: "0190a618-971c-7000-8000-000000000002",
         email: "customer1@ecom.com",
         username: "customer1",
         name: "Nguyễn Văn A",
@@ -33,6 +34,7 @@ export const CustomersSeeder: Seeder = {
         groupId: tier1?.id || null,
       },
       {
+        id: "0190a618-971c-7000-8000-000000000003",
         email: "customer2@ecom.com",
         username: "customer2",
         name: "Trần Thị B",
@@ -42,6 +44,7 @@ export const CustomersSeeder: Seeder = {
         groupId: tier2?.id || null,
       },
       {
+        id: "0190a618-971c-7000-8000-000000000004",
         email: "customer3@ecom.com",
         username: "customer3",
         name: "Lê Văn C",

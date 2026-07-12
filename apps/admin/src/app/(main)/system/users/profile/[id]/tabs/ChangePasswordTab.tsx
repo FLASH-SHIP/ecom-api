@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 interface ChangePasswordTabProps {
-  userId: number;
+  userId: string;
   /** True when the logged-in viewer is viewing their own profile */
   isSelf: boolean;
   /** True when viewer has USERS_UPDATE permission */

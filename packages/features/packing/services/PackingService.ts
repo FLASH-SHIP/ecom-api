@@ -62,7 +62,11 @@ export class PackingService {
 
     const existing = await this.deps.packingRepo.findByName(data.name.trim());
     if (existing) {
-      throw new ErrorWithCode(ErrorCode.Conflict, `Packing type with name "${data.name}" already exists`, 409);
+      throw new ErrorWithCode(
+        ErrorCode.Conflict,
+        `Packing type with name "${data.name}" already exists`,
+        409,
+      );
     }
 
     return this.deps.packingRepo.create({
@@ -78,7 +82,7 @@ export class PackingService {
       image?: string | null;
       description?: string | null;
       status?: ContentStatus;
-    }
+    },
   ) {
     // Check existence first
     await this.getPackingType(id);
@@ -90,7 +94,11 @@ export class PackingService {
 
       const existing = await this.deps.packingRepo.findByName(data.name.trim());
       if (existing && existing.id !== id) {
-        throw new ErrorWithCode(ErrorCode.Conflict, `Packing type with name "${data.name}" already exists`, 409);
+        throw new ErrorWithCode(
+          ErrorCode.Conflict,
+          `Packing type with name "${data.name}" already exists`,
+          409,
+        );
       }
     }
 

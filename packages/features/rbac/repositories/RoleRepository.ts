@@ -21,7 +21,7 @@ export class RoleRepository {
     });
   }
 
-  async findById(id: string) {
+  async findById(id: number) {
     return this.prisma.role.findUnique({
       where: { id },
       select: {
@@ -57,7 +57,7 @@ export class RoleRepository {
     });
   }
 
-  async update(id: string, data: { displayName?: string; description?: string }) {
+  async update(id: number, data: { displayName?: string; description?: string }) {
     return this.prisma.role.update({
       where: { id },
       data,
@@ -65,11 +65,11 @@ export class RoleRepository {
     });
   }
 
-  async delete(id: string) {
+  async delete(id: number) {
     return this.prisma.role.delete({ where: { id } });
   }
 
-  async syncPermissions(roleId: string, permissionIds: string[]) {
+  async syncPermissions(roleId: number, permissionIds: number[]) {
     await this.prisma.$transaction([
       this.prisma.rolePermission.deleteMany({ where: { roleId } }),
       ...permissionIds.map((permissionId) =>

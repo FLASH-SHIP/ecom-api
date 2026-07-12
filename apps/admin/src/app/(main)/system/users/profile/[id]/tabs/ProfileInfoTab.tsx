@@ -11,7 +11,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 interface TargetUser {
-  id?: number;
+  id?: string;
   email?: string;
   name?: string | null;
   phone?: string | null;
@@ -21,7 +21,7 @@ interface TargetUser {
 }
 
 interface ProfileInfoTabProps {
-  userId: number;
+  userId: string;
   targetUser: TargetUser;
 }
 

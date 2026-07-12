@@ -5,19 +5,7 @@ export const RateCardsSeeder: Seeder = {
   name: "Rate Cards & Customer Groups",
 
   async run(prisma: PrismaClient) {
-    // 1. Create Default, Tier 1, Tier 2, and Tier 3 Customer Groups
-    const defaultGroup = await prisma.customerGroup.upsert({
-      where: { code: "default" },
-      update: {
-        description: "Nhóm khách hàng mặc định của hệ thống",
-      },
-      create: {
-        code: "default",
-        name: "Nhóm mặc định (Default)",
-        description: "Nhóm khách hàng mặc định của hệ thống",
-      },
-    });
-
+    // 1. Create Tier 1, Tier 2, and Tier 3 Customer Groups
     const tier1Group = await prisma.customerGroup.upsert({
       where: { code: "tier1" },
       update: {
@@ -54,12 +42,6 @@ export const RateCardsSeeder: Seeder = {
       },
     });
 
-    // 2. Assign any existing customers with no groupId to the default group
-    await prisma.customer.updateMany({
-      where: { groupId: null },
-      data: { groupId: defaultGroup.id },
-    });
-
     // ==========================================
     // DEFAULT TIER (Baseline) - ID: 1, 2
     // ==========================================
@@ -80,21 +62,6 @@ export const RateCardsSeeder: Seeder = {
         weightStep: 0.05,
         minWeight: 0.05,
         maxWeight: 5.0,
-      },
-    });
-
-    // Link epacketDefaultCard to default group
-    await prisma.rateCardGroup.upsert({
-      where: {
-        rateCardId_customerGroupId: {
-          rateCardId: epacketDefaultCard.id,
-          customerGroupId: defaultGroup.id,
-        },
-      },
-      update: {},
-      create: {
-        rateCardId: epacketDefaultCard.id,
-        customerGroupId: defaultGroup.id,
       },
     });
 
@@ -148,21 +115,6 @@ export const RateCardsSeeder: Seeder = {
         weightStep: 0.5,
         minWeight: 0.5,
         maxWeight: 20.0,
-      },
-    });
-
-    // Link expressDefaultCard to default group
-    await prisma.rateCardGroup.upsert({
-      where: {
-        rateCardId_customerGroupId: {
-          rateCardId: expressDefaultCard.id,
-          customerGroupId: defaultGroup.id,
-        },
-      },
-      update: {},
-      create: {
-        rateCardId: expressDefaultCard.id,
-        customerGroupId: defaultGroup.id,
       },
     });
 
@@ -648,7 +600,7 @@ export const RateCardsSeeder: Seeder = {
       data: expressItems3,
     });
 
-    console.log(`    → Created 4 Customer Groups ("default", "tier1", "tier2", "tier3")`);
+    console.log(`    → Created 3 Customer Groups ("tier1", "tier2", "tier3")`);
     console.log(
       `    → Created Rate Card "${epacketDefaultCode}" with ${epacketDefaultItems.length} slabs`,
     );

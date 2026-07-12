@@ -13,7 +13,7 @@ export const updateProfile = authedProcedure
   .input(
     z.object({
       /** Target user ID. Defaults to the logged-in user. Admins may pass another userId. */
-      userId: z.number().int().positive().optional(),
+      userId: z.string().min(1).optional(),
       name: z
         .string()
         .min(1, "users.profile.nameRequired")

@@ -132,13 +132,11 @@ export class CustomerAuthService {
 
       const hashedPwd = await hashPassword(data.password);
 
-      const defaultGroup = await this.deps.customerRepo.findOrCreateDefaultGroup();
-
       const created = await this.deps.customerRepo.createWithPassword({
         email: data.email,
         username,
         hashedPassword: hashedPwd,
-        groupId: defaultGroup.id,
+        groupId: null,
       });
 
       await this.deps.customerRepo.verifyEmail(created.id);
@@ -187,7 +185,7 @@ export class CustomerAuthService {
   }
 
   async changePassword(
-    customerId: number,
+    customerId: string,
     oldPassword: string,
     newPassword: string,
     currentSessionToken?: string,
@@ -213,7 +211,7 @@ export class CustomerAuthService {
     await this.deps.customerRepo.deleteSessions(customerId, currentSessionToken);
   }
 
-  async sendVerificationEmail(customerId: number) {
+  async sendVerificationEmail(customerId: string) {
     const customer = await this.deps.customerRepo.findById(customerId);
     if (!customer) {
       throw ErrorWithCode.Factory.NotFound("Customer not found");
@@ -249,7 +247,7 @@ export class CustomerAuthService {
       const payload = jwt.verify(token, jwtSecret, {
         issuer: "ecom",
         audience: "ecom-customer",
-      }) as unknown as { sub: number; type: string };
+      }) as unknown as { sub: string; type: string };
       if (payload.type !== "email-verify") {
         throw ErrorWithCode.Factory.BadRequest("Invalid token type");
       }
@@ -307,7 +305,7 @@ export class CustomerAuthService {
       const payload = jwt.verify(token, jwtSecret, {
         issuer: "ecom",
         audience: "ecom-customer",
-      }) as unknown as { sub: number; type: string };
+      }) as unknown as { sub: string; type: string };
       if (payload.type !== "password-reset") {
         throw ErrorWithCode.Factory.BadRequest("Invalid token type");
       }

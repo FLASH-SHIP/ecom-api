@@ -26,8 +26,8 @@ export class CreateCommentDto {
   parentId?: number;
 
   @IsOptional()
-  @IsNumber()
-  customerId?: number;
+  @IsString()
+  customerId?: string;
 
   @ValidateIf((o: CreateCommentDto) => !o.postId && !o.pageId)
   @IsNotEmpty({ message: "Either postId or pageId is required" })

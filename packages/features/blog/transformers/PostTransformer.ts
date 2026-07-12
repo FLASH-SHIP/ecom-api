@@ -15,12 +15,12 @@ export interface PostResponseDto {
   sponsoredBy: string | null;
   views: number;
   status: string;
-  authorId: number;
+  authorId: string;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
   author?: {
-    id: number;
+    id: string;
     name: string | null;
     avatarUrl: string | null;
   } | null;
@@ -55,12 +55,12 @@ export interface PostInput {
   sponsoredBy?: string | null;
   views?: number;
   status?: string;
-  authorId?: number;
+  authorId?: string;
   publishedAt?: Date | string | null;
   createdAt?: Date | string;
   updatedAt?: Date | string;
   author?: {
-    id: number;
+    id: string;
     name: string | null;
     avatarUrl?: string | null;
   } | null;
@@ -97,7 +97,7 @@ export class PostTransformer extends BaseTransformer<PostInput, PostResponseDto>
       sponsoredBy: post.sponsoredBy ?? null,
       views: post.views ?? 0,
       status: post.status ?? "DRAFT",
-      authorId: post.authorId ?? 0,
+      authorId: post.authorId ?? "",
       publishedAt: this.formatDate(post.publishedAt),
       createdAt: this.formatDate(post.createdAt) ?? new Date().toISOString(),
       updatedAt: this.formatDate(post.updatedAt) ?? new Date().toISOString(),

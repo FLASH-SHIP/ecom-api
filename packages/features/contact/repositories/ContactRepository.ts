@@ -96,7 +96,7 @@ export class ContactRepository {
     });
   }
 
-  async assignTo(id: number, assigneeId: number) {
+  async assignTo(id: number, assigneeId: string) {
     return this.prisma.contactSubmission.update({
       where: { id },
       data: { assigneeId },

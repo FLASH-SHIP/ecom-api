@@ -25,7 +25,7 @@ export class RevisionService {
     referenceType: "post" | "page";
     title: string;
     content?: string;
-    authorId: number;
+    authorId: string;
     note?: string;
   }) {
     const revision = await this.deps.revisionRepo.create(data);

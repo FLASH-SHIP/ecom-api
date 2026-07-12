@@ -21,7 +21,7 @@ export const AdminUserSeeder: Seeder = {
       select: { id: true, email: true },
     });
 
-    let userId: number;
+    let userId: string;
 
     if (existing) {
       // User already exists — NEVER overwrite password or profile on re-seed
@@ -34,6 +34,7 @@ export const AdminUserSeeder: Seeder = {
 
       const created = await prisma.user.create({
         data: {
+          id: "0190a618-971c-7000-8000-000000000001",
           email: "admin@ecom.com",
           username: "admin",
           name: "Admin",

@@ -292,7 +292,15 @@ export class RateCardRepository {
     customerGroupId?: number;
     page?: number;
     perPage?: number;
-    sortBy?: "id" | "code" | "name" | "status" | "createdAt" | "updatedAt" | "startDate" | "endDate";
+    sortBy?:
+      | "id"
+      | "code"
+      | "name"
+      | "status"
+      | "createdAt"
+      | "updatedAt"
+      | "startDate"
+      | "endDate";
     sortOrder?: "asc" | "desc";
   }) {
     const {
@@ -535,8 +543,7 @@ export class RateCardRepository {
     });
   }
 
-  // Custom Customer Group lookup helper
-  async findCustomerGroupIdByCustomerId(customerId: number) {
+  async findCustomerGroupIdByCustomerId(customerId: string) {
     const customer = await this.prisma.customer.findUnique({
       where: { id: customerId },
       select: { groupId: true },

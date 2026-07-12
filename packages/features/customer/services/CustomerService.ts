@@ -22,7 +22,7 @@ export class CustomerService {
     return this.deps.customerRepo.findMany(filters, page, perPage);
   }
 
-  async getCustomer(id: number) {
+  async getCustomer(id: string) {
     return this.deps.customerRepo.findById(id);
   }
 
@@ -59,7 +59,7 @@ export class CustomerService {
   }
 
   async updateCustomer(
-    id: number,
+    id: string,
     data: {
       username?: string;
       name?: string;
@@ -101,7 +101,7 @@ export class CustomerService {
 
   // Returns normalized username and the incremented change count
   async #validateAndNormalizeUsername(
-    id: number,
+    id: string,
     username: string,
     bypassLimit?: boolean,
   ): Promise<{ value: string; newCount: number }> {
@@ -129,7 +129,7 @@ export class CustomerService {
     return { value: normalized, newCount: (current.usernameChangeCount ?? 0) + 1 };
   }
 
-  async deleteCustomer(id: number) {
+  async deleteCustomer(id: string) {
     return this.deps.customerRepo.delete(id);
   }
 
@@ -141,11 +141,11 @@ export class CustomerService {
     return this.deps.customerRepo.isUsernameAvailable(username.toLowerCase());
   }
 
-  async verifyCustomerEmail(id: number) {
+  async verifyCustomerEmail(id: string) {
     return this.deps.customerRepo.verifyEmail(id);
   }
 
-  async setCustomerPassword(id: number, password: string) {
+  async setCustomerPassword(id: string, password: string) {
     const hashedPwd = await hashPassword(password);
     return this.deps.customerRepo.updatePassword(id, hashedPwd);
   }

@@ -11,7 +11,7 @@ const handler = async (req: Request) => {
   let user: AuthUser | null = null;
 
   if (session?.user?.id) {
-    const customerId = Number(session.user.id);
+    const customerId = session.user.id;
     const dbCustomer = await prisma.customer.findUnique({
       where: { id: customerId },
       select: {

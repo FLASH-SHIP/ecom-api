@@ -59,7 +59,7 @@ export class CategoryService {
     isDefault?: number;
     status?: ContentStatus;
     parentId?: number;
-    authorId?: number;
+    authorId?: string;
     order?: number;
   }) {
     const { slug: customSlug, ...rest } = data;

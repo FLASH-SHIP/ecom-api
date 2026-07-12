@@ -42,7 +42,7 @@ export class TagService {
     slug?: string;
     description?: string;
     status?: ContentStatus;
-    authorId?: number;
+    authorId?: string;
     authorType?: string;
   }) {
     const { slug: customSlug, ...rest } = data;

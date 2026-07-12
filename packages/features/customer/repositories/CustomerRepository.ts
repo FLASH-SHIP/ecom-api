@@ -49,7 +49,7 @@ export class CustomerRepository {
     return { items, total, page, perPage, totalPages: Math.ceil(total / perPage) };
   }
 
-  async findById(id: number) {
+  async findById(id: string) {
     return this.prisma.customer.findFirst({
       where: { id, deletedAt: null },
       select: {
@@ -184,7 +184,7 @@ export class CustomerRepository {
   }
 
   async update(
-    id: number,
+    id: string,
     data: {
       username?: string;
       usernameChangeCount?: number;
@@ -216,7 +216,7 @@ export class CustomerRepository {
     });
   }
 
-  async delete(id: number) {
+  async delete(id: string) {
     return this.prisma.customer.update({
       where: { id },
       data: { deletedAt: new Date() },
@@ -224,7 +224,7 @@ export class CustomerRepository {
     });
   }
 
-  async restore(id: number) {
+  async restore(id: string) {
     return this.prisma.customer.update({
       where: { id },
       data: { deletedAt: null },
@@ -232,7 +232,7 @@ export class CustomerRepository {
     });
   }
 
-  async hardDelete(id: number) {
+  async hardDelete(id: string) {
     return this.prisma.customer.delete({ where: { id } });
   }
 
@@ -278,7 +278,7 @@ export class CustomerRepository {
     });
   }
 
-  async findByIdWithPassword(id: number) {
+  async findByIdWithPassword(id: string) {
     return this.prisma.customer.findUnique({
       where: { id },
       select: {
@@ -289,22 +289,6 @@ export class CustomerRepository {
         status: true,
       },
     });
-  }
-
-  async findOrCreateDefaultGroup() {
-    let group = await this.prisma.customerGroup.findUnique({
-      where: { code: "default" },
-    });
-    if (!group) {
-      group = await this.prisma.customerGroup.create({
-        data: {
-          code: "default",
-          name: "Default Group",
-          description: "Nhóm khách hàng mặc định của hệ thống",
-        },
-      });
-    }
-    return group;
   }
 
   async createWithPassword(data: {
@@ -328,7 +312,7 @@ export class CustomerRepository {
     });
   }
 
-  async updatePassword(id: number, hashedPassword: string) {
+  async updatePassword(id: string, hashedPassword: string) {
     return this.prisma.customer.update({
       where: { id },
       data: { hashedPassword },
@@ -336,7 +320,7 @@ export class CustomerRepository {
     });
   }
 
-  async updateLastLogin(id: number) {
+  async updateLastLogin(id: string) {
     return this.prisma.customer.update({
       where: { id },
       data: { lastLoginAt: new Date() },
@@ -344,7 +328,7 @@ export class CustomerRepository {
     });
   }
 
-  async verifyEmail(id: number) {
+  async verifyEmail(id: string) {
     return this.prisma.customer.update({
       where: { id },
       data: { emailVerified: new Date() },
@@ -352,7 +336,7 @@ export class CustomerRepository {
     });
   }
 
-  async deleteSessions(customerId: number, excludeSessionToken?: string): Promise<void> {
+  async deleteSessions(customerId: string, excludeSessionToken?: string): Promise<void> {
     await this.prisma.customerSession.deleteMany({
       where: {
         customerId,

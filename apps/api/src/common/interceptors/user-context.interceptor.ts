@@ -12,7 +12,7 @@ export class UserContextInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const userId = user && typeof user === "object" && "id" in user ? Number(user.id) : undefined;
+    const userId = user && typeof user === "object" && "id" in user ? String(user.id) : undefined;
 
     const store = loggerContext.getStore() || { traceId: "" };
 

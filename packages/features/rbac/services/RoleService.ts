@@ -20,7 +20,7 @@ export class RoleService {
     return this.deps.roleRepo.findMany();
   }
 
-  async getRole(id: string) {
+  async getRole(id: number) {
     const role = await this.deps.roleRepo.findById(id);
     if (!role) {
       throw ErrorWithCode.Factory.NotFound("Role not found");
@@ -36,7 +36,7 @@ export class RoleService {
     return this.deps.roleRepo.create(data);
   }
 
-  async updateRole(id: string, data: { displayName?: string; description?: string }) {
+  async updateRole(id: number, data: { displayName?: string; description?: string }) {
     const role = await this.deps.roleRepo.findById(id);
     if (!role) {
       throw ErrorWithCode.Factory.NotFound("Role not found");
@@ -44,7 +44,7 @@ export class RoleService {
     return this.deps.roleRepo.update(id, data);
   }
 
-  async deleteRole(id: string) {
+  async deleteRole(id: number) {
     const role = await this.deps.roleRepo.findById(id);
     if (!role) {
       throw ErrorWithCode.Factory.NotFound("Role not found");
@@ -57,7 +57,7 @@ export class RoleService {
     return this.deps.roleRepo.delete(id);
   }
 
-  async syncPermissions(roleId: string, permissionIds: string[]) {
+  async syncPermissions(roleId: number, permissionIds: number[]) {
     const role = await this.deps.roleRepo.findById(roleId);
     if (!role) {
       throw ErrorWithCode.Factory.NotFound("Role not found");

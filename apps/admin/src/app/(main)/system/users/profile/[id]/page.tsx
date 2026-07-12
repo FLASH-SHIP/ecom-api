@@ -15,11 +15,10 @@ interface Props {
 export default async function ProfilePage({ params }: Props) {
   const { id } = await params;
 
-  // Validate param is a positive integer
-  const userId = Number.parseInt(id, 10);
-  if (Number.isNaN(userId) || userId <= 0) {
+  if (!id) {
     notFound();
   }
+  const userId = id;
 
   // Server-side session check — (main)/layout.tsx also guards this, but
   // explicit check here gives a cleaner 401 boundary for the profile route.

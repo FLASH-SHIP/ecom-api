@@ -28,8 +28,8 @@ type PageRow = {
   order: number;
   status: string;
   parentId: number | null;
-  authorId: number;
-  author?: { id: number; name: string | null } | null;
+  authorId: string;
+  author?: { id: string; name: string | null } | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;

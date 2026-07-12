@@ -14,7 +14,7 @@ export class AuditLogRepository {
   }
 
   async create(data: {
-    userId?: number;
+    userId?: string;
     action: string;
     module: string;
     entityId?: string;

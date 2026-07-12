@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import type { Prisma, User } from "../generated/prisma/client";
 import { prisma } from "../index";
 
@@ -43,6 +44,7 @@ export class UserFactory {
     const { password, roles, ...rest } = overrides;
 
     return {
+      id: rest.id ?? crypto.randomUUID(),
       email: rest.email ?? `user-${randomId}@ecom.com`,
       name: rest.name ?? `Test User ${randomId}`,
       status: rest.status ?? "ACTIVE",

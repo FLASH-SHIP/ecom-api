@@ -63,12 +63,6 @@ export const Permissions = {
   CUSTOM_FIELDS_UPDATE: "custom-fields.update",
   CUSTOM_FIELDS_DELETE: "custom-fields.delete",
 
-  // Admin Menus
-  ADMIN_MENUS_READ: "admin-menus.read",
-  ADMIN_MENUS_CREATE: "admin-menus.create",
-  ADMIN_MENUS_UPDATE: "admin-menus.update",
-  ADMIN_MENUS_DELETE: "admin-menus.delete",
-
   // Settings
   SETTINGS_READ: "settings.read",
   SETTINGS_UPDATE: "settings.update",
@@ -106,6 +100,12 @@ export const Permissions = {
   CONTACTS_READ: "contacts.read",
   CONTACTS_MANAGE: "contacts.manage",
   CONTACTS_DELETE: "contacts.delete",
+
+  // Partners
+  PARTNERS_READ: "settings.partners.read",
+  PARTNERS_CREATE: "settings.partners.create",
+  PARTNERS_UPDATE: "settings.partners.update",
+  PARTNERS_DELETE: "settings.partners.delete",
 } as const;
 
 export type PermissionName = (typeof Permissions)[keyof typeof Permissions];
@@ -320,39 +320,6 @@ export const ALL_PERMISSIONS: SystemPermission[] = [
     section: "cms",
     module: "custom-fields",
     parent: Permissions.CUSTOM_FIELDS_READ,
-  },
-
-  // Admin Menus
-  {
-    name: Permissions.ADMIN_MENUS_READ,
-    displayName: "View Admin Menus",
-    group: "admin-menus",
-    section: "cms",
-    module: "admin-menus",
-  },
-  {
-    name: Permissions.ADMIN_MENUS_CREATE,
-    displayName: "Create Admin Menus",
-    group: "admin-menus",
-    section: "cms",
-    module: "admin-menus",
-    parent: Permissions.ADMIN_MENUS_READ,
-  },
-  {
-    name: Permissions.ADMIN_MENUS_UPDATE,
-    displayName: "Update Admin Menus",
-    group: "admin-menus",
-    section: "cms",
-    module: "admin-menus",
-    parent: Permissions.ADMIN_MENUS_READ,
-  },
-  {
-    name: Permissions.ADMIN_MENUS_DELETE,
-    displayName: "Delete Admin Menus",
-    group: "admin-menus",
-    section: "cms",
-    module: "admin-menus",
-    parent: Permissions.ADMIN_MENUS_READ,
   },
 
   // Comments
@@ -653,6 +620,39 @@ export const ALL_PERMISSIONS: SystemPermission[] = [
     section: "settings",
     module: "rates",
     parent: Permissions.RATES_READ,
+  },
+
+  // ── Partners & Services ───────────────────────────────────────────────────
+  {
+    name: Permissions.PARTNERS_READ,
+    displayName: "View Partners",
+    group: "partners",
+    section: "settings",
+    module: "partners",
+  },
+  {
+    name: Permissions.PARTNERS_CREATE,
+    displayName: "Create Partners",
+    group: "partners",
+    section: "settings",
+    module: "partners",
+    parent: Permissions.PARTNERS_READ,
+  },
+  {
+    name: Permissions.PARTNERS_UPDATE,
+    displayName: "Update Partners",
+    group: "partners",
+    section: "settings",
+    module: "partners",
+    parent: Permissions.PARTNERS_READ,
+  },
+  {
+    name: Permissions.PARTNERS_DELETE,
+    displayName: "Delete Partners",
+    group: "partners",
+    section: "settings",
+    module: "partners",
+    parent: Permissions.PARTNERS_READ,
   },
 
   // ── Tools Section ─────────────────────────────────────────────────────────

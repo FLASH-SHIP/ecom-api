@@ -1,13 +1,29 @@
+import enAuth from "../locales/en/auth.json";
 import enCommon from "../locales/en/common.json";
+import enCustomFields from "../locales/en/custom-fields.json";
 import enCustomerAuth from "../locales/en/customer-auth.json";
 import enCustomerDashboard from "../locales/en/customer-dashboard.json";
 import enCustomerProfile from "../locales/en/customer-profile.json";
+import enCustomers from "../locales/en/customers.json";
+import enLanguages from "../locales/en/languages.json";
+import enNav from "../locales/en/nav.json";
+import enOrders from "../locales/en/orders.json";
+import enRoles from "../locales/en/roles.json";
+import enSettings from "../locales/en/settings.json";
 import enUsers from "../locales/en/users.json";
 
+import viAuth from "../locales/vi/auth.json";
 import viCommon from "../locales/vi/common.json";
+import viCustomFields from "../locales/vi/custom-fields.json";
 import viCustomerAuth from "../locales/vi/customer-auth.json";
 import viCustomerDashboard from "../locales/vi/customer-dashboard.json";
 import viCustomerProfile from "../locales/vi/customer-profile.json";
+import viCustomers from "../locales/vi/customers.json";
+import viLanguages from "../locales/vi/languages.json";
+import viNav from "../locales/vi/nav.json";
+import viOrders from "../locales/vi/orders.json";
+import viRoles from "../locales/vi/roles.json";
+import viSettings from "../locales/vi/settings.json";
 import viUsers from "../locales/vi/users.json";
 
 const messages = {
@@ -17,6 +33,14 @@ const messages = {
     customerAuth: enCustomerAuth,
     customerProfile: enCustomerProfile,
     customerDashboard: enCustomerDashboard,
+    orders: enOrders,
+    auth: enAuth,
+    nav: enNav,
+    customers: enCustomers,
+    roles: enRoles,
+    settings: enSettings,
+    languages: enLanguages,
+    customFields: enCustomFields,
   },
   vi: {
     ...viCommon,
@@ -24,6 +48,14 @@ const messages = {
     customerAuth: viCustomerAuth,
     customerProfile: viCustomerProfile,
     customerDashboard: viCustomerDashboard,
+    orders: viOrders,
+    auth: viAuth,
+    nav: viNav,
+    customers: viCustomers,
+    roles: viRoles,
+    settings: viSettings,
+    languages: viLanguages,
+    customFields: viCustomFields,
   },
 } as const;
 

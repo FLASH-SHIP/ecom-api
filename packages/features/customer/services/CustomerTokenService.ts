@@ -7,7 +7,7 @@ const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL = "30d";
 
 export interface CustomerTokenPayload {
-  sub: number;
+  sub: string;
   email: string;
   type: "access" | "refresh";
   jti?: string;
@@ -28,7 +28,7 @@ export class CustomerTokenService {
     this.refreshSecret = process.env.JWT_REFRESH_SECRET ?? secret;
   }
 
-  generateTokens(customer: { id: number; email: string }) {
+  generateTokens(customer: { id: string; email: string }) {
     const accessJti = crypto.randomUUID();
     const refreshJti = crypto.randomUUID();
 
@@ -136,13 +136,13 @@ export class CustomerTokenService {
     return result === "1";
   }
 
-  async revokeAllTokens(customerId: number): Promise<void> {
+  async revokeAllTokens(customerId: string): Promise<void> {
     const redis = getRedisClient();
     const now = Math.floor(Date.now() / 1000);
     await redis.set(`customer:revoked_before:${customerId}`, String(now));
   }
 
-  async getRevocationTime(customerId: number): Promise<number | null> {
+  async getRevocationTime(customerId: string): Promise<number | null> {
     const redis = getRedisClient();
     const val = await redis.get(`customer:revoked_before:${customerId}`);
     return val ? Number(val) : null;

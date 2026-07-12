@@ -26,7 +26,7 @@ export class PostService {
 
   async listPosts(options: {
     status?: ContentStatus;
-    authorId?: number;
+    authorId?: string;
     categoryId?: number;
     isFeatured?: boolean;
     search?: string;
@@ -61,7 +61,7 @@ export class PostService {
     externalSource?: string;
     sponsoredBy?: string;
     status?: ContentStatus;
-    authorId: number;
+    authorId: string;
     categoryIds?: number[];
     tagIds?: number[];
   }) {
@@ -85,7 +85,7 @@ export class PostService {
       status?: ContentStatus;
       categoryIds?: number[];
       tagIds?: number[];
-      authorId?: number;
+      authorId?: string;
     },
   ) {
     return this.commands.updatePost(id, data);
@@ -115,7 +115,7 @@ export class PostService {
     return this.commands.permanentlyDeletePost(id);
   }
 
-  async clonePost(id: number, authorId: number) {
+  async clonePost(id: number, authorId: string) {
     return this.commands.clonePost(id, authorId);
   }
 }

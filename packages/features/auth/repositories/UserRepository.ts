@@ -32,7 +32,7 @@ export class UserRepository {
     });
   }
 
-  async findById(id: number) {
+  async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -50,7 +50,7 @@ export class UserRepository {
     });
   }
 
-  async findByIdWithRoles(id: number) {
+  async findByIdWithRoles(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -87,7 +87,7 @@ export class UserRepository {
   }
 
   /** Fetch password hash for self-password-change verification */
-  async findByIdWithPassword(id: number) {
+  async findByIdWithPassword(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -98,7 +98,7 @@ export class UserRepository {
   }
 
   async updateProfile(
-    id: number,
+    id: string,
     data: {
       name?: string;
       username?: string;
@@ -122,7 +122,7 @@ export class UserRepository {
     });
   }
 
-  async updatePassword(id: number, hash: string) {
+  async updatePassword(id: string, hash: string) {
     return this.prisma.userPassword.upsert({
       where: { userId: id },
       create: { userId: id, hash },
@@ -131,7 +131,7 @@ export class UserRepository {
   }
 
   /** Get a single user_meta value by key (returns null if not found) */
-  async getMeta(userId: number, key: string): Promise<string | null> {
+  async getMeta(userId: string, key: string): Promise<string | null> {
     const meta = await this.prisma.userMeta.findUnique({
       where: { userId_key: { userId, key } },
       select: { value: true },
@@ -140,7 +140,7 @@ export class UserRepository {
   }
 
   /** Upsert a user_meta key-value pair */
-  async setMeta(userId: number, key: string, value: string): Promise<void> {
+  async setMeta(userId: string, key: string, value: string): Promise<void> {
     await this.prisma.userMeta.upsert({
       where: { userId_key: { userId, key } },
       create: { userId, key, value },

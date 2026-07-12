@@ -9,8 +9,8 @@ import {
   UploadedFile,
   UseInterceptors,
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
 import { ConfigService } from "@nestjs/config";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { type MediaAction, MediaService } from "./media.service";
 
 @Controller({
@@ -64,11 +64,7 @@ export class MediaController {
 
   @Post("files/upload")
   @UseInterceptors(FileInterceptor("file"))
-  async upload(
-    @UploadedFile() file: any,
-    @Body() body: any,
-    @Req() req: any,
-  ) {
+  async upload(@UploadedFile() file: any, @Body() body: any, @Req() req: any) {
     const folderIdStr = body.folderId;
     const baseUrl = this.getBaseUrl(req);
     return this.mediaService.uploadFile(

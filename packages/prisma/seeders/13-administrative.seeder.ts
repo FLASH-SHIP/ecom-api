@@ -7,12 +7,22 @@ export const AdministrativeDivisionsSeeder: Seeder = {
   name: "Administrative Divisions",
 
   async run(prisma: PrismaClient) {
-    const provincesPath = path.join(__dirname, "../../../specs/administrative-divisions/provinces.json");
+    const provincesPath = path.join(
+      __dirname,
+      "../../../specs/administrative-divisions/provinces.json",
+    );
     const wardsPath = path.join(__dirname, "../../../specs/administrative-divisions/wards.json");
-    const errorLogPath = path.join(__dirname, "../../../specs/administrative-divisions/seeding_errors.log");
+    const errorLogPath = path.join(
+      __dirname,
+      "../../../specs/administrative-divisions/seeding_errors.log",
+    );
 
     // Initialize or clear error log file
-    fs.writeFileSync(errorLogPath, `Seeding Error Log - Started at ${new Date().toISOString()}\n\n`, "utf8");
+    fs.writeFileSync(
+      errorLogPath,
+      `Seeding Error Log - Started at ${new Date().toISOString()}\n\n`,
+      "utf8",
+    );
 
     let provincesCount = 0;
     let wardsCount = 0;
@@ -87,9 +97,13 @@ export const AdministrativeDivisionsSeeder: Seeder = {
       console.warn(`    ⚠ Wards source file not found at ${wardsPath}`);
     }
 
-    console.log(`    → Seeding complete: ${provincesCount} provinces, ${wardsCount} Wards successfully seeded.`);
+    console.log(
+      `    → Seeding complete: ${provincesCount} provinces, ${wardsCount} Wards successfully seeded.`,
+    );
     if (errorsCount > 0) {
-      console.warn(`    ⚠ Encountered ${errorsCount} errors. Details logged to specs/administrative-divisions/seeding_errors.log`);
+      console.warn(
+        `    ⚠ Encountered ${errorsCount} errors. Details logged to specs/administrative-divisions/seeding_errors.log`,
+      );
     }
   },
 };
