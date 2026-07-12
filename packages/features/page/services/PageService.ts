@@ -49,7 +49,7 @@ export class PageService {
     order?: number;
     parentId?: number;
     status?: ContentStatus;
-    authorId: number;
+    authorId: string;
     bannerImage?: string;
     heroBanner?: string;
     layout?: string;
@@ -92,7 +92,7 @@ export class PageService {
       ctaText?: string;
       ctaLink?: string;
     },
-    authorId: number,
+    authorId: string,
   ) {
     const page = await this.deps.pageRepo.findById(id);
     if (!page) throw ErrorWithCode.Factory.NotFound("Page not found");

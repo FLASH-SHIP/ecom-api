@@ -19,7 +19,7 @@ export const requestLogger = middleware(async ({ ctx, path, type, next }) => {
   if (!isEnabled()) return next();
   const start = Date.now();
   const userId = (ctx as Record<string, unknown>).user
-    ? ((ctx as Record<string, { id?: number }>).user?.id ?? null)
+    ? ((ctx as Record<string, { id?: string }>).user?.id ?? null)
     : null;
 
   try {
@@ -61,7 +61,7 @@ export const requestLogger = middleware(async ({ ctx, path, type, next }) => {
 export const verboseRequestLogger = middleware(async ({ ctx, path, type, next }) => {
   const start = Date.now();
   const userId = (ctx as Record<string, unknown>).user
-    ? ((ctx as Record<string, { id?: number }>).user?.id ?? null)
+    ? ((ctx as Record<string, { id?: string }>).user?.id ?? null)
     : null;
 
   log.info("Request started", { path, type, userId });

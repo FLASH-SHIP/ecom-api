@@ -37,11 +37,11 @@ type PostRow = {
   isFeatured: boolean;
   views: number;
   status: string;
-  authorId: number;
+  authorId: string;
   publishedAt: string | null;
   deletedAt: string | null;
   createdAt: string;
-  author?: { id: number; name: string | null; avatarUrl: string | null } | null;
+  author?: { id: string; name: string | null; avatarUrl: string | null } | null;
   categories?: Array<{
     category: {
       id: number;

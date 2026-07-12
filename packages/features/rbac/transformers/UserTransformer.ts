@@ -1,7 +1,7 @@
 import { BaseTransformer } from "@ecom/lib";
 
 export interface UserResponseDto {
-  id: number;
+  id: string;
   email: string;
   name: string | null;
   username: string | null;
@@ -12,7 +12,7 @@ export interface UserResponseDto {
   createdAt: string;
   roles: Array<{
     role: {
-      id: string;
+      id: number;
       name: string;
       displayName: string | null;
     };
@@ -20,7 +20,7 @@ export interface UserResponseDto {
 }
 
 export interface UserInput {
-  id: number;
+  id: string;
   email?: string;
   name?: string | null;
   username?: string | null;
@@ -31,7 +31,7 @@ export interface UserInput {
   createdAt?: Date | string;
   roles?: Array<{
     role: {
-      id: string;
+      id: number;
       name: string;
       displayName: string | null;
     };

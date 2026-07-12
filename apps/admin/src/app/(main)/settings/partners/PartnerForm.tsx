@@ -4,7 +4,7 @@ import { useToast } from "@admin/components/toast-provider";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
 import { trpc } from "@admin/lib/trpc";
-import { PartnerStatus, ServiceType } from "@ecom/prisma";
+import { PartnerStatus, ServiceType } from "@ecom/types";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent } from "@ecom/ui/components/card";
@@ -92,7 +92,6 @@ type ServiceFormState = {
   code: string;
   name: string;
   type: ServiceType;
-  isSandbox: boolean;
   isActive: boolean;
   webhookSecret: string;
   timeoutMs: number;
@@ -106,18 +105,35 @@ interface PairItem {
 }
 
 interface ServiceItem {
-  id: string;
+  id: number;
   code: string;
   name: string;
   type: ServiceType;
-  isSandbox: boolean;
   isActive: boolean;
   webhookSecret?: string | null;
   timeoutMs: number;
   rateLimitPerMinute: number;
-  apiConfig?: unknown | null;
   statusMapping?: unknown | null;
 }
+
+const SERVICE_TYPE_STYLES = {
+  [ServiceType.PICKUP]: {
+    labelKey: "partners.services.typePickup",
+    colorClass: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  },
+  [ServiceType.EXPORT]: {
+    labelKey: "partners.services.typeExport",
+    colorClass: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  },
+  [ServiceType.IMPORT]: {
+    labelKey: "partners.services.typeImport",
+    colorClass: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+  },
+  [ServiceType.LASTMILE]: {
+    labelKey: "partners.services.typeLastMile",
+    colorClass: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  },
+};
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Component contains nested forms and multiple tabs
 export function PartnerForm({ partnerId }: PartnerFormProps) {
@@ -129,14 +145,13 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
 
   const [activeTab, setActiveTab] = useState<string>("general");
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
-  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
 
   // Dialog form state
   const [serviceForm, setServiceForm] = useState<ServiceFormState>({
     code: "",
     name: "",
     type: ServiceType.LASTMILE,
-    isSandbox: true,
     isActive: true,
     webhookSecret: "",
     timeoutMs: 10000,
@@ -175,7 +190,7 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
 
   const { data: services, refetch: refetchServices } = trpc.viewer.partners.listServices.useQuery(
     { partnerId: partnerId as number },
-    { enabled: !isCreate && activeTab === "services" },
+    { enabled: !isCreate },
   );
 
   // Mutations
@@ -235,27 +250,24 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
         status: partnerData.status,
         description: partnerData.description ?? "",
       });
+
+      // Populate API config key-values for the Partner
+      const configEntries = Object.entries(
+        (partnerData.apiConfig as Record<string, unknown>) || {},
+      );
+      if (configEntries.length > 0) {
+        setApiConfigPairs(
+          configEntries.map(([key, value]) => ({
+            id: Math.random().toString(),
+            key,
+            value: String(value),
+          })),
+        );
+      } else {
+        setApiConfigPairs([{ id: Math.random().toString(), key: "", value: "" }]);
+      }
     }
   }, [partnerData, reset]);
-
-  // Form Submit
-  const onSubmitForm = async (data: PartnerFormState) => {
-    if (isCreate) {
-      await createMut.mutateAsync(data);
-    } else {
-      await updateMut.mutateAsync({ id: partnerId as number, ...data });
-    }
-  };
-
-  const handleBack = () => {
-    router.push("/settings/partners");
-  };
-
-  // Webhook display computation
-  const getWebhookUrl = (serviceId: string) => {
-    if (typeof window === "undefined") return "";
-    return `${window.location.origin}/api/webhooks/carriers/${serviceId}`;
-  };
 
   // Helper for config conversions
   const getApiConfigObject = () => {
@@ -278,14 +290,39 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
     return mapping;
   };
 
-  // Connection validation trigger
+  // Form Submit
+  const onSubmitForm = async (data: PartnerFormState) => {
+    const apiConfig = getApiConfigObject();
+    const payload = {
+      ...data,
+      apiConfig: Object.keys(apiConfig).length > 0 ? apiConfig : null,
+    };
+
+    if (isCreate) {
+      await createMut.mutateAsync(payload);
+    } else {
+      await updateMut.mutateAsync({ id: partnerId as number, ...payload });
+    }
+  };
+
+  const handleBack = () => {
+    router.push("/settings/partners");
+  };
+
+  // Webhook display computation
+  const getWebhookUrl = (serviceId: number | string) => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    return `${baseUrl}/api/v2/webhooks/carriers/${serviceId}`;
+  };
+
+  // Connection validation trigger at Partner level
   const handleTestConnection = async () => {
-    if (!editingServiceId) return;
+    if (isCreate) return;
     setIsTestingConn(true);
     try {
       const config = getApiConfigObject();
       const res = await testConnMut.mutateAsync({
-        id: editingServiceId,
+        id: partnerId as number,
         tempConfig: config,
       });
       if (res.success) {
@@ -307,13 +344,11 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
       code: "",
       name: "",
       type: ServiceType.LASTMILE,
-      isSandbox: true,
       isActive: true,
       webhookSecret: "",
       timeoutMs: 10000,
       rateLimitPerMinute: 60,
     });
-    setApiConfigPairs([{ id: Math.random().toString(), key: "", value: "" }]);
     setStatusMappingPairs([{ id: Math.random().toString(), key: "", value: "" }]);
     setIsServiceDialogOpen(true);
   };
@@ -324,26 +359,11 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
       code: service.code,
       name: service.name,
       type: service.type,
-      isSandbox: service.isSandbox,
       isActive: service.isActive,
       webhookSecret: service.webhookSecret ?? "",
       timeoutMs: service.timeoutMs,
       rateLimitPerMinute: service.rateLimitPerMinute,
     });
-
-    // Populate API config key-values
-    const configEntries = Object.entries((service.apiConfig as Record<string, unknown>) || {});
-    if (configEntries.length > 0) {
-      setApiConfigPairs(
-        configEntries.map(([key, value]) => ({
-          id: Math.random().toString(),
-          key,
-          value: String(value),
-        })),
-      );
-    } else {
-      setApiConfigPairs([{ id: Math.random().toString(), key: "", value: "" }]);
-    }
 
     // Populate Status Mapping key-values
     const mappingEntries = Object.entries((service.statusMapping as Record<string, unknown>) || {});
@@ -368,12 +388,10 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
       return;
     }
 
-    const apiConfig = getApiConfigObject();
     const statusMapping = getStatusMappingObject();
 
     const payload = {
       ...serviceForm,
-      apiConfig: Object.keys(apiConfig).length > 0 ? apiConfig : null,
       statusMapping: Object.keys(statusMapping).length > 0 ? statusMapping : null,
       webhookSecret: serviceForm.webhookSecret.trim() || null,
     };
@@ -385,7 +403,7 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
     }
   };
 
-  const deleteService = (id: string, codeStr: string) => {
+  const deleteService = (id: number, codeStr: string) => {
     askConfirm({
       message: t("partners.services.confirmDelete", { code: codeStr }),
       onConfirm: () => deleteServiceMut.mutate({ id }),
@@ -426,7 +444,7 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
   const codeStr = watch("code");
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto p-4">
+    <div className="flex flex-col gap-6 w-full">
       {/* Header controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -446,19 +464,6 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
           <Button variant="outline" size="sm" onClick={handleBack}>
             {t("partners.btnBack")}
           </Button>
-          <Button
-            size="sm"
-            onClick={handleSubmit(onSubmitForm)}
-            disabled={isSubmitting || (!isCreate && !isDirty)}
-            className="bg-primary text-primary-foreground"
-          >
-            {isSubmitting ? (
-              <Loader2 className="mr-1.5 size-4 animate-spin" />
-            ) : (
-              <Save className="mr-1.5 size-4" />
-            )}
-            {isCreate ? t("partners.btnCreate") : t("partners.btnSave")}
-          </Button>
         </div>
       </div>
 
@@ -472,7 +477,7 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
         </TabsList>
 
         {/* Tab 1: General configuration */}
-        <TabsContent value="general" className="mt-4">
+        <TabsContent value="general" className="mt-4 flex flex-col gap-5">
           <Card>
             <CardContent className="pt-6 flex flex-col gap-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -579,6 +584,37 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
                     )}
                   />
                 </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label className="font-semibold text-xs">Khâu logistics hỗ trợ</Label>
+                  <div className="flex flex-wrap gap-1.5 min-h-[38px] items-center">
+                    {isCreate ? (
+                      <span className="text-xs text-muted-foreground italic">
+                        Chưa cấu hình dịch vụ
+                      </span>
+                    ) : services && services.length > 0 ? (
+                      Array.from(new Set(services.map((s) => s.type))).map((type) => {
+                        const style = SERVICE_TYPE_STYLES[type];
+                        const label = style ? t(style.labelKey) : type;
+                        const colorClass = style
+                          ? style.colorClass
+                          : "bg-muted text-muted-foreground border-border";
+                        return (
+                          <span
+                            key={type}
+                            className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${colorClass}`}
+                          >
+                            {label}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">
+                        Chưa cấu hình dịch vụ
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -594,6 +630,102 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Connection Parameters & Sandbox Toggle moved here */}
+          <Card>
+            <CardContent className="pt-6 flex flex-col gap-5 text-xs">
+              <h3 className="text-sm font-bold border-b border-border pb-2">
+                Cấu hình kết nối API
+              </h3>
+
+              {/* API Endpoint and credentials configuration */}
+
+              <div className="flex flex-col gap-2 border border-border p-3 rounded">
+                <div className="flex justify-between items-center mb-1">
+                  <Label className="font-bold">{t("partners.services.lblApiConfig")}</Label>
+                  <Button size="sm" variant="outline" className="h-6 px-2" onClick={addConfigPair}>
+                    <Plus className="size-3 mr-1" /> Thêm trường
+                  </Button>
+                </div>
+                <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                  {apiConfigPairs.map((pair, idx) => (
+                    <div key={pair.id} className="flex gap-2 items-center">
+                      <Input
+                        placeholder="Key (E.g. apiKey)"
+                        value={pair.key}
+                        onChange={(e) => {
+                          const next = [...apiConfigPairs];
+                          const item = next[idx];
+                          if (item) {
+                            item.key = e.target.value;
+                            setApiConfigPairs(next);
+                          }
+                        }}
+                        className="h-8"
+                      />
+                      <Input
+                        placeholder="Value"
+                        value={pair.value}
+                        onChange={(e) => {
+                          const next = [...apiConfigPairs];
+                          const item = next[idx];
+                          if (item) {
+                            item.value = e.target.value;
+                            setApiConfigPairs(next);
+                          }
+                        }}
+                        className="h-8"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 text-destructive border-destructive/20 hover:bg-destructive/5 shrink-0"
+                        onClick={() => removeConfigPair(idx)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {!isCreate && (
+                <div className="flex justify-end pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTestConnection}
+                    disabled={isTestingConn}
+                    className="h-8"
+                  >
+                    {isTestingConn ? (
+                      <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-1.5 size-3.5" />
+                    )}
+                    {t("partners.services.btnTestConnection")}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end mt-5">
+            <Button
+              type="button"
+              onClick={handleSubmit(onSubmitForm)}
+              disabled={isSubmitting || (!isCreate && !isDirty)}
+              className="bg-primary text-primary-foreground h-9 px-4"
+            >
+              {isSubmitting ? (
+                <Loader2 className="mr-1.5 size-4 animate-spin" />
+              ) : (
+                <Save className="mr-1.5 size-4" />
+              )}
+              {isCreate ? t("partners.btnCreate") : t("partners.btnSave")}
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Tab 2: Integrated Carrier Services configuration */}
@@ -624,9 +756,6 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
                       </th>
                       <th className="px-3 py-2.5 font-semibold text-muted-foreground w-32">
                         {t("partners.services.colType")}
-                      </th>
-                      <th className="px-3 py-2.5 font-semibold text-muted-foreground w-28 text-center">
-                        {t("partners.services.colMode")}
                       </th>
                       <th className="px-3 py-2.5 font-semibold text-muted-foreground w-24 text-center">
                         {t("partners.services.colStatus")}
@@ -659,13 +788,6 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
                             <td className="px-3 py-2 font-medium">{service.name}</td>
                             <td className="px-3 py-2 text-muted-foreground">{typeText}</td>
                             <td className="px-3 py-2 text-center">
-                              <Badge variant={service.isSandbox ? "outline" : "default"}>
-                                {service.isSandbox
-                                  ? t("partners.services.modeSandbox")
-                                  : t("partners.services.modeProduction")}
-                              </Badge>
-                            </td>
-                            <td className="px-3 py-2 text-center">
                               <Badge variant={service.isActive ? "default" : "outline"}>
                                 {service.isActive
                                   ? t("partners.statusActive")
@@ -697,7 +819,7 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="text-center py-8 text-muted-foreground italic">
+                        <td colSpan={5} className="text-center py-8 text-muted-foreground italic">
                           {t("partners.services.noServices")}
                         </td>
                       </tr>
@@ -802,17 +924,7 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 items-center border border-border p-3 rounded bg-muted/10">
-              <label className="flex items-center gap-2 cursor-pointer font-semibold select-none">
-                <input
-                  type="checkbox"
-                  checked={serviceForm.isSandbox}
-                  onChange={(e) => setServiceForm({ ...serviceForm, isSandbox: e.target.checked })}
-                  className="rounded border-input text-primary focus:ring-primary size-4"
-                />
-                <span>{t("partners.services.lblIsSandbox")}</span>
-              </label>
-
+            <div className="grid grid-cols-1 gap-3 items-center border border-border p-3 rounded bg-muted/10">
               <label className="flex items-center gap-2 cursor-pointer font-semibold select-none">
                 <input
                   type="checkbox"
@@ -864,56 +976,6 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
                 onChange={(e) => setServiceForm({ ...serviceForm, webhookSecret: e.target.value })}
                 placeholder="E.g. whsec_..."
               />
-            </div>
-
-            {/* Dynamic key-value editor for API Config */}
-            <div className="flex flex-col gap-2 border border-border p-3 rounded">
-              <div className="flex justify-between items-center mb-1">
-                <Label className="font-bold">{t("partners.services.lblApiConfig")}</Label>
-                <Button size="sm" variant="outline" className="h-6 px-2" onClick={addConfigPair}>
-                  <Plus className="size-3 mr-1" /> Thêm trường
-                </Button>
-              </div>
-              <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
-                {apiConfigPairs.map((pair, idx) => (
-                  <div key={pair.id} className="flex gap-2 items-center">
-                    <Input
-                      placeholder="Key (E.g. apiKey)"
-                      value={pair.key}
-                      onChange={(e) => {
-                        const next = [...apiConfigPairs];
-                        const item = next[idx];
-                        if (item) {
-                          item.key = e.target.value;
-                          setApiConfigPairs(next);
-                        }
-                      }}
-                      className="h-8"
-                    />
-                    <Input
-                      placeholder="Value"
-                      value={pair.value}
-                      onChange={(e) => {
-                        const next = [...apiConfigPairs];
-                        const item = next[idx];
-                        if (item) {
-                          item.value = e.target.value;
-                          setApiConfigPairs(next);
-                        }
-                      }}
-                      className="h-8"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 text-destructive border-destructive/20 hover:bg-destructive/5 shrink-0"
-                      onClick={() => removeConfigPair(idx)}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* Dynamic key-value editor for Status Mapping */}
@@ -968,21 +1030,6 @@ export function PartnerForm({ partnerId }: PartnerFormProps) {
           </div>
 
           <DialogFooter className="mt-4 gap-2">
-            {editingServiceId && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleTestConnection}
-                disabled={isTestingConn}
-              >
-                {isTestingConn ? (
-                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-1.5 size-3.5" />
-                )}
-                {t("partners.services.btnTestConnection")}
-              </Button>
-            )}
             <Button variant="outline" size="sm" onClick={() => setIsServiceDialogOpen(false)}>
               Hủy
             </Button>

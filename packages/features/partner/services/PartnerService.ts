@@ -89,20 +89,27 @@ export class PartnerService {
 
   // --- Partner CRUD ---
 
-  async getPartner(id: number) {
+  async getPartner(id: number, decrypt = false) {
     const partner = await this.deps.partnerRepo.findById(id);
     if (!partner) {
       throw new ErrorWithCode(ErrorCode.NotFound, `Không tìm thấy đối tác với ID ${id}.`, 404);
     }
+
+    if (decrypt && partner.apiConfig) {
+      partner.apiConfig = decryptConfig(partner.apiConfig) as Prisma.JsonValue;
+    }
+
     return partner;
   }
 
-  async getPartnerByCode(code: string) {
+  async getPartnerByCode(code: string, decrypt = false) {
     const partner = await this.deps.partnerRepo.findByCode(code);
     if (!partner) {
       throw new ErrorWithCode(ErrorCode.NotFound, `Không tìm thấy đối tác với mã ${code}.`, 404);
     }
-    return partner;
+
+    const fullPartner = await this.getPartner(partner.id, decrypt);
+    return fullPartner;
   }
 
   async listPartners(options: {
@@ -113,7 +120,8 @@ export class PartnerService {
     sortBy?: "id" | "code" | "name" | "status" | "createdAt" | "updatedAt";
     sortOrder?: "asc" | "desc";
   }) {
-    return this.deps.partnerRepo.findMany(options);
+    const paginated = await this.deps.partnerRepo.findMany(options);
+    return paginated;
   }
 
   async createPartner(data: {
@@ -124,12 +132,19 @@ export class PartnerService {
     contactPhone?: string | null;
     status?: PartnerStatus;
     description?: string | null;
+    apiConfig?: Prisma.InputJsonValue | null;
   }) {
     const existing = await this.deps.partnerRepo.findByCode(data.code);
     if (existing) {
       throw new ErrorWithCode(ErrorCode.Conflict, `Mã đối tác "${data.code}" đã tồn tại.`, 409);
     }
-    return this.deps.partnerRepo.create(data);
+
+    const payload = {
+      ...data,
+      apiConfig: data.apiConfig ? (encryptConfig(data.apiConfig) as Prisma.InputJsonValue) : null,
+    };
+
+    return this.deps.partnerRepo.create(payload);
   }
 
   async updatePartner(
@@ -142,6 +157,7 @@ export class PartnerService {
       contactPhone?: string | null;
       status?: PartnerStatus;
       description?: string | null;
+      apiConfig?: Prisma.InputJsonValue | null;
     },
   ) {
     const partner = await this.getPartner(id);
@@ -151,7 +167,26 @@ export class PartnerService {
         throw new ErrorWithCode(ErrorCode.Conflict, `Mã đối tác "${data.code}" đã tồn tại.`, 409);
       }
     }
-    return this.deps.partnerRepo.update(id, data);
+
+    const payload = {
+      ...data,
+      apiConfig:
+        data.apiConfig !== undefined
+          ? data.apiConfig
+            ? (encryptConfig(data.apiConfig) as Prisma.InputJsonValue)
+            : null
+          : undefined,
+    };
+
+    const updated = await this.deps.partnerRepo.update(id, payload);
+
+    // Invalidate Redis caches for all services of this partner
+    const services = await this.deps.partnerServiceRepo.findManyByPartnerId(id);
+    for (const service of services) {
+      await this.cache.invalidate(`config:${service.id}`);
+    }
+
+    return updated;
   }
 
   async deletePartner(id: number) {
@@ -168,7 +203,7 @@ export class PartnerService {
 
   // --- PartnerService (Carrier Service) CRUD ---
 
-  async getService(id: string, decrypt = false) {
+  async getService(id: number, decrypt = false) {
     const service = await this.deps.partnerServiceRepo.findById(id);
     if (!service) {
       throw new ErrorWithCode(
@@ -178,14 +213,16 @@ export class PartnerService {
       );
     }
 
-    if (decrypt && service.apiConfig) {
-      service.apiConfig = decryptConfig(service.apiConfig) as typeof service.apiConfig;
+    if (decrypt && service.partner.apiConfig) {
+      service.partner.apiConfig = decryptConfig(
+        service.partner.apiConfig,
+      ) as typeof service.partner.apiConfig;
     }
 
     return service;
   }
 
-  async getServiceWithCachedConfig(id: string): Promise<Record<string, unknown>> {
+  async getServiceWithCachedConfig(id: number): Promise<Record<string, unknown>> {
     const cacheKey = `config:${id}`;
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
@@ -198,9 +235,8 @@ export class PartnerService {
       code: service.code,
       name: service.name,
       type: service.type,
-      apiConfig: (service.apiConfig as Record<string, unknown>) || {},
+      apiConfig: (service.partner.apiConfig as Record<string, unknown>) || {},
       statusMapping: (service.statusMapping as Record<string, unknown>) || {},
-      isSandbox: service.isSandbox,
       isActive: service.isActive,
       webhookSecret: service.webhookSecret,
       timeoutMs: service.timeoutMs,
@@ -213,12 +249,7 @@ export class PartnerService {
   async listServices(partnerId: number) {
     await this.getPartner(partnerId);
     const services = await this.deps.partnerServiceRepo.findManyByPartnerId(partnerId);
-    return services.map((s) => {
-      if (s.apiConfig) {
-        s.apiConfig = decryptConfig(s.apiConfig) as typeof s.apiConfig;
-      }
-      return s;
-    });
+    return services;
   }
 
   async addService(data: {
@@ -226,9 +257,7 @@ export class PartnerService {
     code: string;
     name: string;
     type: ServiceType;
-    apiConfig?: Prisma.InputJsonValue | null;
     statusMapping?: Prisma.InputJsonValue | null;
-    isSandbox?: boolean;
     isActive?: boolean;
     webhookSecret?: string | null;
     timeoutMs?: number;
@@ -247,9 +276,6 @@ export class PartnerService {
 
     const payload: CreatePartnerServiceInput = {
       ...data,
-      apiConfig: data.apiConfig
-        ? (encryptConfig(data.apiConfig) as CreatePartnerServiceInput["apiConfig"])
-        : null,
       statusMapping: data.statusMapping,
     };
 
@@ -257,14 +283,12 @@ export class PartnerService {
   }
 
   async updateService(
-    id: string,
+    id: number,
     data: {
       code?: string;
       name?: string;
       type?: ServiceType;
-      apiConfig?: Prisma.InputJsonValue | null;
       statusMapping?: Prisma.InputJsonValue | null;
-      isSandbox?: boolean;
       isActive?: boolean;
       webhookSecret?: string | null;
       timeoutMs?: number;
@@ -286,9 +310,6 @@ export class PartnerService {
 
     const payload: UpdatePartnerServiceInput = {
       ...data,
-      apiConfig: data.apiConfig
-        ? (encryptConfig(data.apiConfig) as UpdatePartnerServiceInput["apiConfig"])
-        : undefined,
       statusMapping: data.statusMapping,
     };
 
@@ -300,7 +321,7 @@ export class PartnerService {
     return updated;
   }
 
-  async deleteService(id: string) {
+  async deleteService(id: number) {
     await this.getService(id);
     const result = await this.deps.partnerServiceRepo.delete(id);
 
@@ -311,13 +332,13 @@ export class PartnerService {
   }
 
   async testConnection(
-    id: string,
+    partnerId: number,
     tempConfig?: Record<string, unknown>,
   ): Promise<{ success: boolean; message: string }> {
-    const service = await this.getService(id, true);
-    const config = tempConfig || (service.apiConfig as Record<string, unknown>) || {};
+    const partner = await this.getPartner(partnerId, true);
+    const config = tempConfig || (partner.apiConfig as Record<string, unknown>) || {};
 
-    const partnerCode = service.partner.code.toUpperCase();
+    const partnerCode = partner.code.toUpperCase();
 
     // Simulated connection delays
     await new Promise((resolve) => setTimeout(resolve, 800));
@@ -331,7 +352,7 @@ export class PartnerService {
 
     return {
       success: true,
-      message: `Kết nối thành công tới ${service.partner.name} (${service.name}) ở chế độ ${service.isSandbox ? "Sandbox" : "Production"}.`,
+      message: `Kết nối thành công tới ${partner.name}.`,
     };
   }
 }

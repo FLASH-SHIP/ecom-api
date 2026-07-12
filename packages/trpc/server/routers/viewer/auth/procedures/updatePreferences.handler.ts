@@ -13,7 +13,7 @@ export const updatePreferences = authedProcedure
   .input(
     z.object({
       /** Target user. Defaults to logged-in user. */
-      userId: z.number().int().positive().optional(),
+      userId: z.string().min(1).optional(),
       theme: z.enum(["light", "dark"]).optional(),
     }),
   )

@@ -24,7 +24,7 @@ export class AuditService {
   // ─── Audit Logs ───────────────────────────────────
 
   async logAction(data: {
-    userId?: number;
+    userId?: string;
     action: string;
     module: string;
     entityId?: string;
@@ -89,7 +89,7 @@ export class AuditService {
   // ─── Request Logs ─────────────────────────────────
 
   async logRequest(data: {
-    userId?: number;
+    userId?: string;
     method: string;
     url: string;
     statusCode?: number;

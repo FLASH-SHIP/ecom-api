@@ -38,7 +38,7 @@ export const list = authedProcedure
 
 export const get = authedProcedure
   .use(requirePermission(Permissions.CUSTOMERS_READ))
-  .input(z.object({ id: z.number() }))
+  .input(z.object({ id: z.string().min(1) }))
   .query(async ({ input }) => {
     const service = getCustomerService();
     return service.getCustomer(input.id);
@@ -78,7 +78,7 @@ export const update = authedProcedure
   .use(auditLog({ module: "customers", action: "UPDATE", entityType: "Customer" }))
   .input(
     z.object({
-      id: z.number(),
+      id: z.string().min(1),
       username: usernameSchema,
       name: z.string().max(200).optional(),
       phone: z.string().max(20).optional(),
@@ -103,7 +103,7 @@ export const update = authedProcedure
 export const remove = authedProcedure
   .use(requirePermission(Permissions.CUSTOMERS_DELETE))
   .use(auditLog({ module: "customers", action: "DELETE", entityType: "Customer" }))
-  .input(z.object({ id: z.number() }))
+  .input(z.object({ id: z.string().min(1) }))
   .mutation(async ({ input }) => {
     const service = getCustomerService();
     return service.deleteCustomer(input.id);
@@ -127,7 +127,7 @@ export const checkUsername = authedProcedure
 export const verifyEmail = authedProcedure
   .use(requirePermission(Permissions.CUSTOMERS_UPDATE))
   .use(auditLog({ module: "customers", action: "VERIFY_EMAIL", entityType: "Customer" }))
-  .input(z.object({ id: z.number() }))
+  .input(z.object({ id: z.string().min(1) }))
   .mutation(async ({ input }) => {
     const service = getCustomerService();
     return service.verifyCustomerEmail(input.id);
@@ -136,7 +136,7 @@ export const verifyEmail = authedProcedure
 export const setPassword = authedProcedure
   .use(requirePermission(Permissions.CUSTOMERS_UPDATE))
   .use(auditLog({ module: "customers", action: "SET_PASSWORD", entityType: "Customer" }))
-  .input(z.object({ id: z.number(), password: z.string().min(8).max(100) }))
+  .input(z.object({ id: z.string().min(1), password: z.string().min(8).max(100) }))
   .mutation(async ({ input }) => {
     const service = getCustomerService();
     return service.setCustomerPassword(input.id, input.password);
@@ -144,7 +144,7 @@ export const setPassword = authedProcedure
 
 export const auditHistory = authedProcedure
   .use(requirePermission(Permissions.CUSTOMERS_READ))
-  .input(z.object({ id: z.number() }))
+  .input(z.object({ id: z.string().min(1) }))
   .query(async ({ input }) => {
     const service = getAuditService();
     return service.getAuditLogs({

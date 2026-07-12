@@ -1,14 +1,12 @@
-import type { PrismaClient } from "@ecom/prisma";
-import { Prisma, type ServiceType } from "@ecom/prisma";
+import type { PrismaClient, ServiceType } from "@ecom/prisma";
+import { Prisma } from "@ecom/prisma";
 
 export interface CreatePartnerServiceInput {
   partnerId: number;
   code: string;
   name: string;
   type: ServiceType;
-  apiConfig?: Prisma.InputJsonValue | null;
   statusMapping?: Prisma.InputJsonValue | null;
-  isSandbox?: boolean;
   isActive?: boolean;
   webhookSecret?: string | null;
   timeoutMs?: number;
@@ -19,9 +17,7 @@ export interface UpdatePartnerServiceInput {
   code?: string;
   name?: string;
   type?: ServiceType;
-  apiConfig?: Prisma.InputJsonValue | null;
   statusMapping?: Prisma.InputJsonValue | null;
-  isSandbox?: boolean;
   isActive?: boolean;
   webhookSecret?: string | null;
   timeoutMs?: number;
@@ -35,7 +31,7 @@ export class PartnerServiceRepository {
     this.prisma = prisma;
   }
 
-  async findById(id: string) {
+  async findById(id: number) {
     return this.prisma.partnerService.findFirst({
       where: { id, deletedAt: null },
       select: {
@@ -44,9 +40,7 @@ export class PartnerServiceRepository {
         code: true,
         name: true,
         type: true,
-        apiConfig: true,
         statusMapping: true,
-        isSandbox: true,
         isActive: true,
         webhookSecret: true,
         timeoutMs: true,
@@ -54,7 +48,7 @@ export class PartnerServiceRepository {
         createdAt: true,
         updatedAt: true,
         partner: {
-          select: { id: true, code: true, name: true },
+          select: { id: true, code: true, name: true, apiConfig: true },
         },
       },
     });
@@ -69,9 +63,7 @@ export class PartnerServiceRepository {
         code: true,
         name: true,
         type: true,
-        apiConfig: true,
         statusMapping: true,
-        isSandbox: true,
         isActive: true,
         webhookSecret: true,
         timeoutMs: true,
@@ -99,8 +91,10 @@ export class PartnerServiceRepository {
     return this.prisma.partnerService.create({
       data: {
         ...data,
-        apiConfig: data.apiConfig === null ? Prisma.DbNull : data.apiConfig,
-        statusMapping: data.statusMapping === null ? Prisma.DbNull : data.statusMapping,
+        statusMapping:
+          data.statusMapping === null
+            ? Prisma.DbNull
+            : (data.statusMapping as Prisma.InputJsonValue),
       },
       select: {
         id: true,
@@ -111,13 +105,15 @@ export class PartnerServiceRepository {
     });
   }
 
-  async update(id: string, data: UpdatePartnerServiceInput) {
+  async update(id: number, data: UpdatePartnerServiceInput) {
     return this.prisma.partnerService.update({
       where: { id },
       data: {
         ...data,
-        apiConfig: data.apiConfig === null ? Prisma.DbNull : data.apiConfig,
-        statusMapping: data.statusMapping === null ? Prisma.DbNull : data.statusMapping,
+        statusMapping:
+          data.statusMapping === null
+            ? Prisma.DbNull
+            : (data.statusMapping as Prisma.InputJsonValue),
       },
       select: {
         id: true,
@@ -128,7 +124,7 @@ export class PartnerServiceRepository {
     });
   }
 
-  async delete(id: string) {
+  async delete(id: number) {
     const service = await this.prisma.partnerService.findFirst({
       where: { id, deletedAt: null },
       select: { code: true, partnerId: true },

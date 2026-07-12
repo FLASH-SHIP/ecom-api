@@ -38,7 +38,6 @@ export default getRequestConfig(async () => {
           settings: (await import("@ecom/i18n/locales/vi/settings.json")).default,
           languages: (await import("@ecom/i18n/locales/vi/languages.json")).default,
           customFields: (await import("@ecom/i18n/locales/vi/custom-fields.json")).default,
-          adminMenus: (await import("@ecom/i18n/locales/vi/admin-menus.json")).default,
           cache: (await import("@ecom/i18n/locales/vi/cache.json")).default,
           systemInfo: (await import("@ecom/i18n/locales/vi/system-info.json")).default,
           auditLogs: (await import("@ecom/i18n/locales/vi/audit-logs.json")).default,
@@ -52,6 +51,9 @@ export default getRequestConfig(async () => {
           seo: (await import("@ecom/i18n/locales/vi/seo.json")).default,
           dataTable: (await import("@ecom/i18n/locales/vi/data-table.json")).default,
           "customer-groups": (await import("@ecom/i18n/locales/vi/customer-groups.json")).default,
+          orders: (await import("@ecom/i18n/locales/vi/orders.json")).default,
+          auth: (await import("@ecom/i18n/locales/vi/auth.json")).default,
+          nav: (await import("@ecom/i18n/locales/vi/nav.json")).default,
         }
       : {
           ...(await import("@ecom/i18n/locales/en/common.json")).default,
@@ -66,7 +68,6 @@ export default getRequestConfig(async () => {
           settings: (await import("@ecom/i18n/locales/en/settings.json")).default,
           languages: (await import("@ecom/i18n/locales/en/languages.json")).default,
           customFields: (await import("@ecom/i18n/locales/en/custom-fields.json")).default,
-          adminMenus: (await import("@ecom/i18n/locales/en/admin-menus.json")).default,
           cache: (await import("@ecom/i18n/locales/en/cache.json")).default,
           systemInfo: (await import("@ecom/i18n/locales/en/system-info.json")).default,
           auditLogs: (await import("@ecom/i18n/locales/en/audit-logs.json")).default,
@@ -80,6 +81,9 @@ export default getRequestConfig(async () => {
           seo: (await import("@ecom/i18n/locales/en/seo.json")).default,
           dataTable: (await import("@ecom/i18n/locales/en/data-table.json")).default,
           "customer-groups": (await import("@ecom/i18n/locales/en/customer-groups.json")).default,
+          orders: (await import("@ecom/i18n/locales/en/orders.json")).default,
+          auth: (await import("@ecom/i18n/locales/en/auth.json")).default,
+          nav: (await import("@ecom/i18n/locales/en/nav.json")).default,
         };
 
   return {

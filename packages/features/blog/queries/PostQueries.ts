@@ -15,7 +15,7 @@ export class PostQueries {
 
   async listPosts(options: {
     status?: ContentStatus;
-    authorId?: number;
+    authorId?: string;
     categoryId?: number;
     isFeatured?: boolean;
     search?: string;

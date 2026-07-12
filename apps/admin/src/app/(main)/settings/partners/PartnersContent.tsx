@@ -9,7 +9,7 @@ import { useToast } from "@admin/components/toast-provider";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
 import { trpc } from "@admin/lib/trpc";
-import { PartnerStatus } from "@ecom/prisma";
+import { PartnerStatus } from "@ecom/types";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
 import { keepPreviousData } from "@tanstack/react-query";

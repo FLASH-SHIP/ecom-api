@@ -34,7 +34,7 @@ export class AuthService {
   /**
    * Get user profile with roles and permissions.
    */
-  async getUserWithPermissions(userId: number) {
+  async getUserWithPermissions(userId: string) {
     const user = await this.deps.userRepo.findByIdWithRoles(userId);
     if (!user) {
       throw ErrorWithCode.Factory.NotFound("User not found");
@@ -67,7 +67,7 @@ export class AuthService {
    * - Cleans up old avatar from storage + DB when avatarUrl changes
    */
   async updateProfile(
-    userId: number,
+    userId: string,
     data: {
       name?: string;
       username?: string;
@@ -106,7 +106,7 @@ export class AuthService {
    *   the current password is not checked.
    */
   async changePassword(
-    userId: number,
+    userId: string,
     opts: {
       currentPassword?: string;
       newPassword: string;
@@ -138,7 +138,7 @@ export class AuthService {
    * Get user's theme preference from user_meta.
    * Returns "light" as default if not set.
    */
-  async getTheme(userId: number): Promise<"light" | "dark"> {
+  async getTheme(userId: string): Promise<"light" | "dark"> {
     const value = await this.deps.userRepo.getMeta(userId, "theme");
     return value === "dark" ? "dark" : "light";
   }
@@ -146,7 +146,7 @@ export class AuthService {
   /**
    * Set user's theme preference in user_meta.
    */
-  async setTheme(userId: number, theme: "light" | "dark"): Promise<void> {
+  async setTheme(userId: string, theme: "light" | "dark"): Promise<void> {
     await this.deps.userRepo.setMeta(userId, "theme", theme);
   }
 }

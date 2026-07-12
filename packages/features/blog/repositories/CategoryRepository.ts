@@ -230,7 +230,7 @@ export class CategoryRepository {
     isDefault?: number;
     status?: ContentStatus;
     parentId?: number;
-    authorId?: number;
+    authorId?: string;
     order?: number;
   }) {
     return this.prisma.category.create({

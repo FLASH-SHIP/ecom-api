@@ -28,9 +28,9 @@ import { PermissionTree } from "../../components/PermissionTree";
 interface CloneRoleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  sourceId: string;
+  sourceId: number;
   sourceName: string;
-  onSuccess: (newRoleId: string) => void;
+  onSuccess: (newRoleId: number) => void;
 }
 
 function CloneRoleDialog({
@@ -139,7 +139,7 @@ export default function EditRolePage({ params }: { params: Promise<{ id: string 
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDisplay, setNewRoleDisplay] = useState("");
   const [newRoleDesc, setNewRoleDesc] = useState("");
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
 
   // Search and collapsed sections states
   const [cloneDialogOpen, setCloneDialogOpen] = useState(false);
@@ -166,7 +166,7 @@ export default function EditRolePage({ params }: { params: Promise<{ id: string 
   const dbPermissions = useMemo(() => {
     if (!allPermissions) return [];
     return Object.values(allPermissions).flat() as {
-      id: string;
+      id: number;
       name: string;
       displayName: string | null;
     }[];

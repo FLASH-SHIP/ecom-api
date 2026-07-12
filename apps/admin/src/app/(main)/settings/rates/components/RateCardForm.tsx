@@ -866,8 +866,8 @@ interface LogsTabProps {
     id?: number;
     action?: string;
     createdAt?: Date | string;
-    userId?: number;
-    user?: { email: string } | null;
+    userId?: string;
+    user?: { name: string; id: string; email: string } | null;
     oldValues?: unknown;
     newValues?: unknown;
   }[];

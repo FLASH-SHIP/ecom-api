@@ -1,0 +1,33 @@
+model Province {
+  id           Int        @id @default(autoincrement())
+  name         String
+  code         Int        @unique
+  divisionType String
+  codeName     String
+  phoneCode    Int
+  wards        Ward[]
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  @@map("provinces")
+}
+
+model Ward {
+  id           Int        @id @default(autoincrement())
+  name         String
+  code         Int        @unique
+  divisionType String
+  codeName     String
+  provinceCode Int
+  province     Province   @relation(fields: [provinceCode], references: [code], onDelete: Cascade)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  @@index([provinceCode])
+  @@index([codeName])
+  @@map("wards")
+}

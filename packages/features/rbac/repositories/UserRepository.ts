@@ -58,7 +58,7 @@ export class UserRepository {
     };
   }
 
-  async findById(id: number) {
+  async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -98,13 +98,15 @@ export class UserRepository {
     status?: UserStatus;
   }) {
     return this.prisma.user.create({
-      data,
+      data: {
+        ...data,
+      },
       select: { id: true, email: true, name: true, username: true, phone: true, status: true },
     });
   }
 
   async update(
-    id: number,
+    id: string,
     data: {
       name?: string;
       username?: string;
@@ -121,7 +123,7 @@ export class UserRepository {
     });
   }
 
-  async setPassword(userId: number, hash: string) {
+  async setPassword(userId: string, hash: string) {
     await this.prisma.userPassword.upsert({
       where: { userId },
       create: { userId, hash },
@@ -129,7 +131,7 @@ export class UserRepository {
     });
   }
 
-  async syncRoles(userId: number, roleIds: string[]) {
+  async syncRoles(userId: string, roleIds: number[]) {
     await this.prisma.$transaction([
       this.prisma.userRoleAssignment.deleteMany({ where: { userId } }),
       ...roleIds.map((roleId) =>
@@ -140,7 +142,7 @@ export class UserRepository {
     ]);
   }
 
-  async toggleSuperAdmin(userId: number, isSuperAdmin: boolean) {
+  async toggleSuperAdmin(userId: string, isSuperAdmin: boolean) {
     const adminRole = await this.prisma.role.findUnique({
       where: { name: "admin" },
       select: { id: true },
@@ -164,7 +166,7 @@ export class UserRepository {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: string) {
     return this.prisma.user.delete({ where: { id } });
   }
 }

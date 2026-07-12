@@ -11,7 +11,7 @@ export class CustomerActivityService {
   }
 
   async logActivity(data: {
-    customerId: number;
+    customerId: string;
     action: string;
     ipAddress?: string;
     userAgent?: string;
@@ -20,11 +20,11 @@ export class CustomerActivityService {
     return this.deps.activityLogRepo.create(data);
   }
 
-  async getActivityHistory(customerId: number, options?: { page?: number; perPage?: number }) {
+  async getActivityHistory(customerId: string, options?: { page?: number; perPage?: number }) {
     return this.deps.activityLogRepo.findByCustomer(customerId, options);
   }
 
-  async getCustomerStats(customerId: number) {
+  async getCustomerStats(customerId: string) {
     return this.deps.activityLogRepo.getStats(customerId);
   }
 }

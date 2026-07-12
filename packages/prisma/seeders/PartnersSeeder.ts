@@ -14,6 +14,9 @@ export const PartnersSeeder: Seeder = {
         contactPhone: "0901234567",
         status: "ACTIVE" as const,
         description: "Đối tác hải quan và logistics chặng quốc tế",
+        apiConfig: {
+          endpoint: "https://api-sandbox.ibc.com/v1",
+        },
       },
       {
         code: "USPS",
@@ -23,6 +26,9 @@ export const PartnersSeeder: Seeder = {
         contactPhone: "+18002758777",
         status: "ACTIVE" as const,
         description: "Đối tác giao hàng chặng cuối tại Mỹ (Last Mile)",
+        apiConfig: {
+          endpoint: "https://secure.shippingapis.com/ShippingAPI.dll",
+        },
       },
       {
         code: "SBP",
@@ -32,6 +38,9 @@ export const PartnersSeeder: Seeder = {
         contactPhone: "0918765432",
         status: "ACTIVE" as const,
         description: "Đối tác thu gom hàng chặng đi tại Việt Nam (Pickup)",
+        apiConfig: {
+          endpoint: "https://staging-api.sbpexpress.com/v2",
+        },
       },
       {
         code: "UPS",
@@ -41,6 +50,9 @@ export const PartnersSeeder: Seeder = {
         contactPhone: "+18007425877",
         status: "ACTIVE" as const,
         description: "Đối tác chuyển phát nhanh Last Mile",
+        apiConfig: {
+          endpoint: "https://api-sandbox.ups.com/v1",
+        },
       },
     ];
 
@@ -55,6 +67,7 @@ export const PartnersSeeder: Seeder = {
           contactPhone: partnerData.contactPhone,
           status: partnerData.status,
           description: partnerData.description,
+          apiConfig: partnerData.apiConfig,
         },
         create: partnerData,
       });
@@ -72,60 +85,35 @@ export const PartnersSeeder: Seeder = {
         code: "ibc_epacket",
         name: "IBC Epacket",
         type: "LASTMILE" as const,
-        isSandbox: true,
         isActive: true,
-        apiConfig: {
-          endpoint: "https://api-sandbox.ibc.com/v1",
-          timeoutMs: 15000,
-        },
       },
       {
         partnerCode: "IBC",
         code: "ibc_express",
         name: "IBC Express Direct",
         type: "LASTMILE" as const,
-        isSandbox: true,
         isActive: true,
-        apiConfig: {
-          endpoint: "https://api-sandbox.ibc.com/v1/express",
-          timeoutMs: 15000,
-        },
       },
       {
         partnerCode: "USPS",
         code: "usps_first_class",
         name: "USPS Ground Advantage / First-Class",
         type: "LASTMILE" as const,
-        isSandbox: true,
         isActive: true,
-        apiConfig: {
-          endpoint: "https://secure.shippingapis.com/ShippingAPI.dll",
-          timeoutMs: 10000,
-        },
       },
       {
         partnerCode: "USPS",
         code: "usps_priority",
         name: "USPS Priority Mail",
         type: "LASTMILE" as const,
-        isSandbox: true,
         isActive: true,
-        apiConfig: {
-          endpoint: "https://secure.shippingapis.com/ShippingAPI.dll",
-          timeoutMs: 10000,
-        },
       },
       {
         partnerCode: "SBP",
         code: "sbp_pickup",
         name: "SBP Domestic Pickup",
         type: "PICKUP" as const,
-        isSandbox: true,
         isActive: true,
-        apiConfig: {
-          endpoint: "https://staging-api.sbpexpress.com/v2",
-          timeoutMs: 10000,
-        },
       },
     ];
 
@@ -145,9 +133,7 @@ export const PartnersSeeder: Seeder = {
         update: {
           name: servicePayload.name,
           type: servicePayload.type,
-          isSandbox: servicePayload.isSandbox,
           isActive: servicePayload.isActive,
-          apiConfig: servicePayload.apiConfig,
         },
         create: {
           ...servicePayload,

@@ -40,7 +40,7 @@ export class CommentService {
     content: string;
     authorName?: string;
     authorEmail?: string;
-    customerId?: number;
+    customerId?: string;
     postId?: number;
     pageId?: number;
     parentId?: number;

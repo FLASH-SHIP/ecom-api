@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 interface RolesTabProps {
-  userId: number;
+  userId: string;
 }
 
 export function RolesTab({ userId }: RolesTabProps) {
@@ -33,7 +33,7 @@ export function RolesTab({ userId }: RolesTabProps) {
     staleTime: 300_000,
   });
 
-  const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
+  const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -87,7 +87,7 @@ export function RolesTab({ userId }: RolesTabProps) {
     });
   };
 
-  const handleToggleRole = (roleId: string, checked: boolean) => {
+  const handleToggleRole = (roleId: number, checked: boolean) => {
     if (checked) {
       setSelectedRoleIds((prev) => [...prev, roleId]);
     } else {

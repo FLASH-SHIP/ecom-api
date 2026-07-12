@@ -56,7 +56,7 @@ export const assignTo = authedProcedure
   .input(
     z.object({
       id: z.number().int().positive(),
-      assigneeId: z.number().int().positive(),
+      assigneeId: z.string().min(1),
     }),
   )
   .mutation(async ({ input }) => {

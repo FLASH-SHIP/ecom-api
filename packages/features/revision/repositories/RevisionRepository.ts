@@ -11,7 +11,7 @@ export class RevisionRepository {
     referenceType: string;
     title: string;
     content?: string;
-    authorId: number;
+    authorId: string;
     note?: string;
   }) {
     return this.prisma.revision.create({

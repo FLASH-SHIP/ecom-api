@@ -40,7 +40,7 @@ function maskSensitiveValues(obj: unknown): unknown {
 
 // Helper to log changes to global AuditLog table securely
 async function writeSecureAuditLog(params: {
-  userId: number | null;
+  userId: string | null;
   action: "CREATE" | "UPDATE" | "DELETE";
   entityId: string;
   entityType: string;
@@ -103,7 +103,13 @@ export const get = authedProcedure
   .query(async ({ input }) => {
     const partnerService = getPartnerService();
     try {
-      return await partnerService.getPartner(input.id);
+      const partner = await partnerService.getPartner(input.id, true);
+      return {
+        ...partner,
+        apiConfig: partner.apiConfig
+          ? (maskSensitiveValues(partner.apiConfig) as Record<string, unknown>)
+          : null,
+      };
     } catch (error) {
       throw new TRPCError({
         code: "NOT_FOUND",
@@ -124,13 +130,18 @@ export const create = authedProcedure
       contactPhone: z.string().optional().nullable(),
       status: partnerStatusSchema.default(PartnerStatus.ACTIVE),
       description: z.string().optional().nullable(),
+      apiConfig: z.record(z.string(), z.unknown()).optional().nullable(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
     const partnerService = getPartnerService();
     try {
       const email = input.contactEmail === "" ? null : input.contactEmail;
-      const created = await partnerService.createPartner({ ...input, contactEmail: email });
+      const created = await partnerService.createPartner({
+        ...input,
+        apiConfig: input.apiConfig as Prisma.InputJsonValue | null,
+        contactEmail: email,
+      });
 
       await writeSecureAuditLog({
         userId: ctx.user?.id || null,
@@ -164,6 +175,7 @@ export const update = authedProcedure
       contactPhone: z.string().optional().nullable(),
       status: partnerStatusSchema.optional(),
       description: z.string().optional().nullable(),
+      apiConfig: z.record(z.string(), z.unknown()).optional().nullable(),
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -172,7 +184,11 @@ export const update = authedProcedure
     try {
       const original = await partnerService.getPartner(id);
       const email = data.contactEmail === "" ? null : data.contactEmail;
-      const updated = await partnerService.updatePartner(id, { ...data, contactEmail: email });
+      const updated = await partnerService.updatePartner(id, {
+        ...data,
+        apiConfig: data.apiConfig as Prisma.InputJsonValue | null,
+        contactEmail: email,
+      });
 
       await writeSecureAuditLog({
         userId: ctx.user?.id || null,
@@ -230,12 +246,7 @@ export const listServices = authedProcedure
   .query(async ({ input }) => {
     const partnerService = getPartnerService();
     const services = await partnerService.listServices(input.partnerId);
-
-    // Mask sensitive keys in apiConfig before returning to UI
-    return services.map((s) => ({
-      ...s,
-      apiConfig: s.apiConfig ? (maskSensitiveValues(s.apiConfig) as Record<string, unknown>) : null,
-    }));
+    return services;
   });
 
 // 7. Add Partner Service (authed)
@@ -247,9 +258,7 @@ export const addService = authedProcedure
       code: z.string().min(2).max(50),
       name: z.string().min(2).max(100),
       type: serviceTypeSchema,
-      apiConfig: z.record(z.string(), z.unknown()).optional().nullable(),
       statusMapping: z.record(z.string(), z.unknown()).optional().nullable(),
-      isSandbox: z.boolean().default(true),
       isActive: z.boolean().default(true),
       webhookSecret: z.string().optional().nullable(),
       timeoutMs: z.number().int().positive().default(10000),
@@ -261,7 +270,6 @@ export const addService = authedProcedure
     try {
       const created = await partnerService.addService({
         ...input,
-        apiConfig: input.apiConfig as Prisma.InputJsonValue | null,
         statusMapping: input.statusMapping as Prisma.InputJsonValue | null,
       });
 
@@ -290,13 +298,11 @@ export const updateService = authedProcedure
   .use(requirePermission(Permissions.PARTNERS_UPDATE))
   .input(
     z.object({
-      id: z.string().cuid(),
+      id: z.coerce.number(),
       code: z.string().min(2).max(50).optional(),
       name: z.string().min(2).max(100).optional(),
       type: serviceTypeSchema.optional(),
-      apiConfig: z.record(z.string(), z.unknown()).optional().nullable(),
       statusMapping: z.record(z.string(), z.unknown()).optional().nullable(),
-      isSandbox: z.boolean().optional(),
       isActive: z.boolean().optional(),
       webhookSecret: z.string().optional().nullable(),
       timeoutMs: z.number().int().positive().optional(),
@@ -310,7 +316,6 @@ export const updateService = authedProcedure
       const original = await partnerService.getService(id);
       const updated = await partnerService.updateService(id, {
         ...data,
-        apiConfig: data.apiConfig as Prisma.InputJsonValue | null,
         statusMapping: data.statusMapping as Prisma.InputJsonValue | null,
       });
 
@@ -338,7 +343,7 @@ export const updateService = authedProcedure
 // 9. Delete Partner Service (authed)
 export const deleteService = authedProcedure
   .use(requirePermission(Permissions.PARTNERS_UPDATE))
-  .input(z.object({ id: z.string().cuid() }))
+  .input(z.object({ id: z.coerce.number() }))
   .mutation(async ({ ctx, input }) => {
     const partnerService = getPartnerService();
     try {
@@ -370,7 +375,7 @@ export const testConnection = authedProcedure
   .use(requirePermission(Permissions.PARTNERS_UPDATE))
   .input(
     z.object({
-      id: z.string().cuid(),
+      id: z.number().int().positive(),
       tempConfig: z.record(z.string(), z.unknown()).optional().nullable(),
     }),
   )

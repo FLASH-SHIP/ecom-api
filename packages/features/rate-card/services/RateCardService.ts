@@ -17,7 +17,7 @@ export interface CalculateFreightParams {
   country: string;
   weight: number; // raw input weight in kg
   origin?: string | null;
-  customerId: number;
+  customerId: string;
   calculationDate?: Date;
 }
 
@@ -176,6 +176,62 @@ export class RateCardService {
     const itemAmount = new Decimal(matchedItem.amount);
 
     // Return the calculation result and audit snapshot
+    return {
+      freightCost: Number(freightCost.toFixed(2)),
+      appliedRateCardId: card.id,
+      appliedRateCardSnapshot: {
+        rateCardId: card.id,
+        rateCardCode: card.code,
+        rateCardName: card.name,
+        currency: card.currency,
+        itemId: matchedItem.id,
+        startWeight: Number(new Decimal(matchedItem.startWeight).toFixed(3)),
+        endWeight: Number(new Decimal(matchedItem.endWeight).toFixed(3)),
+        rateType: matchedItem.rateType,
+        amount: Number(itemAmount.toFixed(2)),
+      },
+    };
+  }
+
+  /**
+   * Calculates freight cost using a specific RateCard ID.
+   */
+  async calculateFreightWithCardId(rateCardId: number, weight: number) {
+    const card = await this.deps.rateCardRepo.findById(rateCardId);
+    if (!card) {
+      throw new ErrorWithCode(
+        ErrorCode.NotFound,
+        `Bảng giá cước với ID ${rateCardId} không tồn tại.`,
+        404,
+      );
+    }
+
+    const W = new Decimal(weight);
+    const S = new Decimal(card.weightStep);
+    const minW = new Decimal(card.minWeight);
+
+    let RW = W.div(S).ceil().mul(S);
+    if (RW.lt(minW)) {
+      RW = minW;
+    }
+
+    const matchedItem = card.items.find((item) => {
+      const start = new Decimal(item.startWeight);
+      const end = new Decimal(item.endWeight);
+      return RW.gt(start) && RW.lte(end);
+    });
+
+    if (!matchedItem) {
+      throw new ErrorWithCode(
+        ErrorCode.RateCardValidationError,
+        `Trọng lượng tính cước ${RW.toFixed(3)}kg vượt quá mọi nấc cước cấu hình của bảng giá ${card.code}.`,
+        400,
+      );
+    }
+
+    const freightCost = this.calculateItemFreight(matchedItem, RW);
+    const itemAmount = new Decimal(matchedItem.amount);
+
     return {
       freightCost: Number(freightCost.toFixed(2)),
       appliedRateCardId: card.id,

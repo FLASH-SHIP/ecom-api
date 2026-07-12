@@ -32,7 +32,7 @@ interface FormValues {
   phone?: string;
   password: string;
   confirmPassword: string;
-  roleIds?: string[];
+  roleIds?: number[];
 }
 
 const getValidationSchema = (t: (key: string) => string) =>
@@ -53,7 +53,7 @@ const getValidationSchema = (t: (key: string) => string) =>
         .optional(),
       password: z.string().min(8, t("profile.passwordMinLength")).max(100),
       confirmPassword: z.string().min(8, t("profile.passwordMinLength")).max(100),
-      roleIds: z.array(z.string()).optional(),
+      roleIds: z.array(z.number()).optional(),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: t("profile.passwordMismatch"),
@@ -229,9 +229,9 @@ function UserFieldsCard({ control, t, isFormDisabled }: UserFieldsCardProps) {
 }
 
 interface UserRolesCardProps {
-  roles?: Array<{ id?: string; name?: string; displayName?: string | null }>;
+  roles?: Array<{ id?: number; name?: string; displayName?: string | null }>;
   isLoading: boolean;
-  selectedRoleIds: string[];
+  selectedRoleIds: number[];
   isFormDisabled: boolean;
   setValue: UseFormSetValue<FormValues>;
   t: (key: string) => string;
@@ -270,10 +270,10 @@ function UserRolesCard({
                 <div className="flex flex-wrap gap-1.5 items-center mr-2">
                   {selectedRoleIds.length > 0 ? (
                     roles
-                      ?.filter((r) => r.id && selectedRoleIds.includes(r.id))
+                      ?.filter((r) => r.id !== undefined && selectedRoleIds.includes(r.id))
                       .map((role) => (
                         <span
-                          key={role.id || ""}
+                          key={role.id}
                           className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground border border-border"
                         >
                           {role.displayName ?? role.name}
@@ -287,10 +287,12 @@ function UserRolesCard({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                setValue(
-                                  "roleIds",
-                                  selectedRoleIds.filter((id) => id !== (role.id || "")),
-                                );
+                                if (role.id !== undefined) {
+                                  setValue(
+                                    "roleIds",
+                                    selectedRoleIds.filter((id) => id !== role.id),
+                                  );
+                                }
                               }}
                             >
                               <X className="size-3" />
@@ -309,7 +311,7 @@ function UserRolesCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="start">
               {roles?.map((role) => {
-                if (!role.id) return null;
+                if (role.id === undefined) return null;
                 const checked = selectedRoleIds.includes(role.id);
                 return (
                   <DropdownMenuCheckboxItem
@@ -317,11 +319,11 @@ function UserRolesCard({
                     checked={checked}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        setValue("roleIds", [...selectedRoleIds, role.id || ""]);
+                        setValue("roleIds", [...selectedRoleIds, role.id!]);
                       } else {
                         setValue(
                           "roleIds",
-                          selectedRoleIds.filter((id) => id !== (role.id || "")),
+                          selectedRoleIds.filter((id) => id !== role.id),
                         );
                       }
                     }}

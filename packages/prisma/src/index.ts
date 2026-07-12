@@ -5,9 +5,19 @@ import { readReplicas } from "@prisma/extension-read-replicas";
 import { PostFactory } from "./factories/PostFactory";
 import { UserFactory } from "./factories/UserFactory";
 import {
+  ActorType,
   ContentStatus,
+  type Customer,
   CustomerStatus,
+  CustomsStatus,
+  LabelStatus,
+  type Order,
+  type OrderActivityLog,
+  type OrderFeeItem,
+  OrderStatus,
+  type OrderTrackingCheckpoint,
   PartnerStatus,
+  PaymentStatus,
   Prisma,
   PrismaClient,
   RateCardType,
@@ -69,6 +79,51 @@ const AUDIT_EXEMPT_MODELS = [
   "AccessToken",
 ];
 
+const SOFT_DELETE_MODELS = [
+  "Customer",
+  "MediaFolder",
+  "MediaFile",
+  "Partner",
+  "PartnerService",
+  "Province",
+  "Ward",
+  "Post",
+  "Category",
+  "Tag",
+  "Page",
+  "PackingType",
+];
+
+const SENSITIVE_FIELDS = [
+  "hashedPassword",
+  "password",
+  "token",
+  "secret",
+  "hashedKey",
+  "refreshTokenHash",
+  "tokenHash",
+];
+
+function sanitizeAuditValues(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (Array.isArray(value)) {
+    return value.map(sanitizeAuditValues);
+  }
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const sanitized: Record<string, unknown> = {};
+    for (const key of Object.keys(obj)) {
+      if (SENSITIVE_FIELDS.includes(key)) {
+        sanitized[key] = "[REDACTED]";
+      } else {
+        sanitized[key] = sanitizeAuditValues(obj[key]);
+      }
+    }
+    return sanitized;
+  }
+  return value;
+}
+
 const getPrismaDelegateName = (modelName: string) => {
   return modelName.charAt(0).toLowerCase() + modelName.slice(1);
 };
@@ -100,9 +155,50 @@ const prismaWithReplicas = hasReplicas
       },
     });
 
-const extendedPrisma = prismaWithReplicas.$extends({
+// biome-ignore lint/suspicious/noExplicitAny: prisma extension type safety bypass
+const extendedPrisma = (prismaWithReplicas as any).$extends({
   query: {
     $allModels: {
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic hook arguments
+      async findFirst({ model, args, query }: any) {
+        if (SOFT_DELETE_MODELS.includes(model)) {
+          args.where = args.where || {};
+          if (args.where.deletedAt === undefined) {
+            args.where.deletedAt = null;
+          }
+        }
+        return query(args);
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic hook arguments
+      async findFirstOrThrow({ model, args, query }: any) {
+        if (SOFT_DELETE_MODELS.includes(model)) {
+          args.where = args.where || {};
+          if (args.where.deletedAt === undefined) {
+            args.where.deletedAt = null;
+          }
+        }
+        return query(args);
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic hook arguments
+      async findMany({ model, args, query }: any) {
+        if (SOFT_DELETE_MODELS.includes(model)) {
+          args.where = args.where || {};
+          if (args.where.deletedAt === undefined) {
+            args.where.deletedAt = null;
+          }
+        }
+        return query(args);
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic hook arguments
+      async count({ model, args, query }: any) {
+        if (SOFT_DELETE_MODELS.includes(model)) {
+          args.where = args.where || {};
+          if (args.where.deletedAt === undefined) {
+            args.where.deletedAt = null;
+          }
+        }
+        return query(args);
+      },
       // biome-ignore lint/suspicious/noExplicitAny: dynamic hook arguments
       async create({ model, args, query }: any) {
         if (AUDIT_EXEMPT_MODELS.includes(model)) {
@@ -113,7 +209,7 @@ const extendedPrisma = prismaWithReplicas.$extends({
 
         try {
           const store = loggerContext.getStore();
-          const userId = store?.userId || null;
+          const userId = store?.userId ? String(store.userId) : null;
           const entityId = getEntityId(result);
 
           await basePrisma.auditLog.create({
@@ -123,7 +219,7 @@ const extendedPrisma = prismaWithReplicas.$extends({
               module: `${model.toLowerCase()}s`,
               entityId,
               entityType: model,
-              newValues: result ? JSON.parse(JSON.stringify(result)) : null,
+              newValues: (result ? sanitizeAuditValues(result) : null) as unknown as Prisma.InputJsonValue,
               ipAddress: store?.ipAddress || null,
               userAgent: store?.userAgent || null,
               metadata: { source: "prisma-extension" },
@@ -186,7 +282,7 @@ const extendedPrisma = prismaWithReplicas.$extends({
 
         try {
           const store = loggerContext.getStore();
-          const userId = store?.userId || null;
+          const userId = store?.userId ? String(store.userId) : null;
           const entityId = getEntityId(result);
 
           await basePrisma.auditLog.create({
@@ -196,12 +292,12 @@ const extendedPrisma = prismaWithReplicas.$extends({
               module: `${model.toLowerCase()}s`,
               entityId,
               entityType: model,
-              oldValues: oldRecord ? JSON.parse(JSON.stringify(oldRecord)) : null,
-              newValues: newRecord
-                ? JSON.parse(JSON.stringify(newRecord))
+              oldValues: (oldRecord ? sanitizeAuditValues(oldRecord) : null) as unknown as Prisma.InputJsonValue,
+              newValues: (newRecord
+                ? sanitizeAuditValues(newRecord)
                 : result
-                  ? JSON.parse(JSON.stringify(result))
-                  : null,
+                  ? sanitizeAuditValues(result)
+                  : null) as unknown as Prisma.InputJsonValue,
               ipAddress: store?.ipAddress || null,
               userAgent: store?.userAgent || null,
               metadata: { source: "prisma-extension" },
@@ -243,7 +339,7 @@ const extendedPrisma = prismaWithReplicas.$extends({
 
         try {
           const store = loggerContext.getStore();
-          const userId = store?.userId || null;
+          const userId = store?.userId ? String(store.userId) : null;
           const entityId = getEntityId(result);
 
           await basePrisma.auditLog.create({
@@ -253,7 +349,7 @@ const extendedPrisma = prismaWithReplicas.$extends({
               module: `${model.toLowerCase()}s`,
               entityId,
               entityType: model,
-              oldValues: oldRecord ? JSON.parse(JSON.stringify(oldRecord)) : null,
+              oldValues: (oldRecord ? sanitizeAuditValues(oldRecord) : null) as unknown as Prisma.InputJsonValue,
               ipAddress: store?.ipAddress || null,
               userAgent: store?.userAgent || null,
               metadata: { source: "prisma-extension" },
@@ -330,10 +426,16 @@ export async function runInTransaction<T>(work: () => Promise<T>): Promise<T> {
   });
 }
 
+export type { Customer, Order, OrderActivityLog, OrderFeeItem, OrderTrackingCheckpoint };
 export {
+  ActorType,
   ContentStatus,
   CustomerStatus,
+  CustomsStatus,
+  LabelStatus,
+  OrderStatus,
   PartnerStatus,
+  PaymentStatus,
   PostFactory,
   Prisma,
   PrismaClient,

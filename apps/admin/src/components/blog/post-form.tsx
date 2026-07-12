@@ -62,7 +62,7 @@ interface PostFormData {
   seoDescription: string;
   indexMode: string;
   seoImage: string;
-  authorId?: number;
+  authorId?: string;
   formatType?: string;
   externalSource?: string;
   sponsoredBy?: string;
@@ -165,10 +165,9 @@ export function PostForm({
     }
   }, []);
 
-  // Set default author to currently logged-in user on create mode
   useEffect(() => {
     if (mode === "create" && currentUser?.id && !formData.authorId) {
-      setFormData((prev) => ({ ...prev, authorId: Number(currentUser.id) }));
+      setFormData((prev) => ({ ...prev, authorId: currentUser.id }));
     }
   }, [currentUser, mode, formData.authorId]);
 
@@ -1110,7 +1109,7 @@ export function PostForm({
                   <Select
                     value={formData.authorId !== undefined ? String(formData.authorId) : ""}
                     onValueChange={(v) =>
-                      setFormData((prev) => ({ ...prev, authorId: v ? Number(v) : undefined }))
+                      setFormData((prev) => ({ ...prev, authorId: v || undefined }))
                     }
                   >
                     <SelectTrigger className="w-full">

@@ -77,7 +77,7 @@ export const bulkStatusCustomers = authedProcedure
   .use(auditLog({ module: "bulk", action: "BULK_STATUS", entityType: "Customer" }))
   .input(
     z.object({
-      ids: z.array(z.number().int().positive()).min(1).max(100),
+      ids: z.array(z.string().min(1)).min(1).max(100),
       status: z.enum(["ACTIVE", "INACTIVE", "BANNED"]),
     }),
   )

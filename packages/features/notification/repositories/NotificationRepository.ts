@@ -2,7 +2,7 @@ import { prisma } from "@ecom/prisma";
 
 export class NotificationRepository {
   async create(data: {
-    userId: number;
+    userId: string;
     type: string;
     title: string;
     message: string;
@@ -25,14 +25,14 @@ export class NotificationRepository {
   }
 
   async findByUser(
-    userId: number,
+    userId: string,
     options?: { page?: number; perPage?: number; unreadOnly?: boolean },
   ) {
     const page = options?.page ?? 1;
     const perPage = options?.perPage ?? 20;
     const skip = (page - 1) * perPage;
 
-    const where: { userId: number; isRead?: boolean } = { userId };
+    const where: { userId: string; isRead?: boolean } = { userId };
     if (options?.unreadOnly) where.isRead = false;
 
     const [items, total] = await Promise.all([
@@ -57,27 +57,27 @@ export class NotificationRepository {
     return { items, total, page, perPage };
   }
 
-  async getUnreadCount(userId: number) {
+  async getUnreadCount(userId: string) {
     return prisma.notification.count({
       where: { userId, isRead: false },
     });
   }
 
-  async markRead(id: number, userId: number) {
+  async markRead(id: number, userId: string) {
     return prisma.notification.updateMany({
       where: { id, userId },
       data: { isRead: true },
     });
   }
 
-  async markAllRead(userId: number) {
+  async markAllRead(userId: string) {
     return prisma.notification.updateMany({
       where: { userId, isRead: false },
       data: { isRead: true },
     });
   }
 
-  async delete(id: number, userId: number) {
+  async delete(id: number, userId: string) {
     return prisma.notification.deleteMany({
       where: { id, userId },
     });

@@ -68,7 +68,7 @@ function getRefreshTokenTtl(): number {
 }
 
 export interface JwtPayload {
-  userId: number;
+  userId: string;
   email: string;
   type: "access" | "refresh";
 }
@@ -140,7 +140,7 @@ export function getExpirationDate(duration: string): Date {
 }
 
 export interface QueueDashboardJwtPayload {
-  userId: number;
+  userId: string;
   email: string;
   type: "queue-dashboard-sso" | "queue-dashboard-session";
   jti?: string;

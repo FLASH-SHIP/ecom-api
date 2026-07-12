@@ -75,7 +75,7 @@ export const calculate = publicProcedure
       country: z.string().min(2).max(10),
       weight: z.number().positive(),
       origin: z.string().min(2).max(10).optional().nullable(),
-      customerId: z.number().int().positive(),
+      customerId: z.string().min(1),
       calculationDate: z.coerce.date().optional(),
     }),
   )
@@ -317,6 +317,17 @@ export const remove = authedProcedure
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Không thể xóa bảng giá cước mặc định của hệ thống.",
+      });
+    }
+
+    const orderCount = await prisma.order.count({
+      where: { rateCardId: input.id },
+    });
+    if (orderCount > 0) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Không thể xóa bảng giá cước này vì đã có đơn hàng sử dụng. Bạn chỉ có thể chuyển trạng thái bảng cước sang ARCHIVED.",
       });
     }
 

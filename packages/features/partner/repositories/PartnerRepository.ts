@@ -1,5 +1,6 @@
 import { normalizePagination, paginate } from "@ecom/lib/pagination";
 import type { PartnerStatus, PrismaClient } from "@ecom/prisma";
+import { Prisma } from "@ecom/prisma";
 
 export interface CreatePartnerInput {
   code: string;
@@ -9,6 +10,7 @@ export interface CreatePartnerInput {
   contactPhone?: string | null;
   status?: PartnerStatus;
   description?: string | null;
+  apiConfig?: Prisma.InputJsonValue | null;
 }
 
 export interface UpdatePartnerInput {
@@ -19,6 +21,7 @@ export interface UpdatePartnerInput {
   contactPhone?: string | null;
   status?: PartnerStatus;
   description?: string | null;
+  apiConfig?: Prisma.InputJsonValue | null;
 }
 
 export class PartnerRepository {
@@ -40,6 +43,7 @@ export class PartnerRepository {
         contactPhone: true,
         status: true,
         description: true,
+        apiConfig: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -115,7 +119,10 @@ export class PartnerRepository {
 
   async create(data: CreatePartnerInput) {
     return this.prisma.partner.create({
-      data,
+      data: {
+        ...data,
+        apiConfig: data.apiConfig === null ? Prisma.DbNull : data.apiConfig,
+      },
       select: {
         id: true,
         code: true,
@@ -128,7 +135,10 @@ export class PartnerRepository {
   async update(id: number, data: UpdatePartnerInput) {
     return this.prisma.partner.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        apiConfig: data.apiConfig === null ? Prisma.DbNull : data.apiConfig,
+      },
       select: {
         id: true,
         code: true,
@@ -139,7 +149,6 @@ export class PartnerRepository {
   }
 
   async delete(id: number) {
-    // Soft delete: set deletedAt, and modify unique constraint fields if needed (e.g. append timestamp to code to prevent reuse collision if re-created)
     const partner = await this.prisma.partner.findFirst({
       where: { id, deletedAt: null },
       select: { code: true },

@@ -543,8 +543,7 @@ export class RateCardRepository {
     });
   }
 
-  // Custom Customer Group lookup helper
-  async findCustomerGroupIdByCustomerId(customerId: number) {
+  async findCustomerGroupIdByCustomerId(customerId: string) {
     const customer = await this.prisma.customer.findUnique({
       where: { id: customerId },
       select: { groupId: true },

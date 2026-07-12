@@ -10,7 +10,7 @@ import { z } from "zod";
  * - others: requires USERS_READ permission
  */
 export const getUserProfile = authedProcedure
-  .input(z.object({ userId: z.number().int().positive() }))
+  .input(z.object({ userId: z.string().min(1) }))
   .query(async ({ ctx, input }) => {
     const isSelf = ctx.user.id === input.userId;
     const canRead = ctx.user.permissions.includes(Permissions.USERS_READ);
