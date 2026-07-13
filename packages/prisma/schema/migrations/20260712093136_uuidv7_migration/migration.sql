@@ -156,7 +156,7 @@ ALTER TABLE "user_role_assignments" DROP CONSTRAINT "user_role_assignments_userI
 -- AlterTable
 ALTER TABLE "access_tokens" DROP CONSTRAINT "access_tokens_pkey",
 DROP COLUMN "id",
-ADD COLUMN     "id" SERIAL NOT NULL,
+ADD COLUMN     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
 DROP COLUMN "userId",
 ADD COLUMN     "userId" UUID NOT NULL,
 ADD CONSTRAINT "access_tokens_pkey" PRIMARY KEY ("id");
@@ -172,7 +172,7 @@ ADD CONSTRAINT "accounts_pkey" PRIMARY KEY ("id");
 -- AlterTable
 ALTER TABLE "api_keys" DROP CONSTRAINT "api_keys_pkey",
 DROP COLUMN "id",
-ADD COLUMN     "id" SERIAL NOT NULL,
+ADD COLUMN     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
 DROP COLUMN "userId",
 ADD COLUMN     "userId" UUID NOT NULL,
 ADD CONSTRAINT "api_keys_pkey" PRIMARY KEY ("id");
@@ -196,7 +196,7 @@ ADD COLUMN     "customerId" UUID NOT NULL;
 -- AlterTable
 ALTER TABLE "customer_sessions" DROP CONSTRAINT "customer_sessions_pkey",
 DROP COLUMN "id",
-ADD COLUMN     "id" SERIAL NOT NULL,
+ADD COLUMN     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
 DROP COLUMN "customerId",
 ADD COLUMN     "customerId" UUID NOT NULL,
 ADD CONSTRAINT "customer_sessions_pkey" PRIMARY KEY ("id");
@@ -314,7 +314,7 @@ ADD CONSTRAINT "roles_pkey" PRIMARY KEY ("id");
 -- AlterTable
 ALTER TABLE "sessions" DROP CONSTRAINT "sessions_pkey",
 DROP COLUMN "id",
-ADD COLUMN     "id" SERIAL NOT NULL,
+ADD COLUMN     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
 DROP COLUMN "userId",
 ADD COLUMN     "userId" UUID NOT NULL,
 ADD CONSTRAINT "sessions_pkey" PRIMARY KEY ("id");

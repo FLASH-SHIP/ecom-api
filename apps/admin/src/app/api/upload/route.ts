@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     let height: number | undefined;
 
     const folderId = folderIdStr ? Number.parseInt(folderIdStr, 10) : null;
-    const userId = session.user.id ? Number.parseInt(session.user.id, 10) : undefined;
+    const userId = session.user.id;
 
     const service = getMediaFileService();
     const result = await service.uploadFile({
