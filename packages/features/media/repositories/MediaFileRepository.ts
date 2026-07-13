@@ -113,7 +113,7 @@ export class MediaFileRepository {
     alt?: string;
     description?: string;
     folderId?: number | null;
-    uploadedBy?: number;
+    uploadedBy?: string;
   }) {
     return this.prisma.mediaFile.create({
       data: {

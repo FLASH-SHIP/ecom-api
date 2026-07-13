@@ -31,7 +31,7 @@ model MediaFile {
   description String?      @db.Text
   folderId    Int?
   folder      MediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  uploadedBy  Int?
+  uploadedBy  String?      @db.Uuid
   visibility  String       @default("public")
   accessMode  String?
   isFavorite  Boolean      @default(false)

@@ -219,7 +219,9 @@ const extendedPrisma = (prismaWithReplicas as any).$extends({
               module: `${model.toLowerCase()}s`,
               entityId,
               entityType: model,
-              newValues: (result ? sanitizeAuditValues(result) : null) as unknown as Prisma.InputJsonValue,
+              newValues: (result
+                ? sanitizeAuditValues(result)
+                : null) as unknown as Prisma.InputJsonValue,
               ipAddress: store?.ipAddress || null,
               userAgent: store?.userAgent || null,
               metadata: { source: "prisma-extension" },
@@ -292,7 +294,9 @@ const extendedPrisma = (prismaWithReplicas as any).$extends({
               module: `${model.toLowerCase()}s`,
               entityId,
               entityType: model,
-              oldValues: (oldRecord ? sanitizeAuditValues(oldRecord) : null) as unknown as Prisma.InputJsonValue,
+              oldValues: (oldRecord
+                ? sanitizeAuditValues(oldRecord)
+                : null) as unknown as Prisma.InputJsonValue,
               newValues: (newRecord
                 ? sanitizeAuditValues(newRecord)
                 : result
@@ -349,7 +353,9 @@ const extendedPrisma = (prismaWithReplicas as any).$extends({
               module: `${model.toLowerCase()}s`,
               entityId,
               entityType: model,
-              oldValues: (oldRecord ? sanitizeAuditValues(oldRecord) : null) as unknown as Prisma.InputJsonValue,
+              oldValues: (oldRecord
+                ? sanitizeAuditValues(oldRecord)
+                : null) as unknown as Prisma.InputJsonValue,
               ipAddress: store?.ipAddress || null,
               userAgent: store?.userAgent || null,
               metadata: { source: "prisma-extension" },
