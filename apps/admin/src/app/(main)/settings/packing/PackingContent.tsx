@@ -1,28 +1,34 @@
 "use client";
 
+import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
 import type { RowAction } from "@admin/components/data-table";
 import { DataTable } from "@admin/components/data-table";
 import { useToast } from "@admin/components/toast-provider";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
+import { useDebounce } from "@admin/lib/hooks/useDebounce";
 import { trpc } from "@admin/lib/trpc";
 import { formatDate } from "@admin/utils/dateFormat";
+import type { ContentStatus } from "@ecom/prisma";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@ecom/ui/components/sheet";
-import { PerfectScroll } from "@ecom/ui/components/perfect-scroll";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
+import { PerfectScroll } from "@ecom/ui/components/perfect-scroll";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@ecom/ui/components/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@ecom/ui/components/sheet";
 import { Textarea } from "@ecom/ui/components/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ecom/ui/components/select";
-import { MediaPickerDialog } from "@admin/components/base/MediaPickerDialog";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Plus, Trash2, Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
+import NextImage from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useMemo, useState } from "react";
-import NextImage from "next/image";
-import type { ContentStatus } from "@ecom/prisma";
-import { useDebounce } from "@admin/lib/hooks/useDebounce";
 
 type PackingRow = {
   id: number;
@@ -100,7 +106,10 @@ export default function PackingContent() {
       image: item.image,
       description: item.description,
       status: item.status,
-      createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date(item.createdAt).toISOString(),
+      createdAt:
+        typeof item.createdAt === "string"
+          ? item.createdAt
+          : new Date(item.createdAt).toISOString(),
     }));
   }, [data]);
 
@@ -114,19 +123,22 @@ export default function PackingContent() {
     setDialogOpen(true);
   };
 
-  const openEdit = useCallback(async (id: number) => {
-    setEditingId(id);
-    try {
-      const item = await utils.client.viewer.packing.get.query({ id });
-      setName(item.name);
-      setImage(item.image);
-      setDescription(item.description || "");
-      setStatus(item.status);
-      setDialogOpen(true);
-    } catch (err: any) {
-      toast(err.message || t("packing.toastLoadError"), "error");
-    }
-  }, [utils, toast, t]);
+  const openEdit = useCallback(
+    async (id: number) => {
+      setEditingId(id);
+      try {
+        const item = await utils.client.viewer.packing.get.query({ id });
+        setName(item.name);
+        setImage(item.image);
+        setDescription(item.description || "");
+        setStatus(item.status);
+        setDialogOpen(true);
+      } catch (err: any) {
+        toast(err.message || t("packing.toastLoadError"), "error");
+      }
+    },
+    [utils, toast, t],
+  );
 
   const handleDelete = useCallback(
     (id: number) => {
@@ -184,7 +196,9 @@ export default function PackingContent() {
         accessorKey: "id",
         header: "ID",
         size: 80,
-        cell: ({ row }) => <span className="text-sm font-mono text-muted-foreground">{row.original.id}</span>,
+        cell: ({ row }) => (
+          <span className="text-sm font-mono text-muted-foreground">{row.original.id}</span>
+        ),
       },
       {
         accessorKey: "image",
@@ -295,7 +309,11 @@ export default function PackingContent() {
         pageTitle={t("packing.title")}
         onRefresh={() => utils.viewer.packing.list.invalidate()}
         headerActions={
-          <Button size="sm" className="bg-primary hover:opacity-90 transition-opacity" onClick={openCreate}>
+          <Button
+            size="sm"
+            className="bg-primary hover:opacity-90 transition-opacity"
+            onClick={openCreate}
+          >
             <Plus className="mr-1.5 size-4" />
             {t("packing.addBtn")}
           </Button>
@@ -311,9 +329,7 @@ export default function PackingContent() {
       <Sheet open={dialogOpen} onOpenChange={setDialogOpen}>
         <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-[480px]">
           <SheetHeader className="border-b border-border px-6 py-4">
-            <SheetTitle>
-              {editingId ? t("packing.editTitle") : t("packing.createTitle")}
-            </SheetTitle>
+            <SheetTitle>{editingId ? t("packing.editTitle") : t("packing.createTitle")}</SheetTitle>
           </SheetHeader>
 
           <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
@@ -335,7 +351,9 @@ export default function PackingContent() {
 
                 {/* Hình ảnh */}
                 <div className="grid gap-2">
-                  <Label className="text-sm font-semibold text-sys-primary">{t("packing.lblImage")}</Label>
+                  <Label className="text-sm font-semibold text-sys-primary">
+                    {t("packing.lblImage")}
+                  </Label>
                   <div className="flex items-center gap-3">
                     <div className="relative flex size-16 items-center justify-center overflow-hidden rounded-md border border-sys-border bg-muted">
                       {image ? (
@@ -373,18 +391,19 @@ export default function PackingContent() {
                           </Button>
                         )}
                       </div>
-                      <span className="text-[11px] text-muted-foreground">{t("packing.imageHint")}</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {t("packing.imageHint")}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Trạng thái */}
                 <div className="grid gap-2">
-                  <Label htmlFor="status" className="text-sm font-semibold text-sys-primary">{t("packing.lblStatus")}</Label>
-                  <Select
-                    value={status}
-                    onValueChange={(val) => setStatus(val as ContentStatus)}
-                  >
+                  <Label htmlFor="status" className="text-sm font-semibold text-sys-primary">
+                    {t("packing.lblStatus")}
+                  </Label>
+                  <Select value={status} onValueChange={(val) => setStatus(val as ContentStatus)}>
                     <SelectTrigger id="status">
                       <SelectValue placeholder="Chọn trạng thái" />
                     </SelectTrigger>
@@ -397,7 +416,9 @@ export default function PackingContent() {
 
                 {/* Mô tả */}
                 <div className="grid gap-2">
-                  <Label htmlFor="description" className="text-sm font-semibold text-sys-primary">{t("packing.lblDescription")}</Label>
+                  <Label htmlFor="description" className="text-sm font-semibold text-sys-primary">
+                    {t("packing.lblDescription")}
+                  </Label>
                   <Textarea
                     id="description"
                     placeholder={t("packing.placeholderDescription")}
@@ -410,7 +431,12 @@ export default function PackingContent() {
 
               {/* Footer buttons */}
               <div className="mt-auto flex gap-3 border-t border-border pt-6">
-                <Button type="button" variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setDialogOpen(false)}
+                >
                   {t("packing.cancel")}
                 </Button>
                 <Button

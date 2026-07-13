@@ -24,7 +24,7 @@ export default async function ProfilePage({ params }: Props) {
   // Server-side session check — (main)/layout.tsx also guards this, but
   // explicit check here gives a cleaner 401 boundary for the profile route.
   const session = await auth();
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
 
