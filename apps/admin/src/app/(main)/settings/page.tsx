@@ -14,6 +14,7 @@ import {
   Package,
   Phone,
   Settings,
+  Truck,
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -76,6 +77,12 @@ const SETTING_SECTIONS: { groupKey: string; items: SettingCard[] }[] = [
         descKey: "overview.divisionsDesc",
         href: "/settings/divisions",
         icon: MapPin,
+      },
+      {
+        titleKey: "overview.partnersTitle",
+        descKey: "overview.partnersDesc",
+        href: "/settings/partners",
+        icon: Truck,
       },
     ],
   },

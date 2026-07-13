@@ -18,7 +18,7 @@ export class PermissionRepository {
     });
   }
 
-  async findByIds(ids: string[]) {
+  async findByIds(ids: number[]) {
     return this.prisma.permission.findMany({
       where: { id: { in: ids } },
       select: { id: true, name: true },

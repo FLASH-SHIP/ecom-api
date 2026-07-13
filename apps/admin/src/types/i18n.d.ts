@@ -1,5 +1,5 @@
-import type enAdminMenus from "@ecom/i18n/locales/en/admin-menus.json";
 import type enAuditLogs from "@ecom/i18n/locales/en/audit-logs.json";
+import type enAuth from "@ecom/i18n/locales/en/auth.json";
 import type enCache from "@ecom/i18n/locales/en/cache.json";
 import type enCategories from "@ecom/i18n/locales/en/categories.json";
 import type enComments from "@ecom/i18n/locales/en/comments.json";
@@ -10,7 +10,9 @@ import type enCustomers from "@ecom/i18n/locales/en/customers.json";
 import type enDataTable from "@ecom/i18n/locales/en/data-table.json";
 import type enLanguages from "@ecom/i18n/locales/en/languages.json";
 import type enMedia from "@ecom/i18n/locales/en/media.json";
+import type enNav from "@ecom/i18n/locales/en/nav.json";
 import type enNotifications from "@ecom/i18n/locales/en/notifications.json";
+import type enOrders from "@ecom/i18n/locales/en/orders.json";
 import type enPages from "@ecom/i18n/locales/en/pages.json";
 import type enPosts from "@ecom/i18n/locales/en/posts.json";
 import type enRequestLogs from "@ecom/i18n/locales/en/request-logs.json";
@@ -36,7 +38,6 @@ type Messages = typeof enCommon & {
   settings: typeof enSettings;
   languages: typeof enLanguages;
   customFields: typeof enCustomFields;
-  adminMenus: typeof enAdminMenus;
   cache: typeof enCache;
   systemInfo: typeof enSystemInfo;
   auditLogs: typeof enAuditLogs;
@@ -49,6 +50,9 @@ type Messages = typeof enCommon & {
   tools: typeof enTools;
   seo: typeof enSeo;
   dataTable: typeof enDataTable;
+  orders: typeof enOrders;
+  auth: typeof enAuth;
+  nav: typeof enNav;
 };
 
 declare global {

@@ -1,0 +1,185 @@
+import { getOrderRepository, getOrderService } from "@ecom/features/di/containers/OrderService";
+import { RedisCache } from "@ecom/lib/redis";
+import type { Customer, Order, OrderActivityLog, OrderTrackingCheckpoint } from "@ecom/prisma";
+import { OrderStatus, type Prisma, ShippingMethod } from "@ecom/prisma";
+import { authedProcedure } from "@ecom/trpc/server/trpc";
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
+const shippingMethodSchema = z.nativeEnum(ShippingMethod);
+const orderStatusSchema = z.nativeEnum(OrderStatus);
+
+export interface CachedOrder
+  extends Omit<
+    Order,
+    | "declaredWeight"
+    | "baseShippingFee"
+    | "surchargeFee"
+    | "totalFee"
+    | "actualWeight"
+    | "volumeWeight"
+    | "chargeableWeight"
+  > {
+  declaredWeight: Prisma.Decimal | number | string;
+  baseShippingFee: Prisma.Decimal | number | string;
+  surchargeFee: Prisma.Decimal | number | string;
+  totalFee: Prisma.Decimal | number | string;
+  actualWeight: Prisma.Decimal | number | string | null;
+  volumeWeight: Prisma.Decimal | number | string | null;
+  chargeableWeight: Prisma.Decimal | number | string | null;
+  activityLogs: Omit<OrderActivityLog, "orderId">[];
+  trackingCheckpoints: Omit<OrderTrackingCheckpoint, "orderId">[];
+  customer: Pick<Customer, "name" | "email" | "username" | "phone">;
+}
+
+const orderCache = new RedisCache<CachedOrder>("order-details", 300); // 5-minute cache TTL
+
+function restoreLogDates(logs?: Omit<OrderActivityLog, "orderId">[]) {
+  if (!logs) return;
+  for (const log of logs) {
+    if (log.createdAt) log.createdAt = new Date(log.createdAt);
+  }
+}
+
+function restoreCheckpointDates(cps?: Omit<OrderTrackingCheckpoint, "orderId">[]) {
+  if (!cps) return;
+  for (const cp of cps) {
+    if (cp.checkpointDate) cp.checkpointDate = new Date(cp.checkpointDate);
+    if (cp.createdAt) cp.createdAt = new Date(cp.createdAt);
+  }
+}
+
+function restoreOrderDates(order?: CachedOrder): CachedOrder | undefined {
+  if (!order) return order;
+  if (order.createdAt) order.createdAt = new Date(order.createdAt);
+  if (order.updatedAt) order.updatedAt = new Date(order.updatedAt);
+  restoreLogDates(order.activityLogs);
+  restoreCheckpointDates(order.trackingCheckpoints);
+  return order;
+}
+
+// 1. Calculate freight
+export const calculateFreight = authedProcedure
+  .input(
+    z.object({
+      shippingMethod: shippingMethodSchema,
+      country: z.string().min(2).max(10),
+      declaredWeight: z.number().positive(),
+      dimensionLength: z.number().positive().optional().nullable(),
+      dimensionWidth: z.number().positive().optional().nullable(),
+      dimensionHeight: z.number().positive().optional().nullable(),
+      origin: z.string().optional().nullable(),
+    }),
+  )
+  .query(async ({ input, ctx }) => {
+    const service = getOrderService();
+    return await service.calculateOrderFreight({
+      ...input,
+      customerId: ctx.user.id,
+    });
+  });
+
+// 2. Create order
+export const create = authedProcedure
+  .input(
+    z.object({
+      shippingMethod: shippingMethodSchema,
+      shippingOrigin: z.string().default("HAN"),
+      sellerOrderId: z.string().optional().nullable(),
+      importId: z.string().optional().nullable(),
+
+      senderName: z.string().optional().nullable(),
+      senderAddress: z.string().optional().nullable(),
+      senderPhone: z.string().optional().nullable(),
+      senderEmail: z.string().optional().nullable(),
+      senderCountry: z.string().optional().nullable(),
+      senderState: z.string().optional().nullable(),
+      senderCity: z.string().optional().nullable(),
+      senderZipCode: z.string().optional().nullable(),
+
+      receiverName: z.string().min(1),
+      receiverPhone: z.string().optional().nullable(),
+      receiverEmail: z.string().optional().nullable(),
+      receiverCity: z.string().min(1),
+      receiverState: z.string().min(1),
+      receiverAddress1: z.string().min(1),
+      receiverAddress2: z.string().optional().nullable(),
+      receiverCountry: z.string().min(2).max(10),
+      receiverZipCode: z.string().min(1),
+
+      detailDescription: z.string().min(1),
+      declaredWeight: z.number().positive(),
+      dimensionLength: z.number().positive().optional().nullable(),
+      dimensionWidth: z.number().positive().optional().nullable(),
+      dimensionHeight: z.number().positive().optional().nullable(),
+      declaredValue: z.number().positive(),
+      hsCode: z.string().optional().nullable(),
+      packagingCode: z.string().optional().nullable(),
+      isGetLabel: z.number().int().optional(),
+    }),
+  )
+  .mutation(async ({ input, ctx }) => {
+    const service = getOrderService();
+    return await service.createOrder({
+      ...input,
+      customerId: ctx.user.id,
+    });
+  });
+
+// 3. List paginated customer orders
+export const list = authedProcedure
+  .input(
+    z
+      .object({
+        search: z.string().optional(),
+        status: orderStatusSchema.optional(),
+        page: z.number().int().positive().default(1),
+        perPage: z.number().int().positive().max(100).default(20),
+        sortBy: z.enum(["id", "createdAt", "orderCode", "status"]).default("createdAt"),
+        sortOrder: z.enum(["asc", "desc"]).default("desc"),
+      })
+      .optional(),
+  )
+  .query(async ({ input, ctx }) => {
+    const repo = getOrderRepository();
+    return await repo.findMany({
+      ...(input ?? {}),
+      customerId: ctx.user.id,
+    });
+  });
+
+// 4. Get secure single customer order details
+export const get = authedProcedure
+  .input(z.object({ id: z.string().min(1) }))
+  .query(async ({ input, ctx }) => {
+    // Try cache first
+    const cached = await orderCache.get(input.id);
+    if (cached && cached.customerId === ctx.user.id) {
+      return restoreOrderDates(cached);
+    }
+
+    const repo = getOrderRepository();
+    const order = await repo.findById(input.id);
+    if (!order || order.customerId !== ctx.user.id) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Đơn hàng không tồn tại",
+      });
+    }
+
+    const [activityLogs, trackingCheckpoints] = await Promise.all([
+      repo.findActivityLogs(order.id),
+      repo.findTrackingCheckpoints(order.id),
+    ]);
+
+    const result = {
+      ...order,
+      activityLogs,
+      trackingCheckpoints,
+    };
+
+    // Cache the result
+    await orderCache.set(input.id, result);
+
+    return result;
+  });

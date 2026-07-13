@@ -192,6 +192,9 @@ export async function importContent(data: ExportData): Promise<{
   }
 
   // 3. Import pages
+  const systemUser = await prisma.user.findFirst({ select: { id: true } });
+  const systemUserId = systemUser?.id ?? "0190a618-971c-7000-8000-000000000001";
+
   for (const page of data.pages) {
     const existing = await prisma.page.findUnique({
       where: { slug: page.slug },
@@ -207,7 +210,7 @@ export async function importContent(data: ExportData): Promise<{
           status: page.status as "DRAFT" | "PUBLISHED",
           template: page.template,
           order: page.order,
-          author: { connect: { id: 1 } },
+          author: { connect: { id: systemUserId } },
         },
       });
       pageCount++;
@@ -231,7 +234,7 @@ export async function importContent(data: ExportData): Promise<{
           featuredImage: post.featuredImage,
           isFeatured: post.isFeatured,
           publishedAt: post.publishedAt,
-          author: { connect: { id: 1 } },
+          author: { connect: { id: systemUserId } },
         },
       });
       postCount++;

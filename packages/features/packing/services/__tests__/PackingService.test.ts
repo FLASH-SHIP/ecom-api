@@ -36,7 +36,7 @@ describe("PackingService", () => {
       repo.findById.mockResolvedValue(null);
 
       await expect(service.getPackingType(99)).rejects.toThrowError(
-        new ErrorWithCode(ErrorCode.NotFound, "Packing type not found", 404)
+        new ErrorWithCode(ErrorCode.NotFound, "Packing type not found", 404),
       );
     });
   });
@@ -88,7 +88,7 @@ describe("PackingService", () => {
       const service = new PackingService({ packingRepo: repo });
 
       await expect(service.createPackingType({ name: "  " })).rejects.toThrowError(
-        new ErrorWithCode(ErrorCode.ValidationError, "Name is required", 422)
+        new ErrorWithCode(ErrorCode.ValidationError, "Name is required", 422),
       );
     });
 
@@ -97,10 +97,12 @@ describe("PackingService", () => {
       const service = new PackingService({ packingRepo: repo });
       repo.findByName.mockResolvedValue({ id: 1, name: "Cardboard box" });
 
-      await expect(
-        service.createPackingType({ name: "Cardboard box" })
-      ).rejects.toThrowError(
-        new ErrorWithCode(ErrorCode.Conflict, 'Packing type with name "Cardboard box" already exists', 409)
+      await expect(service.createPackingType({ name: "Cardboard box" })).rejects.toThrowError(
+        new ErrorWithCode(
+          ErrorCode.Conflict,
+          'Packing type with name "Cardboard box" already exists',
+          409,
+        ),
       );
     });
   });
@@ -130,10 +132,12 @@ describe("PackingService", () => {
       repo.findById.mockResolvedValue(existing);
       repo.findByName.mockResolvedValue(otherExisting);
 
-      await expect(
-        service.updatePackingType(1, { name: "Other Box" })
-      ).rejects.toThrowError(
-        new ErrorWithCode(ErrorCode.Conflict, 'Packing type with name "Other Box" already exists', 409)
+      await expect(service.updatePackingType(1, { name: "Other Box" })).rejects.toThrowError(
+        new ErrorWithCode(
+          ErrorCode.Conflict,
+          'Packing type with name "Other Box" already exists',
+          409,
+        ),
       );
     });
   });

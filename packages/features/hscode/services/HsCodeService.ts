@@ -20,7 +20,18 @@ function parseDutyRate(rateStr: string | null | undefined): number {
 const SECTION_301_COUNTRIES = ["CN", "CHINA"];
 
 // Countries subject to Section 232 or other additional trade tariffs
-const ADDITIONAL_TARIFF_COUNTRIES = ["CN", "CHINA", "RU", "RUSSIA", "BY", "BELARUS", "IR", "IRAN", "KP", "NORTH KOREA"];
+const ADDITIONAL_TARIFF_COUNTRIES = [
+  "CN",
+  "CHINA",
+  "RU",
+  "RUSSIA",
+  "BY",
+  "BELARUS",
+  "IR",
+  "IRAN",
+  "KP",
+  "NORTH KOREA",
+];
 
 export class HsCodeService {
   private deps: IHsCodeServiceDeps;
@@ -72,7 +83,7 @@ export class HsCodeService {
     }
 
     // Only return notesHtml for Level 1 Parent Chapter (length === 2)
-    const notesHtml = isChapter ? (chapterData?.notes || null) : null;
+    const notesHtml = isChapter ? chapterData?.notes || null : null;
 
     // 2. Resolve Heading names from database
     const articleDescription = await this.deps.hsCodeRepo.getHeadingDescription(headingCode);
@@ -97,7 +108,7 @@ export class HsCodeService {
             description: desc,
             children: headingChildren,
           };
-        })
+        }),
       );
     } else if (cleanCode.length === 4) {
       children = await this.getHeadingTree(cleanCode);

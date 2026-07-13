@@ -65,7 +65,6 @@
     "customers": "Customers",
     "customer-groups": "Customer Groups",
     "custom-fields": "Custom Fields",
-    "admin-menus": "Admin Menus",
     "settings": "General Settings",
     "rates": "Shipping Rates",
     "audit-logs": "Audit Logs",
@@ -113,12 +112,6 @@
       "create": "Create Custom Field",
       "update": "Update Custom Field",
       "delete": "Delete Custom Field"
-    },
-    "admin-menus": {
-      "read": "View Admin Menus",
-      "create": "Create New Menu",
-      "update": "Update Menu Info",
-      "delete": "Delete Menu"
     },
     "comments": {
       "read": "View Comments List",

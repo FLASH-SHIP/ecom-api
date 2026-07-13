@@ -1,7 +1,7 @@
 import type { AuthUser } from "@ecom/types";
 
 export interface ResourceWithAuthor {
-  authorId: number;
+  authorId: string;
   [key: string]: unknown;
 }
 

@@ -4,7 +4,7 @@ export class CustomerActivityLogRepository {
   constructor(private prisma: PrismaClient) {}
 
   async create(data: {
-    customerId: number;
+    customerId: string;
     action: string;
     ipAddress?: string;
     userAgent?: string;
@@ -26,7 +26,7 @@ export class CustomerActivityLogRepository {
     });
   }
 
-  async findByCustomer(customerId: number, options?: { page?: number; perPage?: number }) {
+  async findByCustomer(customerId: string, options?: { page?: number; perPage?: number }) {
     const page = options?.page ?? 1;
     const perPage = options?.perPage ?? 20;
     const skip = (page - 1) * perPage;
@@ -52,7 +52,7 @@ export class CustomerActivityLogRepository {
     return { items, total, page, perPage };
   }
 
-  async getStats(customerId: number) {
+  async getStats(customerId: string) {
     const total = await this.prisma.customerActivityLog.count({ where: { customerId } });
     const lastActivity = await this.prisma.customerActivityLog.findFirst({
       where: { customerId },

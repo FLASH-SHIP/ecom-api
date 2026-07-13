@@ -6,7 +6,7 @@ type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LoggerStore {
   traceId: string;
-  userId?: number;
+  userId?: string;
   ipAddress?: string;
   userAgent?: string;
 }

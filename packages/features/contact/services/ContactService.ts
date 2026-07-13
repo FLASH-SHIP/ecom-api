@@ -59,7 +59,7 @@ export class ContactService {
     return this.deps.contactRepo.updateStatus(id, status);
   }
 
-  async assignTo(id: number, assigneeId: number) {
+  async assignTo(id: number, assigneeId: string) {
     const submission = await this.deps.contactRepo.findById(id);
     if (!submission) throw ErrorWithCode.Factory.NotFound("Contact submission not found");
     return this.deps.contactRepo.assignTo(id, assigneeId);

@@ -2,7 +2,15 @@ import type { SVGProps } from "react";
 
 export function MenuIcon({ className = "", ...props }: SVGProps<SVGSVGElement>) {
   return (
-    <svg className={className} width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <svg
+      className={className}
+      width="20"
+      height="16"
+      viewBox="0 0 20 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
       <path
         fillRule="evenodd"
         clipRule="evenodd"

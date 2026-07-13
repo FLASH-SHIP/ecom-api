@@ -1,11 +1,11 @@
 import { router } from "@ecom/trpc/server/trpc";
 import { customerAuthRouter } from "./customer/auth/_router";
+import { customerOrdersRouter } from "./customer/orders/_router";
 import { blogRouter } from "./public/blog/_router";
 import { healthRouter } from "./public/health/_router";
 import { publicHsCodeRouter } from "./public/hscode/_router";
 import { publicLanguagesRouter } from "./public/languages/_router";
 import { publicPagesRouter } from "./public/pages/_router";
-import { adminMenusRouter } from "./viewer/admin-menus/_router";
 import { auditLogsRouter } from "./viewer/audit-logs/_router";
 import { authRouter } from "./viewer/auth/_router";
 import { categoriesRouter } from "./viewer/categories/_router";
@@ -15,14 +15,16 @@ import { contentLocksRouter } from "./viewer/content-locks/_router";
 import { customFieldsRouter } from "./viewer/custom-fields/_router";
 import { customerGroupsRouter } from "./viewer/customer-groups/_router";
 import { customersRouter } from "./viewer/customers/_router";
+import { divisionsRouter } from "./viewer/divisions/_router";
 import { languagesRouter } from "./viewer/languages/_router";
 import { mediaRouter } from "./viewer/media/_router";
 import { notificationsRouter } from "./viewer/notifications/_router";
+import { adminOrdersRouter } from "./viewer/orders/_router";
+import { packingRouter } from "./viewer/packing/_router";
 import { pagesRouter } from "./viewer/pages/_router";
+import { partnersRouter } from "./viewer/partners/_router";
 import { postsRouter } from "./viewer/posts/_router";
 import { rateCardsRouter } from "./viewer/rate-cards/_router";
-import { packingRouter } from "./viewer/packing/_router";
-import { divisionsRouter } from "./viewer/divisions/_router";
 import { redirectsRouter } from "./viewer/redirects/_router";
 import { revisionsRouter } from "./viewer/revisions/_router";
 import { rolesRouter } from "./viewer/roles/_router";
@@ -56,8 +58,8 @@ export const appRouter = router({
     roles: rolesRouter,
     users: usersRouter,
     customFields: customFieldsRouter,
-    adminMenus: adminMenusRouter,
     settings: settingsRouter,
+
     languages: languagesRouter,
     auditLogs: auditLogsRouter,
     system: systemRouter,
@@ -76,8 +78,10 @@ export const appRouter = router({
     templates: templatesRouter,
     contentLocks: contentLocksRouter,
     rateCards: rateCardsRouter,
+    partners: partnersRouter,
     packing: packingRouter,
     divisions: divisionsRouter,
+    orders: adminOrdersRouter,
   }),
 
   // Public (publicProcedure — no auth required)
@@ -98,6 +102,7 @@ export const appRouter = router({
 
   customer: router({
     auth: customerAuthRouter,
+    orders: customerOrdersRouter,
   }),
 });
 

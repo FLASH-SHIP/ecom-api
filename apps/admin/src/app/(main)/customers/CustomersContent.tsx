@@ -22,7 +22,7 @@ import { CustomerDetailDrawer } from "./components/CustomerDetailDrawer";
 import { CustomerFormDrawer } from "./components/CustomerFormDrawer";
 
 type CustomerRow = {
-  id: number;
+  id: string;
   email: string;
   username: string;
   name: string | null;
@@ -71,8 +71,8 @@ export default function CustomersContent() {
   const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [editId, setEditId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const isBulkRef = useRef(false);
 
   const { queryInput, onServerChange, tableKey, initialState } = useServerTable({

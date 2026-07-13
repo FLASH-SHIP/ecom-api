@@ -8,24 +8,24 @@ const log = createLogger("EventBus");
  */
 export interface EventMap {
   // Post lifecycle
-  "post.created": { postId: number; authorId: number; title: string };
-  "post.updated": { postId: number; authorId: number; changes: string[] };
-  "post.published": { postId: number; slug: string; authorId: number };
-  "post.unpublished": { postId: number; authorId: number };
-  "post.deleted": { postId: number; authorId: number; permanent: boolean };
-  "post.restored": { postId: number; authorId: number };
+  "post.created": { postId: number; authorId: string; title: string };
+  "post.updated": { postId: number; authorId: string; changes: string[] };
+  "post.published": { postId: number; slug: string; authorId: string };
+  "post.unpublished": { postId: number; authorId: string };
+  "post.deleted": { postId: number; authorId: string; permanent: boolean };
+  "post.restored": { postId: number; authorId: string };
   "post.statusChanged": {
     postId: number;
     from: string;
     to: string;
-    authorId: number;
+    authorId: string;
   };
 
   // Page lifecycle
-  "page.created": { pageId: number; authorId: number; title: string };
-  "page.updated": { pageId: number; authorId: number };
+  "page.created": { pageId: number; authorId: string; title: string };
+  "page.updated": { pageId: number; authorId: string };
   "page.published": { pageId: number; slug: string };
-  "page.deleted": { pageId: number; authorId: number };
+  "page.deleted": { pageId: number; authorId: string };
 
   // Comment lifecycle
   "comment.created": {
@@ -47,13 +47,13 @@ export interface EventMap {
   "media.deleted": { fileId: number; fileName: string };
 
   // User/Auth
-  "user.loggedIn": { userId: number; ip: string };
-  "user.registered": { userId: number; email: string };
-  "user.passwordChanged": { userId: number };
+  "user.loggedIn": { userId: string; ip: string };
+  "user.registered": { userId: string; email: string };
+  "user.passwordChanged": { userId: string };
 
   // Member
-  "member.registered": { memberId: number; email: string };
-  "member.activated": { memberId: number };
+  "member.registered": { memberId: string; email: string };
+  "member.activated": { memberId: string };
 
   // Contact
   "contact.submitted": { contactId: number; email: string; subject: string };

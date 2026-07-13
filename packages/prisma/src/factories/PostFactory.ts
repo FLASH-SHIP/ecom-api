@@ -21,7 +21,7 @@ export class PostFactory {
     return this;
   }
 
-  byAuthor(authorId: number): this {
+  byAuthor(authorId: string): this {
     this.overrides.authorId = authorId;
     return this;
   }
@@ -63,7 +63,7 @@ export class PostFactory {
       status: overrides.status ?? "DRAFT",
       content: overrides.content ?? "Lorem ipsum dolor sit amet.",
       excerpt: overrides.excerpt ?? "Excerpt description.",
-      authorId: overrides.authorId ?? 1, // Default fallback author ID
+      authorId: overrides.authorId ?? "0190a618-971c-7000-8000-000000000001", // Default fallback admin user ID
       ...overrides,
     };
   }

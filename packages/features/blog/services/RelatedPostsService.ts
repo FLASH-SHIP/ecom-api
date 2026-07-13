@@ -23,7 +23,7 @@ interface IRelatedPostsDeps {
     id: number;
     categoryIds: number[];
     tagIds: number[];
-    authorId: number;
+    authorId: string;
   } | null>;
   findCandidates: (options: {
     excludeId: number;

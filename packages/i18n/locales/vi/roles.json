@@ -65,7 +65,6 @@
     "customers": "Khách hàng",
     "customer-groups": "Nhóm khách hàng",
     "custom-fields": "Trường tùy chỉnh",
-    "admin-menus": "Menu hệ thống",
     "settings": "Cấu hình chung",
     "rates": "Bảng giá cước",
     "audit-logs": "Nhật ký hệ thống",
@@ -113,12 +112,6 @@
       "create": "Tạo trường tùy chỉnh",
       "update": "Cập nhật trường tùy chỉnh",
       "delete": "Xóa trường tùy chỉnh"
-    },
-    "admin-menus": {
-      "read": "Xem menu hệ thống",
-      "create": "Tạo menu mới",
-      "update": "Cập nhật menu",
-      "delete": "Xóa menu"
     },
     "comments": {
       "read": "Xem bình luận",

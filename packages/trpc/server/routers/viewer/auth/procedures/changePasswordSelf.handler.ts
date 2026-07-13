@@ -22,7 +22,7 @@ export const changePasswordSelf = authedProcedure
   .input(
     z
       .object({
-        userId: z.number().int().positive(),
+        userId: z.string().min(1),
         currentPassword: z.string().optional(),
         newPassword: z.string().min(8).max(100),
         confirmPassword: z.string(),

@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState } from "react";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface PermissionItem {
-  id: string;
+  id: number;
   name: string;
   displayName: string;
 }
@@ -124,7 +124,7 @@ const getOrCreateSubmodule = (mod: TreeModule, submoduleKey: string) => {
 };
 
 function buildPermissionTree(
-  dbPermissionMap: Map<string, { id: string; name: string; displayName: string | null }>,
+  dbPermissionMap: Map<string, { id: number; name: string; displayName: string | null }>,
 ) {
   const tree: { [sectionKey: string]: TreeSection } = {};
 
@@ -195,9 +195,9 @@ function matchSubmodule(
 }
 
 function addParentPermissions(
-  ids: string[],
-  dbPermissions: { id: string; name: string }[],
-): string[] {
+  ids: number[],
+  dbPermissions: { id: number; name: string }[],
+): number[] {
   const result = new Set(ids);
   for (const id of ids) {
     const perm = dbPermissions.find((p) => p.id === id);
@@ -214,9 +214,9 @@ function addParentPermissions(
 }
 
 function removeChildPermissions(
-  ids: string[],
-  dbPermissions: { id: string; name: string }[],
-): string[] {
+  ids: number[],
+  dbPermissions: { id: number; name: string }[],
+): number[] {
   let result = [...ids];
   let changed = true;
   while (changed) {
@@ -288,9 +288,9 @@ function filterModules(
 // ── Main Component ───────────────────────────────────────────────────────────
 
 interface PermissionTreeProps {
-  dbPermissions: { id: string; name: string; displayName: string | null }[];
-  selectedPermissionIds: string[];
-  onChange: (ids: string[]) => void;
+  dbPermissions: { id: number; name: string; displayName: string | null }[];
+  selectedPermissionIds: number[];
+  onChange: (ids: number[]) => void;
   isPending?: boolean;
   isLoading?: boolean;
 }
@@ -352,7 +352,7 @@ export function PermissionTree({
 
   // Check state calculation
   const getSelectionState = useCallback(
-    (targetIds: string[]) => {
+    (targetIds: number[]) => {
       if (targetIds.length === 0) return { checked: false, indeterminate: false };
       const checkedCount = targetIds.filter((id) => selectedPermissionIds.includes(id)).length;
       return {
@@ -365,7 +365,7 @@ export function PermissionTree({
 
   // Core checkbox toggle handler (respects parent-child dependencies)
   const handleTogglePermissions = useCallback(
-    (targetIds: string[], isChecking: boolean) => {
+    (targetIds: number[], isChecking: boolean) => {
       let newIds = [...selectedPermissionIds];
       if (isChecking) {
         newIds = addParentPermissions([...newIds, ...targetIds], dbPermissions);

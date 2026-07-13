@@ -16,7 +16,7 @@ export class RequestLogRepository {
   }
 
   async create(data: {
-    userId?: number;
+    userId?: string;
     method: string;
     url: string;
     statusCode?: number;

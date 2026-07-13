@@ -43,7 +43,7 @@ export const importData = authedProcedure
   )
   .mutation(async ({ input, ctx }) => {
     const service = getImportService();
-    const authorId = ctx.user?.id ?? 0;
+    const authorId = ctx.user?.id ?? "";
 
     switch (input.module) {
       case "posts":

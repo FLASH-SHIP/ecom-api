@@ -61,7 +61,7 @@ const defaultValues: FormValues = {
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface CustomerFormDrawerProps {
-  customerId?: number | null;
+  customerId?: string | null;
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
@@ -86,7 +86,7 @@ export function CustomerFormDrawer({
   const isEdit = customerId !== undefined && customerId !== null;
 
   const { data: customerData, isLoading: isCustomerLoading } = trpc.viewer.customers.get.useQuery(
-    { id: customerId ?? 0 },
+    { id: customerId ?? "" },
     { enabled: open && isEdit },
   );
 
@@ -229,7 +229,7 @@ export function CustomerFormDrawer({
   const updateMut = trpc.viewer.customers.update.useMutation({
     onSuccess: () => {
       utils.viewer.customers.list.invalidate();
-      utils.viewer.customers.get.invalidate({ id: customerId ?? 0 });
+      utils.viewer.customers.get.invalidate({ id: customerId ?? "" });
       toast(tCommon("successUpdated"), "success");
       onSaved();
     },
@@ -240,7 +240,7 @@ export function CustomerFormDrawer({
 
   const setPasswordMut = trpc.viewer.customers.setPassword.useMutation({
     onSuccess: () => {
-      utils.viewer.customers.get.invalidate({ id: customerId ?? 0 });
+      utils.viewer.customers.get.invalidate({ id: customerId ?? "" });
     },
     onError: (err) => {
       toast(err.message, "error");

@@ -36,10 +36,24 @@ export interface SortInput {
  * Authenticated user context passed through tRPC and NestJS.
  */
 export interface AuthUser {
-  id: number;
+  id: string;
   email: string;
   name: string | null;
   username: string | null;
   locale: string | null;
   permissions: string[];
 }
+
+export type PartnerStatus = "ACTIVE" | "INACTIVE";
+export const PartnerStatus = {
+  ACTIVE: "ACTIVE",
+  INACTIVE: "INACTIVE",
+} as const;
+
+export type ServiceType = "PICKUP" | "EXPORT" | "IMPORT" | "LASTMILE";
+export const ServiceType = {
+  PICKUP: "PICKUP",
+  EXPORT: "EXPORT",
+  IMPORT: "IMPORT",
+  LASTMILE: "LASTMILE",
+} as const;

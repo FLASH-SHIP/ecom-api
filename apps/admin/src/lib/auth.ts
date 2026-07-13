@@ -25,7 +25,7 @@ const log = createLogger("NextAuthAdmin");
 
 const permissionsCache = new RedisCache<string[]>("user-permissions", 3600); // 1 hour TTL
 
-export async function resolveUserPermissions(userId: number): Promise<string[]> {
+export async function resolveUserPermissions(userId: string): Promise<string[]> {
   const cacheKey = `user:${userId}`;
   const cachedPermissions = await permissionsCache.get(cacheKey);
 
@@ -97,7 +97,7 @@ const adminAdapter = {
     const created = await prisma.session.create({
       data: {
         sessionToken: session.sessionToken,
-        userId: Number(session.userId),
+        userId: session.userId,
         expires: session.expires,
         ipAddress,
         userAgent,
@@ -106,7 +106,7 @@ const adminAdapter = {
     return {
       id: created.id,
       sessionToken: created.sessionToken,
-      userId: String(created.userId),
+      userId: created.userId,
       expires: created.expires,
     };
   },
@@ -156,11 +156,11 @@ const adminAdapter = {
       session: {
         id: dbSession.id,
         sessionToken: dbSession.sessionToken,
-        userId: String(dbSession.userId),
+        userId: dbSession.userId,
         expires: dbSession.expires,
       },
       user: {
-        id: String(dbSession.user.id),
+        id: dbSession.user.id,
         email: dbSession.user.email,
         name: dbSession.user.name,
         emailVerified: dbSession.user.emailVerified,
@@ -184,7 +184,7 @@ const adminAdapter = {
     return {
       id: updated.id,
       sessionToken: updated.sessionToken,
-      userId: String(updated.userId),
+      userId: updated.userId,
       expires: updated.expires,
     };
   },
@@ -250,7 +250,7 @@ const nextAuth: NextAuthResult = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user, account }) {
-      if (account?.provider === "credentials" && user) {
+      if (account?.provider === "credentials" && user && user.id) {
         const sessionToken = crypto.randomUUID();
         const now = new Date();
         const expires = new Date(
@@ -274,7 +274,7 @@ const nextAuth: NextAuthResult = NextAuth({
         await prisma.session.create({
           data: {
             sessionToken,
-            userId: Number(user.id),
+            userId: user.id,
             expires,
             loginAt: now,
             lastActiveAt: now,
@@ -286,7 +286,7 @@ const nextAuth: NextAuthResult = NextAuth({
         // Enforce max sessions per user — evict oldest sessions (excluding the current session)
         const maxSessions = env.ADMIN_MAX_SESSIONS_PER_USER;
         const existingSessions = await prisma.session.findMany({
-          where: { userId: Number(user.id) },
+          where: { userId: user.id },
           orderBy: { lastActiveAt: "asc" },
           select: { id: true, sessionToken: true },
         });
@@ -306,12 +306,12 @@ const nextAuth: NextAuthResult = NextAuth({
         }
 
         token.sessionId = sessionToken;
-        token.id = Number(user.id);
+        token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      const id = token?.id ? String(token.id) : null;
+      const id = (token?.id as string) || null;
       if (!id) return session;
 
       session.user.id = id;
@@ -444,7 +444,7 @@ const nextAuth: NextAuthResult = NextAuth({
         return {};
       }
 
-      const userPermissions = await resolveUserPermissions(Number(dbSession.user.id));
+      const userPermissions = await resolveUserPermissions(dbSession.user.id);
 
       const payload = {
         sessionId: dbSession.sessionToken,

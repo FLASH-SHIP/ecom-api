@@ -1,0 +1,97 @@
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+
+interface OrderStoreState {
+  step: number;
+  pricing: {
+    baseShippingRate: number;
+    surchargeFee: number;
+    totalAmount: number;
+    chargeableWeight: number;
+    volumeWeight: number;
+    appliedRateCardId?: string;
+  } | null;
+  values: {
+    shippingMethod: "EXPRESS" | "EPACKET";
+    shippingOrigin: string;
+    detailDescription: string;
+    declaredValue: string;
+    sellerOrderId: string;
+    hsCode: string;
+    senderName: string;
+    senderPhone: string;
+    senderEmail: string;
+    senderAddress: string;
+    senderCity: string;
+    senderZipCode: string;
+    senderCountry: string;
+    receiverName: string;
+    receiverPhone: string;
+    receiverEmail: string;
+    receiverAddress1: string;
+    receiverAddress2: string;
+    receiverCity: string;
+    receiverState: string;
+    receiverZipCode: string;
+    receiverCountry: string;
+    packagingCode: string;
+    length: string;
+    width: string;
+    height: string;
+    weight: string;
+    packageName: string;
+  };
+  setStep: (step: number) => void;
+  setPricing: (pricing: OrderStoreState["pricing"]) => void;
+  setValues: (values: Partial<OrderStoreState["values"]>) => void;
+  clearStore: () => void;
+}
+
+const initialValues: OrderStoreState["values"] = {
+  shippingMethod: "EPACKET",
+  shippingOrigin: "HAN",
+  detailDescription: "",
+  declaredValue: "",
+  sellerOrderId: "",
+  hsCode: "",
+  senderName: "",
+  senderPhone: "",
+  senderEmail: "",
+  senderAddress: "",
+  senderCity: "",
+  senderZipCode: "",
+  senderCountry: "VN",
+  receiverName: "",
+  receiverPhone: "",
+  receiverEmail: "",
+  receiverAddress1: "",
+  receiverAddress2: "",
+  receiverCity: "",
+  receiverState: "",
+  receiverZipCode: "",
+  receiverCountry: "US",
+  packagingCode: "cardboard_box",
+  length: "",
+  width: "",
+  height: "",
+  weight: "",
+  packageName: "",
+};
+
+export const useOrderStore = create<OrderStoreState>()(
+  persist(
+    (set) => ({
+      step: 1,
+      pricing: null,
+      values: initialValues,
+      setStep: (step) => set({ step }),
+      setPricing: (pricing) => set({ pricing }),
+      setValues: (newValues) => set((state) => ({ values: { ...state.values, ...newValues } })),
+      clearStore: () => set({ step: 1, pricing: null, values: initialValues }),
+    }),
+    {
+      name: "create_single_order_draft",
+      storage: createJSONStorage(() => sessionStorage),
+    },
+  ),
+);

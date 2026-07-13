@@ -9,7 +9,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
 const permissionsCache = new RedisCache<string[]>("user-permissions", 3600); // 1 hour TTL
 
-async function resolveUserPermissions(userId: number): Promise<string[]> {
+async function resolveUserPermissions(userId: string): Promise<string[]> {
   const cacheKey = `user:${userId}`;
   const cachedPermissions = await permissionsCache.get(cacheKey);
 
@@ -62,7 +62,7 @@ const handler = async (req: Request) => {
   let user: AuthUser | null = null;
 
   if (session?.user?.id) {
-    const userId = Number(session.user.id);
+    const userId = session.user.id;
     const dbUser = await prisma.user.findUnique({
       where: { id: userId },
       select: {

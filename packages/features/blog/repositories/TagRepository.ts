@@ -138,7 +138,7 @@ export class TagRepository {
     slug: string;
     description?: string;
     status?: ContentStatus;
-    authorId?: number;
+    authorId?: string;
     authorType?: string;
   }) {
     return this.prisma.tag.create({

@@ -38,14 +38,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type UserRole = {
   role: {
-    id: string;
+    id: number;
     name: string;
     displayName: string | null;
   };
 };
 
 type UserRow = {
-  id: number;
+  id: string;
   email: string;
   username: string | null;
   name: string | null;
@@ -467,14 +467,14 @@ export default function SystemUsersPage() {
 
 interface UserRolesPopoverCellProps {
   user: UserRow;
-  allRoles: Array<{ id?: string; name?: string; displayName?: string | null }> | undefined;
+  allRoles: Array<{ id?: number; name?: string; displayName?: string | null }> | undefined;
   canUpdate: boolean;
   t: (key: string) => string;
 }
 
 function UserRolesPopoverCell({ user, allRoles, canUpdate, t }: UserRolesPopoverCellProps) {
   const [open, setOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const utils = trpc.useUtils();
   const { toast } = useToast();
@@ -512,7 +512,7 @@ function UserRolesPopoverCell({ user, allRoles, canUpdate, t }: UserRolesPopover
     },
   });
 
-  const handleToggle = (roleId: string, checked: boolean) => {
+  const handleToggle = (roleId: number, checked: boolean) => {
     if (checked) {
       setSelectedIds((prev) => [...prev, roleId]);
     } else {

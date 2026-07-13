@@ -67,7 +67,7 @@ export class ContentTemplateRepository {
     content?: string;
     structure?: Record<string, unknown>;
     thumbnail?: string;
-    createdBy?: number;
+    createdBy?: string;
   }) {
     const { structure, ...rest } = data;
     return prisma.contentTemplate.create({

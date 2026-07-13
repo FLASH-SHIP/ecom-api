@@ -28,7 +28,7 @@ export class ContentTemplateService {
     content?: string;
     structure?: Record<string, unknown>;
     thumbnail?: string;
-    createdBy?: number;
+    createdBy?: string;
   }) {
     const existing = await this.deps.templateRepo.findBySlug(data.slug);
     if (existing) {

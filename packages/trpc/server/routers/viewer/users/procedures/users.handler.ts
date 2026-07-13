@@ -32,7 +32,7 @@ export const list = authedProcedure
 
 export const get = authedProcedure
   .use(requirePermission(Permissions.USERS_READ))
-  .input(z.object({ id: z.number().int().positive() }))
+  .input(z.object({ id: z.string().min(1) }))
   .query(async ({ input }) => {
     const userService = getUserManagementService();
     const result = await userService.getUser(input.id);
@@ -54,7 +54,7 @@ export const create = authedProcedure
       phone: z.string().max(20).optional().nullable(),
       password: z.string().min(8).max(100),
       locale: z.string().max(10).optional(),
-      roleIds: z.array(z.string()).optional(),
+      roleIds: z.array(z.coerce.number()).optional(),
     }),
   )
   .mutation(async ({ input }) => {
@@ -71,7 +71,7 @@ export const update = authedProcedure
   .use(auditLog({ module: "users", action: "UPDATE", entityType: "User" }))
   .input(
     z.object({
-      id: z.number().int().positive(),
+      id: z.string().min(1),
       name: z.string().max(100).optional(),
       username: z.string().max(50).optional(),
       phone: z.string().max(20).optional().nullable(),
@@ -111,7 +111,7 @@ export const changePassword = authedProcedure
   .use(auditLog({ module: "users", action: "CHANGE_PASSWORD", entityType: "User" }))
   .input(
     z.object({
-      userId: z.number().int().positive(),
+      userId: z.string().min(1),
       newPassword: z.string().min(8).max(100),
     }),
   )
@@ -136,8 +136,8 @@ export const syncRoles = authedProcedure
   .use(auditLog({ module: "users", action: "SYNC_ROLES", entityType: "User" }))
   .input(
     z.object({
-      userId: z.number().int().positive(),
-      roleIds: z.array(z.string()),
+      userId: z.string().min(1),
+      roleIds: z.array(z.coerce.number()),
     }),
   )
   .mutation(async ({ input }) => {
@@ -167,7 +167,7 @@ export const syncRoles = authedProcedure
 export const remove = authedProcedure
   .use(requirePermission(Permissions.USERS_DELETE))
   .use(auditLog({ module: "users", action: "DELETE", entityType: "User" }))
-  .input(z.object({ id: z.number().int().positive() }))
+  .input(z.object({ id: z.string().min(1) }))
   .mutation(async ({ ctx, input }) => {
     const sessions = await prisma.session.findMany({
       where: { userId: input.id },
@@ -192,7 +192,7 @@ export const toggleSuperAdmin = authedProcedure
   .use(auditLog({ module: "users", action: "TOGGLE_SUPER_ADMIN", entityType: "User" }))
   .input(
     z.object({
-      userId: z.number().int().positive(),
+      userId: z.string().min(1),
       isSuperAdmin: z.boolean(),
     }),
   )

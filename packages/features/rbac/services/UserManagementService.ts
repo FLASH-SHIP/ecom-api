@@ -25,7 +25,7 @@ export class UserManagementService {
     return this.deps.userRepo.findMany(params);
   }
 
-  async getUser(id: number) {
+  async getUser(id: string) {
     const user = await this.deps.userRepo.findById(id);
     if (!user) {
       throw ErrorWithCode.Factory.NotFound("User not found");
@@ -40,7 +40,7 @@ export class UserManagementService {
     phone?: string | null;
     password: string;
     locale?: string;
-    roleIds?: string[];
+    roleIds?: number[];
   }) {
     const existing = await this.deps.userRepo.findByEmail(data.email);
     if (existing) {
@@ -61,7 +61,7 @@ export class UserManagementService {
   }
 
   async updateUser(
-    id: number,
+    id: string,
     data: {
       name?: string;
       username?: string;
@@ -78,7 +78,7 @@ export class UserManagementService {
     return this.deps.userRepo.update(id, data);
   }
 
-  async changePassword(userId: number, newPassword: string) {
+  async changePassword(userId: string, newPassword: string) {
     const user = await this.deps.userRepo.findById(userId);
     if (!user) {
       throw ErrorWithCode.Factory.NotFound("User not found");
@@ -87,7 +87,7 @@ export class UserManagementService {
     await this.deps.userRepo.setPassword(userId, hash);
   }
 
-  async syncRoles(userId: number, roleIds: string[]) {
+  async syncRoles(userId: string, roleIds: number[]) {
     const user = await this.deps.userRepo.findById(userId);
     if (!user) {
       throw ErrorWithCode.Factory.NotFound("User not found");
@@ -97,7 +97,7 @@ export class UserManagementService {
     return this.deps.userRepo.findById(userId);
   }
 
-  async deleteUser(userId: number, currentUserId: number) {
+  async deleteUser(userId: string, currentUserId: string) {
     if (userId === currentUserId) {
       throw ErrorWithCode.Factory.Forbidden("Cannot delete your own account");
     }
@@ -112,7 +112,7 @@ export class UserManagementService {
     return result;
   }
 
-  async toggleSuperAdmin(userId: number, isSuperAdmin: boolean) {
+  async toggleSuperAdmin(userId: string, isSuperAdmin: boolean) {
     const user = await this.deps.userRepo.findById(userId);
     if (!user) {
       throw ErrorWithCode.Factory.NotFound("User not found");

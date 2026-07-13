@@ -48,7 +48,7 @@ const _customerAdapter = {
     const created = await prisma.customerSession.create({
       data: {
         sessionToken: session.sessionToken,
-        customerId: Number(session.userId),
+        customerId: session.userId,
         expires: session.expires,
         ipAddress,
         userAgent,
@@ -57,7 +57,7 @@ const _customerAdapter = {
     return {
       id: created.id,
       sessionToken: created.sessionToken,
-      userId: String(created.customerId),
+      userId: created.customerId,
       expires: created.expires,
     };
   },
@@ -295,6 +295,7 @@ const nextAuth: NextAuthResult = NextAuth({
 
           customer = await prisma.customer.create({
             data: {
+              id: crypto.randomUUID(),
               email,
               username,
               name: profile.name || baseUsername,
@@ -326,7 +327,7 @@ const nextAuth: NextAuthResult = NextAuth({
       return true;
     },
     async jwt({ token, user }) {
-      if (user) {
+      if (user?.id) {
         const sessionToken = crypto.randomUUID();
         const now = new Date();
         const sessionMaxAgeMs = env.CUSTOMER_SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
@@ -349,7 +350,7 @@ const nextAuth: NextAuthResult = NextAuth({
         await prisma.customerSession.create({
           data: {
             sessionToken,
-            customerId: Number(user.id),
+            customerId: user.id,
             expires,
             loginAt: now,
             lastActiveAt: now,
@@ -361,7 +362,7 @@ const nextAuth: NextAuthResult = NextAuth({
         // Enforce max sessions per user — evict oldest sessions (excluding the current session)
         const maxSessions = env.CUSTOMER_MAX_SESSIONS_PER_USER;
         const existingSessions = await prisma.customerSession.findMany({
-          where: { customerId: Number(user.id) },
+          where: { customerId: user.id },
           orderBy: { lastActiveAt: "asc" },
           select: { id: true, sessionToken: true },
         });
@@ -381,12 +382,12 @@ const nextAuth: NextAuthResult = NextAuth({
         }
 
         token.sessionId = sessionToken;
-        token.id = Number(user.id);
+        token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      const id = token?.id ? String(token.id) : null;
+      const id = (token?.id as string) || null;
       if (!id) return session;
 
       session.user.id = id;

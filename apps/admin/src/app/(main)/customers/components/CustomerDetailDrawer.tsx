@@ -20,7 +20,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 interface CustomerDetailDrawerProps {
-  customerId: number | null;
+  customerId: string | null;
   onClose: () => void;
   onDeleted: () => void;
 }
@@ -42,13 +42,13 @@ export function CustomerDetailDrawer({
   const [activeTab, setActiveTab] = useState<"activity" | "history">("activity");
 
   const { data: detail, isLoading } = trpc.viewer.customers.get.useQuery(
-    { id: customerId ?? 0 },
+    { id: customerId ?? "" },
     { enabled: open },
   );
 
   const { data: auditLogs, isLoading: isAuditLoading } =
     trpc.viewer.customers.auditHistory.useQuery(
-      { id: customerId ?? 0 },
+      { id: customerId ?? "" },
       { enabled: open && activeTab === "history" },
     );
 
@@ -57,7 +57,7 @@ export function CustomerDetailDrawer({
   const updateMut = trpc.viewer.customers.update.useMutation({
     onSuccess: () => {
       utils.viewer.customers.list.invalidate();
-      utils.viewer.customers.get.invalidate({ id: customerId ?? 0 });
+      utils.viewer.customers.get.invalidate({ id: customerId ?? "" });
       toast(tCommon("successUpdated"), "success");
     },
     onError: (err) => toast(err.message, "error"),
@@ -383,7 +383,7 @@ export function CustomerDetailDrawer({
               onClick={() =>
                 askConfirm({
                   message: t("detail.deleteConfirm"),
-                  onConfirm: () => deleteMut.mutate({ id: detail?.id ?? 0 }),
+                  onConfirm: () => deleteMut.mutate({ id: detail?.id ?? "" }),
                 })
               }
             >

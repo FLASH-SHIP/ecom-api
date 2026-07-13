@@ -31,7 +31,7 @@ export class PostCommands {
     externalSource?: string;
     sponsoredBy?: string;
     status?: ContentStatus;
-    authorId: number;
+    authorId: string;
     categoryIds?: number[];
     tagIds?: number[];
   }) {
@@ -102,7 +102,7 @@ export class PostCommands {
       status?: ContentStatus;
       categoryIds?: number[];
       tagIds?: number[];
-      authorId?: number;
+      authorId?: string;
     },
   ) {
     // Acquire a distributed lock to prevent race conditions during concurrent updates
@@ -314,7 +314,7 @@ export class PostCommands {
     return result;
   }
 
-  async clonePost(id: number, authorId: number) {
+  async clonePost(id: number, authorId: string) {
     const source = await this.deps.postRepo.findByIdWithRelations(id);
     if (!source) throw ErrorWithCode.Factory.NotFound("Post not found");
 

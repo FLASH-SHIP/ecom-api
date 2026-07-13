@@ -15,7 +15,7 @@ model Post {
   sponsoredBy    String?
   views          Int               @default(0)
   status         ContentStatus     @default(DRAFT)
-  authorId       Int
+  authorId       String            @db.Uuid
   author         User              @relation(fields: [authorId], references: [id])
   categories     PostCategory[]
   tags           PostTag[]
@@ -70,7 +70,7 @@ model Category {
   posts        PostCategory[]
   translations CategoryTranslation[]
   seoMeta      SeoMeta?              @relation("CategorySeo")
-  authorId     Int?
+  authorId     String?
   order        Int                   @default(0)
   deletedAt    DateTime?
   createdAt    DateTime              @default(now())
@@ -101,7 +101,7 @@ model Tag {
   slug         String           @unique
   description  String?          @db.Text
   status       ContentStatus    @default(PUBLISHED)
-  authorId     Int?
+  authorId     String?
   authorType   String           @default("User")
   posts        PostTag[]
   translations TagTranslation[]
@@ -153,7 +153,7 @@ model Comment {
   content     String    @db.Text
   authorName  String?
   authorEmail String?
-  customerId  Int?
+  customerId  String?   @db.Uuid
   customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   postId      Int?
   post        Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)

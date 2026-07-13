@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
 import type { SlugRepository } from "@ecom/features/blog/repositories/SlugRepository";
+import { describe, expect, it, vi } from "vitest";
 import type { TranslationRepository } from "../../repositories/TranslationRepository";
 import { TranslationService } from "../TranslationService";
 

@@ -116,7 +116,7 @@ export class PackingRepository {
       image?: string | null;
       description?: string | null;
       status?: ContentStatus;
-    }
+    },
   ) {
     return this.prisma.packingType.update({
       where: { id },

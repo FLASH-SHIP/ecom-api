@@ -18,7 +18,7 @@ interface IApiAuthServiceDeps {
 }
 
 export interface AuthenticatedUser {
-  id: number;
+  id: string;
   email: string;
   name: string | null;
   authMethod: "api_key" | "jwt" | "session";
@@ -27,7 +27,7 @@ export interface AuthenticatedUser {
 
 const permissionsCache = new RedisCache<string[]>("user-permissions", 3600); // 1 hour TTL
 
-async function resolveUserPermissions(userId: number, userRepo: UserRepository): Promise<string[]> {
+async function resolveUserPermissions(userId: string, userRepo: UserRepository): Promise<string[]> {
   const cacheKey = `user:${userId}`;
   const cachedPermissions = await permissionsCache.get(cacheKey);
 
@@ -183,7 +183,7 @@ export class ApiAuthService {
    * Revoke all tokens for a user by user ID.
    * Useful for "logout from all devices" or admin account suspension.
    */
-  static async revokeAllUserTokens(userId: number, ttlSeconds = 15 * 60): Promise<void> {
+  static async revokeAllUserTokens(userId: string, ttlSeconds = 15 * 60): Promise<void> {
     try {
       const redis = getRedisClient();
       const key = `${TOKEN_BLACKLIST_PREFIX}user:${userId}`;

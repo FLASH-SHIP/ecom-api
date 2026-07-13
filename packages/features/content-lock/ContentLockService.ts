@@ -5,7 +5,7 @@ const log = createLogger("ContentLock");
 interface ContentLock {
   entityType: "post" | "page";
   entityId: number;
-  userId: number;
+  userId: string;
   userName: string;
   lockedAt: number;
   expiresAt: number;
@@ -31,7 +31,7 @@ class ContentLockService {
   acquire(
     entityType: "post" | "page",
     entityId: number,
-    userId: number,
+    userId: string,
     userName: string,
   ): { acquired: boolean; lock: ContentLock } {
     const key = this.getKey(entityType, entityId);
@@ -67,7 +67,7 @@ class ContentLockService {
   /**
    * Release a lock (only the lock holder can release it).
    */
-  release(entityType: "post" | "page", entityId: number, userId: number): boolean {
+  release(entityType: "post" | "page", entityId: number, userId: string): boolean {
     const key = this.getKey(entityType, entityId);
     const existing = this.locks.get(key);
 
@@ -100,7 +100,7 @@ class ContentLockService {
   /**
    * Heartbeat — extend a lock (called periodically by the editor).
    */
-  heartbeat(entityType: "post" | "page", entityId: number, userId: number): boolean {
+  heartbeat(entityType: "post" | "page", entityId: number, userId: string): boolean {
     const key = this.getKey(entityType, entityId);
     const existing = this.locks.get(key);
 

@@ -13,7 +13,7 @@ model Page {
   parent        Page?             @relation("PageTree", fields: [parentId], references: [id])
   children      Page[]            @relation("PageTree")
   status        ContentStatus     @default(DRAFT)
-  authorId      Int
+  authorId      String            @db.Uuid
   author        User              @relation(fields: [authorId], references: [id])
   translations  PageTranslation[]
   seoMeta       SeoMeta?          @relation("PageSeo")

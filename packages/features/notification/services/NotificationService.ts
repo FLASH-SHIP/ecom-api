@@ -11,7 +11,7 @@ export class NotificationService {
   }
 
   async notify(data: {
-    userId: number;
+    userId: string;
     type: string;
     title: string;
     message: string;
@@ -24,7 +24,7 @@ export class NotificationService {
 
   /** Send notification to all users with a specific role (e.g., admins) */
   async notifyUsers(
-    userIds: number[],
+    userIds: string[],
     data: {
       type: string;
       title: string;
@@ -43,25 +43,25 @@ export class NotificationService {
   }
 
   async listNotifications(
-    userId: number,
+    userId: string,
     options?: { page?: number; perPage?: number; unreadOnly?: boolean },
   ) {
     return this.deps.notificationRepo.findByUser(userId, options);
   }
 
-  async getUnreadCount(userId: number) {
+  async getUnreadCount(userId: string) {
     return this.deps.notificationRepo.getUnreadCount(userId);
   }
 
-  async markRead(id: number, userId: number) {
+  async markRead(id: number, userId: string) {
     return this.deps.notificationRepo.markRead(id, userId);
   }
 
-  async markAllRead(userId: number) {
+  async markAllRead(userId: string) {
     return this.deps.notificationRepo.markAllRead(userId);
   }
 
-  async deleteNotification(id: number, userId: number) {
+  async deleteNotification(id: number, userId: string) {
     return this.deps.notificationRepo.delete(id, userId);
   }
 }

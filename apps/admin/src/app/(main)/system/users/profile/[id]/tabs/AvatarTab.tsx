@@ -16,13 +16,13 @@ import { useEffect, useRef, useState } from "react";
 import { AvatarCropDialog } from "./AvatarCropDialog";
 
 interface TargetUser {
-  id?: number;
+  id?: string;
   name?: string | null;
   avatarUrl?: string | null;
 }
 
 interface AvatarTabProps {
-  userId: number;
+  userId: string;
   targetUser: TargetUser;
 }
 

@@ -139,7 +139,7 @@ export class PostRepository {
 
   async findMany(options: {
     status?: ContentStatus;
-    authorId?: number;
+    authorId?: string;
     categoryId?: number;
     isFeatured?: boolean;
     search?: string;
@@ -238,7 +238,7 @@ export class PostRepository {
     externalSource?: string;
     sponsoredBy?: string;
     status?: ContentStatus;
-    authorId: number;
+    authorId: string;
     publishedAt?: Date;
     categoryIds?: number[];
     tagIds?: number[];
@@ -285,7 +285,7 @@ export class PostRepository {
       sponsoredBy?: string | null;
       status?: ContentStatus;
       publishedAt?: Date | null;
-      authorId?: number;
+      authorId?: string;
     },
   ) {
     return this.prisma.post.update({

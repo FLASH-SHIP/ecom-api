@@ -20,7 +20,7 @@ const LOCALES = [
 ];
 
 interface PreferencesTabProps {
-  userId: number;
+  userId: string;
   isSelf: boolean;
   isAdmin: boolean;
 }
