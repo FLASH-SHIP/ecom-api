@@ -55,7 +55,6 @@ export interface CreateOrderInput {
   dimensionWidth?: Prisma.Decimal | number | null;
   dimensionHeight?: Prisma.Decimal | number | null;
   declaredValue: Prisma.Decimal | number;
-  hsCode?: string | null;
   packagingCode?: string | null;
 
   // Warehouse measurement
@@ -76,6 +75,7 @@ export interface CreateOrderInput {
   port?: string | null;
   isGetLabel?: number;
   feeItems?: Prisma.OrderFeeItemUncheckedCreateNestedManyWithoutOrderInput;
+  products?: Prisma.OrderProductUncheckedCreateNestedManyWithoutOrderInput;
 }
 
 export interface UpdateOrderInput {
@@ -155,7 +155,6 @@ export class OrderRepository {
         dimensionWidth: true,
         dimensionHeight: true,
         declaredValue: true,
-        hsCode: true,
         packagingCode: true,
         actualWeight: true,
         volumeWeight: true,
@@ -189,6 +188,20 @@ export class OrderRepository {
             amount: true,
             currency: true,
             rateCardItemId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        products: {
+          select: {
+            id: true,
+            description: true,
+            quantity: true,
+            value: true,
+            hsCode: true,
+            originCountry: true,
+            weight: true,
+            sku: true,
             createdAt: true,
             updatedAt: true,
           },

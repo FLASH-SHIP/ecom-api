@@ -233,12 +233,51 @@ export default function CustomerOrderDetailPage() {
                     {order.volumeWeight?.toString() || "0"} gr
                   </div>
 
-                  <div className="text-muted-foreground">HS Code</div>
-                  <div className="font-medium text-foreground">{order.hsCode || "N/A"}</div>
+                  <div className="text-muted-foreground">HS Code (Primary)</div>
+                  <div className="font-medium text-foreground">
+                    {order.products?.[0]?.hsCode || "N/A"}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Products Details */}
+          {order.products && order.products.length > 0 && (
+            <Card className="rounded-xl border border-border bg-card">
+              <CardContent className="p-6 flex flex-col gap-4">
+                <h3 className="font-bold text-lg border-b border-border pb-2 text-foreground">
+                  Products ({order.products.length})
+                </h3>
+                <div className="flex flex-col gap-4">
+                  {order.products.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex justify-between items-start text-sm border-b border-dashed border-border last:border-0 pb-3 last:pb-0"
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-foreground">{p.description}</span>
+                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                          {p.hsCode && <span>HS Code: {p.hsCode}</span>}
+                          {p.originCountry && <span>Origin: {p.originCountry}</span>}
+                          {p.weight && <span>| Weight: {p.weight} gr</span>}
+                          {p.sku && <span>| SKU: {p.sku}</span>}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium text-foreground">
+                          ${Number(p.value || 0).toFixed(2)} × {p.quantity}
+                        </div>
+                        <div className="text-xs text-muted-foreground font-semibold">
+                          Total: ${(Number(p.value || 0) * Number(p.quantity || 0)).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Charges & Surcharges Card */}

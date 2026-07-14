@@ -15,9 +15,10 @@ import {
 } from "@ecom/ui/components/select";
 import { cn } from "@ecom/ui/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
 import { useOrderStore } from "./useOrderStore";
@@ -34,7 +35,6 @@ const orderFormSchema = z.object({
       "Trị giá hàng hóa phải lớn hơn 0.",
     ),
   sellerOrderId: z.string().optional(),
-  hsCode: z.string().optional(),
 
   // Sender Info
   senderName: z.string().min(1, "Vui lòng nhập tên người gửi."),
@@ -69,6 +69,38 @@ const orderFormSchema = z.object({
       "Cân nặng gói hàng phải lớn hơn 0.",
     ),
   packageName: z.string().min(1, "Vui lòng nhập tên gói hàng."),
+  products: z
+    .array(
+      z.object({
+        description: z.string().min(1, "Vui lòng nhập mô tả sản phẩm."),
+        quantity: z
+          .string()
+          .min(1, "Vui lòng nhập số lượng.")
+          .refine(
+            (val) => !Number.isNaN(Number(val)) && Number.isInteger(Number(val)) && Number(val) > 0,
+            "Số lượng phải là số nguyên dương.",
+          ),
+        value: z
+          .string()
+          .min(1, "Vui lòng nhập trị giá.")
+          .refine(
+            (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
+            "Trị giá phải lớn hơn 0.",
+          ),
+        hsCodePrefix: z.string(),
+        hsCodeNumber: z.string().optional(),
+        originCountry: z.string().min(1, "Vui lòng chọn xuất xứ."),
+        weight: z
+          .string()
+          .optional()
+          .refine(
+            (val) => !val || (!Number.isNaN(Number(val)) && Number(val) > 0),
+            "Cân nặng phải lớn hơn 0.",
+          ),
+        sku: z.string().optional(),
+      }),
+    )
+    .min(1, "Vui lòng khai báo ít nhất 1 sản phẩm."),
 });
 
 type OrderFormValues = z.infer<typeof orderFormSchema>;
@@ -99,6 +131,7 @@ export default function CreateSingleOrderPage() {
     control,
     watch,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
@@ -108,7 +141,6 @@ export default function CreateSingleOrderPage() {
       detailDescription: "",
       declaredValue: "",
       sellerOrderId: "",
-      hsCode: "",
       senderName: "",
       senderPhone: "",
       senderEmail: "",
@@ -131,7 +163,24 @@ export default function CreateSingleOrderPage() {
       height: "",
       weight: "",
       packageName: "",
+      products: [
+        {
+          description: "",
+          quantity: "1",
+          value: "",
+          hsCodePrefix: "US",
+          hsCodeNumber: "",
+          originCountry: "VN",
+          weight: "",
+          sku: "",
+        },
+      ],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "products",
   });
 
   // Extract watched values for Step 2 and live calculations
@@ -142,7 +191,6 @@ export default function CreateSingleOrderPage() {
     detailDescription,
     declaredValue,
     sellerOrderId,
-    hsCode,
     senderName,
     senderPhone,
     senderEmail,
@@ -165,7 +213,28 @@ export default function CreateSingleOrderPage() {
     height,
     weight,
     packageName,
+    products,
   } = watched;
+
+  const productsString = JSON.stringify(products);
+
+  // Sync declaredValue, detailDescription, and hsCode automatically when products change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: use productsString for deep change tracking
+  useEffect(() => {
+    if (!products) return;
+    const totalVal = products.reduce((sum, p) => {
+      const q = Number(p.quantity) || 0;
+      const v = Number(p.value) || 0;
+      return sum + q * v;
+    }, 0);
+    setValue("declaredValue", totalVal > 0 ? totalVal.toFixed(2) : "", { shouldValidate: true });
+
+    const desc = products
+      .filter((p) => p.description && p.description.trim() !== "")
+      .map((p) => `${p.description.trim()} (x${p.quantity})`)
+      .join(", ");
+    setValue("detailDescription", desc || "", { shouldValidate: true });
+  }, [productsString, setValue]);
 
   const triggerError = (msg: string) => {
     setError(msg);
@@ -174,6 +243,7 @@ export default function CreateSingleOrderPage() {
   };
 
   const [saveSenderSetting, setSaveSenderSetting] = useState(false);
+  const [saveReceiverSetting, setSaveReceiverSetting] = useState(false);
   const [savePackageSetting, setSavePackageSetting] = useState(false);
 
   const [isGetLabel, setIsGetLabel] = useState(false);
@@ -211,6 +281,7 @@ export default function CreateSingleOrderPage() {
         } else {
           // Prefill from localStorage defaults if no draft session exists
           const defaultSender = localStorage.getItem("default_sender_info");
+          const defaultReceiver = localStorage.getItem("default_receiver_info");
           const defaultPackage = localStorage.getItem("default_package_info");
           const newDefaults = JSON.parse(storeValuesString);
 
@@ -221,6 +292,16 @@ export default function CreateSingleOrderPage() {
               setSaveSenderSetting(true);
             } catch (e) {
               console.error("Failed to parse default sender info", e);
+            }
+          }
+
+          if (defaultReceiver) {
+            try {
+              const receiverObj = JSON.parse(defaultReceiver);
+              Object.assign(newDefaults, receiverObj);
+              setSaveReceiverSetting(true);
+            } catch (e) {
+              console.error("Failed to parse default receiver info", e);
             }
           }
 
@@ -311,6 +392,23 @@ export default function CreateSingleOrderPage() {
           localStorage.removeItem("default_sender_info");
         }
 
+        if (saveReceiverSetting) {
+          const receiverInfo = {
+            receiverName,
+            receiverPhone,
+            receiverEmail,
+            receiverAddress1,
+            receiverAddress2,
+            receiverCity,
+            receiverState,
+            receiverZipCode,
+            receiverCountry,
+          };
+          localStorage.setItem("default_receiver_info", JSON.stringify(receiverInfo));
+        } else {
+          localStorage.removeItem("default_receiver_info");
+        }
+
         if (savePackageSetting) {
           const packageInfo = {
             packagingCode,
@@ -369,9 +467,17 @@ export default function CreateSingleOrderPage() {
       dimensionWidth: width ? Number(width) : null,
       dimensionHeight: height ? Number(height) : null,
       declaredValue: Number(declaredValue),
-      hsCode: hsCode || null,
       packagingCode,
       isGetLabel: isGetLabel ? 1 : 0,
+      products: products.map((p) => ({
+        description: p.description,
+        quantity: Number(p.quantity),
+        value: Number(p.value),
+        hsCode: p.hsCodeNumber ? `${p.hsCodePrefix}-${p.hsCodeNumber}` : null,
+        originCountry: p.originCountry || null,
+        weight: p.weight ? Number(p.weight) : null,
+        sku: p.sku || null,
+      })),
     });
   };
 
@@ -545,12 +651,55 @@ export default function CreateSingleOrderPage() {
                     <div className="text-muted-foreground">Volume Weight</div>
                     <div className="font-medium text-foreground">{pricing.volumeWeight} gr</div>
 
-                    <div className="text-muted-foreground">HS Code</div>
-                    <div className="font-medium text-foreground">{hsCode || "N/A"}</div>
+                    <div className="text-muted-foreground">HS Code (Primary)</div>
+                    <div className="font-medium text-foreground">
+                      {products?.[0]?.hsCodeNumber
+                        ? `${products[0].hsCodePrefix}-${products[0].hsCodeNumber}`
+                        : "N/A"}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Products Details */}
+            <Card className="rounded-xl border border-border bg-card">
+              <CardContent className="p-6 flex flex-col gap-4">
+                <h3 className="font-bold text-lg border-b border-border pb-2 text-foreground">
+                  Products ({products?.length || 0})
+                </h3>
+                <div className="flex flex-col gap-4">
+                  {products?.map((p) => (
+                    <div
+                      key={`${p.description}-${p.quantity}-${p.value}`}
+                      className="flex justify-between items-start text-sm border-b border-dashed border-border last:border-0 pb-3 last:pb-0"
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-foreground">{p.description}</span>
+                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                          {p.hsCodeNumber && (
+                            <span>
+                              HS Code: {p.hsCodePrefix}-{p.hsCodeNumber}
+                            </span>
+                          )}
+                          <span>Origin: {p.originCountry}</span>
+                          {p.weight && <span>| Weight: {p.weight} gr</span>}
+                          {p.sku && <span>| SKU: {p.sku}</span>}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium text-foreground">
+                          ${Number(p.value || 0).toFixed(2)} × {p.quantity}
+                        </div>
+                        <div className="text-xs text-muted-foreground font-semibold">
+                          Total: ${(Number(p.value || 0) * Number(p.quantity || 0)).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Charges & Surcharges Card */}
@@ -655,60 +804,7 @@ export default function CreateSingleOrderPage() {
               Basic Info
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Shipping Method <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="shippingMethod"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.shippingMethod && "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select shipping method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EPACKET">ePacket</SelectItem>
-                        <SelectItem value="EXPRESS">Express</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.shippingMethod && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.shippingMethod.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label
-                  htmlFor="detailDescription"
-                  className="text-xs font-bold text-muted-foreground"
-                >
-                  Details Description <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="detailDescription"
-                  type="text"
-                  required
-                  {...register("detailDescription")}
-                  placeholder="Enter details description"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.detailDescription && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.detailDescription && (
-                  <p className="text-xs text-destructive mt-0.5">
-                    {errors.detailDescription.message}
-                  </p>
-                )}
-              </div>
-
+              {/* Shipping Origin */}
               <div className="flex flex-col gap-1.5">
                 <Label className="text-xs font-bold text-muted-foreground">
                   Shipping Origin <span className="text-destructive ml-0.5">*</span>
@@ -738,6 +834,37 @@ export default function CreateSingleOrderPage() {
                 )}
               </div>
 
+              {/* Shipping Method */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-bold text-muted-foreground">
+                  Shipping Method <span className="text-destructive ml-0.5">*</span>
+                </Label>
+                <Controller
+                  name="shippingMethod"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        className={cn(
+                          "w-full bg-background/50 border-input",
+                          errors.shippingMethod && "border-destructive focus:ring-destructive",
+                        )}
+                      >
+                        <SelectValue placeholder="Select shipping method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="EPACKET">ePacket</SelectItem>
+                        <SelectItem value="EXPRESS">Express</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.shippingMethod && (
+                  <p className="text-xs text-destructive mt-0.5">{errors.shippingMethod.message}</p>
+                )}
+              </div>
+
+              {/* Order ID */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="sellerOrderId" className="text-xs font-bold text-muted-foreground">
                   Order ID (Optional Reference)
@@ -754,46 +881,9 @@ export default function CreateSingleOrderPage() {
                 />
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center">
-                  <Label
-                    htmlFor="declaredValue"
-                    className="text-xs font-bold text-muted-foreground"
-                  >
-                    Value ($ USD) <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <Label htmlFor="hsCode" className="text-xs font-bold text-muted-foreground">
-                    HS Code (Optional)
-                  </Label>
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    id="declaredValue"
-                    type="number"
-                    step="0.01"
-                    required
-                    {...register("declaredValue")}
-                    placeholder="Value"
-                    className={cn(
-                      "w-1/3 bg-background/50",
-                      errors.declaredValue && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <Input
-                    id="hsCode"
-                    type="text"
-                    {...register("hsCode")}
-                    placeholder="HS code number"
-                    className={cn(
-                      "w-2/3 bg-background/50",
-                      errors.hsCode && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                </div>
-                {errors.declaredValue && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.declaredValue.message}</p>
-                )}
-              </div>
+              {/* Hidden inputs for auto-calculated values to ensure React Hook Form tracks and validates them */}
+              <input type="hidden" {...register("detailDescription")} />
+              <input type="hidden" {...register("declaredValue")} />
             </div>
           </CardContent>
         </Card>
@@ -1175,6 +1265,20 @@ export default function CreateSingleOrderPage() {
                 )}
               </div>
             </div>
+
+            <div className="flex items-center space-x-2 mt-2">
+              <Checkbox
+                id="save-receiver"
+                checked={saveReceiverSetting}
+                onCheckedChange={(c) => setSaveReceiverSetting(!!c)}
+              />
+              <label
+                htmlFor="save-receiver"
+                className="text-xs font-bold text-muted-foreground cursor-pointer select-none"
+              >
+                Save your setting for repeated use
+              </label>
+            </div>
           </CardContent>
         </Card>
 
@@ -1319,6 +1423,229 @@ export default function CreateSingleOrderPage() {
               >
                 Save your setting for repeated use
               </label>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Item List */}
+        <Card className="rounded-xl border border-border bg-card">
+          <CardContent className="p-6 flex flex-col gap-4">
+            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
+              Item List
+            </h3>
+
+            <div className="flex flex-col gap-6">
+              {fields.map((field, index) => {
+                const prefixId =
+                  `products.${index}.hsCodePrefix` as `products.${number}.hsCodePrefix`;
+                const numberId =
+                  `products.${index}.hsCodeNumber` as `products.${number}.hsCodeNumber`;
+                return (
+                  <div
+                    key={field.id}
+                    className="flex flex-col gap-4 pb-6 border-b border-dashed border-border last:border-0 last:pb-0"
+                  >
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-sm font-bold text-foreground">Item {index + 1}</h4>
+                      {fields.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 p-1 h-auto cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <Label className="text-xs font-bold text-muted-foreground">
+                          Details Description <span className="text-destructive ml-0.5">*</span>
+                        </Label>
+                        <Input
+                          type="text"
+                          required
+                          placeholder="Enter details description"
+                          {...register(`products.${index}.description` as const)}
+                          className={cn(
+                            "w-full bg-background/50",
+                            errors.products?.[index]?.description &&
+                              "border-destructive focus-visible:ring-destructive",
+                          )}
+                        />
+                        {errors.products?.[index]?.description && (
+                          <p className="text-xs text-destructive mt-0.5">
+                            {errors.products[index]?.description?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-xs font-bold text-muted-foreground">
+                          Quantity <span className="text-destructive ml-0.5">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          required
+                          placeholder="Enter quantity"
+                          {...register(`products.${index}.quantity` as const)}
+                          className={cn(
+                            "w-full bg-background/50",
+                            errors.products?.[index]?.quantity &&
+                              "border-destructive focus-visible:ring-destructive",
+                          )}
+                        />
+                        {errors.products?.[index]?.quantity && (
+                          <p className="text-xs text-destructive mt-0.5">
+                            {errors.products[index]?.quantity?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-xs font-bold text-muted-foreground">
+                          Value <span className="text-destructive ml-0.5">*</span>
+                        </Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="Enter value"
+                          {...register(`products.${index}.value` as const)}
+                          className={cn(
+                            "w-full bg-background/50",
+                            errors.products?.[index]?.value &&
+                              "border-destructive focus-visible:ring-destructive",
+                          )}
+                        />
+                        {errors.products?.[index]?.value && (
+                          <p className="text-xs text-destructive mt-0.5">
+                            {errors.products[index]?.value?.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <Label className="text-xs font-bold text-muted-foreground">HS Code</Label>
+                        <div className="flex gap-2">
+                          <Controller
+                            name={prefixId}
+                            control={control}
+                            render={({ field: selectField }) => (
+                              <Select
+                                value={selectField.value}
+                                onValueChange={selectField.onChange}
+                              >
+                                <SelectTrigger className="w-1/3 bg-background/50 border-input">
+                                  <SelectValue placeholder="US" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="US">US</SelectItem>
+                                  <SelectItem value="VN">VN</SelectItem>
+                                  <SelectItem value="CA">CA</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                          <Input
+                            type="text"
+                            placeholder="Enter HS code number"
+                            {...register(numberId)}
+                            className="w-2/3 bg-background/50"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-xs font-bold text-muted-foreground">
+                          Origin Country <span className="text-destructive ml-0.5">*</span>
+                        </Label>
+                        <Controller
+                          name={`products.${index}.originCountry` as const}
+                          control={control}
+                          render={({ field: selectField }) => (
+                            <Select value={selectField.value} onValueChange={selectField.onChange}>
+                              <SelectTrigger className="w-full bg-background/50 border-input">
+                                <SelectValue placeholder="Select country" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="VN">Vietnam</SelectItem>
+                                <SelectItem value="CN">China</SelectItem>
+                                <SelectItem value="US">United States</SelectItem>
+                                <SelectItem value="JP">Japan</SelectItem>
+                                <SelectItem value="KR">South Korea</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {errors.products?.[index]?.originCountry && (
+                          <p className="text-xs text-destructive mt-0.5">
+                            {errors.products[index]?.originCountry?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-xs font-bold text-muted-foreground">
+                          Unit Weight (gr)
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder="Weight"
+                          {...register(`products.${index}.weight` as const)}
+                          className="w-full bg-background/50"
+                        />
+                        {errors.products?.[index]?.weight && (
+                          <p className="text-xs text-destructive mt-0.5">
+                            {errors.products[index]?.weight?.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <Label className="text-xs font-bold text-muted-foreground">
+                          SKU (Optional)
+                        </Label>
+                        <Input
+                          type="text"
+                          placeholder="Enter SKU catalog code"
+                          {...register(`products.${index}.sku` as const)}
+                          className="w-full bg-background/50"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-start mt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  append({
+                    description: "",
+                    quantity: "1",
+                    value: "",
+                    hsCodePrefix: "US",
+                    hsCodeNumber: "",
+                    originCountry: "VN",
+                    weight: "",
+                    sku: "",
+                  })
+                }
+                className="border-[#0F798C] text-[#0F798C] hover:bg-[#e6f7f9] dark:hover:bg-cyan-950/40 px-4 py-2 text-xs font-bold flex items-center gap-1.5 rounded-lg cursor-pointer"
+              >
+                <Plus className="h-4 w-4" /> Add Item
+              </Button>
             </div>
           </CardContent>
         </Card>
