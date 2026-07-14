@@ -1,4 +1,5 @@
 import { getOrderRepository, getOrderService } from "@ecom/features/di/containers/OrderService";
+import { getPackingService } from "@ecom/features/di/containers/PackingService";
 import { RedisCache } from "@ecom/lib/redis";
 import type {
   Customer,
@@ -7,7 +8,7 @@ import type {
   OrderProduct,
   OrderTrackingCheckpoint,
 } from "@ecom/prisma";
-import { OrderStatus, type Prisma, ShippingMethod } from "@ecom/prisma";
+import { ContentStatus, OrderStatus, type Prisma, ShippingMethod } from "@ecom/prisma";
 import { authedProcedure } from "@ecom/trpc/server/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -210,4 +211,21 @@ export const get = authedProcedure
     await orderCache.set(input.id, result);
 
     return result;
+  });
+
+export const listPackingTypes = authedProcedure
+  .input(
+    z
+      .object({
+        search: z.string().optional(),
+        page: z.number().int().min(1).default(1),
+        limit: z.number().int().min(1).max(100).default(50),
+      })
+      .optional(),
+  )
+  .query(async ({ input }) => {
+    return getPackingService().listPackingTypes({
+      ...input,
+      status: ContentStatus.PUBLISHED,
+    });
   });
