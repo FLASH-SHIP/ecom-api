@@ -1,6 +1,12 @@
 import { getOrderRepository, getOrderService } from "@ecom/features/di/containers/OrderService";
 import { RedisCache } from "@ecom/lib/redis";
-import type { Customer, Order, OrderActivityLog, OrderTrackingCheckpoint } from "@ecom/prisma";
+import type {
+  Customer,
+  Order,
+  OrderActivityLog,
+  OrderProduct,
+  OrderTrackingCheckpoint,
+} from "@ecom/prisma";
 import { OrderStatus, type Prisma, ShippingMethod } from "@ecom/prisma";
 import { authedProcedure } from "@ecom/trpc/server/trpc";
 import { TRPCError } from "@trpc/server";
@@ -30,6 +36,7 @@ export interface CachedOrder
   activityLogs: Omit<OrderActivityLog, "orderId">[];
   trackingCheckpoints: Omit<OrderTrackingCheckpoint, "orderId">[];
   customer: Pick<Customer, "name" | "email" | "username" | "phone">;
+  products?: Omit<OrderProduct, "orderId">[];
 }
 
 const orderCache = new RedisCache<CachedOrder>("order-details", 300); // 5-minute cache TTL
@@ -49,12 +56,21 @@ function restoreCheckpointDates(cps?: Omit<OrderTrackingCheckpoint, "orderId">[]
   }
 }
 
+function restoreProductDates(products?: Omit<OrderProduct, "orderId">[]) {
+  if (!products) return;
+  for (const p of products) {
+    if (p.createdAt) p.createdAt = new Date(p.createdAt);
+    if (p.updatedAt) p.updatedAt = new Date(p.updatedAt);
+  }
+}
+
 function restoreOrderDates(order?: CachedOrder): CachedOrder | undefined {
   if (!order) return order;
   if (order.createdAt) order.createdAt = new Date(order.createdAt);
   if (order.updatedAt) order.updatedAt = new Date(order.updatedAt);
   restoreLogDates(order.activityLogs);
   restoreCheckpointDates(order.trackingCheckpoints);
+  restoreProductDates(order.products);
   return order;
 }
 
@@ -113,9 +129,21 @@ export const create = authedProcedure
       dimensionWidth: z.number().positive().optional().nullable(),
       dimensionHeight: z.number().positive().optional().nullable(),
       declaredValue: z.number().positive(),
-      hsCode: z.string().optional().nullable(),
       packagingCode: z.string().optional().nullable(),
       isGetLabel: z.number().int().optional(),
+      products: z
+        .array(
+          z.object({
+            description: z.string().min(1),
+            quantity: z.number().int().positive(),
+            value: z.number().positive(),
+            hsCode: z.string().optional().nullable(),
+            originCountry: z.string().optional().nullable(),
+            weight: z.number().int().positive().optional().nullable(),
+            sku: z.string().optional().nullable(),
+          }),
+        )
+        .optional(),
     }),
   )
   .mutation(async ({ input, ctx }) => {

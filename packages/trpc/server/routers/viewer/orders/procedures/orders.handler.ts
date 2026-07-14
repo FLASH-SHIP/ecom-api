@@ -6,6 +6,7 @@ import type {
   Order,
   OrderActivityLog,
   OrderFeeItem,
+  OrderProduct,
   OrderTrackingCheckpoint,
 } from "@ecom/prisma";
 import { OrderStatus, type Prisma } from "@ecom/prisma";
@@ -37,6 +38,7 @@ export interface CachedOrder
   trackingCheckpoints: Omit<OrderTrackingCheckpoint, "orderId">[];
   customer: Pick<Customer, "name" | "email" | "username" | "phone">;
   feeItems?: Omit<OrderFeeItem, "orderId">[];
+  products?: Omit<OrderProduct, "orderId">[];
 }
 
 const orderCache = new RedisCache<CachedOrder>("order-details", 300); // 5-minute cache TTL

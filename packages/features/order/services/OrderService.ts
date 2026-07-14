@@ -62,9 +62,17 @@ export interface CreateOrderParams {
   dimensionWidth?: number | null;
   dimensionHeight?: number | null;
   declaredValue: number;
-  hsCode?: string | null;
   packagingCode?: string | null;
   isGetLabel?: number;
+  products?: {
+    description: string;
+    quantity: number;
+    value: number;
+    hsCode?: string | null;
+    originCountry?: string | null;
+    weight?: number | null;
+    sku?: string | null;
+  }[];
 }
 
 export class OrderService {
@@ -326,7 +334,6 @@ export class OrderService {
       dimensionWidth: dimensionWidth ?? null,
       dimensionHeight: dimensionHeight ?? null,
       declaredValue,
-      hsCode: params.hsCode,
       packagingCode: params.packagingCode,
 
       volumeWeight: pricing.volumeWeight,
@@ -352,6 +359,19 @@ export class OrderService {
           },
         ],
       },
+      products: params.products
+        ? {
+            create: params.products.map((p) => ({
+              description: p.description,
+              quantity: p.quantity,
+              value: p.value,
+              hsCode: p.hsCode,
+              originCountry: p.originCountry,
+              weight: p.weight,
+              sku: p.sku,
+            })),
+          }
+        : undefined,
     };
 
     // 5. Execute creation inside transaction

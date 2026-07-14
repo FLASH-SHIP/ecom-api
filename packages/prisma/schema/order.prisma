@@ -47,7 +47,7 @@ enum PaymentStatus {
 model Order {
   id                   String         @id @default(uuid(7)) @db.Uuid
   orderCode            String         @unique @map("order_code")
-  customerId           String         @map("seller_id") @db.Uuid
+  customerId           String         @map("customer_id") @db.Uuid
   customer             Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
   importId             String?        @map("import_id")
   
@@ -90,7 +90,6 @@ model Order {
   dimensionWidth       Decimal?       @map("dimension_width") @db.Decimal(10, 2)
   dimensionHeight      Decimal?       @map("dimension_height") @db.Decimal(10, 2)
   declaredValue        Decimal        @map("declared_value") @db.Decimal(12, 2)
-  hsCode               String?        @map("hs_code")
   packagingCode        String?        @map("packaging_code")
   
   // Warehouse Measurements (populated during fulfillment)
@@ -115,6 +114,8 @@ model Order {
   activityLogs         OrderActivityLog[]
   trackingCheckpoints  OrderTrackingCheckpoint[]
   feeItems             OrderFeeItem[]
+  products             OrderProduct[]
+
   
   version              Int            @default(0) @map("version")
   createdAt            DateTime       @default(now()) @map("created_at")
@@ -216,4 +217,22 @@ model OrderFeeItem {
 
   @@index([orderId])
   @@map("order_fee_items")
+}
+
+model OrderProduct {
+  id          Int      @id @default(autoincrement())
+  orderId     String   @map("order_id") @db.Uuid
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  description String   @db.Text
+  quantity    Int
+  value       Decimal  @db.Decimal(12, 2)
+  hsCode      String?  @map("hs_code")
+  originCountry String?  @map("origin_country")
+  weight        Int?     @map("weight")
+  sku           String?  @map("sku")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([orderId])
+  @@map("order_products")
 }

@@ -17,7 +17,6 @@ interface OrderStoreState {
     detailDescription: string;
     declaredValue: string;
     sellerOrderId: string;
-    hsCode: string;
     senderName: string;
     senderPhone: string;
     senderEmail: string;
@@ -40,6 +39,16 @@ interface OrderStoreState {
     height: string;
     weight: string;
     packageName: string;
+    products: {
+      description: string;
+      quantity: string;
+      value: string;
+      hsCodePrefix: string;
+      hsCodeNumber: string;
+      originCountry: string;
+      weight: string;
+      sku: string;
+    }[];
   };
   setStep: (step: number) => void;
   setPricing: (pricing: OrderStoreState["pricing"]) => void;
@@ -53,7 +62,6 @@ const initialValues: OrderStoreState["values"] = {
   detailDescription: "",
   declaredValue: "",
   sellerOrderId: "",
-  hsCode: "",
   senderName: "",
   senderPhone: "",
   senderEmail: "",
@@ -76,6 +84,18 @@ const initialValues: OrderStoreState["values"] = {
   height: "",
   weight: "",
   packageName: "",
+  products: [
+    {
+      description: "",
+      quantity: "1",
+      value: "",
+      hsCodePrefix: "US",
+      hsCodeNumber: "",
+      originCountry: "VN",
+      weight: "",
+      sku: "",
+    },
+  ],
 };
 
 export const useOrderStore = create<OrderStoreState>()(
