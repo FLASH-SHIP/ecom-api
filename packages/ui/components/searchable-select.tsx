@@ -4,7 +4,7 @@ import { Button } from "@ecom/ui/components/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@ecom/ui/components/popover";
 
 import { cn } from "@ecom/ui/lib/utils";
-import { Check, ChevronsUpDown, Search, X } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Search, X } from "lucide-react";
 import * as React from "react";
 
 interface SearchableSelectOption {
@@ -25,6 +25,14 @@ interface SearchableSelectProps {
   allowClear?: boolean;
   /** Max height of the dropdown list. Use "none" to show all items. Default: "200px" */
   maxHeight?: string;
+  /** When true, disables local filtering — parent controls options via server-side search */
+  serverSearch?: boolean;
+  /** Called when the search input changes (debounced). Use with serverSearch to fetch filtered options. */
+  onSearchChange?: (search: string) => void;
+  /** Debounce delay in ms for onSearchChange. Default: 300 */
+  searchDebounceMs?: number;
+  /** Show a loading indicator in the dropdown */
+  loading?: boolean;
 }
 
 function SearchableSelect({
@@ -37,41 +45,79 @@ function SearchableSelect({
   className,
   allowClear = true,
   maxHeight = "200px",
+  serverSearch = false,
+  onSearchChange,
+  searchDebounceMs = 300,
+  loading = false,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
+  const hasValue = !!value;
+  const displayLabel = selectedOption?.label ?? (hasValue ? value : placeholder);
+  const showClear = allowClear && hasValue && !disabled;
+
+  const resetSearch = React.useCallback(() => {
+    setSearch("");
+    onSearchChange?.("");
+  }, [onSearchChange]);
+
+  const handleSearchInput = React.useCallback(
+    (val: string) => {
+      setSearch(val);
+      if (onSearchChange) {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          onSearchChange(val);
+        }, searchDebounceMs);
+      }
+    },
+    [onSearchChange, searchDebounceMs],
+  );
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const filteredOptions = React.useMemo(() => {
+    if (serverSearch) return options;
     if (!search.trim()) return options;
     const q = search.toLowerCase();
     return options.filter((opt) => opt.label.toLowerCase().includes(q));
-  }, [options, search]);
+  }, [options, search, serverSearch]);
 
-  const handleSelect = (optionValue: string) => {
-    onValueChange?.(optionValue === value ? "" : optionValue);
-    setOpen(false);
-    setSearch("");
-  };
+  const handleSelect = React.useCallback(
+    (optionValue: string) => {
+      onValueChange?.(optionValue === value ? "" : optionValue);
+      setOpen(false);
+      resetSearch();
+    },
+    [onValueChange, value, resetSearch],
+  );
 
-  const _handleClear = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onValueChange?.("");
-    setOpen(false);
-  };
+  const handleOpenChange = React.useCallback(
+    (isOpen: boolean) => {
+      setOpen(isOpen);
+      if (!isOpen) resetSearch();
+    },
+    [resetSearch],
+  );
 
-  const showClear = allowClear && selectedOption && !disabled;
+  const handleClear = React.useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onValueChange?.("");
+    },
+    [onValueChange],
+  );
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(isOpen) => {
-        setOpen(isOpen);
-        if (!isOpen) setSearch("");
-      }}
-    >
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -80,7 +126,7 @@ function SearchableSelect({
           disabled={disabled}
           className={cn(
             "w-full justify-between font-normal",
-            !selectedOption && "text-muted-foreground",
+            !hasValue && "text-muted-foreground",
             className,
           )}
         >
@@ -90,7 +136,7 @@ function SearchableSelect({
                 {selectedOption.icon}
               </span>
             )}
-            {selectedOption ? selectedOption.label : placeholder}
+            {displayLabel}
           </span>
           <span className="ml-auto flex shrink-0 items-center gap-1">
             {showClear && (
@@ -99,11 +145,7 @@ function SearchableSelect({
                 role="button"
                 tabIndex={-1}
                 aria-label="Clear selection"
-                onPointerDownCapture={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onValueChange?.("");
-                }}
+                onPointerDownCapture={handleClear}
                 className="rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer inline-flex items-center justify-center"
               >
                 <X className="size-3.5" />
@@ -120,24 +162,26 @@ function SearchableSelect({
       </PopoverTrigger>
 
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        {/* Search input */}
         <div className="flex items-center border-b border-border px-2.5 py-2">
           <Search className="mr-2 size-3.5 shrink-0 text-muted-foreground" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchInput(e.target.value)}
             placeholder={searchPlaceholder}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
+          {loading && (
+            <Loader2 className="ml-2 size-3.5 shrink-0 animate-spin text-muted-foreground" />
+          )}
         </div>
 
-        {/* Options list */}
         <div className="overflow-y-auto p-1" style={{ maxHeight }}>
-          {filteredOptions.length === 0 ? (
+          {!loading && filteredOptions.length === 0 ? (
             <div className="py-4 text-center text-sm text-muted-foreground">No results found.</div>
           ) : (
-            filteredOptions.map((opt) => (
-              <div key={opt.value}>
+            filteredOptions.map((opt, idx) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: options may have duplicate values (e.g. same city name)
+              <div key={`${opt.value}-${idx}`}>
                 <button
                   type="button"
                   onClick={() => handleSelect(opt.value)}

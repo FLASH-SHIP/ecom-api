@@ -31,3 +31,23 @@ model Ward {
   @@index([codeName])
   @@map("wards")
 }
+model AdministrativeDivision {
+  id           Int                 @id @default(autoincrement())
+  countryCode  String
+  code         String
+  name         String
+  nameEn       String?
+  divisionType String
+  level        Int
+  parentId     Int?
+  parent       AdministrativeDivision? @relation("DivisionChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children     AdministrativeDivision[] @relation("DivisionChildren")
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  deletedAt    DateTime?
+
+  @@unique([countryCode, code])
+  @@index([countryCode])
+  @@map("administrative_divisions")
+}
