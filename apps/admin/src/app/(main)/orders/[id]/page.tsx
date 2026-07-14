@@ -273,7 +273,9 @@ export default function AdminOrderDetailPage() {
                 </div>
                 <div className="flex justify-between border-b border-border/40 pb-1.5">
                   <span className="text-muted-foreground">{t("hsCode")}</span>
-                  <span className="font-medium text-foreground">{order.hsCode || "-"}</span>
+                  <span className="font-medium text-foreground">
+                    {order.products?.[0]?.hsCode || "-"}
+                  </span>
                 </div>
               </div>
             </CardContent>

@@ -45,6 +45,7 @@ function findMonorepoRoot(): string {
   if (!dir || dir === "/") {
     dir = process.cwd();
   }
+  dir = path.resolve(dir);
   while (true) {
     const packageJsonPath = path.join(dir, "package.json");
     if (fs.existsSync(packageJsonPath)) {
