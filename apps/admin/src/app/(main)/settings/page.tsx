@@ -79,6 +79,12 @@ const SETTING_SECTIONS: { groupKey: string; items: SettingCard[] }[] = [
         icon: MapPin,
       },
       {
+        titleKey: "overview.usDivisionsTitle",
+        descKey: "overview.usDivisionsDesc",
+        href: "/settings/us-divisions",
+        icon: MapPin,
+      },
+      {
         titleKey: "overview.partnersTitle",
         descKey: "overview.partnersDesc",
         href: "/settings/partners",

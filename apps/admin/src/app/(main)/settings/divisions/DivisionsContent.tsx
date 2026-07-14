@@ -10,6 +10,7 @@ import { Button } from "@ecom/ui/components/button";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
 import { PerfectScroll } from "@ecom/ui/components/perfect-scroll";
+import { SearchableSelect } from "@ecom/ui/components/searchable-select";
 import {
   Select,
   SelectContent,
@@ -179,7 +180,14 @@ export default function DivisionsContent() {
     }));
   }, [wardData]);
 
-  // Province Form Actions
+  const provinceOptions = useMemo(() => {
+    return (
+      allProvincesData?.items.map((prov) => ({
+        value: prov.code.toString(),
+        label: prov.name,
+      })) ?? []
+    );
+  }, [allProvincesData?.items]);
   const openCreateProvince = () => {
     setProvEditingId(null);
     setProvName("");
@@ -502,6 +510,31 @@ export default function DivisionsContent() {
             }}
             rowCount={wardData?.total ?? 0}
             onRefresh={() => utils.viewer.divisions.listWards.invalidate()}
+            toolbarLeading={
+              <SearchableSelect
+                placeholder={t("divisions.selectProvince")}
+                searchPlaceholder={
+                  t("divisions.searchProvincePlaceholder") || "Search province..."
+                }
+                value={selectedProvinceCode?.toString() ?? ""}
+                onValueChange={(val) => {
+                  if (val) {
+                    const code = parseInt(val, 10);
+                    const name = allProvincesData?.items.find((p) => p.code === code)?.name ?? "";
+                    setSelectedProvinceCode(code);
+                    setSelectedProvinceName(name);
+                  } else {
+                    setSelectedProvinceCode(undefined);
+                    setSelectedProvinceName("");
+                  }
+                  setWardPage(1);
+                }}
+                options={provinceOptions}
+                className="h-8 w-[220px] text-sm py-0"
+                allowClear
+                maxHeight="280px"
+              />
+            }
           />
         </TabsContent>
       </Tabs>

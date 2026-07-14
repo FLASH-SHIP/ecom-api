@@ -136,3 +136,65 @@ export const deleteWard = authedProcedure
   .mutation(async ({ input }) => {
     return getAdministrativeService().deleteWard(input.id);
   });
+
+// --- ADMINISTRATIVE DIVISIONS (Multi-country) ---
+
+export const listDivisions = authedProcedure
+  .use(requirePermission(Permissions.SETTINGS_READ))
+  .input(
+    z.object({
+      countryCode: z.string().length(2),
+      level: z.number().int().min(1).optional(),
+      parentId: z.number().int().positive().optional(),
+      search: z.string().optional(),
+      page: z.number().int().min(1).default(1),
+      limit: z.number().int().min(1).max(100).default(10),
+      orderBy: z.enum(["asc", "desc"]).default("asc"),
+    }),
+  )
+  .query(async ({ input }) => {
+    return getAdministrativeService().listDivisions(input);
+  });
+
+export const getDivision = authedProcedure
+  .use(requirePermission(Permissions.SETTINGS_READ))
+  .input(z.object({ id: z.number().int().positive() }))
+  .query(async ({ input }) => {
+    return getAdministrativeService().getDivision(input.id);
+  });
+
+export const createDivision = authedProcedure
+  .use(requirePermission(Permissions.SETTINGS_UPDATE))
+  .use(auditLog({ module: "settings", action: "CREATE", entityType: "Division" }))
+  .input(
+    z.object({
+      countryCode: z.string().length(2),
+      code: z.string().min(1).max(100),
+      name: z.string().min(1).max(200),
+      nameEn: z.string().max(200).optional(),
+      divisionType: z.string().min(1).max(100),
+      level: z.number().int().min(1),
+      parentId: z.number().int().positive().optional(),
+    }),
+  )
+  .mutation(async ({ input }) => {
+    return getAdministrativeService().createDivision(input);
+  });
+
+export const updateDivision = authedProcedure
+  .use(requirePermission(Permissions.SETTINGS_UPDATE))
+  .use(auditLog({ module: "settings", action: "UPDATE", entityType: "Division" }))
+  .input(
+    z.object({
+      id: z.number().int().positive(),
+      name: z.string().min(1).max(200).optional(),
+      nameEn: z.string().max(200).optional(),
+      divisionType: z.string().min(1).max(100).optional(),
+      isActive: z.boolean().optional(),
+    }),
+  )
+  .mutation(async ({ input }) => {
+    const { id, ...data } = input;
+    return getAdministrativeService().updateDivision(id, data);
+  });
+
