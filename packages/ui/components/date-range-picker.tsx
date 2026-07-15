@@ -139,19 +139,26 @@ function DateRangePicker({
           <CalendarIcon className="mr-2 size-4 shrink-0" />
           <span className="truncate flex-1">{displayText}</span>
           {committedRange?.from && !disabled && (
-            <button
-              type="button"
+            <span
+              role="button"
               tabIndex={0}
               aria-label="Clear date range"
-              className="ml-1 shrink-0 rounded-sm opacity-50 hover:opacity-100 transition-opacity"
+              className="ml-1 shrink-0 rounded-sm opacity-50 hover:opacity-100 transition-opacity focus:outline-none focus:ring-1 focus:ring-ring"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 onClear?.();
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onClear?.();
+                }
+              }}
             >
               <XIcon className="size-3.5" />
-            </button>
+            </span>
           )}
         </Button>
       </PopoverTrigger>

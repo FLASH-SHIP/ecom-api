@@ -43,83 +43,82 @@ enum PaymentStatus {
   DEBT
 }
 
-
 model Order {
-  id                   String         @id @default(uuid(7)) @db.Uuid
-  orderCode            String         @unique @map("order_code")
-  customerId           String         @map("customer_id") @db.Uuid
-  customer             Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  importId             String?        @map("import_id")
-  
-  status               OrderStatus    @default(DRAFT) @map("order_status")
-  labelStatus          LabelStatus    @default(PENDING_LABEL) @map("label_status")
-  exportCustomsStatus  CustomsStatus  @default(PENDING) @map("export_customs_status")
-  importCustomsStatus  CustomsStatus  @default(PENDING) @map("import_customs_status")
-  paymentStatus        PaymentStatus  @default(INIT) @map("payment_status")
-  shippingMethod       ShippingMethod @map("shipping_method")
-  shippingOrigin       String         @map("shipping_origin") @default("HAN")
-  sellerOrderId        String?        @map("seller_order_id")
-  trackingNumber       String?        @map("tracking_number")
-  
-  // Sender Details
-  senderName           String?        @map("sender_name")
-  senderAddress        String?        @map("sender_address") @db.Text
-  senderPhone          String?        @map("sender_phone")
-  senderEmail          String?        @map("sender_email")
-  senderCountry        String?        @map("sender_country")
-  senderState          String?        @map("sender_state")
-  senderCity           String?        @map("sender_city")
-  senderZipCode        String?        @map("sender_zip_code")
-  
-  // Recipient Details
-  receiverName         String         @map("receiver_name")
-  receiverPhone        String?        @map("receiver_phone")
-  receiverEmail        String?        @map("receiver_email")
-  receiverCity         String         @map("receiver_city")
-  receiverState        String         @map("receiver_state")
-  receiverAddress1     String         @map("receiver_address_1")
-  receiverAddress2     String?        @map("receiver_address_2")
-  receiverCountry      String         @map("receiver_country")
-  receiverZipCode      String         @map("receiver_zip_code")
-  
-  // Cargo Details
-  detailDescription    String         @map("detail_description") @db.Text
-  declaredWeight       Int            @map("declared_weight") // Declared weight in grams
-  dimensionText        String?        @map("dimension_text") // e.g. "60,5x60x1,5"
-  dimensionLength      Decimal?       @map("dimension_length") @db.Decimal(10, 2)
-  dimensionWidth       Decimal?       @map("dimension_width") @db.Decimal(10, 2)
-  dimensionHeight      Decimal?       @map("dimension_height") @db.Decimal(10, 2)
-  declaredValue        Decimal        @map("declared_value") @db.Decimal(12, 2)
-  packagingCode        String?        @map("packaging_code")
-  
-  // Warehouse Measurements (populated during fulfillment)
-  actualWeight         Decimal?       @map("actual_weight") @db.Decimal(10, 3)
-  volumeWeight         Decimal?       @map("volume_weight") @db.Decimal(10, 3)
-  chargeableWeight     Decimal?       @map("chargeable_weight") @db.Decimal(10, 3)
-  mawb                 String?        @map("mawb")
-  flightNumber         String?        @map("flight_number")
-  ecomTrackingNumber   String?        @map("ecom_tracking_number")
-  
-  // Pricing Audit
-  rateCardId           Int?           @map("rate_card_id")
-  rateCard             RateCard?      @relation(fields: [rateCardId], references: [id], onDelete: SetNull)
-  baseShippingFee      Decimal        @map("base_shipping_fee") @db.Decimal(12, 2)
-  surchargeFee         Decimal        @map("surcharge_fee") @db.Decimal(12, 2) @default(0.00)
-  totalFee             Decimal        @map("total_fee") @db.Decimal(12, 2)
-  
-  boxId                String?        @map("box_id")
-  port                 String?        @map("port")
-  isGetLabel           Int            @default(0) @map("is_get_label") // 0 or 1
-  partners             OrderPartner[]
-  activityLogs         OrderActivityLog[]
-  trackingCheckpoints  OrderTrackingCheckpoint[]
-  feeItems             OrderFeeItem[]
-  products             OrderProduct[]
+  id         String       @id @default(uuid(7)) @db.Uuid
+  orderCode  String       @unique @map("order_code")
+  customerId String       @map("customer_id") @db.Uuid
+  customer   Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  importId   String?      @map("import_id")
+  import     OrderImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
 
-  
-  version              Int            @default(0) @map("version")
-  createdAt            DateTime       @default(now()) @map("created_at")
-  updatedAt            DateTime       @updatedAt @map("updated_at")
+  status              OrderStatus    @default(DRAFT) @map("order_status")
+  labelStatus         LabelStatus    @default(PENDING_LABEL) @map("label_status")
+  exportCustomsStatus CustomsStatus  @default(PENDING) @map("export_customs_status")
+  importCustomsStatus CustomsStatus  @default(PENDING) @map("import_customs_status")
+  paymentStatus       PaymentStatus  @default(INIT) @map("payment_status")
+  shippingMethod      ShippingMethod @map("shipping_method")
+  shippingOrigin      String         @default("HAN") @map("shipping_origin")
+  sellerOrderId       String?        @map("seller_order_id")
+  trackingNumber      String?        @map("tracking_number")
+
+  // Sender Details
+  senderName    String? @map("sender_name")
+  senderAddress String? @map("sender_address") @db.Text
+  senderPhone   String? @map("sender_phone")
+  senderEmail   String? @map("sender_email")
+  senderCountry String? @map("sender_country")
+  senderState   String? @map("sender_state")
+  senderCity    String? @map("sender_city")
+  senderZipCode String? @map("sender_zip_code")
+
+  // Recipient Details
+  receiverName     String  @map("receiver_name")
+  receiverPhone    String? @map("receiver_phone")
+  receiverEmail    String? @map("receiver_email")
+  receiverCity     String  @map("receiver_city")
+  receiverState    String  @map("receiver_state")
+  receiverAddress1 String  @map("receiver_address_1")
+  receiverAddress2 String? @map("receiver_address_2")
+  receiverCountry  String  @map("receiver_country")
+  receiverZipCode  String  @map("receiver_zip_code")
+
+  // Cargo Details
+  detailDescription String   @map("detail_description") @db.Text
+  declaredWeight    Int      @map("declared_weight") // Declared weight in grams
+  dimensionText     String?  @map("dimension_text") // e.g. "60,5x60x1,5"
+  dimensionLength   Decimal? @map("dimension_length") @db.Decimal(10, 2)
+  dimensionWidth    Decimal? @map("dimension_width") @db.Decimal(10, 2)
+  dimensionHeight   Decimal? @map("dimension_height") @db.Decimal(10, 2)
+  declaredValue     Decimal  @map("declared_value") @db.Decimal(12, 2)
+  packagingCode     String?  @map("packaging_code")
+
+  // Warehouse Measurements (populated during fulfillment)
+  actualWeight       Decimal? @map("actual_weight") @db.Decimal(10, 3)
+  volumeWeight       Decimal? @map("volume_weight") @db.Decimal(10, 3)
+  chargeableWeight   Decimal? @map("chargeable_weight") @db.Decimal(10, 3)
+  mawb               String?  @map("mawb")
+  flightNumber       String?  @map("flight_number")
+  ecomTrackingNumber String?  @map("ecom_tracking_number")
+
+  // Pricing Audit
+  rateCardId      Int?      @map("rate_card_id")
+  rateCard        RateCard? @relation(fields: [rateCardId], references: [id], onDelete: SetNull)
+  baseShippingFee Decimal   @map("base_shipping_fee") @db.Decimal(12, 2)
+  surchargeFee    Decimal   @default(0.00) @map("surcharge_fee") @db.Decimal(12, 2)
+  totalFee        Decimal   @map("total_fee") @db.Decimal(12, 2)
+
+  boxId               String?                   @map("box_id")
+  port                String?                   @map("port")
+  isGetLabel          Int                       @default(0) @map("is_get_label") // 0 or 1
+  partners            OrderPartner[]
+  activityLogs        OrderActivityLog[]
+  trackingCheckpoints OrderTrackingCheckpoint[]
+  feeItems            OrderFeeItem[]
+  products            OrderProduct[]
+
+  version   Int      @default(0) @map("version")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([customerId, sellerOrderId]) // Chống trùng đơn hàng gốc của Seller
   @@index([customerId, status, createdAt]) // Composite index tối ưu hóa phân trang lọc đơn
@@ -200,33 +199,33 @@ model OrderTrackingCheckpoint {
 }
 
 model OrderFeeItem {
-  id              Int           @id @default(autoincrement())
-  orderId         String        @map("order_id") @db.Uuid
-  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
-  feeType         String        @map("fee_type") // e.g. "BASE_SHIPPING", "FUEL_SURCHARGE", "WOOD_PACKING", "REMOTE_AREA"
-  name            String        // Translated display name: "Cước vận chuyển chính", "Phí đóng gỗ"
-  amount          Decimal       @db.Decimal(12, 2)
-  currency        String        @default("USD")
-  
-  rateCardItemId  Int?          @map("rate_card_item_id")
-  rateCardItem    RateCardItem? @relation(fields: [rateCardItemId], references: [id], onDelete: SetNull)
-  
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  id      Int    @id @default(autoincrement())
+  orderId String @map("order_id") @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  feeType  String  @map("fee_type") // e.g. "BASE_SHIPPING", "FUEL_SURCHARGE", "WOOD_PACKING", "REMOTE_AREA"
+  name     String // Translated display name: "Cước vận chuyển chính", "Phí đóng gỗ"
+  amount   Decimal @db.Decimal(12, 2)
+  currency String  @default("USD")
+
+  rateCardItemId Int?          @map("rate_card_item_id")
+  rateCardItem   RateCardItem? @relation(fields: [rateCardItemId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([orderId])
   @@map("order_fee_items")
 }
 
 model OrderProduct {
-  id          Int      @id @default(autoincrement())
-  orderId     String   @map("order_id") @db.Uuid
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  description String   @db.Text
-  quantity    Int
-  value       Decimal  @db.Decimal(12, 2)
-  hsCode      String?  @map("hs_code")
+  id            Int      @id @default(autoincrement())
+  orderId       String   @map("order_id") @db.Uuid
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  description   String   @db.Text
+  quantity      Int
+  value         Decimal  @db.Decimal(12, 2)
+  hsCode        String?  @map("hs_code")
   originCountry String?  @map("origin_country")
   weight        Int?     @map("weight")
   sku           String?  @map("sku")
@@ -235,4 +234,24 @@ model OrderProduct {
 
   @@index([orderId])
   @@map("order_products")
+}
+
+model OrderImport {
+  id           String   @id @default(uuid(7))
+  customerId   String   @map("customer_id") @db.Uuid
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fileName     String   @map("file_name")
+  fileSize     Int?     @map("file_size")
+  totalRows    Int      @map("total_rows")
+  successRows  Int      @map("success_rows")
+  failedRows   Int      @map("failed_rows")
+  errorFileUrl String?  @map("error_file_url")
+  status       String   @map("status")
+  errors       Json?    @map("errors")
+  orders       Order[]
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@map("order_imports")
 }

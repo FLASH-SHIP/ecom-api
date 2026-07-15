@@ -14,6 +14,7 @@ import {
   type Order,
   type OrderActivityLog,
   type OrderFeeItem,
+  type OrderImport,
   type OrderProduct,
   OrderStatus,
   type OrderTrackingCheckpoint,
@@ -433,7 +434,15 @@ export async function runInTransaction<T>(work: () => Promise<T>): Promise<T> {
   });
 }
 
-export type { Customer, Order, OrderActivityLog, OrderFeeItem, OrderTrackingCheckpoint, OrderProduct };
+export type {
+  Customer,
+  Order,
+  OrderActivityLog,
+  OrderFeeItem,
+  OrderImport,
+  OrderProduct,
+  OrderTrackingCheckpoint,
+};
 export {
   ActorType,
   ContentStatus,

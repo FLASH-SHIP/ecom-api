@@ -26,7 +26,7 @@ model Partner {
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
 
-  services     PartnerService[]
+  services      PartnerService[]
   orderPartners OrderPartner[]
 
   @@index([deletedAt])
@@ -34,20 +34,20 @@ model Partner {
 }
 
 model PartnerService {
-  id                 Int         @id @default(autoincrement())
-  partnerId          Int         @map("partner_id")
-  partner            Partner     @relation(fields: [partnerId], references: [id], onDelete: Cascade)
-  code               String      @map("service_code") // E.g. "usps_first_class"
-  name               String      @map("service_name") // E.g. "USPS First-Class"
-  type               ServiceType @map("service_type")
-  statusMapping      Json?       @map("status_mapping")
-  isActive           Boolean     @default(true) @map("is_active")
-  webhookSecret      String?     @map("webhook_secret")
-  timeoutMs          Int         @default(10000) @map("timeout_ms")
-  rateLimitPerMinute Int         @default(60) @map("rate_limit_per_minute")
-  deletedAt          DateTime?   @map("deleted_at")
-  createdAt          DateTime    @default(now()) @map("created_at")
-  updatedAt          DateTime    @updatedAt @map("updated_at")
+  id                 Int            @id @default(autoincrement())
+  partnerId          Int            @map("partner_id")
+  partner            Partner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  code               String         @map("service_code") // E.g. "usps_first_class"
+  name               String         @map("service_name") // E.g. "USPS First-Class"
+  type               ServiceType    @map("service_type")
+  statusMapping      Json?          @map("status_mapping")
+  isActive           Boolean        @default(true) @map("is_active")
+  webhookSecret      String?        @map("webhook_secret")
+  timeoutMs          Int            @default(10000) @map("timeout_ms")
+  rateLimitPerMinute Int            @default(60) @map("rate_limit_per_minute")
+  deletedAt          DateTime?      @map("deleted_at")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
   orderPartners      OrderPartner[]
 
   @@unique([partnerId, code])
