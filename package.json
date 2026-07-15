@@ -23,6 +23,7 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "prisma:generate": "yarn workspace @ecom/prisma prisma generate",
+    "template:generate": "yarn workspace @ecom/customer generate-template",
     "prisma:migrate": "yarn workspace @ecom/prisma prisma migrate dev",
     "prisma:seed": "yarn workspace @ecom/prisma db:seed",
     "prisma:seed:nestjs": "yarn workspace @ecom/api db:seed",
