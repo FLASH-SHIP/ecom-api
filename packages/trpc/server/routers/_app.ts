@@ -1,5 +1,6 @@
 import { router } from "@ecom/trpc/server/trpc";
 import { customerAuthRouter } from "./customer/auth/_router";
+import { customerDivisionsRouter } from "./customer/divisions/_router";
 import { customerOrdersRouter } from "./customer/orders/_router";
 import { blogRouter } from "./public/blog/_router";
 import { healthRouter } from "./public/health/_router";
@@ -102,6 +103,7 @@ export const appRouter = router({
 
   customer: router({
     auth: customerAuthRouter,
+    divisions: customerDivisionsRouter,
     orders: customerOrdersRouter,
   }),
 });

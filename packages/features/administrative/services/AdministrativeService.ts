@@ -1,11 +1,13 @@
 import { ErrorCode } from "@ecom/lib/errorCodes";
 import { ErrorWithCode } from "@ecom/lib/errors";
+import type { AdministrativeDivisionRepository } from "../repositories/AdministrativeDivisionRepository";
 import type { ProvinceRepository } from "../repositories/ProvinceRepository";
 import type { WardRepository } from "../repositories/WardRepository";
 
 export interface IAdministrativeServiceDeps {
   provinceRepo: ProvinceRepository;
   wardRepo: WardRepository;
+  divisionRepo: AdministrativeDivisionRepository;
 }
 
 export class AdministrativeService {
@@ -328,5 +330,117 @@ export class AdministrativeService {
   async deleteWard(id: number) {
     await this.getWard(id);
     return this.deps.wardRepo.softDelete(id);
+  }
+
+  // --- ADMINISTRATIVE DIVISIONS (Multi-country) ---
+
+  async listDivisions(params: {
+    countryCode: string;
+    level?: number;
+    parentId?: number;
+    search?: string;
+    page?: number;
+    limit?: number;
+    orderBy?: "asc" | "desc";
+  }) {
+    const page = params.page && params.page > 0 ? params.page : 1;
+    const limit = params.limit && params.limit > 0 ? params.limit : 10;
+    const skip = (page - 1) * limit;
+
+    const { items, total } = await this.deps.divisionRepo.list({
+      countryCode: params.countryCode,
+      level: params.level,
+      parentId: params.parentId,
+      search: params.search,
+      skip,
+      take: limit,
+      orderBy: params.orderBy,
+    });
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getDivision(id: number) {
+    const division = await this.deps.divisionRepo.findById(id);
+    if (!division) {
+      throw new ErrorWithCode(ErrorCode.NotFound, "Division not found", 404);
+    }
+    return division;
+  }
+
+  async createDivision(data: {
+    countryCode: string;
+    code: string;
+    name: string;
+    nameEn?: string;
+    divisionType: string;
+    level: number;
+    parentId?: number;
+  }) {
+    if (!data.name || data.name.trim() === "") {
+      throw new ErrorWithCode(ErrorCode.ValidationError, "Name is required", 422);
+    }
+    if (!data.code || data.code.trim() === "") {
+      throw new ErrorWithCode(ErrorCode.ValidationError, "Code is required", 422);
+    }
+
+    const existing = await this.deps.divisionRepo.findByCountryAndCode(
+      data.countryCode,
+      data.code,
+    );
+    if (existing) {
+      throw new ErrorWithCode(
+        ErrorCode.Conflict,
+        `Division with code "${data.code}" already exists for country ${data.countryCode}`,
+        409,
+      );
+    }
+
+    if (data.parentId) {
+      const parent = await this.deps.divisionRepo.findById(data.parentId);
+      if (!parent) {
+        throw new ErrorWithCode(ErrorCode.NotFound, "Parent division not found", 404);
+      }
+    }
+
+    return this.deps.divisionRepo.create({
+      ...data,
+      name: data.name.trim(),
+    });
+  }
+
+  async updateDivision(
+    id: number,
+    data: {
+      name?: string;
+      nameEn?: string;
+      divisionType?: string;
+      isActive?: boolean;
+    },
+  ) {
+    await this.getDivision(id);
+
+    if (data.name !== undefined && (!data.name || data.name.trim() === "")) {
+      throw new ErrorWithCode(ErrorCode.ValidationError, "Name cannot be empty", 422);
+    }
+
+    const updateData: {
+      name?: string;
+      nameEn?: string;
+      divisionType?: string;
+      isActive?: boolean;
+    } = {};
+    if (data.name !== undefined) updateData.name = data.name.trim();
+    if (data.nameEn !== undefined) updateData.nameEn = data.nameEn.trim();
+    if (data.divisionType !== undefined) updateData.divisionType = data.divisionType;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+    return this.deps.divisionRepo.update(id, updateData);
   }
 }

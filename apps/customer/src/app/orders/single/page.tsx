@@ -6,6 +6,7 @@ import { Card, CardContent } from "@ecom/ui/components/card";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import { Input } from "@ecom/ui/components/input";
 import { Label } from "@ecom/ui/components/label";
+import { SearchableSelect } from "@ecom/ui/components/searchable-select";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,7 @@ import { cn } from "@ecom/ui/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
@@ -41,7 +42,8 @@ const orderFormSchema = z.object({
   senderPhone: z.string().min(1, "Vui lòng nhập số điện thoại người gửi."),
   senderEmail: z.string().email("Email người gửi không hợp lệ.").or(z.literal("")),
   senderAddress: z.string().min(1, "Vui lòng nhập địa chỉ người gửi."),
-  senderCity: z.string().min(1, "Vui lòng nhập thành phố người gửi."),
+  senderCity: z.string().min(1, "Vui lòng chọn tỉnh/thành phố người gửi."),
+  senderWard: z.string().optional(),
   senderZipCode: z.string().min(1, "Vui lòng nhập mã zip người gửi."),
   senderCountry: z.string().min(1, "Vui lòng chọn quốc gia người gửi."),
 
@@ -146,6 +148,7 @@ export default function CreateSingleOrderPage() {
       senderEmail: "",
       senderAddress: "",
       senderCity: "",
+      senderWard: "",
       senderZipCode: "",
       senderCountry: "VN",
       receiverName: "",
@@ -182,7 +185,24 @@ export default function CreateSingleOrderPage() {
     control,
     name: "products",
   });
+  const { data: packingTypesData } = trpc.customer.orders.listPackingTypes.useQuery();
 
+  useEffect(() => {
+    if (packingTypesData?.items && packingTypesData.items.length > 0) {
+      const currentVal = watch("packagingCode");
+      const exists = packingTypesData.items.some((item) => item.name === currentVal);
+      if (!exists) {
+        const matchedItem = packingTypesData.items.find(
+          (item) => item.name.toLowerCase().replace(/\s+/g, "_") === currentVal.toLowerCase(),
+        );
+        if (matchedItem) {
+          setValue("packagingCode", matchedItem.name);
+        } else {
+          setValue("packagingCode", packingTypesData.items[0]?.name ?? "");
+        }
+      }
+    }
+  }, [packingTypesData, setValue, watch]);
   // Extract watched values for Step 2 and live calculations
   const watched = watch();
   const {
@@ -196,6 +216,7 @@ export default function CreateSingleOrderPage() {
     senderEmail,
     senderAddress,
     senderCity,
+    senderWard,
     senderZipCode,
     senderCountry,
     receiverName,
@@ -215,6 +236,85 @@ export default function CreateSingleOrderPage() {
     packageName,
     products,
   } = watched;
+
+  // --- Sender: Provinces & Wards (server-side search) ---
+  const [provinceSearch, setProvinceSearch] = useState("");
+  const { data: provincesData, isFetching: provincesFetching } =
+    trpc.customer.divisions.listProvinces.useQuery(
+      { search: provinceSearch || undefined },
+      { placeholderData: (prev) => prev },
+    );
+
+  const provinceOptions = useMemo(
+    () => (provincesData ?? []).map((p) => ({ value: p.name, label: p.name })),
+    [provincesData],
+  );
+
+  const selectedProvinceCode = useMemo(() => {
+    if (!senderCity || !provincesData) return undefined;
+    const found = provincesData.find((p) => p.name === senderCity);
+    return found?.code;
+  }, [senderCity, provincesData]);
+
+  const [wardSearch, setWardSearch] = useState("");
+  const { data: wardsData, isFetching: wardsFetching } = trpc.customer.divisions.listWards.useQuery(
+    { provinceCode: selectedProvinceCode ?? 0, search: wardSearch || undefined },
+    { enabled: !!selectedProvinceCode, placeholderData: (prev) => prev },
+  );
+
+  const wardOptions = useMemo(
+    () => (wardsData ?? []).map((w) => ({ value: w.name, label: w.name })),
+    [wardsData],
+  );
+
+  // Reset ward when city changes
+  const prevSenderCityRef = useRef(senderCity);
+  useEffect(() => {
+    if (prevSenderCityRef.current !== senderCity) {
+      setValue("senderWard", "");
+      prevSenderCityRef.current = senderCity;
+    }
+  }, [senderCity, setValue]);
+
+  // --- Receiver: States & Cities (server-side search) ---
+  const [stateSearch, setStateSearch] = useState("");
+  const { data: statesData, isFetching: statesFetching } =
+    trpc.customer.divisions.listStates.useQuery(
+      { search: stateSearch || undefined },
+      { placeholderData: (prev) => prev },
+    );
+
+  const stateOptions = useMemo(
+    () => (statesData ?? []).map((s) => ({ value: s.name, label: s.name })),
+    [statesData],
+  );
+
+  const selectedStateId = useMemo(() => {
+    if (!receiverState || !statesData) return undefined;
+    const found = statesData.find((s) => s.name === receiverState);
+    return found?.id;
+  }, [receiverState, statesData]);
+
+  const [citySearch, setCitySearch] = useState("");
+  const { data: citiesData, isFetching: citiesFetching } =
+    trpc.customer.divisions.listCities.useQuery(
+      { parentId: selectedStateId ?? 0, search: citySearch || undefined },
+      { enabled: !!selectedStateId, placeholderData: (prev) => prev },
+    );
+
+  const cityOptions = useMemo(
+    () => (citiesData ?? []).map((c) => ({ value: c.name, label: c.name })),
+    [citiesData],
+  );
+
+  // Reset city when state changes
+  const prevReceiverStateRef = useRef(receiverState);
+  useEffect(() => {
+    if (prevReceiverStateRef.current !== receiverState) {
+      setValue("receiverCity", "");
+      prevReceiverStateRef.current = receiverState;
+    }
+  }, [receiverState, setValue]);
 
   const productsString = JSON.stringify(products);
 
@@ -319,8 +419,11 @@ export default function CreateSingleOrderPage() {
         }
       }
       isRestored.current = true;
+      // Countries are locked — force them after any restore
+      setValue("senderCountry", "VN");
+      setValue("receiverCountry", "US");
     }
-  }, [isHydrated, reset, storeValuesString]);
+  }, [isHydrated, reset, storeValuesString, setValue]);
 
   // Save draft to Zustand store on field change
   const watchedString = JSON.stringify(watched);
@@ -384,6 +487,7 @@ export default function CreateSingleOrderPage() {
             senderEmail,
             senderAddress,
             senderCity,
+            senderWard,
             senderZipCode,
             senderCountry,
           };
@@ -560,9 +664,10 @@ export default function CreateSingleOrderPage() {
                     <div className="text-muted-foreground">Sender Name</div>
                     <div className="col-span-2 font-medium text-foreground">{senderName}</div>
 
-                    <div className="text-muted-foreground">City/Country</div>
+                    <div className="text-muted-foreground">City/Ward/Country</div>
                     <div className="col-span-2 font-medium text-foreground">
-                      {senderCity}, {senderCountry}
+                      {senderCity}
+                      {senderWard ? `, ${senderWard}` : ""}, {senderCountry}
                     </div>
 
                     <div className="text-muted-foreground">Address</div>
@@ -895,7 +1000,8 @@ export default function CreateSingleOrderPage() {
               Sender
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex flex-col gap-1.5 md:col-span-3">
+              {/* Row 1: Address (2/3) + Country (1/3) */}
+              <div className="flex flex-col gap-1.5 md:col-span-2">
                 <Label htmlFor="senderAddress" className="text-xs font-bold text-muted-foreground">
                   Address <span className="text-destructive ml-0.5">*</span>
                 </Label>
@@ -923,7 +1029,7 @@ export default function CreateSingleOrderPage() {
                   name="senderCountry"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled>
                       <SelectTrigger
                         className={cn(
                           "w-full bg-background/50 border-input",
@@ -934,7 +1040,6 @@ export default function CreateSingleOrderPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="VN">Vietnam</SelectItem>
-                        <SelectItem value="US">United States</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -942,6 +1047,61 @@ export default function CreateSingleOrderPage() {
                 {errors.senderCountry && (
                   <p className="text-xs text-destructive mt-0.5">{errors.senderCountry.message}</p>
                 )}
+              </div>
+
+              {/* Row 2: City/Province select + Ward select */}
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-bold text-muted-foreground">
+                  City / Province <span className="text-destructive ml-0.5">*</span>
+                </Label>
+                <Controller
+                  name="senderCity"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      options={provinceOptions}
+                      placeholder="Select city / province"
+                      searchPlaceholder="Search province..."
+                      allowClear
+                      maxHeight="250px"
+                      serverSearch
+                      onSearchChange={setProvinceSearch}
+                      loading={provincesFetching}
+                      className={cn("bg-background/50", errors.senderCity && "border-destructive")}
+                    />
+                  )}
+                />
+                {errors.senderCity && (
+                  <p className="text-xs text-destructive mt-0.5">{errors.senderCity.message}</p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-xs font-bold text-muted-foreground">
+                  Ward <span className="text-destructive ml-0.5">*</span>
+                </Label>
+                <Controller
+                  name="senderWard"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      options={wardOptions}
+                      placeholder="Select ward"
+                      searchPlaceholder="Search ward..."
+                      disabled={!selectedProvinceCode}
+                      allowClear
+                      maxHeight="250px"
+                      serverSearch
+                      onSearchChange={setWardSearch}
+                      loading={wardsFetching}
+                      className="bg-background/50"
+                    />
+                  )}
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -961,26 +1121,6 @@ export default function CreateSingleOrderPage() {
                 />
                 {errors.senderZipCode && (
                   <p className="text-xs text-destructive mt-0.5">{errors.senderZipCode.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="senderCity" className="text-xs font-bold text-muted-foreground">
-                  City / Province <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="senderCity"
-                  type="text"
-                  required
-                  {...register("senderCity")}
-                  placeholder="Enter city"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderCity && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderCity && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderCity.message}</p>
                 )}
               </div>
 
@@ -1121,7 +1261,7 @@ export default function CreateSingleOrderPage() {
                   name="receiverCountry"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled>
                       <SelectTrigger
                         className={cn(
                           "w-full bg-background/50 border-input",
@@ -1132,8 +1272,6 @@ export default function CreateSingleOrderPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="US">United States</SelectItem>
-                        <SelectItem value="CA">Canada</SelectItem>
-                        <SelectItem value="VN">Vietnam</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -1171,18 +1309,29 @@ export default function CreateSingleOrderPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="receiverState" className="text-xs font-bold text-muted-foreground">
+                <Label className="text-xs font-bold text-muted-foreground">
                   State / Region <span className="text-destructive ml-0.5">*</span>
                 </Label>
-                <Input
-                  id="receiverState"
-                  type="text"
-                  required
-                  {...register("receiverState")}
-                  placeholder="Enter state"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverState && "border-destructive focus-visible:ring-destructive",
+                <Controller
+                  name="receiverState"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      options={stateOptions}
+                      placeholder="Select state"
+                      searchPlaceholder="Search state..."
+                      allowClear
+                      maxHeight="250px"
+                      serverSearch
+                      onSearchChange={setStateSearch}
+                      loading={statesFetching}
+                      className={cn(
+                        "bg-background/50",
+                        errors.receiverState && "border-destructive",
+                      )}
+                    />
                   )}
                 />
                 {errors.receiverState && (
@@ -1191,18 +1340,30 @@ export default function CreateSingleOrderPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="receiverCity" className="text-xs font-bold text-muted-foreground">
+                <Label className="text-xs font-bold text-muted-foreground">
                   City <span className="text-destructive ml-0.5">*</span>
                 </Label>
-                <Input
-                  id="receiverCity"
-                  type="text"
-                  required
-                  {...register("receiverCity")}
-                  placeholder="Enter city"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverCity && "border-destructive focus-visible:ring-destructive",
+                <Controller
+                  name="receiverCity"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      options={cityOptions}
+                      placeholder="Select city"
+                      searchPlaceholder="Search city..."
+                      disabled={!selectedStateId}
+                      allowClear
+                      maxHeight="250px"
+                      serverSearch
+                      onSearchChange={setCitySearch}
+                      loading={citiesFetching}
+                      className={cn(
+                        "bg-background/50",
+                        errors.receiverCity && "border-destructive",
+                      )}
+                    />
                   )}
                 />
                 {errors.receiverCity && (
@@ -1296,22 +1457,54 @@ export default function CreateSingleOrderPage() {
                 <Controller
                   name="packagingCode"
                   control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.packagingCode && "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select type of packaging" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cardboard_box">Cardboard box</SelectItem>
-                        <SelectItem value="poly_mailer">Poly mailer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
+                  render={({ field }) => {
+                    const selectedPt = packingTypesData?.items.find(
+                      (item) => item.name === field.value,
+                    );
+                    return (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger
+                          className={cn(
+                            "w-full bg-background/50 border-input h-[52px]",
+                            errors.packagingCode && "border-destructive focus:ring-destructive",
+                          )}
+                        >
+                          {selectedPt ? (
+                            <div className="flex items-center gap-3">
+                              {selectedPt.image && (
+                                // biome-ignore lint/performance/noImgElement: dynamic svg/png package image
+                                <img
+                                  src={selectedPt.image}
+                                  alt={selectedPt.name}
+                                  className="h-9 w-9 object-contain"
+                                />
+                              )}
+                              <span className="text-sm">{selectedPt.name}</span>
+                            </div>
+                          ) : (
+                            <SelectValue placeholder="Select type of packaging" />
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {packingTypesData?.items.map((pt) => (
+                            <SelectItem key={pt.name} value={pt.name}>
+                              <div className="flex items-center gap-3 py-0.5">
+                                {pt.image && (
+                                  // biome-ignore lint/performance/noImgElement: dynamic svg/png package image
+                                  <img
+                                    src={pt.image}
+                                    alt={pt.name}
+                                    className="h-9 w-9 object-contain"
+                                  />
+                                )}
+                                <span className="text-sm">{pt.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
                 />
                 {errors.packagingCode && (
                   <p className="text-xs text-destructive mt-0.5">{errors.packagingCode.message}</p>

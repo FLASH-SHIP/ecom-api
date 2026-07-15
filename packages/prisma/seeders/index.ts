@@ -13,6 +13,7 @@ import { CountriesSeeder } from "./08-countries.seeder";
 import { TransportModesSeeder } from "./09-transport-modes.seeder";
 import { PackingTypesSeeder } from "./12-packing.seeder";
 import { AdministrativeDivisionsSeeder } from "./13-administrative.seeder";
+import { UsDivisionsSeeder } from "./14-us-divisions.seeder";
 import { AdminUserSeeder } from "./AdminUserSeeder";
 import { CustomersSeeder } from "./CustomersSeeder";
 import { CustomFieldsSeeder } from "./CustomFieldsSeeder";
@@ -42,4 +43,6 @@ export const SEEDERS: Seeder[] = [
   PartnersSeeder, // 10 — no dependencies
   PackingTypesSeeder, // 12 — no dependencies
   AdministrativeDivisionsSeeder, // 13 — depends on: none (or countries)
+  UsDivisionsSeeder, // 14 — depends on: none
 ];
+

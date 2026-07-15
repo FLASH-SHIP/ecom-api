@@ -15,7 +15,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   const session = await auth();
 
   // Server-side auth guard — redirect to login if no session
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
 

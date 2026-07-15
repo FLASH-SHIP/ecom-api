@@ -1,13 +1,17 @@
 import { router } from "@ecom/trpc/server/trpc";
 import {
+  createDivision,
   createProvince,
   createWard,
   deleteProvince,
   deleteWard,
+  getDivision,
   getProvince,
   getWard,
+  listDivisions,
   listProvinces,
   listWards,
+  updateDivision,
   updateProvince,
   updateWard,
 } from "./procedures/divisions.handler";
@@ -23,4 +27,9 @@ export const divisionsRouter = router({
   createWard,
   updateWard,
   deleteWard,
+  listDivisions,
+  getDivision,
+  createDivision,
+  updateDivision,
 });
+

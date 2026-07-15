@@ -1,3 +1,4 @@
+import { AdministrativeDivisionRepository } from "@ecom/features/administrative/repositories/AdministrativeDivisionRepository";
 import { ProvinceRepository } from "@ecom/features/administrative/repositories/ProvinceRepository";
 import { WardRepository } from "@ecom/features/administrative/repositories/WardRepository";
 import { AdministrativeService } from "@ecom/features/administrative/services/AdministrativeService";
@@ -5,6 +6,7 @@ import { prisma } from "@ecom/prisma";
 
 let _provinceRepository: ProvinceRepository | null = null;
 let _wardRepository: WardRepository | null = null;
+let _divisionRepository: AdministrativeDivisionRepository | null = null;
 let _administrativeService: AdministrativeService | null = null;
 
 export function getProvinceRepository(): ProvinceRepository {
@@ -21,11 +23,19 @@ export function getWardRepository(): WardRepository {
   return _wardRepository;
 }
 
+export function getDivisionRepository(): AdministrativeDivisionRepository {
+  if (!_divisionRepository) {
+    _divisionRepository = new AdministrativeDivisionRepository(prisma);
+  }
+  return _divisionRepository;
+}
+
 export function getAdministrativeService(): AdministrativeService {
   if (!_administrativeService) {
     _administrativeService = new AdministrativeService({
       provinceRepo: getProvinceRepository(),
       wardRepo: getWardRepository(),
+      divisionRepo: getDivisionRepository(),
     });
   }
   return _administrativeService;
@@ -34,5 +44,7 @@ export function getAdministrativeService(): AdministrativeService {
 export function resetAdministrativeService() {
   _provinceRepository = null;
   _wardRepository = null;
+  _divisionRepository = null;
   _administrativeService = null;
 }
+

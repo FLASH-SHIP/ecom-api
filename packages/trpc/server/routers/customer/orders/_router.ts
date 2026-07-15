@@ -6,7 +6,7 @@ import {
   importBatch,
   listImportSessions,
 } from "./procedures/import.handler";
-import { calculateFreight, create, get, list } from "./procedures/orders.handler";
+import { calculateFreight, create, get, list, listPackingTypes } from "./procedures/orders.handler";
 
 export const customerOrdersRouter = router({
   calculateFreight,
@@ -18,6 +18,7 @@ export const customerOrdersRouter = router({
   completeImportSession,
   listImportSessions,
   getImportSessionDetail,
+  listPackingTypes,
 });
 
 export type CustomerOrdersRouter = typeof customerOrdersRouter;

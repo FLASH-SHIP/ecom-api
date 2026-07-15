@@ -127,6 +127,8 @@ export interface DataTableProps<T> {
   filterFields?: FilterFieldDef[];
   pageTitle?: string;
   headerActions?: ReactNode;
+  /** Render content right after the search input (before the spacer) */
+  toolbarLeading?: ReactNode;
   toolbarActions?: ReactNode;
   emptyState?: ReactNode;
   tableKey?: string | number;
@@ -161,6 +163,7 @@ export function DataTable<T extends Record<string, unknown>>({
   filterFields,
   pageTitle,
   headerActions,
+  toolbarLeading,
   toolbarActions,
   emptyState,
   tableKey,
@@ -730,6 +733,8 @@ export function DataTable<T extends Record<string, unknown>>({
               </button>
             )}
           </div>
+
+          {toolbarLeading}
 
           {/* Bulk action buttons */}
           {hasSelection && bulkActionConfig && (

@@ -74,7 +74,7 @@ export class MediaFileService {
     alt?: string;
     description?: string;
     folderId?: number | null;
-    uploadedBy?: number;
+    uploadedBy?: string;
   }) {
     // Validate file size
     if (data.size > MAX_FILE_SIZE) {
