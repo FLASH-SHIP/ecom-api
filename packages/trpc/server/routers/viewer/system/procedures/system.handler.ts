@@ -308,3 +308,234 @@ export const getQueueDashboardUrl = authedProcedure
       url: `${apiUrl}/api/v1/queues/sso?token=${ssoToken}`,
     };
   });
+
+// ─── Developer Diagnostics & Database Maintenance Procedures (Non-Production Only) ───
+
+import { Writable } from "node:stream";
+
+class MemoryWriteStream extends Writable {
+  public data = "";
+  override _write(
+    chunk: unknown,
+    _encoding: string,
+    callback: (error?: Error | null) => void
+  ) {
+    this.data += (chunk as string | Buffer).toString("utf8");
+    callback();
+  }
+}
+
+export const listLogFiles = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .query(async () => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    return getSystemDiagnosticsService().listLogFiles();
+  });
+
+export const getProcessStatus = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .input(
+    z.object({
+      sudoPassword: z.string().min(1),
+      maintenanceKey: z.string().min(1),
+    })
+  )
+  .query(async ({ input, ctx }) => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    return getSystemDiagnosticsService().getProcessStatus({
+      sudoPassword: input.sudoPassword,
+      userId: ctx.user.id,
+      maintenanceKey: input.maintenanceKey,
+    });
+  });
+
+export const executeProcessAction = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .input(
+    z.object({
+      action: z.enum(["restart", "stop", "reload"]),
+      target: z.string().min(1),
+      sudoPassword: z.string().min(1),
+      maintenanceKey: z.string().min(1),
+    })
+  )
+  .mutation(async ({ input, ctx }) => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    return getSystemDiagnosticsService().executeProcessAction({
+      action: input.action,
+      target: input.target,
+      sudoPassword: input.sudoPassword,
+      userId: ctx.user.id,
+      maintenanceKey: input.maintenanceKey,
+    });
+  });
+
+export const pingServices = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .input(
+    z.object({
+      sudoPassword: z.string().min(1),
+      maintenanceKey: z.string().min(1),
+    })
+  )
+  .query(async ({ input, ctx }) => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    return getSystemDiagnosticsService().pingExternalServices({
+      sudoPassword: input.sudoPassword,
+      userId: ctx.user.id,
+      maintenanceKey: input.maintenanceKey,
+    });
+  });
+
+export const queryRedis = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .input(
+    z.object({
+      action: z.enum(["scan", "get", "del"]),
+      pattern: z.string().optional(),
+      key: z.string().optional(),
+      sudoPassword: z.string().min(1),
+      maintenanceKey: z.string().min(1),
+    })
+  )
+  .query(async ({ input, ctx }) => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    return getSystemDiagnosticsService().queryRedis({
+      action: input.action,
+      pattern: input.pattern,
+      key: input.key,
+      sudoPassword: input.sudoPassword,
+      userId: ctx.user.id,
+      maintenanceKey: input.maintenanceKey,
+    });
+  });
+
+export const executeDbCommand = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .input(
+    z.object({
+      action: z.enum([
+        "migrate-deploy",
+        "migrate-reset",
+        "migrate-status",
+        "db-push",
+        "validate",
+        "generate",
+        "seed",
+      ]),
+      seedOnly: z.string().optional(),
+      sudoPassword: z.string().min(1),
+      maintenanceKey: z.string().min(1),
+    })
+  )
+  .mutation(async ({ input, ctx }) => {
+    const { getDatabaseMaintenanceService } = await import("@ecom/features/di/containers/DatabaseMaintenanceService");
+    const writeStream = new MemoryWriteStream();
+    await getDatabaseMaintenanceService().executeCommand({
+      action: input.action,
+      maintenanceKey: input.maintenanceKey,
+      sudoPassword: input.sudoPassword,
+      seedOnly: input.seedOnly,
+      userId: ctx.user.id,
+      username: ctx.user.email,
+      writeStream,
+    });
+    return {
+      success: true,
+      output: writeStream.data,
+    };
+  });
+
+export const executeLogCommand = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .input(
+    z.object({
+      filename: z.string().optional(),
+      lines: z.number().optional(),
+      level: z.string().optional(),
+      search: z.string().optional(),
+      sudoPassword: z.string().min(1),
+      maintenanceKey: z.string().min(1),
+    })
+  )
+  .mutation(async ({ input, ctx }) => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const writeStream = new MemoryWriteStream();
+    await getSystemDiagnosticsService().executeLogCommand({
+      action: "read",
+      filename: input.filename,
+      lines: input.lines,
+      level: input.level,
+      search: input.search,
+      sudoPassword: input.sudoPassword,
+      userId: ctx.user.id,
+      username: ctx.user.email,
+      writeStream,
+      maintenanceKey: input.maintenanceKey,
+    });
+    return {
+      success: true,
+      output: writeStream.data,
+    };
+  });
+
+export const getLogLevel = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .query(async () => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    return getSystemDiagnosticsService().getLogLevel();
+  });
+
+export const updateLogLevel = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .input(
+    z.object({
+      level: z.string().min(1),
+      sudoPassword: z.string().min(1),
+      maintenanceKey: z.string().min(1),
+    })
+  )
+  .mutation(async ({ input, ctx }) => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    return getSystemDiagnosticsService().updateLogLevel({
+      level: input.level,
+      sudoPassword: input.sudoPassword,
+      userId: ctx.user.id,
+      maintenanceKey: input.maintenanceKey,
+    });
+  });
+
+export const getDatabaseStats = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .input(
+    z.object({
+      sudoPassword: z.string().min(1),
+      maintenanceKey: z.string().min(1),
+    })
+  )
+  .query(async ({ input, ctx }) => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    return getSystemDiagnosticsService().getDatabaseStats({
+      sudoPassword: input.sudoPassword,
+      userId: ctx.user.id,
+      maintenanceKey: input.maintenanceKey,
+    });
+  });
+
+export const getRedisStats = authedProcedure
+  .use(requirePermission(Permissions.SYSTEM_MANAGE))
+  .input(
+    z.object({
+      sudoPassword: z.string().min(1),
+      maintenanceKey: z.string().min(1),
+    })
+  )
+  .query(async ({ input, ctx }) => {
+    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    return getSystemDiagnosticsService().getRedisStats({
+      sudoPassword: input.sudoPassword,
+      userId: ctx.user.id,
+      maintenanceKey: input.maintenanceKey,
+    });
+  });
+

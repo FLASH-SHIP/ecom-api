@@ -17,6 +17,17 @@ import {
   getWorkflowTransitions,
   listRequestLogs,
   purgeRequestLogs,
+  listLogFiles,
+  getProcessStatus,
+  executeProcessAction,
+  pingServices,
+  queryRedis,
+  executeDbCommand,
+  executeLogCommand,
+  getLogLevel,
+  updateLogLevel,
+  getDatabaseStats,
+  getRedisStats,
 } from "./procedures/system.handler";
 
 export const systemRouter = router({
@@ -37,4 +48,15 @@ export const systemRouter = router({
   cacheStats: getCacheStats,
   clearCache: clearCacheNamespace,
   getQueueDashboardUrl,
+  listLogFiles,
+  getProcessStatus,
+  executeProcessAction,
+  pingServices,
+  queryRedis,
+  executeDbCommand,
+  executeLogCommand,
+  getLogLevel,
+  updateLogLevel,
+  getDatabaseStats,
+  getRedisStats,
 });
