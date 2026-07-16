@@ -73,6 +73,10 @@ export const apiEnvSchema = z.object({
   STORAGE_S3_CDN_URL: z.string().optional(),
   STORAGE_S3_ACCESS_KEY: z.string().optional(),
   STORAGE_S3_SECRET_KEY: z.string().optional(),
+  SYSTEM_MAINTENANCE_KEY: z
+    .string()
+    .min(8, "SYSTEM_MAINTENANCE_KEY must be at least 8 characters long")
+    .optional(),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

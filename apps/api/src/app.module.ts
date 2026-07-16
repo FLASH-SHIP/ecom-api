@@ -28,6 +28,7 @@ import { MediaModule } from "./modules/media/media.module";
 import { QueuesModule } from "./modules/queues/queues.module";
 import { RequestLoggerMiddleware } from "./modules/request-logger/request-logger.middleware";
 import { UsersModule } from "./modules/users/users.module";
+import { SystemModule } from "./modules/system/system.module";
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { UsersModule } from "./modules/users/users.module";
     UsersModule,
     QueuesModule,
     HttpClientModule,
+    SystemModule,
   ],
   providers: [
     {
