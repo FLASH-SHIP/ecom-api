@@ -197,4 +197,3 @@ export const updateDivision = authedProcedure
     const { id, ...data } = input;
     return getAdministrativeService().updateDivision(id, data);
   });
-

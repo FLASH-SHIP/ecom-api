@@ -3,7 +3,7 @@ model Country {
   name      String   @db.VarChar
   code      String   @unique @db.VarChar
   flag      String?  @db.VarChar
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("countries")
 }
@@ -12,8 +12,8 @@ model TransportMode {
   id        Int      @id @default(autoincrement())
   code      String   @unique @db.VarChar
   name      String   @db.VarChar
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("transport_modes")
 }

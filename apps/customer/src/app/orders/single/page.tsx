@@ -18,7 +18,7 @@ import { cn } from "@ecom/ui/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
@@ -59,7 +59,7 @@ const orderFormSchema = z.object({
   receiverCountry: z.string().min(1, "Vui lòng chọn quốc gia người nhận."),
 
   // Package Info
-  packagingCode: z.string().min(1, "Vui lòng chọn loại đóng gói."),
+  packingTypeId: z.number({ message: "Vui lòng chọn loại đóng gói." }).int().positive(),
   length: z.string().optional(),
   width: z.string().optional(),
   height: z.string().optional(),
@@ -134,6 +134,7 @@ export default function CreateSingleOrderPage() {
     watch,
     reset,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
@@ -160,7 +161,7 @@ export default function CreateSingleOrderPage() {
       receiverState: "",
       receiverZipCode: "",
       receiverCountry: "US",
-      packagingCode: "cardboard_box",
+      packingTypeId: 0,
       length: "",
       width: "",
       height: "",
@@ -189,53 +190,19 @@ export default function CreateSingleOrderPage() {
 
   useEffect(() => {
     if (packingTypesData?.items && packingTypesData.items.length > 0) {
-      const currentVal = watch("packagingCode");
-      const exists = packingTypesData.items.some((item) => item.name === currentVal);
-      if (!exists) {
-        const matchedItem = packingTypesData.items.find(
-          (item) => item.name.toLowerCase().replace(/\s+/g, "_") === currentVal.toLowerCase(),
-        );
-        if (matchedItem) {
-          setValue("packagingCode", matchedItem.name);
-        } else {
-          setValue("packagingCode", packingTypesData.items[0]?.name ?? "");
-        }
+      const currentVal = watch("packingTypeId");
+      if (!currentVal || !packingTypesData.items.some((item) => item.id === currentVal)) {
+        setValue("packingTypeId", packingTypesData.items[0]?.id ?? 0);
       }
     }
   }, [packingTypesData, setValue, watch]);
-  // Extract watched values for Step 2 and live calculations
-  const watched = watch();
-  const {
-    shippingMethod,
-    shippingOrigin,
-    detailDescription,
-    declaredValue,
-    sellerOrderId,
-    senderName,
-    senderPhone,
-    senderEmail,
-    senderAddress,
-    senderCity,
-    senderWard,
-    senderZipCode,
-    senderCountry,
-    receiverName,
-    receiverPhone,
-    receiverEmail,
-    receiverAddress1,
-    receiverAddress2,
-    receiverCity,
-    receiverState,
-    receiverZipCode,
-    receiverCountry,
-    packagingCode,
-    length,
-    width,
-    height,
-    weight,
-    packageName,
-    products,
-  } = watched;
+  // Watch only necessary fields to prevent typing lag
+  const watchedSenderCity = watch("senderCity");
+  const watchedReceiverState = watch("receiverState");
+  const watchedLength = watch("length");
+  const watchedWidth = watch("width");
+  const watchedHeight = watch("height");
+  const watchedProducts = watch("products");
 
   // --- Sender: Provinces & Wards (server-side search) ---
   const [provinceSearch, setProvinceSearch] = useState("");
@@ -251,10 +218,10 @@ export default function CreateSingleOrderPage() {
   );
 
   const selectedProvinceCode = useMemo(() => {
-    if (!senderCity || !provincesData) return undefined;
-    const found = provincesData.find((p) => p.name === senderCity);
+    if (!watchedSenderCity || !provincesData) return undefined;
+    const found = provincesData.find((p) => p.name === watchedSenderCity);
     return found?.code;
-  }, [senderCity, provincesData]);
+  }, [watchedSenderCity, provincesData]);
 
   const [wardSearch, setWardSearch] = useState("");
   const { data: wardsData, isFetching: wardsFetching } = trpc.customer.divisions.listWards.useQuery(
@@ -268,13 +235,13 @@ export default function CreateSingleOrderPage() {
   );
 
   // Reset ward when city changes
-  const prevSenderCityRef = useRef(senderCity);
+  const prevSenderCityRef = useRef(watchedSenderCity);
   useEffect(() => {
-    if (prevSenderCityRef.current !== senderCity) {
+    if (prevSenderCityRef.current !== watchedSenderCity) {
       setValue("senderWard", "");
-      prevSenderCityRef.current = senderCity;
+      prevSenderCityRef.current = watchedSenderCity;
     }
-  }, [senderCity, setValue]);
+  }, [watchedSenderCity, setValue]);
 
   // --- Receiver: States & Cities (server-side search) ---
   const [stateSearch, setStateSearch] = useState("");
@@ -290,10 +257,10 @@ export default function CreateSingleOrderPage() {
   );
 
   const selectedStateId = useMemo(() => {
-    if (!receiverState || !statesData) return undefined;
-    const found = statesData.find((s) => s.name === receiverState);
+    if (!watchedReceiverState || !statesData) return undefined;
+    const found = statesData.find((s) => s.name === watchedReceiverState);
     return found?.id;
-  }, [receiverState, statesData]);
+  }, [watchedReceiverState, statesData]);
 
   const [citySearch, setCitySearch] = useState("");
   const { data: citiesData, isFetching: citiesFetching } =
@@ -308,28 +275,28 @@ export default function CreateSingleOrderPage() {
   );
 
   // Reset city when state changes
-  const prevReceiverStateRef = useRef(receiverState);
+  const prevReceiverStateRef = useRef(watchedReceiverState);
   useEffect(() => {
-    if (prevReceiverStateRef.current !== receiverState) {
+    if (prevReceiverStateRef.current !== watchedReceiverState) {
       setValue("receiverCity", "");
-      prevReceiverStateRef.current = receiverState;
+      prevReceiverStateRef.current = watchedReceiverState;
     }
-  }, [receiverState, setValue]);
+  }, [watchedReceiverState, setValue]);
 
-  const productsString = JSON.stringify(products);
+  const productsString = JSON.stringify(watchedProducts);
 
   // Sync declaredValue, detailDescription, and hsCode automatically when products change
   // biome-ignore lint/correctness/useExhaustiveDependencies: use productsString for deep change tracking
   useEffect(() => {
-    if (!products) return;
-    const totalVal = products.reduce((sum, p) => {
+    if (!watchedProducts) return;
+    const totalVal = watchedProducts.reduce((sum, p) => {
       const q = Number(p.quantity) || 0;
       const v = Number(p.value) || 0;
       return sum + q * v;
     }, 0);
     setValue("declaredValue", totalVal > 0 ? totalVal.toFixed(2) : "", { shouldValidate: true });
 
-    const desc = products
+    const desc = watchedProducts
       .filter((p) => p.description && p.description.trim() !== "")
       .map((p) => `${p.description.trim()} (x${p.quantity})`)
       .join(", ");
@@ -343,8 +310,122 @@ export default function CreateSingleOrderPage() {
   };
 
   const [saveSenderSetting, setSaveSenderSetting] = useState(false);
+  const [selectedSenderId, setSelectedSenderId] = useState<number | null>(null);
   const [saveReceiverSetting, setSaveReceiverSetting] = useState(false);
+  const [selectedReceiverId, setSelectedReceiverId] = useState<number | null>(null);
   const [savePackageSetting, setSavePackageSetting] = useState(false);
+
+  // Saved senders from DB
+  const { data: savedSenders = [] } = trpc.customer.senders.list.useQuery();
+  const createSenderMutation = trpc.customer.senders.create.useMutation();
+  const updateSenderMutation = trpc.customer.senders.update.useMutation();
+  const trpcUtils = trpc.useUtils();
+
+  const savedSenderOptions = useMemo(
+    () =>
+      savedSenders.map((s) => ({
+        value: String(s.id),
+        label: s.label || `${s.name} — ${s.city}`,
+      })),
+    [savedSenders],
+  );
+
+  const handleSelectSavedSender = useCallback(
+    (val: string) => {
+      if (!val) {
+        setSelectedSenderId(null);
+        return;
+      }
+      const sender = savedSenders.find((s) => s.id === Number(val));
+      if (!sender) return;
+      setSelectedSenderId(sender.id);
+      setValue("senderName", sender.name);
+      setValue("senderPhone", sender.phone ?? "");
+      setValue("senderEmail", sender.email ?? "");
+      setValue("senderAddress", sender.address);
+      setValue("senderCity", sender.city);
+      setValue("senderWard", sender.ward ?? "");
+      setValue("senderZipCode", sender.zipCode ?? "");
+      setValue("senderCountry", sender.country ?? "VN");
+      setSaveSenderSetting(true);
+    },
+    [savedSenders, setValue],
+  );
+
+  // Saved receivers from DB
+  const { data: savedReceivers = [] } = trpc.customer.receivers.list.useQuery();
+  const createReceiverMutation = trpc.customer.receivers.create.useMutation();
+  const updateReceiverMutation = trpc.customer.receivers.update.useMutation();
+
+  const savedReceiverOptions = useMemo(
+    () =>
+      savedReceivers.map((r) => ({
+        value: String(r.id),
+        label: r.label || `${r.name} — ${r.city}, ${r.state}`,
+      })),
+    [savedReceivers],
+  );
+
+  const handleSelectSavedReceiver = useCallback(
+    (val: string) => {
+      if (!val) {
+        setSelectedReceiverId(null);
+        return;
+      }
+      const receiver = savedReceivers.find((r) => r.id === Number(val));
+      if (!receiver) return;
+      setSelectedReceiverId(receiver.id);
+      setValue("receiverName", receiver.name);
+      setValue("receiverPhone", receiver.phone ?? "");
+      setValue("receiverEmail", receiver.email ?? "");
+      setValue("receiverAddress1", receiver.address1);
+      setValue("receiverAddress2", receiver.address2 ?? "");
+      setValue("receiverCity", receiver.city);
+      setValue("receiverState", receiver.state);
+      setValue("receiverZipCode", receiver.zipCode);
+      setValue("receiverCountry", receiver.country ?? "US");
+      setSaveReceiverSetting(true);
+    },
+    [savedReceivers, setValue],
+  );
+
+  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
+
+  // Saved packages from DB
+  const { data: savedPackages = [] } = trpc.customer.packages.list.useQuery();
+  const createPackageMutation = trpc.customer.packages.create.useMutation();
+  const updatePackageMutation = trpc.customer.packages.update.useMutation();
+
+  const savedPackageOptions = useMemo(
+    () =>
+      savedPackages.map((p) => ({
+        value: String(p.id),
+        label:
+          p.label ||
+          `${p.packageName} — ${p.weight}g (${p.length ?? 0}x${p.width ?? 0}x${p.height ?? 0})`,
+      })),
+    [savedPackages],
+  );
+
+  const handleSelectSavedPackage = useCallback(
+    (val: string) => {
+      if (!val) {
+        setSelectedPackageId(null);
+        return;
+      }
+      const pkg = savedPackages.find((p) => p.id === Number(val));
+      if (!pkg) return;
+      setSelectedPackageId(pkg.id);
+      setValue("packageName", pkg.packageName);
+      setValue("packingTypeId", pkg.packingTypeId ?? 0);
+      setValue("length", pkg.length !== null ? String(pkg.length) : "");
+      setValue("width", pkg.width !== null ? String(pkg.width) : "");
+      setValue("height", pkg.height !== null ? String(pkg.height) : "");
+      setValue("weight", String(pkg.weight));
+      setSavePackageSetting(true);
+    },
+    [savedPackages, setValue],
+  );
 
   const [isGetLabel, setIsGetLabel] = useState(false);
 
@@ -352,12 +433,12 @@ export default function CreateSingleOrderPage() {
   const [liveVolumeWeight, setLiveVolumeWeight] = useState(0);
 
   useEffect(() => {
-    const l = Number(length) || 0;
-    const w = Number(width) || 0;
-    const h = Number(height) || 0;
+    const l = Number(watchedLength) || 0;
+    const w = Number(watchedWidth) || 0;
+    const h = Number(watchedHeight) || 0;
     const computedGrams = Math.round((l * w * h) / 5);
     setLiveVolumeWeight(computedGrams);
-  }, [length, width, height]);
+  }, [watchedLength, watchedWidth, watchedHeight]);
 
   // Set hydration status
   useEffect(() => {
@@ -380,22 +461,45 @@ export default function CreateSingleOrderPage() {
           }
         } else {
           // Prefill from localStorage defaults if no draft session exists
-          const defaultSender = localStorage.getItem("default_sender_info");
           const defaultReceiver = localStorage.getItem("default_receiver_info");
           const defaultPackage = localStorage.getItem("default_package_info");
           const newDefaults = JSON.parse(storeValuesString);
 
+          // Auto-fill from default saved sender (DB)
+          const defaultSender = savedSenders.find((s) => s.isDefault);
           if (defaultSender) {
-            try {
-              const senderObj = JSON.parse(defaultSender);
-              Object.assign(newDefaults, senderObj);
-              setSaveSenderSetting(true);
-            } catch (e) {
-              console.error("Failed to parse default sender info", e);
-            }
+            Object.assign(newDefaults, {
+              senderName: defaultSender.name,
+              senderPhone: defaultSender.phone ?? "",
+              senderEmail: defaultSender.email ?? "",
+              senderAddress: defaultSender.address,
+              senderCity: defaultSender.city,
+              senderWard: defaultSender.ward ?? "",
+              senderZipCode: defaultSender.zipCode ?? "",
+              senderCountry: defaultSender.country ?? "VN",
+            });
+            setSelectedSenderId(defaultSender.id);
+            setSaveSenderSetting(true);
           }
 
-          if (defaultReceiver) {
+          // Auto-fill from default saved receiver (DB)
+          const defaultReceiverDb = savedReceivers.find((r) => r.isDefault);
+          if (defaultReceiverDb) {
+            Object.assign(newDefaults, {
+              receiverName: defaultReceiverDb.name,
+              receiverPhone: defaultReceiverDb.phone ?? "",
+              receiverEmail: defaultReceiverDb.email ?? "",
+              receiverAddress1: defaultReceiverDb.address1,
+              receiverAddress2: defaultReceiverDb.address2 ?? "",
+              receiverCity: defaultReceiverDb.city,
+              receiverState: defaultReceiverDb.state,
+              receiverZipCode: defaultReceiverDb.zipCode,
+              receiverCountry: defaultReceiverDb.country ?? "US",
+            });
+            setSelectedReceiverId(defaultReceiverDb.id);
+            setSaveReceiverSetting(true);
+          } else if (defaultReceiver) {
+            // Fallback: migrate from localStorage (one-time)
             try {
               const receiverObj = JSON.parse(defaultReceiver);
               Object.assign(newDefaults, receiverObj);
@@ -405,7 +509,21 @@ export default function CreateSingleOrderPage() {
             }
           }
 
-          if (defaultPackage) {
+          // Auto-fill from default saved package (DB)
+          const defaultPackageDb = savedPackages.find((p) => p.isDefault);
+          if (defaultPackageDb) {
+            Object.assign(newDefaults, {
+              packageName: defaultPackageDb.packageName,
+              packingTypeId: defaultPackageDb.packingTypeId,
+              length: defaultPackageDb.length !== null ? String(defaultPackageDb.length) : "",
+              width: defaultPackageDb.width !== null ? String(defaultPackageDb.width) : "",
+              height: defaultPackageDb.height !== null ? String(defaultPackageDb.height) : "",
+              weight: String(defaultPackageDb.weight),
+            });
+            setSelectedPackageId(defaultPackageDb.id);
+            setSavePackageSetting(true);
+          } else if (defaultPackage) {
+            // Fallback: migrate from localStorage (one-time)
             try {
               const packageObj = JSON.parse(defaultPackage);
               Object.assign(newDefaults, packageObj);
@@ -423,34 +541,35 @@ export default function CreateSingleOrderPage() {
       setValue("senderCountry", "VN");
       setValue("receiverCountry", "US");
     }
-  }, [isHydrated, reset, storeValuesString, setValue]);
-
-  // Save draft to Zustand store on field change
-  const watchedString = JSON.stringify(watched);
-  useEffect(() => {
-    if (isHydrated && isRestored.current) {
-      try {
-        const parsed = JSON.parse(watchedString);
-        setValues(parsed);
-      } catch (e) {
-        console.error("Failed to parse watched values", e);
-      }
-    }
-  }, [watchedString, isHydrated, setValues]);
+  }, [isHydrated, reset, storeValuesString, setValue, savedSenders, savedReceivers, savedPackages]);
 
   // handle step 1 "Get Rates"
   const handleGetRates = async () => {
     setError(null);
     setLoading(true);
+
+    const formValues = getValues();
+
+    // Save draft to Zustand store (persisted to sessionStorage) only on Get Rates
+    setValues({
+      ...formValues,
+      products: formValues.products.map((p: OrderFormValues["products"][number]) => ({
+        ...p,
+        hsCodeNumber: p.hsCodeNumber ?? "",
+        weight: p.weight ?? "",
+        sku: p.sku ?? "",
+      })),
+    });
+
     try {
       const res = await trpcContext.client.customer.orders.calculateFreight.query({
-        shippingMethod,
-        country: receiverCountry,
-        declaredWeight: Number(weight),
-        dimensionLength: length ? Number(length) : null,
-        dimensionWidth: width ? Number(width) : null,
-        dimensionHeight: height ? Number(height) : null,
-        origin: shippingOrigin,
+        shippingMethod: formValues.shippingMethod,
+        country: formValues.receiverCountry,
+        declaredWeight: Number(formValues.weight),
+        dimensionLength: formValues.length ? Number(formValues.length) : null,
+        dimensionWidth: formValues.width ? Number(formValues.width) : null,
+        dimensionHeight: formValues.height ? Number(formValues.height) : null,
+        origin: formValues.shippingOrigin,
       });
 
       setPricing({
@@ -476,113 +595,192 @@ export default function CreateSingleOrderPage() {
   };
 
   // create order mutation
-  const createOrderMutation = trpc.customer.orders.create.useMutation({
-    onSuccess: () => {
-      // Save or remove defaults based on checkbox states
+  const createOrderMutation = trpc.customer.orders.create.useMutation();
+
+  const handleCreateOrder = async () => {
+    setError(null);
+    setLoading(true);
+
+    const formValues = getValues();
+    const {
+      shippingMethod,
+      shippingOrigin,
+      sellerOrderId,
+      senderName,
+      senderAddress,
+      senderPhone,
+      senderEmail,
+      senderCountry,
+      senderCity,
+      senderWard,
+      senderZipCode,
+      receiverName,
+      receiverPhone,
+      receiverEmail,
+      receiverCity,
+      receiverState,
+      receiverAddress1,
+      receiverAddress2,
+      receiverCountry,
+      receiverZipCode,
+      detailDescription,
+      weight,
+      length,
+      width,
+      height,
+      declaredValue,
+      packingTypeId,
+      products,
+      packageName,
+    } = formValues;
+
+    try {
+      await createOrderMutation.mutateAsync({
+        shippingMethod,
+        shippingOrigin,
+        sellerOrderId: sellerOrderId || null,
+        importId: null,
+
+        senderName,
+        senderAddress,
+        senderPhone,
+        senderEmail,
+        senderCountry,
+        senderState: "",
+        senderCity,
+        senderZipCode,
+
+        receiverName,
+        receiverPhone: receiverPhone || null,
+        receiverEmail,
+        receiverCity,
+        receiverState,
+        receiverAddress1,
+        receiverAddress2: receiverAddress2 || null,
+        receiverCountry,
+        receiverZipCode,
+
+        detailDescription,
+        declaredWeight: Number(weight),
+        dimensionLength: length ? Number(length) : null,
+        dimensionWidth: width ? Number(width) : null,
+        dimensionHeight: height ? Number(height) : null,
+        declaredValue: Number(declaredValue),
+        packingTypeId: packingTypeId || null,
+        isGetLabel: isGetLabel ? 1 : 0,
+        products: products.map((p: OrderFormValues["products"][number]) => ({
+          description: p.description,
+          quantity: Number(p.quantity),
+          value: Number(p.value),
+          hsCode: p.hsCodeNumber ? `${p.hsCodePrefix}-${p.hsCodeNumber}` : null,
+          originCountry: p.originCountry || null,
+          weight: p.weight ? Number(p.weight) : null,
+          sku: p.sku || null,
+        })),
+      });
+
+      const promises: Promise<unknown>[] = [];
+
+      // Save sender to DB if checkbox is ticked
+      if (saveSenderSetting) {
+        const senderPayload = {
+          name: senderName,
+          phone: senderPhone || null,
+          email: senderEmail || null,
+          address: senderAddress,
+          city: senderCity,
+          ward: senderWard || null,
+          zipCode: senderZipCode || null,
+          country: senderCountry || "VN",
+          isDefault: true,
+        };
+        if (selectedSenderId) {
+          promises.push(
+            updateSenderMutation.mutateAsync({ id: selectedSenderId, data: senderPayload }),
+          );
+        } else {
+          promises.push(createSenderMutation.mutateAsync(senderPayload));
+        }
+      }
+
+      // Save receiver to DB if checkbox is ticked
+      console.log("saveReceiverSetting state value in handleCreateOrder:", saveReceiverSetting);
+      if (saveReceiverSetting) {
+        const receiverPayload = {
+          name: receiverName,
+          phone: receiverPhone || null,
+          email: receiverEmail || null,
+          address1: receiverAddress1,
+          address2: receiverAddress2 || null,
+          city: receiverCity,
+          state: receiverState,
+          zipCode: receiverZipCode,
+          country: receiverCountry || "US",
+          isDefault: true,
+        };
+        console.log("receiverPayload constructed:", receiverPayload);
+        if (selectedReceiverId) {
+          console.log("Updating receiver settings for id:", selectedReceiverId);
+          promises.push(
+            updateReceiverMutation.mutateAsync({ id: selectedReceiverId, data: receiverPayload }),
+          );
+        } else {
+          console.log("Creating new receiver settings");
+          promises.push(createReceiverMutation.mutateAsync(receiverPayload));
+        }
+      }
+
+      // Save package to DB if checkbox is ticked
+      if (savePackageSetting) {
+        const packagePayload = {
+          packageName: packageName || "Mẫu gói hàng",
+          packingTypeId: Number(packingTypeId),
+          length: length ? Number(length) : null,
+          width: width ? Number(width) : null,
+          height: height ? Number(height) : null,
+          weight: Number(weight),
+          isDefault: true,
+        };
+        if (selectedPackageId) {
+          promises.push(
+            updatePackageMutation.mutateAsync({ id: selectedPackageId, data: packagePayload }),
+          );
+        } else {
+          promises.push(createPackageMutation.mutateAsync(packagePayload));
+        }
+      }
+
+      if (promises.length > 0) {
+        try {
+          console.log("Waiting for settings save promises:", promises.length);
+          const results = await Promise.all(promises);
+          console.log("Settings save results:", results);
+          // Invalidate list queries
+          await Promise.all([
+            trpcUtils.customer.senders.list.invalidate(),
+            trpcUtils.customer.receivers.list.invalidate(),
+            trpcUtils.customer.packages.list.invalidate(),
+          ]);
+        } catch (e) {
+          console.error("Failed to save settings:", e);
+        }
+      }
+
       if (typeof window !== "undefined") {
-        if (saveSenderSetting) {
-          const senderInfo = {
-            senderName,
-            senderPhone,
-            senderEmail,
-            senderAddress,
-            senderCity,
-            senderWard,
-            senderZipCode,
-            senderCountry,
-          };
-          localStorage.setItem("default_sender_info", JSON.stringify(senderInfo));
-        } else {
-          localStorage.removeItem("default_sender_info");
-        }
-
-        if (saveReceiverSetting) {
-          const receiverInfo = {
-            receiverName,
-            receiverPhone,
-            receiverEmail,
-            receiverAddress1,
-            receiverAddress2,
-            receiverCity,
-            receiverState,
-            receiverZipCode,
-            receiverCountry,
-          };
-          localStorage.setItem("default_receiver_info", JSON.stringify(receiverInfo));
-        } else {
-          localStorage.removeItem("default_receiver_info");
-        }
-
-        if (savePackageSetting) {
-          const packageInfo = {
-            packagingCode,
-            length,
-            width,
-            height,
-            weight,
-            packageName,
-          };
-          localStorage.setItem("default_package_info", JSON.stringify(packageInfo));
-        } else {
-          localStorage.removeItem("default_package_info");
-        }
+        // Clear legacy package settings from localStorage
+        localStorage.removeItem("default_package_info");
       }
 
       clearStore();
       // Refresh context cache and navigate back to list
       trpcContext.customer.orders.list.invalidate();
       router.push("/orders");
-    },
-    onError: (err) => {
-      triggerError(err.message || "Tạo đơn hàng thất bại. Vui lòng thử lại.");
-    },
-  });
-
-  const handleCreateOrder = () => {
-    setError(null);
-    createOrderMutation.mutate({
-      shippingMethod,
-      shippingOrigin,
-      sellerOrderId: sellerOrderId || null,
-      importId: null,
-
-      senderName,
-      senderAddress,
-      senderPhone,
-      senderEmail,
-      senderCountry,
-      senderState: "",
-      senderCity,
-      senderZipCode,
-
-      receiverName,
-      receiverPhone: receiverPhone || null,
-      receiverEmail,
-      receiverCity,
-      receiverState,
-      receiverAddress1,
-      receiverAddress2: receiverAddress2 || null,
-      receiverCountry,
-      receiverZipCode,
-
-      detailDescription,
-      declaredWeight: Number(weight),
-      dimensionLength: length ? Number(length) : null,
-      dimensionWidth: width ? Number(width) : null,
-      dimensionHeight: height ? Number(height) : null,
-      declaredValue: Number(declaredValue),
-      packagingCode,
-      isGetLabel: isGetLabel ? 1 : 0,
-      products: products.map((p) => ({
-        description: p.description,
-        quantity: Number(p.quantity),
-        value: Number(p.value),
-        hsCode: p.hsCodeNumber ? `${p.hsCodePrefix}-${p.hsCodeNumber}` : null,
-        originCountry: p.originCountry || null,
-        weight: p.weight ? Number(p.weight) : null,
-        sku: p.sku || null,
-      })),
-    });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      triggerError(errMsg || "Tạo đơn hàng thất bại. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isHydrated) {
@@ -594,6 +792,37 @@ export default function CreateSingleOrderPage() {
   }
 
   if (step === 2 && pricing) {
+    // Read details from storeValues in Step 2 to avoid watching them during Step 1 typing
+    const {
+      senderName,
+      senderCity,
+      senderWard,
+      senderCountry,
+      senderAddress,
+      senderZipCode,
+      senderPhone,
+      senderEmail,
+      shippingOrigin,
+      shippingMethod,
+      sellerOrderId,
+      detailDescription,
+      declaredValue,
+      length,
+      width,
+      height,
+      weight,
+      products,
+      receiverName,
+      receiverCity,
+      receiverState,
+      receiverCountry,
+      receiverAddress1,
+      receiverAddress2,
+      receiverZipCode,
+      receiverPhone,
+      receiverEmail,
+    } = storeValues;
+
     // Render Step 2: Review & Payment
     return (
       <div className="flex flex-col gap-6 w-full pb-10">
@@ -996,9 +1225,23 @@ export default function CreateSingleOrderPage() {
         {/* Sender Info */}
         <Card className="rounded-xl border border-border bg-card">
           <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Sender
-            </h3>
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h3 className="font-bold text-lg text-foreground">Sender</h3>
+              {savedSenders.length > 0 && (
+                <div className="w-64">
+                  <SearchableSelect
+                    value={selectedSenderId ? String(selectedSenderId) : ""}
+                    onValueChange={handleSelectSavedSender}
+                    options={savedSenderOptions}
+                    placeholder="Choose saved sender..."
+                    searchPlaceholder="Search saved sender..."
+                    allowClear
+                    maxHeight="200px"
+                    className="h-8 text-xs"
+                  />
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Row 1: Address (2/3) + Country (1/3) */}
               <div className="flex flex-col gap-1.5 md:col-span-2">
@@ -1206,6 +1449,16 @@ export default function CreateSingleOrderPage() {
             <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
               Receiver
             </h3>
+
+            {savedReceiverOptions.length > 0 && (
+              <SearchableSelect
+                options={savedReceiverOptions}
+                value={selectedReceiverId ? String(selectedReceiverId) : ""}
+                onValueChange={handleSelectSavedReceiver}
+                placeholder="Choose saved receiver..."
+              />
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="flex flex-col gap-1.5">
                 <Label
@@ -1284,31 +1537,6 @@ export default function CreateSingleOrderPage() {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="receiverZipCode"
-                  className="text-xs font-bold text-muted-foreground"
-                >
-                  Postcode / Zipcode <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="receiverZipCode"
-                  type="text"
-                  required
-                  {...register("receiverZipCode")}
-                  placeholder="Enter zipcode"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverZipCode && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.receiverZipCode && (
-                  <p className="text-xs text-destructive mt-0.5">
-                    {errors.receiverZipCode.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
                 <Label className="text-xs font-bold text-muted-foreground">
                   State / Region <span className="text-destructive ml-0.5">*</span>
                 </Label>
@@ -1368,6 +1596,31 @@ export default function CreateSingleOrderPage() {
                 />
                 {errors.receiverCity && (
                   <p className="text-xs text-destructive mt-0.5">{errors.receiverCity.message}</p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label
+                  htmlFor="receiverZipCode"
+                  className="text-xs font-bold text-muted-foreground"
+                >
+                  Postcode / Zipcode <span className="text-destructive ml-0.5">*</span>
+                </Label>
+                <Input
+                  id="receiverZipCode"
+                  type="text"
+                  required
+                  {...register("receiverZipCode")}
+                  placeholder="Enter zipcode"
+                  className={cn(
+                    "w-full bg-background/50",
+                    errors.receiverZipCode && "border-destructive focus-visible:ring-destructive",
+                  )}
+                />
+                {errors.receiverZipCode && (
+                  <p className="text-xs text-destructive mt-0.5">
+                    {errors.receiverZipCode.message}
+                  </p>
                 )}
               </div>
 
@@ -1446,27 +1699,44 @@ export default function CreateSingleOrderPage() {
         {/* Package Info */}
         <Card className="rounded-xl border border-border bg-card">
           <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Package Info
-            </h3>
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h3 className="font-bold text-lg text-foreground">Package Info</h3>
+              {savedPackages.length > 0 && (
+                <div className="w-64">
+                  <SearchableSelect
+                    value={selectedPackageId ? String(selectedPackageId) : ""}
+                    onValueChange={handleSelectSavedPackage}
+                    options={savedPackageOptions}
+                    placeholder="Choose saved package..."
+                    searchPlaceholder="Search saved package..."
+                    allowClear
+                    maxHeight="200px"
+                    className="h-8 text-xs"
+                  />
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex flex-col gap-1.5 md:col-span-3">
                 <Label className="text-xs font-bold text-muted-foreground">
                   Type of Packaging <span className="text-destructive ml-0.5">*</span>
                 </Label>
                 <Controller
-                  name="packagingCode"
+                  name="packingTypeId"
                   control={control}
                   render={({ field }) => {
                     const selectedPt = packingTypesData?.items.find(
-                      (item) => item.name === field.value,
+                      (item) => item.id === field.value,
                     );
                     return (
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value ? String(field.value) : ""}
+                        onValueChange={(v) => field.onChange(Number(v))}
+                      >
                         <SelectTrigger
                           className={cn(
                             "w-full bg-background/50 border-input h-[52px]",
-                            errors.packagingCode && "border-destructive focus:ring-destructive",
+                            errors.packingTypeId && "border-destructive focus:ring-destructive",
                           )}
                         >
                           {selectedPt ? (
@@ -1487,7 +1757,7 @@ export default function CreateSingleOrderPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {packingTypesData?.items.map((pt) => (
-                            <SelectItem key={pt.name} value={pt.name}>
+                            <SelectItem key={pt.id} value={String(pt.id)}>
                               <div className="flex items-center gap-3 py-0.5">
                                 {pt.image && (
                                   // biome-ignore lint/performance/noImgElement: dynamic svg/png package image
@@ -1506,8 +1776,8 @@ export default function CreateSingleOrderPage() {
                     );
                   }}
                 />
-                {errors.packagingCode && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.packagingCode.message}</p>
+                {errors.packingTypeId && (
+                  <p className="text-xs text-destructive mt-0.5">{errors.packingTypeId.message}</p>
                 )}
               </div>
 

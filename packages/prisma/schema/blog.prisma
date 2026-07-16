@@ -6,28 +6,28 @@ model Post {
   slug           String            @unique
   content        String?           @db.Text
   excerpt        String?           @db.Text
-  featuredImage  String?
-  bannerImage    String?
-  isFeatured     Boolean           @default(false)
-  allowComments  Boolean           @default(true)
-  formatType     String?
-  externalSource String?
-  sponsoredBy    String?
+  featuredImage  String?           @map("featured_image")
+  bannerImage    String?           @map("banner_image")
+  isFeatured     Boolean           @default(false) @map("is_featured")
+  allowComments  Boolean           @default(true) @map("allow_comments")
+  formatType     String?           @map("format_type")
+  externalSource String?           @map("external_source")
+  sponsoredBy    String?           @map("sponsored_by")
   views          Int               @default(0)
   status         ContentStatus     @default(DRAFT)
-  authorId       String            @db.Uuid
+  authorId       String            @map("author_id") @db.Uuid
   author         User              @relation(fields: [authorId], references: [id])
   categories     PostCategory[]
   tags           PostTag[]
   translations   PostTranslation[]
   seoMeta        SeoMeta?          @relation("PostSeo")
   comments       Comment[]
-  publishedAt    DateTime?
-  scheduledAt    DateTime?
-  expiresAt      DateTime?
-  deletedAt      DateTime?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  publishedAt    DateTime?         @map("published_at")
+  scheduledAt    DateTime?         @map("scheduled_at")
+  expiresAt      DateTime?         @map("expires_at")
+  deletedAt      DateTime?         @map("deleted_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
 
   @@index([authorId])
   @@index([status])
@@ -43,9 +43,9 @@ model Post {
 
 model PostTranslation {
   id       Int     @id @default(autoincrement())
-  postId   Int
+  postId   Int     @map("post_id")
   post     Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  langCode String
+  langCode String  @map("lang_code")
   title    String
   slug     String?
   excerpt  String? @db.Text
@@ -61,20 +61,20 @@ model Category {
   slug         String                @unique
   description  String?               @db.Text
   icon         String?
-  isFeatured   Int                   @default(0) @db.SmallInt
-  isDefault    Int                   @default(0) @db.SmallInt
+  isFeatured   Int                   @default(0) @db.SmallInt @map("is_featured")
+  isDefault    Int                   @default(0) @db.SmallInt @map("is_default")
   status       ContentStatus         @default(PUBLISHED)
-  parentId     Int?
+  parentId     Int?                  @map("parent_id")
   parent       Category?             @relation("CategoryTree", fields: [parentId], references: [id])
   children     Category[]            @relation("CategoryTree")
   posts        PostCategory[]
   translations CategoryTranslation[]
   seoMeta      SeoMeta?              @relation("CategorySeo")
-  authorId     String?
+  authorId     String?               @map("author_id")
   order        Int                   @default(0)
-  deletedAt    DateTime?
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
+  deletedAt    DateTime?             @map("deleted_at")
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
 
   @@index([parentId])
   @@index([slug])
@@ -85,9 +85,9 @@ model Category {
 
 model CategoryTranslation {
   id          Int      @id @default(autoincrement())
-  categoryId  Int
+  categoryId  Int      @map("category_id")
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  langCode    String
+  langCode    String   @map("lang_code")
   name        String
   description String?  @db.Text
 
@@ -101,14 +101,14 @@ model Tag {
   slug         String           @unique
   description  String?          @db.Text
   status       ContentStatus    @default(PUBLISHED)
-  authorId     String?
-  authorType   String           @default("User")
+  authorId     String?          @map("author_id")
+  authorType   String           @default("User") @map("author_type")
   posts        PostTag[]
   translations TagTranslation[]
   seoMeta      SeoMeta?         @relation("TagSeo")
-  deletedAt    DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  deletedAt    DateTime?        @map("deleted_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
 
   @@index([deletedAt])
   @@map("tags")
@@ -116,9 +116,9 @@ model Tag {
 
 model TagTranslation {
   id          Int     @id @default(autoincrement())
-  tagId       Int
+  tagId       Int     @map("tag_id")
   tag         Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  langCode    String
+  langCode    String  @map("lang_code")
   name        String
   description String? @db.Text
 
@@ -129,9 +129,9 @@ model TagTranslation {
 model PostCategory {
   id         Int      @id @default(autoincrement())
   post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId     Int
+  postId     Int      @map("post_id")
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  categoryId Int
+  categoryId Int      @map("category_id")
 
   @@unique([postId, categoryId])
   @@map("post_categories")
@@ -140,9 +140,9 @@ model PostCategory {
 model PostTag {
   id     Int  @id @default(autoincrement())
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId Int
+  postId Int  @map("post_id")
   tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  tagId  Int
+  tagId  Int  @map("tag_id")
 
   @@unique([postId, tagId])
   @@map("post_tags")

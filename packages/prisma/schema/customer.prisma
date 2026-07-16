@@ -41,6 +41,9 @@ model Customer {
   comments       Comment[]
   sessions       CustomerSession[]
   orders         Order[]
+  senders        CustomerSender[]
+  receivers      CustomerReceiver[]
+  packages       CustomerPackage[]
 
   @@index([status])
   @@index([email])
@@ -70,15 +73,15 @@ model CustomerSession {
 
 model CustomerSocialAccount {
   id         Int      @id @default(autoincrement())
-  customerId String   @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   provider   String
-  providerId String
+  providerId String   @map("provider_id")
   email      String?
   name       String?
-  avatarUrl  String?
+  avatarUrl  String?  @map("avatar_url")
   metadata   Json?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@unique([provider, providerId])
   @@index([customerId])
@@ -114,4 +117,81 @@ model CustomerVerificationCode {
   @@index([email])
   @@index([status])
   @@map("customer_verification_codes")
+}
+
+model CustomerSender {
+  id         Int      @id @default(autoincrement())
+  customerId String   @map("customer_id") @db.Uuid
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  label      String?
+  name       String
+  phone      String?
+  email      String?
+  address    String   @db.Text
+  city       String
+  ward       String?
+  zipCode    String?  @map("zip_code")
+  country    String   @default("VN")
+  isDefault  Boolean  @default(false) @map("is_default")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  @@index([customerId])
+  @@index([customerId, isDefault])
+  @@map("customer_senders")
+}
+
+model CustomerReceiver {
+  id         Int      @id @default(autoincrement())
+  customerId String   @map("customer_id") @db.Uuid
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  label      String?
+  name       String
+  phone      String?
+  email      String?
+  address1   String   @map("address_1") @db.Text
+  address2   String?  @map("address_2") @db.Text
+  city       String
+  state      String
+  zipCode    String   @map("zip_code")
+  country    String   @default("US")
+  isDefault  Boolean  @default(false) @map("is_default")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  @@index([customerId])
+  @@index([customerId, isDefault])
+  @@map("customer_receivers")
+}
+
+model CustomerPackage {
+  id            Int          @id @default(autoincrement())
+  customerId    String       @map("customer_id") @db.Uuid
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  label         String?      // Tên gợi nhớ: "Hộp 1kg", "Túi nilon nhỏ"
+  packageName   String       @map("package_name") // Tên hiển thị gói hàng
+  packingTypeId Int?         @map("packing_type_id")
+  packingType   PackingType? @relation(fields: [packingTypeId], references: [id], onDelete: SetNull)
+
+  length        Float?
+  width         Float?
+  height        Float?
+  weight        Float        // Cân nặng tính bằng Gram (gr)
+
+  isDefault     Boolean      @default(false) @map("is_default")
+
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  @@index([customerId])
+  @@index([customerId, isDefault])
+  @@map("customer_packages")
 }

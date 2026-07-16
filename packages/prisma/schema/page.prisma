@@ -6,38 +6,38 @@ model Page {
   slug          String            @unique
   content       String?           @db.Text
   excerpt       String?           @db.Text
-  featuredImage String?
+  featuredImage String?           @map("featured_image")
   template      String?           @default("default")
   order         Int               @default(0)
-  parentId      Int?
+  parentId      Int?              @map("parent_id")
   parent        Page?             @relation("PageTree", fields: [parentId], references: [id])
   children      Page[]            @relation("PageTree")
   status        ContentStatus     @default(DRAFT)
-  authorId      String            @db.Uuid
+  authorId      String            @map("author_id") @db.Uuid
   author        User              @relation(fields: [authorId], references: [id])
   translations  PageTranslation[]
   seoMeta       SeoMeta?          @relation("PageSeo")
   comments      Comment[]
-  publishedAt   DateTime?
-  scheduledAt   DateTime?
-  deletedAt     DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  publishedAt   DateTime?         @map("published_at")
+  scheduledAt   DateTime?         @map("scheduled_at")
+  deletedAt     DateTime?         @map("deleted_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
 
   // Custom Fields (Shared)
-  bannerImage    String?
-  heroBanner     String?
+  bannerImage    String? @map("banner_image")
+  heroBanner     String? @map("hero_banner")
   layout         String? @default("default")
-  hideTitle      Boolean @default(false)
-  hideBreadcrumb Boolean @default(false)
-  hideSidebar    Boolean @default(false)
-  hideFooter     Boolean @default(false)
+  hideTitle      Boolean @default(false) @map("hide_title")
+  hideBreadcrumb Boolean @default(false) @map("hide_breadcrumb")
+  hideSidebar    Boolean @default(false) @map("hide_sidebar")
+  hideFooter     Boolean @default(false) @map("hide_footer")
   gallery        Json?
 
   // Custom Fields (Default Locale)
   subtitle String?
-  ctaText  String?
-  ctaLink  String?
+  ctaText  String? @map("cta_text")
+  ctaLink  String? @map("cta_link")
 
   @@index([authorId])
   @@index([status])
@@ -50,9 +50,9 @@ model Page {
 
 model PageTranslation {
   id       Int     @id @default(autoincrement())
-  pageId   Int
+  pageId   Int     @map("page_id")
   page     Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  langCode String
+  langCode String  @map("lang_code")
   title    String
   slug     String?
   content  String? @db.Text
@@ -60,8 +60,8 @@ model PageTranslation {
 
   // Custom Fields (Translatable)
   subtitle String?
-  ctaText  String?
-  ctaLink  String?
+  ctaText  String? @map("cta_text")
+  ctaLink  String? @map("cta_link")
 
   @@unique([pageId, langCode])
   @@map("page_translations")

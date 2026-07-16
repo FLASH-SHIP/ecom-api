@@ -192,15 +192,15 @@ CREATE TABLE "categories" (
     "slug" TEXT NOT NULL,
     "description" TEXT,
     "icon" TEXT,
-    "isFeatured" BOOLEAN NOT NULL DEFAULT false,
-    "isDefault" BOOLEAN NOT NULL DEFAULT false,
+    "is_featured" BOOLEAN NOT NULL DEFAULT false,
+    "is_default" BOOLEAN NOT NULL DEFAULT false,
     "status" "ContentStatus" NOT NULL DEFAULT 'PUBLISHED',
-    "parentId" INTEGER,
-    "authorId" INTEGER,
+    "parent_id" INTEGER,
+    "author_id" INTEGER,
     "order" INTEGER NOT NULL DEFAULT 0,
-    "deletedAt" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
 );
@@ -208,8 +208,8 @@ CREATE TABLE "categories" (
 -- CreateTable
 CREATE TABLE "category_translations" (
     "id" SERIAL NOT NULL,
-    "categoryId" INTEGER NOT NULL,
-    "langCode" TEXT NOT NULL,
+    "category_id" INTEGER NOT NULL,
+    "lang_code" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
 
@@ -223,10 +223,10 @@ CREATE TABLE "tags" (
     "slug" TEXT NOT NULL,
     "description" TEXT,
     "status" "ContentStatus" NOT NULL DEFAULT 'PUBLISHED',
-    "authorId" INTEGER,
-    "authorType" TEXT NOT NULL DEFAULT 'User',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "author_id" INTEGER,
+    "author_type" TEXT NOT NULL DEFAULT 'User',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "tags_pkey" PRIMARY KEY ("id")
 );
@@ -234,8 +234,8 @@ CREATE TABLE "tags" (
 -- CreateTable
 CREATE TABLE "tag_translations" (
     "id" SERIAL NOT NULL,
-    "tagId" INTEGER NOT NULL,
-    "langCode" TEXT NOT NULL,
+    "tag_id" INTEGER NOT NULL,
+    "lang_code" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
 
@@ -244,18 +244,18 @@ CREATE TABLE "tag_translations" (
 
 -- CreateTable
 CREATE TABLE "post_categories" (
-    "postId" INTEGER NOT NULL,
-    "categoryId" INTEGER NOT NULL,
+    "post_id" INTEGER NOT NULL,
+    "category_id" INTEGER NOT NULL,
 
-    CONSTRAINT "post_categories_pkey" PRIMARY KEY ("postId","categoryId")
+    CONSTRAINT "post_categories_pkey" PRIMARY KEY ("post_id","category_id")
 );
 
 -- CreateTable
 CREATE TABLE "post_tags" (
-    "postId" INTEGER NOT NULL,
-    "tagId" INTEGER NOT NULL,
+    "post_id" INTEGER NOT NULL,
+    "tag_id" INTEGER NOT NULL,
 
-    CONSTRAINT "post_tags_pkey" PRIMARY KEY ("postId","tagId")
+    CONSTRAINT "post_tags_pkey" PRIMARY KEY ("post_id","tag_id")
 );
 
 -- CreateTable
@@ -601,14 +601,14 @@ CREATE TABLE "customers" (
 -- CreateTable
 CREATE TABLE "customer_social_accounts" (
     "id" SERIAL NOT NULL,
-    "customerId" INTEGER NOT NULL,
+    "customer_id" INTEGER NOT NULL,
     "provider" TEXT NOT NULL,
-    "providerId" TEXT NOT NULL,
+    "provider_id" TEXT NOT NULL,
     "email" TEXT,
     "name" TEXT,
-    "avatarUrl" TEXT,
+    "avatar_url" TEXT,
     "metadata" JSONB,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "customer_social_accounts_pkey" PRIMARY KEY ("id")
 );
@@ -915,7 +915,7 @@ CREATE UNIQUE INDEX "post_translations_postId_langCode_key" ON "post_translation
 CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
 
 -- CreateIndex
-CREATE INDEX "categories_parentId_idx" ON "categories"("parentId");
+CREATE INDEX "categories_parent_id_idx" ON "categories"("parent_id");
 
 -- CreateIndex
 CREATE INDEX "categories_slug_idx" ON "categories"("slug");
@@ -924,16 +924,16 @@ CREATE INDEX "categories_slug_idx" ON "categories"("slug");
 CREATE INDEX "categories_status_idx" ON "categories"("status");
 
 -- CreateIndex
-CREATE INDEX "categories_deletedAt_idx" ON "categories"("deletedAt");
+CREATE INDEX "categories_deleted_at_idx" ON "categories"("deleted_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "category_translations_categoryId_langCode_key" ON "category_translations"("categoryId", "langCode");
+CREATE UNIQUE INDEX "category_translations_category_id_lang_code_key" ON "category_translations"("category_id", "lang_code");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "tags_slug_key" ON "tags"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "tag_translations_tagId_langCode_key" ON "tag_translations"("tagId", "langCode");
+CREATE UNIQUE INDEX "tag_translations_tag_id_lang_code_key" ON "tag_translations"("tag_id", "lang_code");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "pages_slug_key" ON "pages"("slug");
@@ -1119,10 +1119,10 @@ CREATE INDEX "customers_email_idx" ON "customers"("email");
 CREATE INDEX "customers_username_idx" ON "customers"("username");
 
 -- CreateIndex
-CREATE INDEX "customer_social_accounts_customerId_idx" ON "customer_social_accounts"("customerId");
+CREATE INDEX "customer_social_accounts_customer_id_idx" ON "customer_social_accounts"("customer_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "customer_social_accounts_provider_providerId_key" ON "customer_social_accounts"("provider", "providerId");
+CREATE UNIQUE INDEX "customer_social_accounts_provider_provider_id_key" ON "customer_social_accounts"("provider", "provider_id");
 
 -- CreateIndex
 CREATE INDEX "customer_activity_logs_customerId_idx" ON "customer_activity_logs"("customerId");
@@ -1254,25 +1254,25 @@ ALTER TABLE "posts" ADD CONSTRAINT "posts_authorId_fkey" FOREIGN KEY ("authorId"
 ALTER TABLE "post_translations" ADD CONSTRAINT "post_translations_postId_fkey" FOREIGN KEY ("postId") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "categories" ADD CONSTRAINT "categories_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "categories" ADD CONSTRAINT "categories_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "category_translations" ADD CONSTRAINT "category_translations_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "category_translations" ADD CONSTRAINT "category_translations_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tag_translations" ADD CONSTRAINT "tag_translations_tagId_fkey" FOREIGN KEY ("tagId") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "tag_translations" ADD CONSTRAINT "tag_translations_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "post_categories" ADD CONSTRAINT "post_categories_postId_fkey" FOREIGN KEY ("postId") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "post_categories" ADD CONSTRAINT "post_categories_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "post_categories" ADD CONSTRAINT "post_categories_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "post_categories" ADD CONSTRAINT "post_categories_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "post_tags" ADD CONSTRAINT "post_tags_postId_fkey" FOREIGN KEY ("postId") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "post_tags" ADD CONSTRAINT "post_tags_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "post_tags" ADD CONSTRAINT "post_tags_tagId_fkey" FOREIGN KEY ("tagId") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "post_tags" ADD CONSTRAINT "post_tags_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tags"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "pages" ADD CONSTRAINT "pages_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "pages"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1338,7 +1338,7 @@ ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_userId_fkey" FOREIGN KEY ("u
 ALTER TABLE "request_logs" ADD CONSTRAINT "request_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "customer_social_accounts" ADD CONSTRAINT "customer_social_accounts_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "customer_social_accounts" ADD CONSTRAINT "customer_social_accounts_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "customer_activity_logs" ADD CONSTRAINT "customer_activity_logs_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1372,3 +1372,328 @@ ALTER TABLE "form_fields" ADD CONSTRAINT "form_fields_formId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "form_submissions" ADD CONSTRAINT "form_submissions_formId_fkey" FOREIGN KEY ("formId") REFERENCES "forms"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- =========================================================================
+-- Rename columns of categories (camelCase -> snake_case) for existing DB
+-- =========================================================================
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='categories' AND column_name='isFeatured') THEN
+        ALTER TABLE "categories" RENAME COLUMN "isFeatured" TO "is_featured";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='categories' AND column_name='isDefault') THEN
+        ALTER TABLE "categories" RENAME COLUMN "isDefault" TO "is_default";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='categories' AND column_name='parentId') THEN
+        ALTER TABLE "categories" RENAME COLUMN "parentId" TO "parent_id";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='categories' AND column_name='authorId') THEN
+        ALTER TABLE "categories" RENAME COLUMN "authorId" TO "author_id";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='categories' AND column_name='deletedAt') THEN
+        ALTER TABLE "categories" RENAME COLUMN "deletedAt" TO "deleted_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='categories' AND column_name='createdAt') THEN
+        ALTER TABLE "categories" RENAME COLUMN "createdAt" TO "created_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='categories' AND column_name='updatedAt') THEN
+        ALTER TABLE "categories" RENAME COLUMN "updatedAt" TO "updated_at";
+    END IF;
+END $$;
+
+-- =========================================================================
+-- Rename columns of category_translations (camelCase -> snake_case) for existing DB
+-- =========================================================================
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='category_translations' AND column_name='categoryId') THEN
+        ALTER TABLE "category_translations" RENAME COLUMN "categoryId" TO "category_id";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='category_translations' AND column_name='langCode') THEN
+        ALTER TABLE "category_translations" RENAME COLUMN "langCode" TO "lang_code";
+    END IF;
+END $$;
+
+-- =========================================================================
+-- Recreate indexes and constraints for categories and category_translations
+-- =========================================================================
+DROP INDEX IF EXISTS "categories_parentId_idx";
+DROP INDEX IF EXISTS "categories_deletedAt_idx";
+DROP INDEX IF EXISTS "category_translations_categoryId_langCode_key";
+
+CREATE INDEX IF NOT EXISTS "categories_parent_id_idx" ON "categories"("parent_id");
+CREATE INDEX IF NOT EXISTS "categories_deleted_at_idx" ON "categories"("deleted_at");
+CREATE UNIQUE INDEX IF NOT EXISTS "category_translations_category_id_lang_code_key" ON "category_translations"("category_id", "lang_code");
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'categories_parentId_fkey' AND table_name = 'categories'
+    ) THEN
+        ALTER TABLE "categories" DROP CONSTRAINT "categories_parentId_fkey";
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'categories_parent_id_fkey' AND table_name = 'categories'
+    ) THEN
+        ALTER TABLE "categories" ADD CONSTRAINT "categories_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "categories"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'category_translations_categoryId_fkey' AND table_name = 'category_translations'
+    ) THEN
+        ALTER TABLE "category_translations" DROP CONSTRAINT "category_translations_categoryId_fkey";
+    END IF;
+END $$;
+
+-- =========================================================================
+-- Rename columns of posts (camelCase -> snake_case) for existing DB
+-- =========================================================================
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='featuredImage') THEN
+        ALTER TABLE "posts" RENAME COLUMN "featuredImage" TO "featured_image";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='bannerImage') THEN
+        ALTER TABLE "posts" RENAME COLUMN "bannerImage" TO "banner_image";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='isFeatured') THEN
+        ALTER TABLE "posts" RENAME COLUMN "isFeatured" TO "is_featured";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='allowComments') THEN
+        ALTER TABLE "posts" RENAME COLUMN "allowComments" TO "allow_comments";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='formatType') THEN
+        ALTER TABLE "posts" RENAME COLUMN "formatType" TO "format_type";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='externalSource') THEN
+        ALTER TABLE "posts" RENAME COLUMN "externalSource" TO "external_source";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='sponsoredBy') THEN
+        ALTER TABLE "posts" RENAME COLUMN "sponsoredBy" TO "sponsored_by";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='authorId') THEN
+        ALTER TABLE "posts" RENAME COLUMN "authorId" TO "author_id";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='publishedAt') THEN
+        ALTER TABLE "posts" RENAME COLUMN "publishedAt" TO "published_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='scheduledAt') THEN
+        ALTER TABLE "posts" RENAME COLUMN "scheduledAt" TO "scheduled_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='expiresAt') THEN
+        ALTER TABLE "posts" RENAME COLUMN "expiresAt" TO "expires_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='deletedAt') THEN
+        ALTER TABLE "posts" RENAME COLUMN "deletedAt" TO "deleted_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='createdAt') THEN
+        ALTER TABLE "posts" RENAME COLUMN "createdAt" TO "created_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='posts' AND column_name='updatedAt') THEN
+        ALTER TABLE "posts" RENAME COLUMN "updatedAt" TO "updated_at";
+    END IF;
+END $$;
+
+-- =========================================================================
+-- Rename columns of post_translations (camelCase -> snake_case) for existing DB
+-- =========================================================================
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='post_translations' AND column_name='postId') THEN
+        ALTER TABLE "post_translations" RENAME COLUMN "postId" TO "post_id";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='post_translations' AND column_name='langCode') THEN
+        ALTER TABLE "post_translations" RENAME COLUMN "langCode" TO "lang_code";
+    END IF;
+END $$;
+
+-- =========================================================================
+-- Rename columns of pages (camelCase -> snake_case) for existing DB
+-- =========================================================================
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='featuredImage') THEN
+        ALTER TABLE "pages" RENAME COLUMN "featuredImage" TO "featured_image";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='parentId') THEN
+        ALTER TABLE "pages" RENAME COLUMN "parentId" TO "parent_id";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='authorId') THEN
+        ALTER TABLE "pages" RENAME COLUMN "authorId" TO "author_id";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='publishedAt') THEN
+        ALTER TABLE "pages" RENAME COLUMN "publishedAt" TO "published_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='scheduledAt') THEN
+        ALTER TABLE "pages" RENAME COLUMN "scheduledAt" TO "scheduled_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='deletedAt') THEN
+        ALTER TABLE "pages" RENAME COLUMN "deletedAt" TO "deleted_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='createdAt') THEN
+        ALTER TABLE "pages" RENAME COLUMN "createdAt" TO "created_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='updatedAt') THEN
+        ALTER TABLE "pages" RENAME COLUMN "updatedAt" TO "updated_at";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='bannerImage') THEN
+        ALTER TABLE "pages" RENAME COLUMN "bannerImage" TO "banner_image";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='heroBanner') THEN
+        ALTER TABLE "pages" RENAME COLUMN "heroBanner" TO "hero_banner";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='hideTitle') THEN
+        ALTER TABLE "pages" RENAME COLUMN "hideTitle" TO "hide_title";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='hideBreadcrumb') THEN
+        ALTER TABLE "pages" RENAME COLUMN "hideBreadcrumb" TO "hide_breadcrumb";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='hideSidebar') THEN
+        ALTER TABLE "pages" RENAME COLUMN "hideSidebar" TO "hide_sidebar";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='hideFooter') THEN
+        ALTER TABLE "pages" RENAME COLUMN "hideFooter" TO "hide_footer";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='ctaText') THEN
+        ALTER TABLE "pages" RENAME COLUMN "ctaText" TO "cta_text";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pages' AND column_name='ctaLink') THEN
+        ALTER TABLE "pages" RENAME COLUMN "ctaLink" TO "cta_link";
+    END IF;
+END $$;
+
+-- =========================================================================
+-- Rename columns of page_translations (camelCase -> snake_case) for existing DB
+-- =========================================================================
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='page_translations' AND column_name='pageId') THEN
+        ALTER TABLE "page_translations" RENAME COLUMN "pageId" TO "page_id";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='page_translations' AND column_name='langCode') THEN
+        ALTER TABLE "page_translations" RENAME COLUMN "langCode" TO "lang_code";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='page_translations' AND column_name='ctaText') THEN
+        ALTER TABLE "page_translations" RENAME COLUMN "ctaText" TO "cta_text";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='page_translations' AND column_name='ctaLink') THEN
+        ALTER TABLE "page_translations" RENAME COLUMN "ctaLink" TO "cta_link";
+    END IF;
+END $$;
+
+-- =========================================================================
+-- Recreate indexes and constraints for posts, post_translations, pages, page_translations
+-- =========================================================================
+DROP INDEX IF EXISTS "posts_authorId_idx";
+DROP INDEX IF EXISTS "posts_isFeatured_idx";
+DROP INDEX IF EXISTS "posts_deletedAt_idx";
+DROP INDEX IF EXISTS "posts_status_deletedAt_createdAt_idx";
+DROP INDEX IF EXISTS "posts_status_deletedAt_publishedAt_idx";
+DROP INDEX IF EXISTS "posts_scheduledAt_idx";
+DROP INDEX IF EXISTS "posts_expiresAt_idx";
+DROP INDEX IF EXISTS "post_translations_postId_langCode_key";
+
+DROP INDEX IF EXISTS "pages_authorId_idx";
+DROP INDEX IF EXISTS "pages_parentId_idx";
+DROP INDEX IF EXISTS "pages_deletedAt_idx";
+DROP INDEX IF EXISTS "pages_status_deletedAt_order_idx";
+DROP INDEX IF EXISTS "page_translations_pageId_langCode_key";
+
+CREATE INDEX IF NOT EXISTS "posts_author_id_idx" ON "posts"("author_id");
+CREATE INDEX IF NOT EXISTS "posts_is_featured_idx" ON "posts"("is_featured");
+CREATE INDEX IF NOT EXISTS "posts_deleted_at_idx" ON "posts"("deleted_at");
+CREATE INDEX IF NOT EXISTS "posts_status_deleted_at_created_at_idx" ON "posts"("status", "deleted_at", "created_at");
+CREATE INDEX IF NOT EXISTS "posts_status_deleted_at_published_at_idx" ON "posts"("status", "deleted_at", "published_at");
+CREATE INDEX IF NOT EXISTS "posts_scheduled_at_idx" ON "posts"("scheduled_at");
+CREATE INDEX IF NOT EXISTS "posts_expires_at_idx" ON "posts"("expires_at");
+CREATE UNIQUE INDEX IF NOT EXISTS "post_translations_post_id_lang_code_key" ON "post_translations"("post_id", "lang_code");
+
+CREATE INDEX IF NOT EXISTS "pages_author_id_idx" ON "pages"("author_id");
+CREATE INDEX IF NOT EXISTS "pages_parent_id_idx" ON "pages"("parent_id");
+CREATE INDEX IF NOT EXISTS "pages_deleted_at_idx" ON "pages"("deleted_at");
+CREATE INDEX IF NOT EXISTS "pages_status_deleted_at_order_idx" ON "pages"("status", "deleted_at", "order");
+CREATE UNIQUE INDEX IF NOT EXISTS "page_translations_page_id_lang_code_key" ON "page_translations"("page_id", "lang_code");
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'posts_authorId_fkey' AND table_name = 'posts'
+    ) THEN
+        ALTER TABLE "posts" DROP CONSTRAINT "posts_authorId_fkey";
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'posts_author_id_fkey' AND table_name = 'posts'
+    ) THEN
+        ALTER TABLE "posts" ADD CONSTRAINT "posts_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'post_translations_postId_fkey' AND table_name = 'post_translations'
+    ) THEN
+        ALTER TABLE "post_translations" DROP CONSTRAINT "post_translations_postId_fkey";
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'post_translations_post_id_fkey' AND table_name = 'post_translations'
+    ) THEN
+        ALTER TABLE "post_translations" ADD CONSTRAINT "post_translations_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'pages_authorId_fkey' AND table_name = 'pages'
+    ) THEN
+        ALTER TABLE "pages" DROP CONSTRAINT "pages_authorId_fkey";
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'pages_author_id_fkey' AND table_name = 'pages'
+    ) THEN
+        ALTER TABLE "pages" ADD CONSTRAINT "pages_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'pages_parentId_fkey' AND table_name = 'pages'
+    ) THEN
+        ALTER TABLE "pages" DROP CONSTRAINT "pages_parentId_fkey";
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'pages_parent_id_fkey' AND table_name = 'pages'
+    ) THEN
+        ALTER TABLE "pages" ADD CONSTRAINT "pages_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "pages"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'page_translations_pageId_fkey' AND table_name = 'page_translations'
+    ) THEN
+        ALTER TABLE "page_translations" DROP CONSTRAINT "page_translations_pageId_fkey";
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.table_constraints 
+        WHERE constraint_name = 'page_translations_page_id_fkey' AND table_name = 'page_translations'
+    ) THEN
+        ALTER TABLE "page_translations" ADD CONSTRAINT "page_translations_page_id_fkey" FOREIGN KEY ("page_id") REFERENCES "pages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;

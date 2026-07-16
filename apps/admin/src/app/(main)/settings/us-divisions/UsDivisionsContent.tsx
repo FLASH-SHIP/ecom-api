@@ -555,9 +555,7 @@ export default function UsDivisionsContent() {
         <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-[480px]">
           <SheetHeader className="border-b border-border px-6 py-4">
             <SheetTitle>
-              {cityEditingId
-                ? t("usDivisions.updateCityTitle")
-                : t("usDivisions.createCityTitle")}
+              {cityEditingId ? t("usDivisions.updateCityTitle") : t("usDivisions.createCityTitle")}
             </SheetTitle>
           </SheetHeader>
           <form onSubmit={handleCitySubmit} className="flex flex-1 flex-col overflow-hidden">

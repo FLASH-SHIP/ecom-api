@@ -1,7 +1,7 @@
 import type { PrismaClient } from "../src/generated/prisma/client";
-import type { Seeder } from "./seeder.interface";
-import usStatesData from "./data/us-states.json";
 import usCitiesData from "./data/us-cities.json";
+import usStatesData from "./data/us-states.json";
+import type { Seeder } from "./seeder.interface";
 
 function slugify(text: string): string {
   return text
@@ -102,9 +102,7 @@ export const UsDivisionsSeeder: Seeder = {
       }
     }
 
-    console.log(
-      `    → Seeding complete: ${statesCount} states, ${citiesCount} cities seeded.`,
-    );
+    console.log(`    → Seeding complete: ${statesCount} states, ${citiesCount} cities seeded.`);
     if (errorsCount > 0) {
       console.warn(`    ⚠ Encountered ${errorsCount} errors:`);
       for (const e of errors.slice(0, 10)) {

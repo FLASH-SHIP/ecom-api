@@ -90,7 +90,9 @@ model Order {
   dimensionWidth       Decimal?       @map("dimension_width") @db.Decimal(10, 2)
   dimensionHeight      Decimal?       @map("dimension_height") @db.Decimal(10, 2)
   declaredValue        Decimal        @map("declared_value") @db.Decimal(12, 2)
-  packagingCode        String?        @map("packaging_code")
+  packingTypeId        Int?           @map("packing_type_id")
+  packingType          PackingType?   @relation(fields: [packingTypeId], references: [id], onDelete: SetNull)
+  packagingCode        String?        @map("packaging_code") // Snapshot of packing type name at order creation
   
   // Warehouse Measurements (populated during fulfillment)
   actualWeight         Decimal?       @map("actual_weight") @db.Decimal(10, 3)

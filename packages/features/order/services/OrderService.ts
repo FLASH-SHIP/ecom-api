@@ -62,6 +62,7 @@ export interface CreateOrderParams {
   dimensionWidth?: number | null;
   dimensionHeight?: number | null;
   declaredValue: number;
+  packingTypeId?: number | null;
   packagingCode?: string | null;
   isGetLabel?: number;
   products?: {
@@ -334,6 +335,7 @@ export class OrderService {
       dimensionWidth: dimensionWidth ?? null,
       dimensionHeight: dimensionHeight ?? null,
       declaredValue,
+      packingTypeId: params.packingTypeId ?? null,
       packagingCode: params.packagingCode,
 
       volumeWeight: pricing.volumeWeight,

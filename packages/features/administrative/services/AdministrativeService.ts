@@ -390,10 +390,7 @@ export class AdministrativeService {
       throw new ErrorWithCode(ErrorCode.ValidationError, "Code is required", 422);
     }
 
-    const existing = await this.deps.divisionRepo.findByCountryAndCode(
-      data.countryCode,
-      data.code,
-    );
+    const existing = await this.deps.divisionRepo.findByCountryAndCode(data.countryCode, data.code);
     if (existing) {
       throw new ErrorWithCode(
         ErrorCode.Conflict,

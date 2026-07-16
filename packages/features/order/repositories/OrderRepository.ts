@@ -55,6 +55,7 @@ export interface CreateOrderInput {
   dimensionWidth?: Prisma.Decimal | number | null;
   dimensionHeight?: Prisma.Decimal | number | null;
   declaredValue: Prisma.Decimal | number;
+  packingTypeId?: number | null;
   packagingCode?: string | null;
 
   // Warehouse measurement
@@ -155,6 +156,7 @@ export class OrderRepository {
         dimensionWidth: true,
         dimensionHeight: true,
         declaredValue: true,
+        packingTypeId: true,
         packagingCode: true,
         actualWeight: true,
         volumeWeight: true,

@@ -35,6 +35,39 @@ interface SearchableSelectProps {
   loading?: boolean;
 }
 
+// Memoized option item to prevent re-renders of the entire list when selection changes
+const OptionItem = React.memo(function OptionItem({
+  opt,
+  isSelected,
+  onSelect,
+}: {
+  opt: SearchableSelectOption;
+  isSelected: boolean;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => onSelect(opt.value)}
+        className={cn(
+          "flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+          isSelected && "font-medium",
+        )}
+      >
+        <Check className={cn("size-3.5 shrink-0", isSelected ? "opacity-100" : "opacity-0")} />
+        {opt.icon && (
+          <span className="inline-block w-4 text-center font-mono text-xs text-muted-foreground">
+            {opt.icon}
+          </span>
+        )}
+        <span className="truncate">{opt.label}</span>
+      </button>
+      {opt.separatorAfter && <div className="my-1 h-px bg-border" />}
+    </div>
+  );
+});
+
 function SearchableSelect({
   value,
   onValueChange,
@@ -53,6 +86,7 @@ function SearchableSelect({
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
   const hasValue = !!value;
@@ -102,7 +136,12 @@ function SearchableSelect({
   const handleOpenChange = React.useCallback(
     (isOpen: boolean) => {
       setOpen(isOpen);
-      if (!isOpen) resetSearch();
+      if (isOpen) {
+        // Auto-focus search input when dropdown opens
+        requestAnimationFrame(() => searchInputRef.current?.focus());
+      } else {
+        resetSearch();
+      }
     },
     [resetSearch],
   );
@@ -165,6 +204,7 @@ function SearchableSelect({
         <div className="flex items-center border-b border-border px-2.5 py-2">
           <Search className="mr-2 size-3.5 shrink-0 text-muted-foreground" />
           <input
+            ref={searchInputRef}
             value={search}
             onChange={(e) => handleSearchInput(e.target.value)}
             placeholder={searchPlaceholder}
@@ -180,31 +220,13 @@ function SearchableSelect({
             <div className="py-4 text-center text-sm text-muted-foreground">No results found.</div>
           ) : (
             filteredOptions.map((opt, idx) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: options may have duplicate values (e.g. same city name)
-              <div key={`${opt.value}-${idx}`}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(opt.value)}
-                  className={cn(
-                    "flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                    value === opt.value && "font-medium",
-                  )}
-                >
-                  <Check
-                    className={cn(
-                      "size-3.5 shrink-0",
-                      value === opt.value ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  {opt.icon && (
-                    <span className="inline-block w-4 text-center font-mono text-xs text-muted-foreground">
-                      {opt.icon}
-                    </span>
-                  )}
-                  <span className="truncate">{opt.label}</span>
-                </button>
-                {opt.separatorAfter && <div className="my-1 h-px bg-border" />}
-              </div>
+              <OptionItem
+                // biome-ignore lint/suspicious/noArrayIndexKey: options may have duplicate values (e.g. same city name)
+                key={`${opt.value}-${idx}`}
+                opt={opt}
+                isSelected={value === opt.value}
+                onSelect={handleSelect}
+              />
             ))
           )}
         </div>
