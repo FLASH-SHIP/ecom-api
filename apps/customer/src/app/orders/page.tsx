@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@ecom/ui/components/dialog";
 import { Input } from "@ecom/ui/components/input";
+import { PaginationBase } from "@ecom/ui/components/pagination-base";
 import {
   Select,
   SelectContent,
@@ -22,16 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@ecom/ui/components/table";
+import { TableBase } from "@ecom/ui/components/table-base";
 import { format } from "date-fns";
-import { Eye, PackageOpen, RefreshCcw, Search } from "lucide-react";
+import { Eye, RefreshCcw, Search } from "lucide-react";
 import NextLink from "next/link";
 import { useState } from "react";
 
@@ -43,10 +37,11 @@ export default function CustomerOrdersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
-  const perPage = 10;
+  const [perPage, setPerPage] = useState(10);
 
   // Selected Order Detail Modal
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedRowIds, setSelectedRowIds] = useState<(string | number)[]>([]);
 
   // Fetch orders list
   const {
@@ -101,7 +96,69 @@ export default function CustomerOrdersPage() {
     setPage(newPage);
   };
 
-  const totalPages = listData ? Math.ceil(listData.meta.total / perPage) : 1;
+  type OrderType = NonNullable<typeof listData>["data"][number];
+  const columns = [
+    {
+      header: "Order Code",
+      cell: (order: OrderType) => (
+        <span className="font-semibold text-[#0F798C] hover:underline cursor-pointer">
+          <NextLink href={`/orders/${order.id}`}>{order.orderCode}</NextLink>
+        </span>
+      ),
+    },
+    {
+      header: "Created Date",
+      cell: (order: OrderType) => (
+        <span className="text-muted-foreground">
+          {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}
+        </span>
+      ),
+    },
+    {
+      header: "Seller Ref",
+      cell: (order: OrderType) => order.sellerOrderId || "-",
+    },
+    {
+      header: "Destination",
+      cell: (order: OrderType) => `${order.receiverCity}, ${order.receiverCountry}`,
+    },
+    {
+      header: "Weight (gr)",
+      cell: (order: OrderType) => order.declaredWeight,
+    },
+    {
+      header: "Total Fee",
+      cell: (order: OrderType) => (
+        <span className="font-semibold text-foreground">
+          $
+          {order.baseShippingFee
+            ? (Number(order.baseShippingFee) + Number(order.surchargeFee || 0)).toFixed(2)
+            : "0.00"}
+        </span>
+      ),
+    },
+    {
+      header: "Status",
+      cell: (order: OrderType) => getStatusBadge(order.status),
+    },
+    {
+      header: "Action",
+      headerClassName: "text-right",
+      className: "text-right",
+      cell: (order: OrderType) => (
+        <NextLink href={`/orders/${order.id}`}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-accent text-primary h-8 w-8 rounded-lg cursor-pointer"
+            title="View tracking and details"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </NextLink>
+      ),
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-6 w-full pb-10">
@@ -169,109 +226,29 @@ export default function CustomerOrdersPage() {
 
       {/* Orders Table */}
       <Card className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-muted/40">
-              <TableRow>
-                <TableHead className="font-bold text-foreground">Order Code</TableHead>
-                <TableHead className="font-bold text-foreground">Created Date</TableHead>
-                <TableHead className="font-bold text-foreground">Seller Ref</TableHead>
-                <TableHead className="font-bold text-foreground">Destination</TableHead>
-                <TableHead className="font-bold text-foreground">Weight (gr)</TableHead>
-                <TableHead className="font-bold text-foreground">Total Fee</TableHead>
-                <TableHead className="font-bold text-foreground">Status</TableHead>
-                <TableHead className="text-right font-bold text-foreground">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#0F798C] border-t-transparent inline-block mr-2" />
-                    Loading orders...
-                  </TableCell>
-                </TableRow>
-              ) : !listData || listData.data.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <PackageOpen className="h-10 w-10 text-muted-foreground" />
-                      <span className="font-medium text-muted-foreground">
-                        No orders found. Create your first single order above!
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                listData.data.map((order) => (
-                  <TableRow key={order.id} className="hover:bg-muted/20">
-                    <TableCell className="font-semibold text-[#0F798C] hover:underline cursor-pointer">
-                      <NextLink href={`/orders/${order.id}`}>{order.orderCode}</NextLink>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}
-                    </TableCell>
-                    <TableCell className="text-foreground">{order.sellerOrderId || "-"}</TableCell>
-                    <TableCell className="text-foreground">
-                      {order.receiverCity}, {order.receiverCountry}
-                    </TableCell>
-                    <TableCell className="text-foreground">{order.declaredWeight}</TableCell>
-                    <TableCell className="font-semibold text-foreground">
-                      $
-                      {order.baseShippingFee
-                        ? (Number(order.baseShippingFee) + Number(order.surchargeFee || 0)).toFixed(
-                            2,
-                          )
-                        : "0.00"}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <NextLink href={`/orders/${order.id}`}>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="hover:bg-accent text-primary h-8 w-8 rounded-lg cursor-pointer"
-                          title="View tracking and details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </NextLink>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <TableBase
+          data={listData?.data || []}
+          columns={columns}
+          isLoading={isLoading}
+          emptyMessage="No orders found. Create your first single order above!"
+          enableRowSelection={true}
+          selectedRowIds={selectedRowIds}
+          onSelectedRowIdsChange={setSelectedRowIds}
+        />
 
         {/* Pagination Controls */}
         {listData && listData.meta.total > 0 && (
-          <div className="border-t border-border px-6 py-4 flex items-center justify-between bg-muted/20">
-            <span className="text-sm text-muted-foreground">
-              Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, listData.meta.total)}{" "}
-              of {listData.meta.total} orders
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => handlePageChange(page - 1)}
-                className="border-border text-foreground hover:bg-accent cursor-pointer"
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => handlePageChange(page + 1)}
-                className="border-border text-foreground hover:bg-accent cursor-pointer"
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <PaginationBase
+            currentPage={page}
+            totalItems={listData.meta.total}
+            perPage={perPage}
+            onPageChange={handlePageChange}
+            onPerPageChange={(val) => {
+              setPerPage(val);
+              setPage(1);
+            }}
+            itemType="orders"
+          />
         )}
       </Card>
 
