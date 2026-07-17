@@ -34,6 +34,7 @@ export interface CreateOrderInput {
   senderCountry?: string | null;
   senderState?: string | null;
   senderCity?: string | null;
+  senderWard?: string | null;
   senderZipCode?: string | null;
 
   // Receiver details
@@ -139,6 +140,7 @@ export class OrderRepository {
         senderCountry: true,
         senderState: true,
         senderCity: true,
+        senderWard: true,
         senderZipCode: true,
         receiverName: true,
         receiverPhone: true,

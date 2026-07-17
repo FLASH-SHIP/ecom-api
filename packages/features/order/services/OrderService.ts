@@ -42,6 +42,7 @@ export interface CreateOrderParams {
   senderCountry?: string | null;
   senderState?: string | null;
   senderCity?: string | null;
+  senderWard?: string | null;
   senderZipCode?: string | null;
 
   // Receiver info
@@ -316,6 +317,7 @@ export class OrderService {
       senderCountry: params.senderCountry,
       senderState: params.senderState,
       senderCity: params.senderCity,
+      senderWard: params.senderWard,
       senderZipCode: params.senderZipCode,
 
       receiverName: params.receiverName,

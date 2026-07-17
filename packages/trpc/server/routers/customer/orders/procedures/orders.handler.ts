@@ -112,6 +112,7 @@ export const create = authedProcedure
       senderCountry: z.string().optional().nullable(),
       senderState: z.string().optional().nullable(),
       senderCity: z.string().optional().nullable(),
+      senderWard: z.string().optional().nullable(),
       senderZipCode: z.string().optional().nullable(),
 
       receiverName: z.string().min(1),

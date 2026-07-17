@@ -69,6 +69,7 @@ model Order {
   senderCountry        String?        @map("sender_country")
   senderState          String?        @map("sender_state")
   senderCity           String?        @map("sender_city")
+  senderWard           String?        @map("sender_ward")
   senderZipCode        String?        @map("sender_zip_code")
   
   // Recipient Details

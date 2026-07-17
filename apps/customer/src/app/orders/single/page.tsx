@@ -422,12 +422,17 @@ export default function CreateSingleOrderPage() {
       senderEmail,
       senderCountry,
       senderCity,
+      senderCityName,
+      senderWard,
+      senderWardName,
       senderZipCode,
       receiverName,
       receiverPhone,
       receiverEmail,
       receiverCity,
+      receiverCityName,
       receiverState,
+      receiverStateName,
       receiverAddress1,
       receiverAddress2,
       receiverCountry,
@@ -455,14 +460,15 @@ export default function CreateSingleOrderPage() {
         senderEmail,
         senderCountry,
         senderState: "",
-        senderCity,
+        senderCity: senderCityName || senderCity || null,
+        senderWard: senderWardName || senderWard || null,
         senderZipCode,
 
         receiverName,
         receiverPhone: receiverPhone || null,
         receiverEmail,
-        receiverCity,
-        receiverState,
+        receiverCity: receiverCityName || receiverCity,
+        receiverState: receiverStateName || receiverState,
         receiverAddress1,
         receiverAddress2: receiverAddress2 || null,
         receiverCountry,
@@ -542,6 +548,7 @@ export default function CreateSingleOrderPage() {
       }
 
       clearStore();
+      toast("Created order successfully", "success");
       // Refresh context cache and navigate back to list
       trpcContext.customer.orders.list.invalidate();
       router.push("/orders");
