@@ -4,24 +4,14 @@ import { trpc } from "@customer/lib/trpc";
 import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent } from "@ecom/ui/components/card";
 import { Checkbox } from "@ecom/ui/components/checkbox";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
-import { Input } from "@ecom/ui/components/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ecom/ui/components/select";
-import { cn } from "@ecom/ui/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
 import { BasicInfoSection } from "./BasicInfoSection";
+import { ItemListSection } from "./ItemListSection";
 import { PackageInfoSection } from "./PackageInfoSection";
 import { ReceiverSection } from "./ReceiverSection";
 import { SenderSection } from "./SenderSection";
@@ -108,7 +98,7 @@ const orderFormSchema = z.object({
     .min(1, "Vui lòng khai báo ít nhất 1 sản phẩm."),
 });
 
-type OrderFormValues = z.infer<typeof orderFormSchema>;
+export type OrderFormValues = z.infer<typeof orderFormSchema>;
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: single order creation form complexity
 export default function CreateSingleOrderPage() {
@@ -185,10 +175,6 @@ export default function CreateSingleOrderPage() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "products",
-  });
   // Watch only necessary fields to prevent typing lag
   const watchedProducts = watch("products");
 
@@ -941,224 +927,17 @@ export default function CreateSingleOrderPage() {
         />
 
         {/* Item List */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Item List
-            </h3>
-
-            <div className="flex flex-col gap-6">
-              {fields.map((field, index) => {
-                const prefixId =
-                  `products.${index}.hsCodePrefix` as `products.${number}.hsCodePrefix`;
-                const numberId =
-                  `products.${index}.hsCodeNumber` as `products.${number}.hsCodeNumber`;
-                return (
-                  <div
-                    key={field.id}
-                    className="flex flex-col gap-4 pb-6 border-b border-dashed border-border last:border-0 last:pb-0"
-                  >
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-sm font-bold text-foreground">Item {index + 1}</h4>
-                      {fields.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => remove(index)}
-                          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 p-1 h-auto cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <FieldGroup>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <Field className="md:col-span-2">
-                          <FieldLabel className="text-xs font-bold text-muted-foreground">
-                            Details Description <span className="text-destructive ml-0.5">*</span>
-                          </FieldLabel>
-                          <Input
-                            type="text"
-                            required
-                            placeholder="Enter details description"
-                            {...register(`products.${index}.description` as const)}
-                            className={cn(
-                              "w-full bg-background/50",
-                              errors.products?.[index]?.description &&
-                                "border-destructive focus-visible:ring-destructive",
-                            )}
-                          />
-                          <FieldError errors={[errors.products?.[index]?.description]} />
-                        </Field>
-
-                        <Field>
-                          <FieldLabel className="text-xs font-bold text-muted-foreground">
-                            Quantity <span className="text-destructive ml-0.5">*</span>
-                          </FieldLabel>
-                          <Input
-                            type="number"
-                            required
-                            placeholder="Enter quantity"
-                            {...register(`products.${index}.quantity` as const)}
-                            className={cn(
-                              "w-full bg-background/50",
-                              errors.products?.[index]?.quantity &&
-                                "border-destructive focus-visible:ring-destructive",
-                            )}
-                          />
-                          <FieldError errors={[errors.products?.[index]?.quantity]} />
-                        </Field>
-
-                        <Field>
-                          <FieldLabel className="text-xs font-bold text-muted-foreground">
-                            Value <span className="text-destructive ml-0.5">*</span>
-                          </FieldLabel>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            required
-                            placeholder="Enter value"
-                            {...register(`products.${index}.value` as const)}
-                            className={cn(
-                              "w-full bg-background/50",
-                              errors.products?.[index]?.value &&
-                                "border-destructive focus-visible:ring-destructive",
-                            )}
-                          />
-                          <FieldError errors={[errors.products?.[index]?.value]} />
-                        </Field>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <Field className="md:col-span-2">
-                          <FieldLabel className="text-xs font-bold text-muted-foreground">
-                            HS Code
-                          </FieldLabel>
-                          <div className="flex gap-2">
-                            <Controller
-                              name={prefixId}
-                              control={control}
-                              render={({ field: selectField }) => (
-                                <Select
-                                  value={selectField.value}
-                                  onValueChange={selectField.onChange}
-                                >
-                                  <SelectTrigger className="w-1/3 bg-background/50 border-input">
-                                    <SelectValue placeholder="US" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="US">US</SelectItem>
-                                    <SelectItem value="VN">VN</SelectItem>
-                                    <SelectItem value="CA">CA</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                            <Input
-                              type="text"
-                              placeholder="Enter HS code number"
-                              {...register(numberId)}
-                              className="w-2/3 bg-background/50"
-                            />
-                          </div>
-                        </Field>
-
-                        <Field>
-                          <FieldLabel className="text-xs font-bold text-muted-foreground">
-                            Origin Country <span className="text-destructive ml-0.5">*</span>
-                          </FieldLabel>
-                          <Controller
-                            name={`products.${index}.originCountry` as const}
-                            control={control}
-                            render={({ field: selectField }) => (
-                              <Select
-                                value={selectField.value}
-                                onValueChange={selectField.onChange}
-                              >
-                                <SelectTrigger className="w-full bg-background/50 border-input">
-                                  <SelectValue placeholder="Select country" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="VN">Vietnam</SelectItem>
-                                  <SelectItem value="CN">China</SelectItem>
-                                  <SelectItem value="US">United States</SelectItem>
-                                  <SelectItem value="JP">Japan</SelectItem>
-                                  <SelectItem value="KR">South Korea</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                          <FieldError errors={[errors.products?.[index]?.originCountry]} />
-                        </Field>
-
-                        <Field>
-                          <FieldLabel className="text-xs font-bold text-muted-foreground">
-                            Unit Weight (gr)
-                          </FieldLabel>
-                          <Input
-                            type="number"
-                            placeholder="Weight"
-                            {...register(`products.${index}.weight` as const)}
-                            className="w-full bg-background/50"
-                          />
-                          <FieldError errors={[errors.products?.[index]?.weight]} />
-                        </Field>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <Field className="md:col-span-2">
-                          <FieldLabel className="text-xs font-bold text-muted-foreground">
-                            SKU (Optional)
-                          </FieldLabel>
-                          <Input
-                            type="text"
-                            placeholder="Enter SKU catalog code"
-                            {...register(`products.${index}.sku` as const)}
-                            className="w-full bg-background/50"
-                          />
-                        </Field>
-                      </div>
-                    </FieldGroup>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex justify-start mt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  append({
-                    description: "",
-                    quantity: "1",
-                    value: "",
-                    hsCodePrefix: "US",
-                    hsCodeNumber: "",
-                    originCountry: "VN",
-                    weight: "",
-                    sku: "",
-                  })
-                }
-                className="border-[#0F798C] text-[#0F798C] hover:bg-[#e6f7f9] dark:hover:bg-cyan-950/40 px-4 py-2 text-xs font-bold flex items-center gap-1.5 rounded-lg cursor-pointer"
-              >
-                <Plus className="h-4 w-4" /> Add Item
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <ItemListSection control={control} register={register} errors={errors} />
 
         {/* Buttons */}
         <div className="flex justify-end mt-4">
           <Button
             type="submit"
             disabled={loading}
-            className="bg-[#0F798C] hover:bg-[#0F798C]/90 text-white px-8 py-2.5 font-semibold rounded-lg"
+            className="bg-[#0F798C] hover:bg-[#0F798C]/90 text-white font-semibold rounded-lg"
           >
             {loading && (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+              <span className="animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
             )}
             Get Rates
           </Button>
