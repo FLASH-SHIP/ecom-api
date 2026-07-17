@@ -1,4 +1,5 @@
 import { createLogger } from "@ecom/lib/logger";
+import { prisma } from "@ecom/prisma";
 import { getAuditService } from "../../di/containers/AuditService";
 import { JobQueue } from "../JobQueue";
 
@@ -27,11 +28,34 @@ export function registerCleanupWorker() {
       // Purge audit logs older than configured days
       const auditLogsPurged = await service.purgeAuditLogs(auditDays);
 
+      // Purge webhook logs older than 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const webhookLogsPurged = await prisma.webhookLog.deleteMany({
+        where: {
+          createdAt: {
+            lt: thirtyDaysAgo,
+          },
+        },
+      });
+
+      // Purge expired API keys
+      const expiredKeysPurged = await prisma.apiKey.deleteMany({
+        where: {
+          expiresAt: {
+            lt: new Date(),
+          },
+        },
+      });
+
       log.info("Database cleanup completed successfully", {
         requestLogsPurged: requestLogsPurged.count,
         auditLogsPurged: auditLogsPurged.count,
+        webhookLogsPurged: webhookLogsPurged.count,
+        expiredKeysPurged: expiredKeysPurged.count,
         requestDaysThreshold: requestDays,
         auditDaysThreshold: auditDays,
+        webhookDaysThreshold: 30,
       });
     },
     3, // 3 retries

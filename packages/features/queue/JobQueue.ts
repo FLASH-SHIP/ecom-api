@@ -65,7 +65,11 @@ export class JobQueue {
   /**
    * Dispatch a job to a named queue.
    */
-  static async dispatch(queueName: string, payload: Record<string, unknown>): Promise<string> {
+  static async dispatch(
+    queueName: string,
+    payload: Record<string, unknown>,
+    options?: { delay?: number },
+  ): Promise<string> {
     try {
       const q = getQueue(queueName);
       const def = registeredJobs.get(queueName);
@@ -77,6 +81,7 @@ export class JobQueue {
           type: "exponential",
           delay: 1000,
         },
+        delay: options?.delay,
       });
       return job.id ?? `bullmq-${Date.now()}`;
     } catch (err) {

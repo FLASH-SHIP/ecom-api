@@ -45,4 +45,3 @@ export const SEEDERS: Seeder[] = [
   AdministrativeDivisionsSeeder, // 13 — depends on: none (or countries)
   UsDivisionsSeeder, // 14 — depends on: none
 ];
-

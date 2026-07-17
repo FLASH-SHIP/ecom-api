@@ -5,6 +5,7 @@ import enCustomerAuth from "../locales/en/customer-auth.json";
 import enCustomerDashboard from "../locales/en/customer-dashboard.json";
 import enCustomerProfile from "../locales/en/customer-profile.json";
 import enCustomers from "../locales/en/customers.json";
+import enDeveloper from "../locales/en/developer.json";
 import enLanguages from "../locales/en/languages.json";
 import enNav from "../locales/en/nav.json";
 import enOrders from "../locales/en/orders.json";
@@ -19,6 +20,7 @@ import viCustomerAuth from "../locales/vi/customer-auth.json";
 import viCustomerDashboard from "../locales/vi/customer-dashboard.json";
 import viCustomerProfile from "../locales/vi/customer-profile.json";
 import viCustomers from "../locales/vi/customers.json";
+import viDeveloper from "../locales/vi/developer.json";
 import viLanguages from "../locales/vi/languages.json";
 import viNav from "../locales/vi/nav.json";
 import viOrders from "../locales/vi/orders.json";
@@ -41,6 +43,7 @@ const messages = {
     settings: enSettings,
     languages: enLanguages,
     customFields: enCustomFields,
+    developer: enDeveloper,
   },
   vi: {
     ...viCommon,
@@ -56,6 +59,7 @@ const messages = {
     settings: viSettings,
     languages: viLanguages,
     customFields: viCustomFields,
+    developer: viDeveloper,
   },
 } as const;
 

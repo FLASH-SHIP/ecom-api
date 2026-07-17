@@ -38,11 +38,7 @@ describe("DatabaseMaintenanceService", () => {
 
   class MockWriteStream extends Writable {
     public data = "";
-    override _write(
-      chunk: any,
-      _encoding: string,
-      callback: (error?: Error | null) => void
-    ) {
+    override _write(chunk: any, _encoding: string, callback: (error?: Error | null) => void) {
       this.data += chunk.toString();
       callback();
     }
@@ -83,13 +79,13 @@ describe("DatabaseMaintenanceService", () => {
           userId: "user_123",
           username: "test-dev@ecom.com",
           writeStream,
-        })
+        }),
       ).rejects.toThrowError(
         new ErrorWithCode(
           "FORBIDDEN",
           "Database maintenance endpoints are strictly disabled on production environments.",
-          403
-        )
+          403,
+        ),
       );
     });
 
@@ -104,10 +100,8 @@ describe("DatabaseMaintenanceService", () => {
           userId: "user_123",
           username: "test-dev@ecom.com",
           writeStream,
-        })
-      ).rejects.toThrowError(
-        /SYSTEM_MAINTENANCE_KEY is not configured on the server/
-      );
+        }),
+      ).rejects.toThrowError(/SYSTEM_MAINTENANCE_KEY is not configured on the server/);
     });
 
     it("should throw Forbidden when key is missing or incorrect", async () => {
@@ -119,7 +113,7 @@ describe("DatabaseMaintenanceService", () => {
           userId: "user_123",
           username: "test-dev@ecom.com",
           writeStream,
-        })
+        }),
       ).rejects.toThrowError(/Missing SYSTEM_MAINTENANCE_KEY/);
 
       await expect(
@@ -130,7 +124,7 @@ describe("DatabaseMaintenanceService", () => {
           userId: "user_123",
           username: "test-dev@ecom.com",
           writeStream,
-        })
+        }),
       ).rejects.toThrowError(/Invalid SYSTEM_MAINTENANCE_KEY/);
     });
 
@@ -143,7 +137,7 @@ describe("DatabaseMaintenanceService", () => {
           userId: "user_123",
           username: "test-dev@ecom.com",
           writeStream,
-        })
+        }),
       ).rejects.toThrowError(/Missing sudoPassword/);
 
       vi.mocked(verifyPassword).mockResolvedValue(false);
@@ -156,7 +150,7 @@ describe("DatabaseMaintenanceService", () => {
           userId: "user_123",
           username: "test-dev@ecom.com",
           writeStream,
-        })
+        }),
       ).rejects.toThrowError(/Invalid sudo password/);
     });
 
@@ -172,10 +166,8 @@ describe("DatabaseMaintenanceService", () => {
           userId: "user_123",
           username: "test-dev@ecom.com",
           writeStream,
-        })
-      ).rejects.toThrowError(
-        /Database is currently undergoing maintenance by other-dev@ecom.com/
-      );
+        }),
+      ).rejects.toThrowError(/Database is currently undergoing maintenance by other-dev@ecom.com/);
     });
   });
 

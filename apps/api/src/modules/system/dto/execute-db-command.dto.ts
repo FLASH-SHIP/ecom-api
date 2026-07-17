@@ -1,5 +1,5 @@
-import { IsEnum, IsOptional, IsString, Matches } from "class-validator";
 import type { MaintenanceAction } from "@ecom/features/system/services/DatabaseMaintenanceService";
+import { IsEnum, IsOptional, IsString, Matches } from "class-validator";
 
 export class ExecuteDatabaseCommandDto {
   @IsEnum([

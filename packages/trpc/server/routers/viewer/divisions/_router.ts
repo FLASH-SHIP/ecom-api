@@ -32,4 +32,3 @@ export const divisionsRouter = router({
   createDivision,
   updateDivision,
 });
-

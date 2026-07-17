@@ -1,12 +1,12 @@
-import { spawn, execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { readdir, stat } from "node:fs/promises";
 import net from "node:net";
 import { Writable } from "node:stream";
 import { verifyPassword } from "@ecom/lib/crypto";
 import { getRedisClient } from "@ecom/lib/redis";
 import type { PrismaClient } from "@ecom/prisma";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Mock } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SystemDiagnosticsService } from "../services/SystemDiagnosticsService";
 
 // Mock node:fs with fallback to original implementation
@@ -23,7 +23,10 @@ vi.mock("node:fs", async () => {
         const { Readable } = require("node:stream");
         return Readable.from(["line1\nline2\nline3\n"]);
       }
-      return actual.createReadStream(path, options as Parameters<typeof actual.createReadStream>[1]);
+      return actual.createReadStream(
+        path,
+        options as Parameters<typeof actual.createReadStream>[1],
+      );
     }),
   };
 });
@@ -106,11 +109,7 @@ describe("SystemDiagnosticsService", () => {
 
   class MockWriteStream extends Writable {
     public data = "";
-    override _write(
-      chunk: unknown,
-      _encoding: string,
-      callback: (error?: Error | null) => void
-    ) {
+    override _write(chunk: unknown, _encoding: string, callback: (error?: Error | null) => void) {
       this.data += (chunk as string | Buffer).toString();
       callback();
     }
@@ -144,11 +143,19 @@ describe("SystemDiagnosticsService", () => {
 
   describe("Log Viewer Features", () => {
     it("should list log files sorted by modified time", async () => {
-      vi.mocked(readdir).mockResolvedValue(["app-2026-07-14.log", "app-2026-07-15.log", "other.txt"] as unknown as never);
+      vi.mocked(readdir).mockResolvedValue([
+        "app-2026-07-14.log",
+        "app-2026-07-15.log",
+        "other.txt",
+      ] as unknown as never);
       vi.mocked(stat).mockImplementation((path: import("node:fs").PathLike) => {
         const pathStr = String(path);
-        const time = pathStr.includes("2026-07-15") ? new Date("2026-07-15") : new Date("2026-07-14");
-        return Promise.resolve({ size: 100, mtime: time } as unknown as Awaited<ReturnType<typeof stat>>);
+        const time = pathStr.includes("2026-07-15")
+          ? new Date("2026-07-15")
+          : new Date("2026-07-14");
+        return Promise.resolve({ size: 100, mtime: time } as unknown as Awaited<
+          ReturnType<typeof stat>
+        >);
       });
 
       const list = await service.listLogFiles();
@@ -158,7 +165,9 @@ describe("SystemDiagnosticsService", () => {
 
     it("should execute read log file and filter by level", async () => {
       vi.mocked(readdir).mockResolvedValue(["app-2026-07-15.log"] as unknown as never);
-      vi.mocked(stat).mockResolvedValue({ size: 100, mtime: new Date() } as unknown as Awaited<ReturnType<typeof stat>>);
+      vi.mocked(stat).mockResolvedValue({ size: 100, mtime: new Date() } as unknown as Awaited<
+        ReturnType<typeof stat>
+      >);
 
       const mockChild = {
         stdout: {
@@ -201,7 +210,7 @@ describe("SystemDiagnosticsService", () => {
           username: "test-dev@ecom.com",
           writeStream,
           maintenanceKey: "test_maintenance_key_value_12345",
-        })
+        }),
       ).rejects.toThrowError(/Invalid log filename/);
     });
   });
@@ -217,16 +226,26 @@ describe("SystemDiagnosticsService", () => {
           monit: { cpu: 12, memory: 50000000 },
         },
       ]);
-      vi.mocked(execFile).mockImplementation((_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-        (callback as (err: Error | null, res: { stdout: string } | Record<string, unknown>) => void)(null, { stdout: pm2Json });
-        return {} as unknown as ReturnType<typeof execFile>;
-      });
+      vi.mocked(execFile).mockImplementation(
+        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
+          (
+            callback as (
+              err: Error | null,
+              res: { stdout: string } | Record<string, unknown>,
+            ) => void
+          )(null, { stdout: pm2Json });
+          return {} as unknown as ReturnType<typeof execFile>;
+        },
+      );
 
-      const res = await service.getProcessStatus({
+      const res = (await service.getProcessStatus({
         sudoPassword: "correct_password",
         userId: "user_123",
         maintenanceKey: "test_maintenance_key_value_12345",
-      });
+      })) as {
+        manager: string;
+        processes: Array<{ name: string; status: string }>;
+      };
 
       expect(res.manager).toBe("pm2");
       expect(res.processes[0].name).toBe("ecom-api");
@@ -234,16 +253,23 @@ describe("SystemDiagnosticsService", () => {
     });
 
     it("should fallback to reporting OS stats if PM2 is not installed", async () => {
-      vi.mocked(execFile).mockImplementation((_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
-        (callback as (err: Error | null, res: { stdout: string } | Record<string, unknown>) => void)(new Error("Command not found"), {});
-        return {} as unknown as ReturnType<typeof execFile>;
-      });
+      vi.mocked(execFile).mockImplementation(
+        (_cmd: unknown, _args: unknown, _opts: unknown, callback: unknown) => {
+          (
+            callback as (
+              err: Error | null,
+              res: { stdout: string } | Record<string, unknown>,
+            ) => void
+          )(new Error("Command not found"), {});
+          return {} as unknown as ReturnType<typeof execFile>;
+        },
+      );
 
-      const res = await service.getProcessStatus({
+      const res = (await service.getProcessStatus({
         sudoPassword: "correct_password",
         userId: "user_123",
         maintenanceKey: "test_maintenance_key_value_12345",
-      });
+      })) as { manager: string; system: { memory: unknown } };
 
       expect(res.manager).toBe("os_fallback");
       expect(res.system.memory).toBeDefined();
@@ -262,11 +288,11 @@ describe("SystemDiagnosticsService", () => {
       };
       vi.mocked(net.Socket).mockReturnValue(mockSocket as unknown as net.Socket);
 
-      const res = await service.pingExternalServices({
+      const res = (await service.pingExternalServices({
         sudoPassword: "correct_password",
         userId: "user_123",
         maintenanceKey: "test_maintenance_key_value_12345",
-      });
+      })) as Array<{ status: string }>;
 
       expect(res).toBeInstanceOf(Array);
       expect(res[0].status).toBe("reachable");
@@ -277,13 +303,13 @@ describe("SystemDiagnosticsService", () => {
     it("should scan keys matching pattern under the whitelisted cache prefix", async () => {
       mockRedis.scan.mockResolvedValue(["0", ["cache:user:1", "cache:user:2"]]);
 
-      const res = await service.queryRedis({
+      const res = (await service.queryRedis({
         action: "scan",
         pattern: "cache:user:*",
         sudoPassword: "correct_password",
         userId: "user_123",
         maintenanceKey: "test_maintenance_key_value_12345",
-      });
+      })) as { keysCount: number; keys: string[] };
 
       expect(res.keysCount).toBe(2);
       expect(res.keys).toContain("cache:user:1");
@@ -297,7 +323,7 @@ describe("SystemDiagnosticsService", () => {
           sudoPassword: "correct_password",
           userId: "user_123",
           maintenanceKey: "test_maintenance_key_value_12345",
-        })
+        }),
       ).rejects.toThrowError(/Redis operations are restricted/);
     });
 
@@ -305,13 +331,13 @@ describe("SystemDiagnosticsService", () => {
       mockRedis.type.mockResolvedValue("string");
       mockRedis.get.mockResolvedValue("a".repeat(11000));
 
-      const res = await service.queryRedis({
+      const res = (await service.queryRedis({
         action: "get",
         key: "cache:large_item",
         sudoPassword: "correct_password",
         userId: "user_123",
         maintenanceKey: "test_maintenance_key_value_12345",
-      });
+      })) as { value: string };
 
       expect(res.value).toContain("[TRUNCATED]");
       expect(res.value.length).toBeLessThan(10200);
@@ -320,10 +346,15 @@ describe("SystemDiagnosticsService", () => {
 
   describe("PM2 Process Control Actions", () => {
     it("should execute PM2 restart action successfully", async () => {
-      vi.mocked(execFile).mockImplementation((_cmd: unknown, _args: unknown, _opts: unknown, cb: unknown) => {
-        (cb as (err: Error | null, res: { stdout: string } | Record<string, unknown>) => void)(null, { stdout: "success" });
-        return {} as unknown as ReturnType<typeof execFile>;
-      });
+      vi.mocked(execFile).mockImplementation(
+        (_cmd: unknown, _args: unknown, _opts: unknown, cb: unknown) => {
+          (cb as (err: Error | null, res: { stdout: string } | Record<string, unknown>) => void)(
+            null,
+            { stdout: "success" },
+          );
+          return {} as unknown as ReturnType<typeof execFile>;
+        },
+      );
 
       const res = await service.executeProcessAction({
         action: "restart",
@@ -338,7 +369,7 @@ describe("SystemDiagnosticsService", () => {
         "pm2",
         ["restart", "ecom-api"],
         expect.any(Object),
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -350,7 +381,7 @@ describe("SystemDiagnosticsService", () => {
           sudoPassword: "correct_password",
           userId: "user_123",
           maintenanceKey: "test_maintenance_key_value_12345",
-        })
+        }),
       ).rejects.toThrowError(/Invalid process name/);
     });
 
@@ -428,7 +459,8 @@ describe("SystemDiagnosticsService", () => {
           },
         ]);
       });
-      mockPrisma.$queryRawUnsafe = mockQueryRawUnsafe as unknown as typeof mockPrisma.$queryRawUnsafe;
+      mockPrisma.$queryRawUnsafe =
+        mockQueryRawUnsafe as unknown as typeof mockPrisma.$queryRawUnsafe;
 
       const res = await service.getDatabaseStats({
         sudoPassword: "correct_password",

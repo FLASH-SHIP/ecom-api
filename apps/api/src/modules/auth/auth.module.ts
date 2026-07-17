@@ -1,7 +1,7 @@
 import { Global, Module } from "@nestjs/common";
 import { ApiAuthGuard } from "./api-auth.guard";
-import { PermissionsGuard } from "./permissions.guard";
 import { AuthController } from "./auth.controller";
+import { PermissionsGuard } from "./permissions.guard";
 
 @Global()
 @Module({

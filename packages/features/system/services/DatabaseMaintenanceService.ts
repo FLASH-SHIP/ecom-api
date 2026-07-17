@@ -2,11 +2,11 @@ import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import type { Writable } from "node:stream";
 import { verifyPassword } from "@ecom/lib/crypto";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { getRedisClient } from "@ecom/lib/redis";
 import type { PrismaClient } from "@ecom/prisma";
-import type { Writable } from "node:stream";
 
 export type MaintenanceAction =
   | "migrate-deploy"
@@ -46,14 +46,19 @@ export class DatabaseMaintenanceService {
         return p;
       }
     }
-    throw ErrorWithCode.Factory.Internal("Could not locate packages/prisma directory on the server");
+    throw ErrorWithCode.Factory.Internal(
+      "Could not locate packages/prisma directory on the server",
+    );
   }
 
   /**
    * Strips ANSI escape codes from stdout/stderr chunks.
    */
   private stripAnsi(text: string): string {
-    return text.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "");
+    return text.replace(
+      /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+      "",
+    );
   }
 
   /**
@@ -64,7 +69,7 @@ export class DatabaseMaintenanceService {
 
     const key = process.env.SYSTEM_MAINTENANCE_KEY;
     if (key && key.length >= 8) {
-      const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const escapedKey = key.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
       const keyRegex = new RegExp(escapedKey, "g");
       masked = masked.replace(keyRegex, "******");
     }
@@ -78,7 +83,7 @@ export class DatabaseMaintenanceService {
     const envKey = process.env.SYSTEM_MAINTENANCE_KEY;
     if (!envKey) {
       throw ErrorWithCode.Factory.Forbidden(
-        "SYSTEM_MAINTENANCE_KEY is not configured on the server. Command execution is disabled."
+        "SYSTEM_MAINTENANCE_KEY is not configured on the server. Command execution is disabled.",
       );
     }
 
@@ -89,10 +94,7 @@ export class DatabaseMaintenanceService {
     const keyBuf = Buffer.from(key);
     const envKeyBuf = Buffer.from(envKey);
 
-    if (
-      keyBuf.length !== envKeyBuf.length ||
-      !crypto.timingSafeEqual(keyBuf, envKeyBuf)
-    ) {
+    if (keyBuf.length !== envKeyBuf.length || !crypto.timingSafeEqual(keyBuf, envKeyBuf)) {
       throw ErrorWithCode.Factory.Forbidden("Invalid SYSTEM_MAINTENANCE_KEY");
     }
   }
@@ -109,12 +111,13 @@ export class DatabaseMaintenanceService {
     username: string;
     writeStream: Writable;
   }): Promise<void> {
-    const { action, maintenanceKey, sudoPassword, seedOnly, userId, username, writeStream } = params;
+    const { action, maintenanceKey, sudoPassword, seedOnly, userId, username, writeStream } =
+      params;
 
     // ── 1. Production Guard ──────────────────────────────────────────────────
     if (process.env.NODE_ENV === "production") {
       throw ErrorWithCode.Factory.Forbidden(
-        "Database maintenance endpoints are strictly disabled on production environments."
+        "Database maintenance endpoints are strictly disabled on production environments.",
       );
     }
 
@@ -151,13 +154,13 @@ export class DatabaseMaintenanceService {
       username,
       "EX",
       this.LOCK_TTL_SECONDS,
-      "NX"
+      "NX",
     );
 
     if (!lockAcquired) {
       const activeUser = (await redis.get(this.LOCK_KEY)) || "another developer";
       throw ErrorWithCode.Factory.Conflict(
-        `Database is currently undergoing maintenance by ${activeUser}. Please try again later.`
+        `Database is currently undergoing maintenance by ${activeUser}. Please try again later.`,
       );
     }
 

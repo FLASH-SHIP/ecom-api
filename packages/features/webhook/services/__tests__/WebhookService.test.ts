@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import type { WebhookRepository } from "../../repositories/WebhookRepository";
 import { WebhookService } from "../WebhookService";
 
-function createMockRepo() {
+// biome-ignore lint/suspicious/noExplicitAny: vitest mock repository requires any casting to bypass private property class assignability checks
+function createMockRepo(): any {
   return {
     findMany: vi.fn(),
     findById: vi.fn(),
@@ -12,7 +12,11 @@ function createMockRepo() {
     remove: vi.fn(),
     createLog: vi.fn(),
     findLogs: vi.fn(),
-  } as unknown as WebhookRepository & Record<string, ReturnType<typeof vi.fn>>;
+    cascadeDeleteOwner: vi.fn(),
+    incrementFailureCount: vi.fn(),
+    resetFailureCount: vi.fn(),
+    rotateSecret: vi.fn(),
+  };
 }
 
 describe("WebhookService", () => {
@@ -140,22 +144,22 @@ describe("WebhookService", () => {
         secret: null,
         retries: 1,
         timeout: 5,
+        isActive: true,
+        apiVersion: "2026-07-16",
       };
-      repo.findByEvent.mockResolvedValue([mockWebhook]);
+      repo.findById.mockResolvedValue(mockWebhook);
       repo.createLog.mockResolvedValue({ id: 1 });
 
       // Mock fetch
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
+        headers: { get: () => null },
         text: () => Promise.resolve("OK"),
       });
       vi.stubGlobal("fetch", mockFetch);
 
-      await service.dispatch("post.published", { id: 1, title: "Test" });
-
-      // Wait for async dispatch
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await service.executeWebhookDelivery(1, "post.published", { id: 1, title: "Test" });
 
       expect(mockFetch).toHaveBeenCalled();
       vi.unstubAllGlobals();
@@ -172,6 +176,59 @@ describe("WebhookService", () => {
 
       const result = await service.getWebhookLogs(1);
       expect(result).toEqual(mockLogs);
+    });
+  });
+
+  describe("rotateWebhookSecret", () => {
+    it("should rotate secret and pass old secret", async () => {
+      const repo = createMockRepo();
+      const service = new WebhookService({ webhookRepo: repo });
+
+      repo.findById.mockResolvedValue({ id: 1, secret: "old_secret_val" });
+      repo.rotateSecret.mockResolvedValue({ id: 1, secret: "new_secret_val" });
+
+      const newSecret = await service.rotateWebhookSecret(1);
+      expect(newSecret).toBeDefined();
+      expect(repo.rotateSecret).toHaveBeenCalledWith(1, expect.any(String), "old_secret_val");
+    });
+  });
+
+  describe("buildWebhookHeaders - dual signatures", () => {
+    it("should generate dual signatures if within 15-minute grace period", async () => {
+      const repo = createMockRepo();
+      const service = new WebhookService({ webhookRepo: repo });
+
+      // biome-ignore lint/suspicious/noExplicitAny: access private buildWebhookHeaders method for test purposes
+      const headers = await (service as any).buildWebhookHeaders(
+        "order.created",
+        "2026-07-16T12:00:00.000Z",
+        '{"id":"evt_123"}',
+        "new_sec",
+        "old_sec",
+        new Date(Date.now() - 5 * 60 * 1000), // 5 mins ago
+      );
+
+      expect(headers["X-Webhook-Signature"]).toBeDefined();
+      expect(headers["X-Webhook-Signature-Legacy"]).toBeDefined();
+      expect(headers["X-Webhook-Signature"]).not.toEqual(headers["X-Webhook-Signature-Legacy"]);
+    });
+
+    it("should NOT generate legacy signature if beyond 15 minutes", async () => {
+      const repo = createMockRepo();
+      const service = new WebhookService({ webhookRepo: repo });
+
+      // biome-ignore lint/suspicious/noExplicitAny: access private buildWebhookHeaders method for test purposes
+      const headers = await (service as any).buildWebhookHeaders(
+        "order.created",
+        "2026-07-16T12:00:00.000Z",
+        '{"id":"evt_123"}',
+        "new_sec",
+        "old_sec",
+        new Date(Date.now() - 20 * 60 * 1000), // 20 mins ago
+      );
+
+      expect(headers["X-Webhook-Signature"]).toBeDefined();
+      expect(headers["X-Webhook-Signature-Legacy"]).toBeUndefined();
     });
   });
 });

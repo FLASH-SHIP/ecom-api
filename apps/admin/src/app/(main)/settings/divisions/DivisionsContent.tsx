@@ -513,9 +513,7 @@ export default function DivisionsContent() {
             toolbarLeading={
               <SearchableSelect
                 placeholder={t("divisions.selectProvince")}
-                searchPlaceholder={
-                  t("divisions.searchProvincePlaceholder") || "Search province..."
-                }
+                searchPlaceholder={t("divisions.searchProvincePlaceholder") || "Search province..."}
                 value={selectedProvinceCode?.toString() ?? ""}
                 onValueChange={(val) => {
                   if (val) {

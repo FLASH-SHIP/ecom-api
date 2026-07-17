@@ -114,20 +114,44 @@ model RequestLog {
 }
 
 model Webhook {
-  id        Int      @id @default(autoincrement())
-  name      String
-  url       String
-  secret    String? // SEC-10: TODO — hash like API keys when scaling to external webhook consumers
-  events    String[] // e.g. ["post.published", "customer.registered"]
-  isActive  Boolean  @default(true)
-  retries   Int      @default(3)
-  timeout   Int      @default(30) // seconds
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              Int       @id @default(autoincrement())
+  name            String
+  url             String
+  secret          String? // SEC-10: TODO — hash like API keys when scaling to external webhook consumers
+  oldSecret       String?   @map("old_secret")
+  secretUpdatedAt DateTime? @map("secret_updated_at")
+  events          String[] // e.g. ["post.published", "customer.registered"]
+  isActive        Boolean   @default(true)
+  retries         Int       @default(3)
+  timeout         Int       @default(30) // seconds
+  ownerId         String?   @map("owner_id")
+  ownerType       String?   @map("owner_type") // e.g. "Customer", "User"
+  failureCount    Int       @default(0) @map("failure_count")
+  apiVersion      String    @default("2026-07-16") @map("api_version")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   logs WebhookLog[]
 
+  @@index([ownerType, ownerId])
   @@map("webhooks")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  ownerId    String    @map("owner_id")
+  ownerType  String    @map("owner_type") // e.g. "Customer", "User"
+  hashedKey  String    @unique
+  maskedKey  String    @map("masked_key") // e.g. "ecom_cust_***3456" for UI display
+  label      String?
+  allowedIps String[]  @default([]) @map("allowed_ips")
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([hashedKey])
+  @@index([ownerType, ownerId])
+  @@map("api_keys")
 }
 
 model WebhookLog {

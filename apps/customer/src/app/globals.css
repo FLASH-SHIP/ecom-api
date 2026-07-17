@@ -28,6 +28,8 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
   --z-popover: 50;
+  --z-overlay: 55;
+  --z-modal: 60;
 
   /* Sidebar */
   --sidebar-width: 260px;
@@ -72,6 +74,8 @@
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --z-popover: 50;
+  --z-overlay: 55;
+  --z-modal: 60;
 
   --sidebar-bg: #0a0a0f;
   --sidebar-border: #1e293b;
@@ -110,7 +114,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --z-popover: var(--z-popover);
+  --z-index-popover: var(--z-popover);
+  --z-index-overlay: var(--z-overlay);
+  --z-index-modal: var(--z-modal);
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;

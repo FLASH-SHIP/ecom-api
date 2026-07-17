@@ -1,8 +1,15 @@
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { signAccessToken, signRefreshToken } from "@ecom/lib/jwt";
-import { Body, Controller, HttpCode, HttpStatus, Post, UnauthorizedException } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
-import { AdminLoginDto } from "./dto/login.dto";
+import type { AdminLoginDto } from "./dto/login.dto";
 
 @ApiTags("Authentication")
 @Controller("auth")
