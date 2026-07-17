@@ -33,7 +33,7 @@ SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 const SelectContent = forwardRef<
   ElementRef<typeof SelectPrimitive.Content>,
   ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = "popper", ...props }, ref) => (
+>(({ className, children, position = "popper", style, ...props }, ref) => (
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       ref={ref}
@@ -44,6 +44,7 @@ const SelectContent = forwardRef<
       )}
       position={position}
       {...props}
+      style={{ ...style, pointerEvents: "auto" }}
     >
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport

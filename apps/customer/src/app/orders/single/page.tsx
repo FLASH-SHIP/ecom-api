@@ -6,7 +6,6 @@ import { Card, CardContent } from "@ecom/ui/components/card";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
-import { SearchableSelect } from "@ecom/ui/components/searchable-select";
 import {
   Select,
   SelectContent,
@@ -18,11 +17,12 @@ import { cn } from "@ecom/ui/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
 import { BasicInfoSection } from "./BasicInfoSection";
+import { PackageInfoSection } from "./PackageInfoSection";
 import { ReceiverSection } from "./ReceiverSection";
 import { SenderSection } from "./SenderSection";
 import { useOrderStore } from "./useOrderStore";
@@ -189,20 +189,7 @@ export default function CreateSingleOrderPage() {
     control,
     name: "products",
   });
-  const { data: packingTypesData } = trpc.customer.orders.listPackingTypes.useQuery();
-
-  useEffect(() => {
-    if (packingTypesData?.items && packingTypesData.items.length > 0) {
-      const currentVal = watch("packingTypeId");
-      if (!currentVal || !packingTypesData.items.some((item) => item.id === currentVal)) {
-        setValue("packingTypeId", packingTypesData.items[0]?.id ?? 0);
-      }
-    }
-  }, [packingTypesData, setValue, watch]);
   // Watch only necessary fields to prevent typing lag
-  const watchedLength = watch("length");
-  const watchedWidth = watch("width");
-  const watchedHeight = watch("height");
   const watchedProducts = watch("products");
 
   const productsString = JSON.stringify(watchedProducts);
@@ -276,52 +263,8 @@ export default function CreateSingleOrderPage() {
 
   // Saved packages from DB
   const { data: savedPackages = [] } = trpc.customer.packages.list.useQuery();
-  const createPackageMutation = trpc.customer.packages.create.useMutation();
-  const updatePackageMutation = trpc.customer.packages.update.useMutation();
-
-  const savedPackageOptions = useMemo(
-    () =>
-      savedPackages.map((p) => ({
-        value: String(p.id),
-        label:
-          p.label ||
-          `${p.packageName} — ${p.weight}g (${p.length ?? 0}x${p.width ?? 0}x${p.height ?? 0})`,
-      })),
-    [savedPackages],
-  );
-
-  const handleSelectSavedPackage = useCallback(
-    (val: string) => {
-      if (!val) {
-        setSelectedPackageId(null);
-        return;
-      }
-      const pkg = savedPackages.find((p) => p.id === Number(val));
-      if (!pkg) return;
-      setSelectedPackageId(pkg.id);
-      setValue("packageName", pkg.packageName);
-      setValue("packingTypeId", pkg.packingTypeId ?? 0);
-      setValue("length", pkg.length !== null ? String(pkg.length) : "");
-      setValue("width", pkg.width !== null ? String(pkg.width) : "");
-      setValue("height", pkg.height !== null ? String(pkg.height) : "");
-      setValue("weight", String(pkg.weight));
-      setSavePackageSetting(true);
-    },
-    [savedPackages, setValue],
-  );
 
   const [isGetLabel, setIsGetLabel] = useState(false);
-
-  // Live volume weight calculation (gr)
-  const [liveVolumeWeight, setLiveVolumeWeight] = useState(0);
-
-  useEffect(() => {
-    const l = Number(watchedLength) || 0;
-    const w = Number(watchedWidth) || 0;
-    const h = Number(watchedHeight) || 0;
-    const computedGrams = Math.round((l * w * h) / 5);
-    setLiveVolumeWeight(computedGrams);
-  }, [watchedLength, watchedWidth, watchedHeight]);
 
   // Set hydration status
   useEffect(() => {
@@ -499,7 +442,6 @@ export default function CreateSingleOrderPage() {
       declaredValue,
       packingTypeId,
       products,
-      packageName,
     } = formValues;
 
     try {
@@ -577,26 +519,6 @@ export default function CreateSingleOrderPage() {
           promises.push(
             createReceiverMutation.mutateAsync({ ...receiverPayload, isDefault: false }),
           );
-        }
-      }
-
-      // Save package to DB if checkbox is ticked
-      if (savePackageSetting) {
-        const packagePayload = {
-          packageName: packageName || "Mẫu gói hàng",
-          packingTypeId: Number(packingTypeId),
-          length: length ? Number(length) : null,
-          width: width ? Number(width) : null,
-          height: height ? Number(height) : null,
-          weight: Number(weight),
-          isDefault: true,
-        };
-        if (selectedPackageId) {
-          promises.push(
-            updatePackageMutation.mutateAsync({ id: selectedPackageId, data: packagePayload }),
-          );
-        } else {
-          promises.push(createPackageMutation.mutateAsync(packagePayload));
         }
       }
 
@@ -1005,192 +927,18 @@ export default function CreateSingleOrderPage() {
         />
 
         {/* Package Info */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-border pb-2">
-              <h3 className="font-bold text-lg text-foreground">Package Info</h3>
-              {savedPackages.length > 0 && (
-                <div className="w-64">
-                  <SearchableSelect
-                    value={selectedPackageId ? String(selectedPackageId) : ""}
-                    onValueChange={handleSelectSavedPackage}
-                    options={savedPackageOptions}
-                    placeholder="Choose saved package..."
-                    searchPlaceholder="Search saved package..."
-                    allowClear
-                    maxHeight="200px"
-                    className="h-8 text-xs"
-                  />
-                </div>
-              )}
-            </div>
-            <FieldGroup className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Field className="md:col-span-3">
-                <FieldLabel className="text-xs font-bold text-muted-foreground">
-                  Type of Packaging <span className="text-destructive ml-0.5">*</span>
-                </FieldLabel>
-                <Controller
-                  name="packingTypeId"
-                  control={control}
-                  render={({ field }) => {
-                    const selectedPt = packingTypesData?.items.find(
-                      (item) => item.id === field.value,
-                    );
-                    return (
-                      <Select
-                        value={field.value ? String(field.value) : ""}
-                        onValueChange={(v) => field.onChange(Number(v))}
-                      >
-                        <SelectTrigger
-                          className={cn(
-                            "w-full bg-background/50 border-input h-[52px]",
-                            errors.packingTypeId && "border-destructive focus:ring-destructive",
-                          )}
-                        >
-                          {selectedPt ? (
-                            <div className="flex items-center gap-3">
-                              {selectedPt.image && (
-                                // biome-ignore lint/performance/noImgElement: dynamic svg/png package image
-                                <img
-                                  src={selectedPt.image}
-                                  alt={selectedPt.name}
-                                  className="h-9 w-9 object-contain"
-                                />
-                              )}
-                              <span className="text-sm">{selectedPt.name}</span>
-                            </div>
-                          ) : (
-                            <SelectValue placeholder="Select type of packaging" />
-                          )}
-                        </SelectTrigger>
-                        <SelectContent>
-                          {packingTypesData?.items.map((pt) => (
-                            <SelectItem key={pt.id} value={String(pt.id)}>
-                              <div className="flex items-center gap-3 py-0.5">
-                                {pt.image && (
-                                  // biome-ignore lint/performance/noImgElement: dynamic svg/png package image
-                                  <img
-                                    src={pt.image}
-                                    alt={pt.name}
-                                    className="h-9 w-9 object-contain"
-                                  />
-                                )}
-                                <span className="text-sm">{pt.name}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    );
-                  }}
-                />
-                <FieldError errors={[errors.packingTypeId]} />
-              </Field>
-
-              <Field className="md:col-span-2">
-                <FieldLabel className="text-xs font-bold text-muted-foreground">
-                  Package Dimensions (cm) <span className="text-destructive ml-0.5">*</span>
-                </FieldLabel>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Length"
-                    {...register("length")}
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.length && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <span className="text-muted-foreground">×</span>
-                  <Input
-                    type="number"
-                    placeholder="Width"
-                    {...register("width")}
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.width && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <span className="text-muted-foreground">×</span>
-                  <Input
-                    type="number"
-                    placeholder="Height"
-                    {...register("height")}
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.height && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                </div>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="weight" className="text-xs font-bold text-muted-foreground">
-                  Package Weight (gr) <span className="text-destructive ml-0.5">*</span>
-                </FieldLabel>
-                <div className="flex gap-2">
-                  <Input
-                    id="weight"
-                    type="number"
-                    required
-                    placeholder="0.00"
-                    {...register("weight")}
-                    className={cn(
-                      "w-2/3 bg-background/50",
-                      errors.weight && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <Select defaultValue="gram">
-                    <SelectTrigger className="w-1/3 bg-background/50 border-input">
-                      <SelectValue placeholder="Unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gram">Gram</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <FieldError errors={[errors.weight]} />
-              </Field>
-
-              <Field className="md:col-span-3">
-                <div className="flex justify-between items-center text-xs font-bold">
-                  <FieldLabel htmlFor="packageName" className="text-muted-foreground">
-                    Package Name <span className="text-destructive ml-0.5">*</span>
-                  </FieldLabel>
-                  <span className="text-cyan-600 dark:text-cyan-400 font-medium">
-                    Volume weight: {(liveVolumeWeight / 1000).toFixed(2)} kg ({liveVolumeWeight} gr)
-                  </span>
-                </div>
-                <Input
-                  id="packageName"
-                  type="text"
-                  required
-                  placeholder="Enter package name"
-                  {...register("packageName")}
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.packageName && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                <FieldError errors={[errors.packageName]} />
-              </Field>
-            </FieldGroup>
-
-            <div className="flex items-center space-x-2 mt-2">
-              <Checkbox
-                id="save-package"
-                checked={savePackageSetting}
-                onCheckedChange={(c) => setSavePackageSetting(!!c)}
-              />
-              <label
-                htmlFor="save-package"
-                className="text-xs font-bold text-muted-foreground cursor-pointer select-none"
-              >
-                Save your setting for repeated use
-              </label>
-            </div>
-          </CardContent>
-        </Card>
+        <PackageInfoSection
+          control={control}
+          register={register}
+          errors={errors}
+          setValue={setValue}
+          watch={watch}
+          savePackageSetting={savePackageSetting}
+          setSavePackageSetting={setSavePackageSetting}
+          selectedPackageId={selectedPackageId}
+          setSelectedPackageId={setSelectedPackageId}
+          savedPackages={savedPackages}
+        />
 
         {/* Item List */}
         <Card className="rounded-xl border border-border bg-card">

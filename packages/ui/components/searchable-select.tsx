@@ -11,6 +11,8 @@ interface SearchableSelectOption {
   value: string;
   label: string;
   icon?: string;
+  /** Optional image URL rendered as a thumbnail beside the label */
+  image?: string | null;
   separatorAfter?: boolean;
 }
 
@@ -57,6 +59,9 @@ const OptionItem = React.memo(function OptionItem({
         )}
       >
         <Check className={cn("size-3.5 shrink-0", isSelected ? "opacity-100" : "opacity-0")} />
+        {opt.image && (
+          <img src={opt.image} alt={opt.label} className="size-7 shrink-0 object-contain" />
+        )}
         {opt.icon && (
           <span className="inline-block w-4 text-center font-mono text-xs text-muted-foreground">
             {opt.icon}
@@ -188,12 +193,19 @@ function SearchableSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal",
+            "h-9 lg:h-10 xl:h-11 2xl:h-[52px] w-full justify-between font-normal",
             !hasValue && "text-muted-foreground",
             className,
           )}
         >
-          <span className="truncate">
+          <span className="flex items-center gap-2 truncate">
+            {selectedOption?.image && (
+              <img
+                src={selectedOption.image}
+                alt={selectedOption.label}
+                className="size-7 shrink-0 object-contain"
+              />
+            )}
             {selectedOption?.icon && (
               <span className="mr-1.5 inline-block w-4 text-center font-mono text-xs text-muted-foreground">
                 {selectedOption.icon}

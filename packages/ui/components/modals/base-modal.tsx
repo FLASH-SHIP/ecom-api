@@ -166,6 +166,17 @@ export function BaseModalContent({
       <BaseModalOverlay />
 
       <DialogPrimitive.Content
+        onInteractOutside={(e) => {
+          // Prevent Dialog from closing when user clicks inside a Radix
+          // Select / Popover portal that is rendered outside the Dialog DOM.
+          const target = e.target as HTMLElement | null;
+          if (
+            target?.closest("[data-radix-select-content]") ||
+            target?.closest("[data-radix-popper-content-wrapper]")
+          ) {
+            e.preventDefault();
+          }
+        }}
         className={cn(
           // positioning
           "fixed left-1/2 top-1/2 z-[201] -translate-x-1/2 -translate-y-1/2",

@@ -254,7 +254,7 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
   const handleFormSubmit = async (data: SenderFormValues) => {
     if (editingSender) {
       // ── Edit mode
-      await updateMutation.mutateAsync({
+      const updatedSender = await updateMutation.mutateAsync({
         id: editingSender.id,
         data: {
           name: data.name,
@@ -268,9 +268,12 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
           isDefault: data.isDefault,
         },
       });
+      if (selectedSenderId === editingSender.id) {
+        onSenderSelected(updatedSender as SavedSender);
+      }
     } else {
       // ── Create mode
-      const newSender = await createMutation.mutateAsync({
+      await createMutation.mutateAsync({
         name: data.name,
         phone: data.phone || null,
         email: data.email || null,
@@ -281,8 +284,6 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
         country: data.country,
         isDefault: data.isDefault,
       });
-      // Auto-select the newly created sender
-      onSenderSelected(newSender as SavedSender);
     }
 
     setIsFormOpen(false);
@@ -337,8 +338,8 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
       {/* ── Sender card ─────────────────────────────────────────────────── */}
       <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
         {/* Header */}
-        <div className="flex items-center px-4 py-4 leading-6 border-b border-[#DADADA] bg-[#FEFCFA]">
-          <h3 className="text-lg 2xl:text-xl font-semibold text-foreground">Sender</h3>
+        <div className="flex items-center px-4 py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
+          <h3 className="text-lg 2xl:text-xl leading-6 font-semibold text-foreground">Sender</h3>
         </div>
 
         {/* Body */}
@@ -373,7 +374,7 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
               <Button
                 type="button"
                 variant="outline"
-                className="h-9 lg:h-10 xl:h-11 2xl:h-[52px] shrink-0 rounded-lg px-4 text-base font-medium"
+                className="h-9 lg:h-10 xl:h-11 2xl:h-[52px] shrink-0 rounded-lg px-4 text-base 2xl:text-xl text-base font-medium"
                 onClick={() => setIsSelectOpen(true)}
               >
                 Change Sender
