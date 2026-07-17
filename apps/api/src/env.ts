@@ -77,6 +77,7 @@ export const apiEnvSchema = z.object({
     .string()
     .min(8, "SYSTEM_MAINTENANCE_KEY must be at least 8 characters long")
     .optional(),
+  API_KEYS_LIMIT_PER_OWNER: z.coerce.number().int().positive().default(10),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

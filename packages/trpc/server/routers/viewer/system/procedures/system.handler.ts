@@ -315,11 +315,7 @@ import { Writable } from "node:stream";
 
 class MemoryWriteStream extends Writable {
   public data = "";
-  override _write(
-    chunk: unknown,
-    _encoding: string,
-    callback: (error?: Error | null) => void
-  ) {
+  override _write(chunk: unknown, _encoding: string, callback: (error?: Error | null) => void) {
     this.data += (chunk as string | Buffer).toString("utf8");
     callback();
   }
@@ -328,7 +324,9 @@ class MemoryWriteStream extends Writable {
 export const listLogFiles = authedProcedure
   .use(requirePermission(Permissions.SYSTEM_MANAGE))
   .query(async () => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     return getSystemDiagnosticsService().listLogFiles();
   });
 
@@ -338,10 +336,12 @@ export const getProcessStatus = authedProcedure
     z.object({
       sudoPassword: z.string().min(1),
       maintenanceKey: z.string().min(1),
-    })
+    }),
   )
   .query(async ({ input, ctx }) => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     return getSystemDiagnosticsService().getProcessStatus({
       sudoPassword: input.sudoPassword,
       userId: ctx.user.id,
@@ -357,10 +357,12 @@ export const executeProcessAction = authedProcedure
       target: z.string().min(1),
       sudoPassword: z.string().min(1),
       maintenanceKey: z.string().min(1),
-    })
+    }),
   )
   .mutation(async ({ input, ctx }) => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     return getSystemDiagnosticsService().executeProcessAction({
       action: input.action,
       target: input.target,
@@ -376,10 +378,12 @@ export const pingServices = authedProcedure
     z.object({
       sudoPassword: z.string().min(1),
       maintenanceKey: z.string().min(1),
-    })
+    }),
   )
   .query(async ({ input, ctx }) => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     return getSystemDiagnosticsService().pingExternalServices({
       sudoPassword: input.sudoPassword,
       userId: ctx.user.id,
@@ -396,10 +400,12 @@ export const queryRedis = authedProcedure
       key: z.string().optional(),
       sudoPassword: z.string().min(1),
       maintenanceKey: z.string().min(1),
-    })
+    }),
   )
   .query(async ({ input, ctx }) => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     return getSystemDiagnosticsService().queryRedis({
       action: input.action,
       pattern: input.pattern,
@@ -426,10 +432,12 @@ export const executeDbCommand = authedProcedure
       seedOnly: z.string().optional(),
       sudoPassword: z.string().min(1),
       maintenanceKey: z.string().min(1),
-    })
+    }),
   )
   .mutation(async ({ input, ctx }) => {
-    const { getDatabaseMaintenanceService } = await import("@ecom/features/di/containers/DatabaseMaintenanceService");
+    const { getDatabaseMaintenanceService } = await import(
+      "@ecom/features/di/containers/DatabaseMaintenanceService"
+    );
     const writeStream = new MemoryWriteStream();
     await getDatabaseMaintenanceService().executeCommand({
       action: input.action,
@@ -456,10 +464,12 @@ export const executeLogCommand = authedProcedure
       search: z.string().optional(),
       sudoPassword: z.string().min(1),
       maintenanceKey: z.string().min(1),
-    })
+    }),
   )
   .mutation(async ({ input, ctx }) => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     const writeStream = new MemoryWriteStream();
     await getSystemDiagnosticsService().executeLogCommand({
       action: "read",
@@ -482,7 +492,9 @@ export const executeLogCommand = authedProcedure
 export const getLogLevel = authedProcedure
   .use(requirePermission(Permissions.SYSTEM_MANAGE))
   .query(async () => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     return getSystemDiagnosticsService().getLogLevel();
   });
 
@@ -493,10 +505,12 @@ export const updateLogLevel = authedProcedure
       level: z.string().min(1),
       sudoPassword: z.string().min(1),
       maintenanceKey: z.string().min(1),
-    })
+    }),
   )
   .mutation(async ({ input, ctx }) => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     return getSystemDiagnosticsService().updateLogLevel({
       level: input.level,
       sudoPassword: input.sudoPassword,
@@ -511,10 +525,12 @@ export const getDatabaseStats = authedProcedure
     z.object({
       sudoPassword: z.string().min(1),
       maintenanceKey: z.string().min(1),
-    })
+    }),
   )
   .query(async ({ input, ctx }) => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     return getSystemDiagnosticsService().getDatabaseStats({
       sudoPassword: input.sudoPassword,
       userId: ctx.user.id,
@@ -528,14 +544,15 @@ export const getRedisStats = authedProcedure
     z.object({
       sudoPassword: z.string().min(1),
       maintenanceKey: z.string().min(1),
-    })
+    }),
   )
   .query(async ({ input, ctx }) => {
-    const { getSystemDiagnosticsService } = await import("@ecom/features/di/containers/SystemDiagnosticsService");
+    const { getSystemDiagnosticsService } = await import(
+      "@ecom/features/di/containers/SystemDiagnosticsService"
+    );
     return getSystemDiagnosticsService().getRedisStats({
       sudoPassword: input.sudoPassword,
       userId: ctx.user.id,
       maintenanceKey: input.maintenanceKey,
     });
   });
-

@@ -21,14 +21,16 @@ import { BlogModule } from "./modules/blog/blog.module";
 import { CommentsModule } from "./modules/comments/comments.module";
 import { ContactsModule } from "./modules/contacts/contacts.module";
 import { CustomerAuthModule } from "./modules/customer-auth/customer-auth.module";
+import { CustomerOrderModule } from "./modules/customer-orders/customer-order.module";
+import { CustomerWebhookModule } from "./modules/customer-webhooks/customer-webhook.module";
 import { HealthModule } from "./modules/health/health.module";
 // import { MemberAuthModule } from "./modules/member-auth/member-auth.module";
 import { HsCodeModule } from "./modules/hscode/hscode.module";
 import { MediaModule } from "./modules/media/media.module";
 import { QueuesModule } from "./modules/queues/queues.module";
 import { RequestLoggerMiddleware } from "./modules/request-logger/request-logger.middleware";
-import { UsersModule } from "./modules/users/users.module";
 import { SystemModule } from "./modules/system/system.module";
+import { UsersModule } from "./modules/users/users.module";
 
 @Module({
   imports: [
@@ -60,6 +62,8 @@ import { SystemModule } from "./modules/system/system.module";
     QueuesModule,
     HttpClientModule,
     SystemModule,
+    CustomerOrderModule,
+    CustomerWebhookModule,
   ],
   providers: [
     {

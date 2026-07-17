@@ -1,23 +1,35 @@
-import { type AuthenticatedUser } from "@ecom/features/auth/services/ApiAuthService";
-import { getAuditService } from "@ecom/features/di/containers/AuditService";
-import { getDatabaseMaintenanceService } from "@ecom/features/di/containers/DatabaseMaintenanceService";
-import { getSystemDiagnosticsService } from "@ecom/features/di/containers/SystemDiagnosticsService";
-import { getApiAuthService, getAuthService } from "@ecom/features/di/containers/AuthService";
-import { Permissions } from "@ecom/lib/permissions";
-import { Body, Controller, Post, Res, UseGuards, Get, Param, Query, Req, ForbiddenException, UnauthorizedException } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
-import type { Response } from "express";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import type { AuthenticatedUser } from "@ecom/features/auth/services/ApiAuthService";
+import { getAuditService } from "@ecom/features/di/containers/AuditService";
+import { getApiAuthService, getAuthService } from "@ecom/features/di/containers/AuthService";
+import { getDatabaseMaintenanceService } from "@ecom/features/di/containers/DatabaseMaintenanceService";
+import { getSystemDiagnosticsService } from "@ecom/features/di/containers/SystemDiagnosticsService";
+import { Permissions } from "@ecom/lib/permissions";
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from "@nestjs/common";
+import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import type { Response } from "express";
 import { SetTimeout } from "../../common/decorators/timeout.decorator";
 import { ApiAuthGuard } from "../auth/api-auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
-import { PermissionsGuard } from "../auth/permissions.guard";
 import { RequirePermissions } from "../auth/permissions.decorator";
-import { ExecuteDatabaseCommandDto } from "./dto/execute-db-command.dto";
-import { ExecuteLogCommandDto } from "./dto/execute-log-command.dto";
-import { QueryRedisDto } from "./dto/query-redis.dto";
-import { ExecuteProcessActionDto } from "./dto/execute-process-action.dto";
+import { PermissionsGuard } from "../auth/permissions.guard";
+import type { ExecuteDatabaseCommandDto } from "./dto/execute-db-command.dto";
+import type { ExecuteLogCommandDto } from "./dto/execute-log-command.dto";
+import type { ExecuteProcessActionDto } from "./dto/execute-process-action.dto";
+import type { QueryRedisDto } from "./dto/query-redis.dto";
 
 @ApiTags("System")
 @Controller("system")
@@ -165,7 +177,9 @@ export class DatabaseMaintenanceController {
   ) {
     // 1. Production Guard
     if (process.env.NODE_ENV === "production") {
-      throw new ForbiddenException("Download endpoint is strictly disabled on production environments.");
+      throw new ForbiddenException(
+        "Download endpoint is strictly disabled on production environments.",
+      );
     }
 
     // 2. Extract and authenticate token
@@ -177,7 +191,7 @@ export class DatabaseMaintenanceController {
 
     let apiUser;
     try {
-      apiUser = await getApiAuthService().authenticateBearer(token);
+      apiUser = await getApiAuthService().authenticateBearer(token, req.ip);
     } catch {
       throw new UnauthorizedException("Authentication failed");
     }
@@ -220,7 +234,10 @@ export class DatabaseMaintenanceController {
 
     const isCompressed = filename.endsWith(".gz");
     res.setHeader("Content-Type", "application/gzip");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}${isCompressed ? "" : ".gz"}"`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${filename}${isCompressed ? "" : ".gz"}"`,
+    );
 
     const { createReadStream } = require("node:fs");
     const { pipeline } = require("node:stream/promises");
@@ -247,10 +264,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get server process and resource status" })
-  async getProcessStatus(
-    @Body() body: any,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  async getProcessStatus(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
     // Log action to AuditLog
     const auditService = getAuditService();
     await auditService.logAction({
@@ -300,10 +314,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Test connectivity to whitelisted services" })
-  async pingServices(
-    @Body() body: any,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  async pingServices(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
     // Log action to AuditLog
     const auditService = getAuditService();
     await auditService.logAction({
@@ -325,10 +336,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Query or manage Redis cache keys" })
-  async queryRedis(
-    @Body() body: QueryRedisDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  async queryRedis(@Body() body: QueryRedisDto, @CurrentUser() user: AuthenticatedUser) {
     // Log action to AuditLog
     const auditService = getAuditService();
     await auditService.logAction({
@@ -364,10 +372,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Update runtime logger level dynamically" })
-  async updateLogLevel(
-    @Body() body: any,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  async updateLogLevel(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
     const auditService = getAuditService();
     await auditService.logAction({
       userId: user.id,
@@ -390,10 +395,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get database sizing and table statistics" })
-  async getDatabaseStats(
-    @Body() body: any,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  async getDatabaseStats(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
     const auditService = getAuditService();
     await auditService.logAction({
       userId: user.id,
@@ -414,10 +416,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get Redis memory profiling and key namespaces stats" })
-  async getRedisStats(
-    @Body() body: any,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
+  async getRedisStats(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
     const auditService = getAuditService();
     await auditService.logAction({
       userId: user.id,

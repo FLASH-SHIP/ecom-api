@@ -1,17 +1,17 @@
-import { spawn, execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import crypto from "node:crypto";
-import { existsSync, createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
 import { join } from "node:path";
 import readline from "node:readline";
+import type { Writable } from "node:stream";
 import { createGunzip } from "node:zlib";
 import { verifyPassword } from "@ecom/lib/crypto";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { getRedisClient } from "@ecom/lib/redis";
 import type { PrismaClient } from "@ecom/prisma";
-import type { Writable } from "node:stream";
 
 export interface ISystemDiagnosticsServiceDeps {
   prisma: PrismaClient;
@@ -65,7 +65,10 @@ export class SystemDiagnosticsService {
    */
   private stripAnsi(text: string): string {
     // biome-ignore lint: we use RegExp constructor to avoid control character warnings in literals
-    const ansiRegex = new RegExp("[\\u001b\\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]", "g");
+    const ansiRegex = new RegExp(
+      "[\\u001b\\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]",
+      "g",
+    );
     return text.replace(ansiRegex, "");
   }
 
@@ -77,7 +80,7 @@ export class SystemDiagnosticsService {
 
     const key = process.env.SYSTEM_MAINTENANCE_KEY;
     if (key && key.length >= 8) {
-      const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+      const escapedKey = key.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
       const keyRegex = new RegExp(escapedKey, "g");
       masked = masked.replace(keyRegex, "******");
     }
@@ -91,7 +94,7 @@ export class SystemDiagnosticsService {
     const envKey = process.env.SYSTEM_MAINTENANCE_KEY;
     if (!envKey) {
       throw ErrorWithCode.Factory.Forbidden(
-        "SYSTEM_MAINTENANCE_KEY is not configured on the server. Command execution is disabled."
+        "SYSTEM_MAINTENANCE_KEY is not configured on the server. Command execution is disabled.",
       );
     }
 
@@ -102,10 +105,7 @@ export class SystemDiagnosticsService {
     const keyBuf = Buffer.from(key);
     const envKeyBuf = Buffer.from(envKey);
 
-    if (
-      keyBuf.length !== envKeyBuf.length ||
-      !crypto.timingSafeEqual(keyBuf, envKeyBuf)
-    ) {
+    if (keyBuf.length !== envKeyBuf.length || !crypto.timingSafeEqual(keyBuf, envKeyBuf)) {
       throw ErrorWithCode.Factory.Forbidden("Invalid SYSTEM_MAINTENANCE_KEY");
     }
   }
@@ -144,12 +144,23 @@ export class SystemDiagnosticsService {
     writeStream: Writable;
     maintenanceKey?: string;
   }): Promise<void> {
-    const { action, filename, lines = 100, level, search, sudoPassword, userId, username, writeStream, maintenanceKey } = params;
+    const {
+      action,
+      filename,
+      lines = 100,
+      level,
+      search,
+      sudoPassword,
+      userId,
+      username,
+      writeStream,
+      maintenanceKey,
+    } = params;
 
     // Production guard
     if (process.env.NODE_ENV === "production") {
       throw ErrorWithCode.Factory.Forbidden(
-        "Diagnostics and log endpoints are strictly disabled on production environments."
+        "Diagnostics and log endpoints are strictly disabled on production environments.",
       );
     }
 
@@ -184,10 +195,11 @@ export class SystemDiagnosticsService {
     let targetFile = filename;
     if (!targetFile) {
       const files = await this.listLogFiles();
-      if (files.length === 0) {
+      const latestFile = files[0];
+      if (!latestFile) {
         throw ErrorWithCode.Factory.NotFound("No log files found in logs directory");
       }
-      targetFile = files[0]!.filename; // Latest
+      targetFile = latestFile.filename; // Latest
     }
 
     // Prevent path traversal
@@ -202,13 +214,17 @@ export class SystemDiagnosticsService {
 
     writeStream.write(`▶ Reading Log File: ${targetFile}\n`);
     writeStream.write(`🧑 Requested by: ${username}\n`);
-    writeStream.write(`🔍 Mode: ${action} | Lines: ${lines} | Level: ${level || "all"} | Search: ${search || "none"}\n`);
+    writeStream.write(
+      `🔍 Mode: ${action} | Lines: ${lines} | Level: ${level || "all"} | Search: ${search || "none"}\n`,
+    );
     writeStream.write("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
     // Decompress and read .gz compressed file on the fly
     if (targetFile.endsWith(".gz")) {
       if (action === "stream") {
-        throw ErrorWithCode.Factory.BadRequest("Streaming is not supported for compressed log files");
+        throw ErrorWithCode.Factory.BadRequest(
+          "Streaming is not supported for compressed log files",
+        );
       }
 
       return new Promise<void>((resolve, reject) => {
@@ -221,6 +237,7 @@ export class SystemDiagnosticsService {
 
         const matchedLines: string[] = [];
 
+        // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: line parser
         rl.on("line", (line: string) => {
           if (!line.trim()) return;
 
@@ -250,7 +267,7 @@ export class SystemDiagnosticsService {
             }
           }
 
-          const cleanLine = this.maskSecrets(this.stripAnsi(line)) + "\n";
+          const cleanLine = `${this.maskSecrets(this.stripAnsi(line))}\n`;
           matchedLines.push(cleanLine);
         });
 
@@ -293,6 +310,7 @@ export class SystemDiagnosticsService {
       writeStream.on("close", onDisconnect);
 
       let buffer = "";
+      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: log line processor
       const processChunk = (chunk: Buffer) => {
         buffer += chunk.toString("utf8");
         const parts = buffer.split("\n");
@@ -302,7 +320,8 @@ export class SystemDiagnosticsService {
           if (!line.trim()) continue;
 
           // Parse JSON log line to apply filters
-          let parsedLog: any = null;
+          let parsedLog: ({ level?: string; message?: string } & Record<string, unknown>) | null =
+            null;
           try {
             parsedLog = JSON.parse(line);
           } catch {
@@ -333,7 +352,7 @@ export class SystemDiagnosticsService {
             }
           }
 
-          const cleanLine = this.maskSecrets(this.stripAnsi(line)) + "\n";
+          const cleanLine = `${this.maskSecrets(this.stripAnsi(line))}\n`;
           writeStream.write(cleanLine);
         }
       };
@@ -367,13 +386,13 @@ export class SystemDiagnosticsService {
     sudoPassword?: string;
     userId: string;
     maintenanceKey?: string;
-  }): Promise<any> {
+  }): Promise<unknown> {
     const { sudoPassword, userId, maintenanceKey } = params;
 
     // Production guard
     if (process.env.NODE_ENV === "production") {
       throw ErrorWithCode.Factory.Forbidden(
-        "Diagnostics and process endpoints are strictly disabled on production environments."
+        "Diagnostics and process endpoints are strictly disabled on production environments.",
       );
     }
 
@@ -411,23 +430,39 @@ export class SystemDiagnosticsService {
       const pm2List = JSON.parse(stdout);
       return {
         manager: "pm2",
-        processes: pm2List.map((proc: any) => ({
-          name: proc.name,
-          pid: proc.pid,
-          pm_id: proc.pm_id,
-          status: proc.pm2_env?.status,
-          uptime: proc.pm2_env?.pm_uptime ? Date.now() - proc.pm2_env.pm_uptime : 0,
-          restarts: proc.pm2_env?.restart_time || 0,
-          cpu: proc.monit?.cpu || 0,
-          memory: proc.monit?.memory || 0,
-        })),
+        processes: pm2List.map(
+          (proc: {
+            name?: string;
+            pid?: number;
+            pm_id?: number;
+            pm2_env?: {
+              status?: string;
+              pm_uptime?: number;
+              restart_time?: number;
+            };
+            monit?: {
+              cpu?: number;
+              memory?: number;
+            };
+          }) => ({
+            name: proc.name,
+            pid: proc.pid,
+            pm_id: proc.pm_id,
+            status: proc.pm2_env?.status,
+            uptime: proc.pm2_env?.pm_uptime ? Date.now() - proc.pm2_env.pm_uptime : 0,
+            restarts: proc.pm2_env?.restart_time || 0,
+            cpu: proc.monit?.cpu || 0,
+            memory: proc.monit?.memory || 0,
+          }),
+        ),
       };
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
       const totalMem = os.totalmem();
       const freeMem = os.freemem();
       return {
         manager: "os_fallback",
-        message: `PM2 is not running or not found: ${err.message}`,
+        message: `PM2 is not running or not found: ${errorMessage}`,
         system: {
           platform: os.platform(),
           release: os.release(),
@@ -450,17 +485,18 @@ export class SystemDiagnosticsService {
   /**
    * Pings a whitelisted set of critical servers and external gateways.
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ping orchestrator
   async pingExternalServices(params: {
     sudoPassword?: string;
     userId: string;
     maintenanceKey?: string;
-  }): Promise<any> {
+  }): Promise<unknown> {
     const { sudoPassword, userId, maintenanceKey } = params;
 
     // Production guard
     if (process.env.NODE_ENV === "production") {
       throw ErrorWithCode.Factory.Forbidden(
-        "Diagnostics endpoints are strictly disabled on production environments."
+        "Diagnostics endpoints are strictly disabled on production environments.",
       );
     }
 
@@ -504,7 +540,7 @@ export class SystemDiagnosticsService {
         });
       } catch {
         const match = dbUrl.match(/@([^:/]+)(?::(\d+))?/);
-        if (match && match[1]) {
+        if (match?.[1]) {
           targets.push({
             name: "Database (PostgreSQL)",
             host: match[1],
@@ -526,7 +562,7 @@ export class SystemDiagnosticsService {
         });
       } catch {
         const match = redisUrl.match(/(?:redis:\/\/)?([^:/]+)(?::(\d+))?/);
-        if (match && match[1]) {
+        if (match?.[1]) {
           targets.push({
             name: "Redis Cache",
             host: match[1],
@@ -561,7 +597,7 @@ export class SystemDiagnosticsService {
 
     const results = [];
     const checkConnection = (t: { name: string; host: string; port: number }) => {
-      return new Promise<any>((resolve) => {
+      return new Promise<unknown>((resolve) => {
         const socket = new net.Socket();
         const start = Date.now();
         let isResolved = false;
@@ -581,7 +617,7 @@ export class SystemDiagnosticsService {
           });
         });
 
-        const onError = (err: any) => {
+        const onError = (err: Error) => {
           if (isResolved) return;
           socket.destroy();
           isResolved = true;
@@ -609,6 +645,7 @@ export class SystemDiagnosticsService {
   /**
    * Scans, reads, or deletes cache keys under whitelisted namespaces.
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: redis query engine
   async queryRedis(params: {
     action: "scan" | "get" | "del";
     pattern?: string;
@@ -616,13 +653,13 @@ export class SystemDiagnosticsService {
     sudoPassword?: string;
     userId: string;
     maintenanceKey?: string;
-  }): Promise<any> {
+  }): Promise<unknown> {
     const { action, pattern, key, sudoPassword, userId, maintenanceKey } = params;
 
     // Production guard
     if (process.env.NODE_ENV === "production") {
       throw ErrorWithCode.Factory.Forbidden(
-        "Diagnostics and Redis endpoints are strictly disabled on production environments."
+        "Diagnostics and Redis endpoints are strictly disabled on production environments.",
       );
     }
 
@@ -659,12 +696,11 @@ export class SystemDiagnosticsService {
       const matchPattern = pattern || "cache:*";
 
       const isWhitelisted =
-        matchPattern.startsWith("cache:") ||
-        matchPattern.startsWith("ratelimit:");
+        matchPattern.startsWith("cache:") || matchPattern.startsWith("ratelimit:");
 
       if (!isWhitelisted) {
         throw ErrorWithCode.Factory.Forbidden(
-          "Redis operations are restricted to namespaces starting with 'cache:' or 'ratelimit:'."
+          "Redis operations are restricted to namespaces starting with 'cache:' or 'ratelimit:'.",
         );
       }
 
@@ -676,12 +712,13 @@ export class SystemDiagnosticsService {
           "MATCH",
           matchPattern,
           "COUNT",
-          "100"
+          "100",
         );
         cursor = nextCursor;
         keys.push(...scannedKeys);
-      } catch (err: any) {
-        throw ErrorWithCode.Factory.Internal(`Redis SCAN failed: ${err.message}`);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        throw ErrorWithCode.Factory.Internal(`Redis SCAN failed: ${errorMessage}`);
       }
 
       return {
@@ -697,13 +734,11 @@ export class SystemDiagnosticsService {
       throw ErrorWithCode.Factory.BadRequest("Missing key parameter");
     }
 
-    const isWhitelisted =
-      key.startsWith("cache:") ||
-      key.startsWith("ratelimit:");
+    const isWhitelisted = key.startsWith("cache:") || key.startsWith("ratelimit:");
 
     if (!isWhitelisted) {
       throw ErrorWithCode.Factory.Forbidden(
-        "Redis operations are restricted to keys starting with 'cache:' or 'ratelimit:'."
+        "Redis operations are restricted to keys starting with 'cache:' or 'ratelimit:'.",
       );
     }
 
@@ -714,7 +749,7 @@ export class SystemDiagnosticsService {
           return { key, type: "none", value: null };
         }
 
-        let rawValue: any = null;
+        let rawValue: string | Record<string, string> | null = null;
         if (keyType === "string") {
           rawValue = await redis.get(key);
         } else if (keyType === "hash") {
@@ -731,9 +766,10 @@ export class SystemDiagnosticsService {
           return { key, type: keyType, value: `[Non-string data type, Size: ${size}]` };
         }
 
-        let formattedValue = typeof rawValue === "object" ? JSON.stringify(rawValue) : String(rawValue);
+        let formattedValue =
+          typeof rawValue === "object" ? JSON.stringify(rawValue) : String(rawValue);
         if (formattedValue.length > 10000) {
-          formattedValue = formattedValue.substring(0, 10000) + "\n... [TRUNCATED]";
+          formattedValue = `${formattedValue.substring(0, 10000)}\n... [TRUNCATED]`;
         }
 
         return {
@@ -741,8 +777,9 @@ export class SystemDiagnosticsService {
           type: keyType,
           value: keyType === "hash" ? rawValue : formattedValue,
         };
-      } catch (err: any) {
-        throw ErrorWithCode.Factory.Internal(`Failed to get Redis key: ${err.message}`);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        throw ErrorWithCode.Factory.Internal(`Failed to get Redis key: ${errorMessage}`);
       }
     }
 
@@ -753,8 +790,9 @@ export class SystemDiagnosticsService {
           key,
           deleted: deletedCount > 0,
         };
-      } catch (err: any) {
-        throw ErrorWithCode.Factory.Internal(`Failed to delete Redis key: ${err.message}`);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        throw ErrorWithCode.Factory.Internal(`Failed to delete Redis key: ${errorMessage}`);
       }
     }
 
@@ -776,7 +814,7 @@ export class SystemDiagnosticsService {
     // Production guard
     if (process.env.NODE_ENV === "production") {
       throw ErrorWithCode.Factory.Forbidden(
-        "Diagnostics and process endpoints are strictly disabled on production environments."
+        "Diagnostics and process endpoints are strictly disabled on production environments.",
       );
     }
 
@@ -820,8 +858,9 @@ export class SystemDiagnosticsService {
         success: true,
         message: `Successfully executed pm2 ${action} on target: ${target}`,
       };
-    } catch (err: any) {
-      throw ErrorWithCode.Factory.Internal(`Failed to execute PM2 action: ${err.message}`);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      throw ErrorWithCode.Factory.Internal(`Failed to execute PM2 action: ${errorMessage}`);
     }
   }
 
@@ -914,13 +953,15 @@ export class SystemDiagnosticsService {
       `);
       const databaseSizeBytes = Number(dbSizeResult?.[0]?.databaseSizeBytes ?? 0);
 
-      const tablesResult = await this.prisma.$queryRawUnsafe<Array<{
-        tableName: string;
-        rowCount: string;
-        totalSizeBytes: string;
-        tableSizeBytes: string;
-        indexSizeBytes: string;
-      }>>(`
+      const tablesResult = await this.prisma.$queryRawUnsafe<
+        Array<{
+          tableName: string;
+          rowCount: string;
+          totalSizeBytes: string;
+          tableSizeBytes: string;
+          indexSizeBytes: string;
+        }>
+      >(`
         SELECT
           c.relname AS "tableName",
           c.reltuples::bigint AS "rowCount",
@@ -1033,4 +1074,3 @@ export class SystemDiagnosticsService {
     }
   }
 }
-

@@ -1,7 +1,7 @@
 import type { PrismaClient } from "../src/generated/prisma/client";
-import type { Seeder } from "./seeder.interface";
 import provincesData from "./data/provinces.json";
 import wardsData from "./data/wards.json";
+import type { Seeder } from "./seeder.interface";
 
 // Data is bundled via JSON import — no runtime fs path resolution needed,
 // which avoids __dirname breakage when running compiled JS on the server.
@@ -75,9 +75,7 @@ export const AdministrativeDivisionsSeeder: Seeder = {
       }
     }
 
-    console.log(
-      `    → Seeding complete: ${provincesCount} provinces, ${wardsCount} wards seeded.`,
-    );
+    console.log(`    → Seeding complete: ${provincesCount} provinces, ${wardsCount} wards seeded.`);
     if (errorsCount > 0) {
       console.warn(`    ⚠ Encountered ${errorsCount} errors:`);
       for (const e of errors.slice(0, 10)) {

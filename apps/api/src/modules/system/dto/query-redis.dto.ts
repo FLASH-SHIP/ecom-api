@@ -7,7 +7,8 @@ export class QueryRedisDto {
   @IsOptional()
   @IsString()
   @Matches(/^[a-zA-Z0-9:*_-]+$/, {
-    message: "pattern must contain only alphanumeric characters, colons, stars, dashes, or underscores",
+    message:
+      "pattern must contain only alphanumeric characters, colons, stars, dashes, or underscores",
   })
   pattern?: string;
 
