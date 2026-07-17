@@ -11,7 +11,7 @@ import {
   updatePreference,
 } from "./procedures/notifications.handler";
 
-export const notificationsRouter = router({
+export const customerNotificationsRouter = router({
   list: listNotifications,
   unreadCount,
   markRead,
@@ -22,3 +22,5 @@ export const notificationsRouter = router({
   getPreferences,
   updatePreference,
 });
+
+export type CustomerNotificationsRouter = typeof customerNotificationsRouter;

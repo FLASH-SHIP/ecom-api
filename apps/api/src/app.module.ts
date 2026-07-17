@@ -27,6 +27,7 @@ import { HealthModule } from "./modules/health/health.module";
 // import { MemberAuthModule } from "./modules/member-auth/member-auth.module";
 import { HsCodeModule } from "./modules/hscode/hscode.module";
 import { MediaModule } from "./modules/media/media.module";
+import { NotificationModule } from "./modules/notification/notification.module";
 import { QueuesModule } from "./modules/queues/queues.module";
 import { RequestLoggerMiddleware } from "./modules/request-logger/request-logger.middleware";
 import { SystemModule } from "./modules/system/system.module";
@@ -64,6 +65,7 @@ import { UsersModule } from "./modules/users/users.module";
     SystemModule,
     CustomerOrderModule,
     CustomerWebhookModule,
+    NotificationModule,
   ],
   providers: [
     {

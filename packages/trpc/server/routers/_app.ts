@@ -2,6 +2,7 @@ import { router } from "@ecom/trpc/server/trpc";
 import { customerApiKeysRouter } from "./customer/apiKeys/_router";
 import { customerAuthRouter } from "./customer/auth/_router";
 import { customerDivisionsRouter } from "./customer/divisions/_router";
+import { customerNotificationsRouter } from "./customer/notifications/_router";
 import { customerOrdersRouter } from "./customer/orders/_router";
 import { customerWebhooksRouter } from "./customer/webhooks/_router";
 import { blogRouter } from "./public/blog/_router";
@@ -109,6 +110,7 @@ export const appRouter = router({
     orders: customerOrdersRouter,
     apiKeys: customerApiKeysRouter,
     webhooks: customerWebhooksRouter,
+    notifications: customerNotificationsRouter,
   }),
 });
 

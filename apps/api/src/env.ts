@@ -78,6 +78,25 @@ export const apiEnvSchema = z.object({
     .min(8, "SYSTEM_MAINTENANCE_KEY must be at least 8 characters long")
     .optional(),
   API_KEYS_LIMIT_PER_OWNER: z.coerce.number().int().positive().default(10),
+
+  // Notification & Delivery System Settings
+  FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  EMAIL_PROVIDER_PRIMARY: z.enum(["resend", "ses", "smtp"]).default("smtp"),
+  EMAIL_PROVIDER_SECONDARY: z.enum(["resend", "ses", "smtp"]).default("resend"),
+  RESEND_API_KEY: z.string().optional(),
+  AWS_SES_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SES_SECRET_ACCESS_KEY: z.string().optional(),
+  AWS_SES_REGION: z.string().default("ap-southeast-1"),
+  NOTIFICATION_DEDUPLICATION_TTL_SEC: z.coerce.number().int().positive().default(86400),
+  NOTIFICATION_DEBOUNCE_WINDOW_SEC: z.coerce.number().int().positive().default(120),
+  NOTIFICATION_SMART_ROUTING_FALLBACK_SEC: z.coerce.number().int().positive().default(600),
+  NOTIFICATION_READ_PURGE_DAYS: z.coerce.number().int().positive().default(14),
+  NOTIFICATION_UNREAD_PURGE_DAYS: z.coerce.number().int().positive().default(45),
+  NOTIFICATION_DEVICE_TOKEN_EXPIRY_DAYS: z.coerce.number().int().positive().default(90),
+  NOTIFICATION_DND_DEFAULT_START: z.string().default("22:00"),
+  NOTIFICATION_DND_DEFAULT_END: z.string().default("06:00"),
+  NOTIFICATION_TIMEZONE: z.string().default("Asia/Ho_Chi_Minh"),
+  NOTIFICATION_MAX_TOKENS_PER_OWNER: z.coerce.number().int().positive().default(10),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

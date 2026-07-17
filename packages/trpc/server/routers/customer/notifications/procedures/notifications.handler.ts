@@ -24,32 +24,32 @@ export const listNotifications = authedProcedure
       perPage: input?.perPage,
       unreadOnly: input?.unreadOnly,
       cursor: input?.cursor,
-      isCustomer: false,
+      isCustomer: true,
     });
   });
 
 export const unreadCount = authedProcedure.query(async ({ ctx }) => {
   const svc = getNotificationService();
-  return svc.getUnreadCount(ctx.user.id, false);
+  return svc.getUnreadCount(ctx.user.id, true);
 });
 
 export const markRead = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ ctx, input }) => {
     const svc = getNotificationService();
-    return svc.markRead(input.id, ctx.user.id, false);
+    return svc.markRead(input.id, ctx.user.id, true);
   });
 
 export const markAllRead = authedProcedure.mutation(async ({ ctx }) => {
   const svc = getNotificationService();
-  return svc.markAllRead(ctx.user.id, false);
+  return svc.markAllRead(ctx.user.id, true);
 });
 
 export const deleteNotification = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ ctx, input }) => {
     const svc = getNotificationService();
-    return svc.deleteNotification(input.id, ctx.user.id, false);
+    return svc.deleteNotification(input.id, ctx.user.id, true);
   });
 
 export const registerToken = authedProcedure
@@ -63,7 +63,7 @@ export const registerToken = authedProcedure
   .mutation(async ({ ctx, input }) => {
     const svc = getDeviceTokenService();
     return svc.registerToken({
-      userId: ctx.user.id,
+      customerId: ctx.user.id,
       token: input.token,
       platform: input.platform,
       deviceInfo: input.deviceInfo,
@@ -79,7 +79,7 @@ export const unregisterToken = authedProcedure
 
 export const getPreferences = authedProcedure.query(async ({ ctx }) => {
   const svc = getNotificationSettingService();
-  return svc.getPreferences({ userId: ctx.user.id });
+  return svc.getPreferences({ customerId: ctx.user.id });
 });
 
 export const updatePreference = authedProcedure
@@ -97,7 +97,7 @@ export const updatePreference = authedProcedure
   )
   .mutation(async ({ ctx, input }) => {
     const svc = getNotificationSettingService();
-    return svc.updatePreference({ userId: ctx.user.id }, input.eventType, {
+    return svc.updatePreference({ customerId: ctx.user.id }, input.eventType, {
       inApp: input.channels.inApp,
       push: input.channels.push,
       email: input.channels.email,

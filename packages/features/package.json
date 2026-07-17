@@ -18,7 +18,8 @@
     "@ecom/prisma": "workspace:*",
     "@ecom/types": "workspace:*",
     "bcryptjs": "^3.0.0",
-    "bullmq": "^5.79.1"
+    "bullmq": "^5.79.1",
+    "firebase-admin": "^12.1.0"
   },
   "devDependencies": {
     "@ecom/tsconfig": "workspace:*",

@@ -118,7 +118,7 @@ export default function NotificationsPage() {
                         n.isRead ? "text-muted-foreground" : "font-semibold text-foreground",
                       )}
                     >
-                      {n.title}
+                      {n.titleKey}
                     </p>
                     {!n.isRead && (
                       <Badge className="h-[18px] px-1.5 text-[10px] font-bold">
@@ -126,7 +126,7 @@ export default function NotificationsPage() {
                       </Badge>
                     )}
                   </div>
-                  <p className="mb-1 text-sm text-muted-foreground">{n.message}</p>
+                  <p className="mb-1 text-sm text-muted-foreground">{n.messageKey}</p>
                   <time className="text-xs text-muted-foreground/60">
                     {formatDateTime(n.createdAt)}
                   </time>
