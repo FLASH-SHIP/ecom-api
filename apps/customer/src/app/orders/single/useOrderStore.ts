@@ -22,7 +22,9 @@ interface OrderStoreState {
     senderEmail: string;
     senderAddress: string;
     senderCity: string;
+    senderCityName?: string;
     senderWard: string;
+    senderWardName?: string;
     senderZipCode: string;
     senderCountry: string;
     receiverName: string;
@@ -31,7 +33,9 @@ interface OrderStoreState {
     receiverAddress1: string;
     receiverAddress2: string;
     receiverCity: string;
+    receiverCityName?: string;
     receiverState: string;
+    receiverStateName?: string;
     receiverZipCode: string;
     receiverCountry: string;
     packingTypeId: number;
@@ -68,7 +72,9 @@ const initialValues: OrderStoreState["values"] = {
   senderEmail: "",
   senderAddress: "",
   senderCity: "",
+  senderCityName: "",
   senderWard: "",
+  senderWardName: "",
   senderZipCode: "",
   senderCountry: "VN",
   receiverName: "",
@@ -77,7 +83,9 @@ const initialValues: OrderStoreState["values"] = {
   receiverAddress1: "",
   receiverAddress2: "",
   receiverCity: "",
+  receiverCityName: "",
   receiverState: "",
+  receiverStateName: "",
   receiverZipCode: "",
   receiverCountry: "US",
   packingTypeId: 0,

@@ -460,7 +460,6 @@ export function PackageInfoSection<TFieldValues extends FieldValues = FieldValue
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       disabled={deleteMutation.isPending}
                       className="h-11 w-[82px] rounded-[10px] border-[#D32D20] text-[#D32D20] text-base font-normal hover:bg-[#D32D20]/10 hover:text-[#D32D20] cursor-pointer"
                       onClick={() => handleDelete(pkg)}
@@ -470,7 +469,6 @@ export function PackageInfoSection<TFieldValues extends FieldValues = FieldValue
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       className="h-11 w-[82px] rounded-[10px] text-base font-normal cursor-pointer"
                       onClick={() => openEditForm(pkg)}
                     >

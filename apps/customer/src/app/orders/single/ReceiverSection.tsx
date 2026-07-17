@@ -111,7 +111,9 @@ export interface ReceiverFormFields {
   receiverAddress1: string;
   receiverAddress2?: string;
   receiverCity: string;
+  receiverCityName?: string;
   receiverState: string;
+  receiverStateName?: string;
   receiverZipCode: string;
   receiverCountry: string;
 }
@@ -227,10 +229,15 @@ export function ReceiverSection<
   useEffect(() => {
     if (watchedReceiverState && statesData && statesData.length > 0) {
       const foundState = statesData.find(
-        (s) => s.name.toLowerCase() === watchedReceiverState.toLowerCase(),
+        (s) =>
+          s.name.toLowerCase() === watchedReceiverState.toLowerCase() ||
+          s.code.toLowerCase() === watchedReceiverState.toLowerCase(),
       );
-      if (foundState && foundState.code !== watchedReceiverState) {
-        setValueParent("receiverState", foundState.code);
+      if (foundState) {
+        if (foundState.code !== watchedReceiverState) {
+          setValueParent("receiverState", foundState.code);
+        }
+        setValueParent("receiverStateName", foundState.name);
       }
     }
   }, [watchedReceiverState, statesData, setValueParent]);
@@ -242,11 +249,16 @@ export function ReceiverSection<
       // 1. If it's a name, resolve it to code first
       if (citiesData && citiesData.length > 0) {
         const foundCity = citiesData.find(
-          (c) => c.name.toLowerCase() === watchedReceiverCity.toLowerCase(),
+          (c) =>
+            c.name.toLowerCase() === watchedReceiverCity.toLowerCase() ||
+            c.code.toLowerCase() === watchedReceiverCity.toLowerCase(),
         );
-        if (foundCity && foundCity.code !== watchedReceiverCity) {
-          setValueParent("receiverCity", foundCity.code);
+        if (foundCity) {
+          if (foundCity.code !== watchedReceiverCity) {
+            setValueParent("receiverCity", foundCity.code);
+          }
           setSelectedCityLabel(foundCity.name);
+          setValueParent("receiverCityName", foundCity.name);
           return;
         }
       }
@@ -255,11 +267,13 @@ export function ReceiverSection<
       const option = (citiesData ?? []).find((c) => c.code === watchedReceiverCity);
       if (option) {
         setSelectedCityLabel(option.name);
+        setValueParent("receiverCityName", option.name);
         return;
       }
       const matched = savedReceivers.find((r) => r.city === watchedReceiverCity);
       if (matched?.cityName) {
         setSelectedCityLabel(matched.cityName);
+        setValueParent("receiverCityName", matched.cityName);
       }
     }
   }, [watchedReceiverCity, citiesData, savedReceivers, setValueParent]);
@@ -379,7 +393,9 @@ export function ReceiverSection<
       prevReceiverStateRef.current = receiver.state;
 
       setValueParent("receiverState", receiver.state);
+      setValueParent("receiverStateName", receiver.stateName ?? receiver.state);
       setValueParent("receiverCity", receiver.city);
+      setValueParent("receiverCityName", receiver.cityName ?? receiver.city);
       setValueParent("receiverZipCode", receiver.zipCode);
       setValueParent("receiverCountry", receiver.country ?? "US");
       setSaveReceiverSetting(false);
@@ -796,7 +812,6 @@ export function ReceiverSection<
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       disabled={deleteMutation.isPending}
                       className="h-11 w-[82px] rounded-[10px] border-[#D32D20] text-[#D32D20] text-base font-normal hover:bg-[#D32D20]/10 hover:text-[#D32D20] cursor-pointer"
                       onClick={() => handleDelete(receiver)}
@@ -806,7 +821,6 @@ export function ReceiverSection<
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       className="h-11 w-[82px] rounded-[10px] text-base font-normal cursor-pointer"
                       onClick={() => openEditForm(receiver)}
                     >

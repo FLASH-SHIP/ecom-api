@@ -36,7 +36,9 @@ const orderFormSchema = z.object({
   senderEmail: z.string().email("Email người gửi không hợp lệ.").or(z.literal("")),
   senderAddress: z.string().min(1, "Vui lòng nhập địa chỉ người gửi."),
   senderCity: z.string().min(1, "Vui lòng chọn tỉnh/thành phố người gửi."),
+  senderCityName: z.string().optional(),
   senderWard: z.string().optional(),
+  senderWardName: z.string().optional(),
   senderZipCode: z.string().min(1, "Vui lòng nhập mã zip người gửi."),
   senderCountry: z.string().min(1, "Vui lòng chọn quốc gia người gửi."),
 
@@ -47,7 +49,9 @@ const orderFormSchema = z.object({
   receiverAddress1: z.string().min(1, "Vui lòng nhập địa chỉ người nhận."),
   receiverAddress2: z.string().optional(),
   receiverCity: z.string().min(1, "Vui lòng nhập thành phố người nhận."),
+  receiverCityName: z.string().optional(),
   receiverState: z.string().min(1, "Vui lòng nhập bang/tỉnh người nhận."),
+  receiverStateName: z.string().optional(),
   receiverZipCode: z.string().min(1, "Vui lòng nhập mã zip người nhận."),
   receiverCountry: z.string().min(1, "Vui lòng chọn quốc gia người nhận."),
 
@@ -142,7 +146,9 @@ export default function CreateSingleOrderPage() {
       senderEmail: "",
       senderAddress: "",
       senderCity: "",
+      senderCityName: "",
       senderWard: "",
+      senderWardName: "",
       senderZipCode: "",
       senderCountry: "VN",
       receiverName: "",
@@ -151,7 +157,9 @@ export default function CreateSingleOrderPage() {
       receiverAddress1: "",
       receiverAddress2: "",
       receiverCity: "",
+      receiverCityName: "",
       receiverState: "",
+      receiverStateName: "",
       receiverZipCode: "",
       receiverCountry: "US",
       packingTypeId: 0,
@@ -219,7 +227,9 @@ export default function CreateSingleOrderPage() {
       email: string | null;
       address: string;
       city: string;
+      cityName?: string | null;
       ward: string | null;
+      wardName?: string | null;
       zipCode: string | null;
       country: string | null;
       isDefault: boolean;
@@ -230,7 +240,9 @@ export default function CreateSingleOrderPage() {
       setValue("senderEmail", sender.email ?? "");
       setValue("senderAddress", sender.address);
       setValue("senderCity", sender.city);
+      setValue("senderCityName", sender.cityName ?? sender.city);
       setValue("senderWard", sender.ward ?? "");
+      setValue("senderWardName", sender.wardName ?? sender.ward ?? "");
       setValue("senderZipCode", sender.zipCode ?? "");
       setValue("senderCountry", sender.country ?? "VN");
       setSaveSenderSetting(true);
@@ -554,7 +566,9 @@ export default function CreateSingleOrderPage() {
     const {
       senderName,
       senderCity,
+      senderCityName,
       senderWard,
+      senderWardName,
       senderCountry,
       senderAddress,
       senderZipCode,
@@ -572,7 +586,9 @@ export default function CreateSingleOrderPage() {
       products,
       receiverName,
       receiverCity,
+      receiverCityName,
       receiverState,
+      receiverStateName,
       receiverCountry,
       receiverAddress1,
       receiverAddress2,
@@ -580,6 +596,11 @@ export default function CreateSingleOrderPage() {
       receiverPhone,
       receiverEmail,
     } = storeValues;
+
+    const displayReceiverCity = receiverCityName || receiverCity;
+    const displayReceiverState = receiverStateName || receiverState;
+    const displaySenderCity = senderCityName || senderCity;
+    const displaySenderWard = senderWardName || senderWard;
 
     // Render Step 2: Review & Payment
     return (
@@ -610,7 +631,7 @@ export default function CreateSingleOrderPage() {
 
                     <div className="text-muted-foreground">City/State/Country</div>
                     <div className="col-span-2 font-medium text-foreground">
-                      {receiverCity}, {receiverState}, {receiverCountry}
+                      {displayReceiverCity}, {displayReceiverState}, {receiverCountry}
                     </div>
 
                     <div className="text-muted-foreground">Address 1</div>
@@ -651,10 +672,10 @@ export default function CreateSingleOrderPage() {
                     <div className="text-muted-foreground">Sender Name</div>
                     <div className="col-span-2 font-medium text-foreground">{senderName}</div>
 
-                    <div className="text-muted-foreground">City/Ward/Country</div>
+                    <div className="text-muted-foreground">Ward/City/Country</div>
                     <div className="col-span-2 font-medium text-foreground">
-                      {senderCity}
-                      {senderWard ? `, ${senderWard}` : ""}, {senderCountry}
+                      {displaySenderWard}
+                      {displaySenderCity ? `, ${displaySenderCity}` : ""}, {senderCountry}
                     </div>
 
                     <div className="text-muted-foreground">Address</div>
