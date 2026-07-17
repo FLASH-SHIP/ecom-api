@@ -11,7 +11,13 @@ export function CloseIcon({ className = "", ...props }: SVGProps<SVGSVGElement>)
       className={className}
       {...props}
     >
-      <path d="M13 1L1 13M1 1L13 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path
+        d="M13 1L1 13M1 1L13 13"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

@@ -337,8 +337,8 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
       {/* ── Sender card ─────────────────────────────────────────────────── */}
       <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
         {/* Header */}
-        <div className="flex items-center px-4 py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-          <h3 className="text-lg font-semibold text-foreground">Sender</h3>
+        <div className="flex items-center px-4 py-4 leading-6 border-b border-[#DADADA] bg-[#FEFCFA]">
+          <h3 className="text-lg 2xl:text-xl font-semibold text-foreground">Sender</h3>
         </div>
 
         {/* Body */}
@@ -530,29 +530,16 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
         >
           <form onSubmit={handleSubmit(handleFormSubmit)}>
             <FieldGroup>
-              {/* Row 1: Address + Country — equal 1/2 width each */}
+              {/* Row 1: Country + City — equal 1/2 width each */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/*Country*/}
                 <Field>
                   <FieldLabel>Country</FieldLabel>
                   <Input value="Vietnam" disabled className="bg-muted/50" />
                   <input type="hidden" {...register("country")} />
                 </Field>
-                <Field>
-                  <FieldLabel htmlFor="sender-form-address">
-                    Address <span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <Input
-                    id="sender-form-address"
-                    placeholder="Enter address"
-                    {...register("address")}
-                    className={cn(formErrors.address && "border-destructive")}
-                  />
-                  <FieldError errors={[formErrors.address]} />
-                </Field>
-              </div>
 
-              {/* Row 2: City + Ward */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/*City*/}
                 <Field>
                   <FieldLabel>
                     City <span className="text-destructive">*</span>
@@ -577,6 +564,11 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
                   />
                   <FieldError errors={[formErrors.city]} />
                 </Field>
+              </div>
+
+              {/* Row 2: Ward + Address */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/*Ward*/}
                 <Field>
                   <FieldLabel htmlFor="sender-form-ward">
                     Ward <span className="text-destructive">*</span>
@@ -602,10 +594,25 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
                   />
                   <FieldError errors={[formErrors.ward]} />
                 </Field>
+
+                {/*Address*/}
+                <Field>
+                  <FieldLabel htmlFor="sender-form-address">
+                    Address <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    id="sender-form-address"
+                    placeholder="Enter address"
+                    {...register("address")}
+                    className={cn(formErrors.address && "border-destructive")}
+                  />
+                  <FieldError errors={[formErrors.address]} />
+                </Field>
               </div>
 
               {/* Row 3: Postcode + Sender Name */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/*ZipCode*/}
                 <Field>
                   <FieldLabel htmlFor="sender-form-zip">Postcode / Zipcode</FieldLabel>
                   <Input
@@ -614,6 +621,8 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
                     {...register("zipCode")}
                   />
                 </Field>
+
+                {/*Name*/}
                 <Field>
                   <FieldLabel htmlFor="sender-form-name">
                     Sender Name <span className="text-destructive">*</span>
@@ -630,6 +639,7 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
 
               {/* Row 4: Phone + Email */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/*Phone*/}
                 <Field>
                   <FieldLabel htmlFor="sender-form-phone">
                     Phone number <span className="text-destructive">*</span>
@@ -641,6 +651,8 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
                     {...register("phone")}
                   />
                 </Field>
+
+                {/*Email*/}
                 <Field>
                   <FieldLabel htmlFor="sender-form-email">Email</FieldLabel>
                   <Input

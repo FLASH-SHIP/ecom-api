@@ -17,6 +17,7 @@ interface SearchableSelectOption {
 interface SearchableSelectProps {
   value?: string;
   onValueChange?: (value: string) => void;
+  onOptionSelect?: (option: SearchableSelectOption) => void;
   options: SearchableSelectOption[];
   placeholder?: string;
   searchPlaceholder?: string;
@@ -71,6 +72,7 @@ const OptionItem = React.memo(function OptionItem({
 function SearchableSelect({
   value,
   onValueChange,
+  onOptionSelect,
   options,
   placeholder = "Select...",
   searchPlaceholder = "Search...",
@@ -88,9 +90,23 @@ function SearchableSelect({
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
+  const [recordedValue, setRecordedValue] = React.useState<string>("");
+  const [lastSelectedLabel, setLastSelectedLabel] = React.useState<string>("");
+
   const selectedOption = options.find((opt) => opt.value === value);
+
+  React.useEffect(() => {
+    if (selectedOption) {
+      setRecordedValue(selectedOption.value);
+      setLastSelectedLabel(selectedOption.label);
+    }
+  }, [selectedOption]);
+
   const hasValue = !!value;
-  const displayLabel = selectedOption?.label ?? (hasValue ? value : placeholder);
+  const displayLabel =
+    selectedOption?.label ??
+    (value && value === recordedValue ? lastSelectedLabel : null) ??
+    (hasValue ? value : placeholder);
   const showClear = allowClear && hasValue && !disabled;
 
   const resetSearch = React.useCallback(() => {
@@ -126,11 +142,19 @@ function SearchableSelect({
 
   const handleSelect = React.useCallback(
     (optionValue: string) => {
-      onValueChange?.(optionValue === value ? "" : optionValue);
+      const isSelected = optionValue === value;
+      const newValue = isSelected ? "" : optionValue;
+      onValueChange?.(newValue);
+      if (!isSelected) {
+        const found = options.find((opt) => opt.value === optionValue);
+        if (found) {
+          onOptionSelect?.(found);
+        }
+      }
       setOpen(false);
       resetSearch();
     },
-    [onValueChange, value, resetSearch],
+    [onValueChange, value, resetSearch, options, onOptionSelect],
   );
 
   const handleOpenChange = React.useCallback(

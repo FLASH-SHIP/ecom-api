@@ -19,3 +19,4 @@ export { TopupIcon } from "./icon-component/TopupIcon";
 export { UserAvatarIcon } from "./icon-component/UserAvatarIcon";
 export { WalletSolidIcon } from "./icon-component/WalletSolidIcon";
 export { WhatsappIcon } from "./icon-component/WhatsappIcon";
+export { SaveIcon } from "./icon-component/SaveIcon";

@@ -15,7 +15,23 @@ export class CustomerReceiverService {
   }
 
   async listByCustomer(customerId: string) {
-    return this.deps.receiverRepo.findByCustomerId(customerId);
+    const receivers = await this.deps.receiverRepo.findByCustomerId(customerId);
+
+    // Extract unique state and city codes
+    const codes = Array.from(
+      new Set(receivers.flatMap((r) => [r.state, r.city]).filter((code) => !!code)),
+    );
+
+    const divisions =
+      codes.length > 0 ? await this.deps.receiverRepo.findDivisionsByCodes("US", codes) : [];
+
+    const divisionMap = new Map(divisions.map((d) => [d.code, d.name]));
+
+    return receivers.map((r) => ({
+      ...r,
+      stateName: divisionMap.get(r.state) || r.state,
+      cityName: divisionMap.get(r.city) || r.city,
+    }));
   }
 
   async create(

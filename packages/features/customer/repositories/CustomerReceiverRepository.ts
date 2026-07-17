@@ -102,4 +102,11 @@ export class CustomerReceiverRepository {
       where: { customerId, deletedAt: null },
     });
   }
+
+  async findDivisionsByCodes(countryCode: string, codes: string[]) {
+    return this.prisma.administrativeDivision.findMany({
+      where: { countryCode, code: { in: codes } },
+      select: { code: true, name: true },
+    });
+  }
 }

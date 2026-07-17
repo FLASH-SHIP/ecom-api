@@ -22,6 +22,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
+import { BasicInfoSection } from "./BasicInfoSection";
+import { ReceiverSection } from "./ReceiverSection";
 import { SenderSection } from "./SenderSection";
 import { useOrderStore } from "./useOrderStore";
 
@@ -198,51 +200,10 @@ export default function CreateSingleOrderPage() {
     }
   }, [packingTypesData, setValue, watch]);
   // Watch only necessary fields to prevent typing lag
-  const watchedReceiverState = watch("receiverState");
   const watchedLength = watch("length");
   const watchedWidth = watch("width");
   const watchedHeight = watch("height");
   const watchedProducts = watch("products");
-
-  // --- Receiver: States & Cities (server-side search) ---
-  const [stateSearch, setStateSearch] = useState("");
-  const { data: statesData, isFetching: statesFetching } =
-    trpc.customer.divisions.listStates.useQuery(
-      { search: stateSearch || undefined },
-      { placeholderData: (prev) => prev },
-    );
-
-  const stateOptions = useMemo(
-    () => (statesData ?? []).map((s) => ({ value: s.name, label: s.name })),
-    [statesData],
-  );
-
-  const selectedStateId = useMemo(() => {
-    if (!watchedReceiverState || !statesData) return undefined;
-    const found = statesData.find((s) => s.name === watchedReceiverState);
-    return found?.id;
-  }, [watchedReceiverState, statesData]);
-
-  const [citySearch, setCitySearch] = useState("");
-  const { data: citiesData, isFetching: citiesFetching } =
-    trpc.customer.divisions.listCities.useQuery(
-      { parentId: selectedStateId ?? 0, search: citySearch || undefined },
-      { enabled: !!selectedStateId, placeholderData: (prev) => prev },
-    );
-
-  const cityOptions = useMemo(
-    () => (citiesData ?? []).map((c) => ({ value: c.name, label: c.name })),
-    [citiesData],
-  );
-
-  // Reset city when state changes
-  const prevReceiverStateRef = useRef(watchedReceiverState);
-  useEffect(() => {
-    if (prevReceiverStateRef.current !== watchedReceiverState) {
-      setValue("receiverCity", "");
-      prevReceiverStateRef.current = watchedReceiverState;
-    }
-  }, [watchedReceiverState, setValue]);
 
   const productsString = JSON.stringify(watchedProducts);
 
@@ -310,38 +271,6 @@ export default function CreateSingleOrderPage() {
   const { data: savedReceivers = [] } = trpc.customer.receivers.list.useQuery();
   const createReceiverMutation = trpc.customer.receivers.create.useMutation();
   const updateReceiverMutation = trpc.customer.receivers.update.useMutation();
-
-  const savedReceiverOptions = useMemo(
-    () =>
-      savedReceivers.map((r) => ({
-        value: String(r.id),
-        label: r.label || `${r.name} — ${r.city}, ${r.state}`,
-      })),
-    [savedReceivers],
-  );
-
-  const handleSelectSavedReceiver = useCallback(
-    (val: string) => {
-      if (!val) {
-        setSelectedReceiverId(null);
-        return;
-      }
-      const receiver = savedReceivers.find((r) => r.id === Number(val));
-      if (!receiver) return;
-      setSelectedReceiverId(receiver.id);
-      setValue("receiverName", receiver.name);
-      setValue("receiverPhone", receiver.phone ?? "");
-      setValue("receiverEmail", receiver.email ?? "");
-      setValue("receiverAddress1", receiver.address1);
-      setValue("receiverAddress2", receiver.address2 ?? "");
-      setValue("receiverCity", receiver.city);
-      setValue("receiverState", receiver.state);
-      setValue("receiverZipCode", receiver.zipCode);
-      setValue("receiverCountry", receiver.country ?? "US");
-      setSaveReceiverSetting(true);
-    },
-    [savedReceivers, setValue],
-  );
 
   const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
 
@@ -536,6 +465,7 @@ export default function CreateSingleOrderPage() {
   // create order mutation
   const createOrderMutation = trpc.customer.orders.create.useMutation();
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: single order creation logic complexity
   const handleCreateOrder = async () => {
     setError(null);
     setLoading(true);
@@ -635,7 +565,6 @@ export default function CreateSingleOrderPage() {
           state: receiverState,
           zipCode: receiverZipCode,
           country: receiverCountry || "US",
-          isDefault: true,
         };
         console.log("receiverPayload constructed:", receiverPayload);
         if (selectedReceiverId) {
@@ -645,7 +574,9 @@ export default function CreateSingleOrderPage() {
           );
         } else {
           console.log("Creating new receiver settings");
-          promises.push(createReceiverMutation.mutateAsync(receiverPayload));
+          promises.push(
+            createReceiverMutation.mutateAsync({ ...receiverPayload, isDefault: false }),
+          );
         }
       }
 
@@ -1051,94 +982,7 @@ export default function CreateSingleOrderPage() {
 
       <form onSubmit={handleSubmit(handleGetRates, onInvalid)} className="flex flex-col gap-6">
         {/* Basic Info */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Basic Info
-            </h3>
-            <FieldGroup className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Shipping Origin */}
-              <Field>
-                <FieldLabel className="text-xs font-bold text-muted-foreground">
-                  Shipping Origin <span className="text-destructive">*</span>
-                </FieldLabel>
-                <Controller
-                  name="shippingOrigin"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.shippingOrigin && "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select shipping origin" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="HAN">HAN (Hà Nội)</SelectItem>
-                        <SelectItem value="SGN">SGN (TP. HCM)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <FieldError errors={[errors.shippingOrigin]} />
-              </Field>
-
-              {/* Shipping Method */}
-              <Field>
-                <FieldLabel className="text-xs font-bold text-muted-foreground">
-                  Shipping Method <span className="text-destructive ml-0.5">*</span>
-                </FieldLabel>
-                <Controller
-                  name="shippingMethod"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.shippingMethod && "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select shipping method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EPACKET">ePacket</SelectItem>
-                        <SelectItem value="EXPRESS">Express</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <FieldError errors={[errors.shippingMethod]} />
-              </Field>
-
-              {/* Order ID */}
-              <Field>
-                <FieldLabel
-                  htmlFor="sellerOrderId"
-                  className="text-xs font-bold text-muted-foreground"
-                >
-                  Order ID (Optional Reference)
-                </FieldLabel>
-                <Input
-                  id="sellerOrderId"
-                  type="text"
-                  {...register("sellerOrderId")}
-                  placeholder="Enter order id reference"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.sellerOrderId && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-              </Field>
-
-              {/* Hidden inputs for auto-calculated values to ensure React Hook Form tracks and validates them */}
-              <input type="hidden" {...register("detailDescription")} />
-              <input type="hidden" {...register("declaredValue")} />
-            </FieldGroup>
-          </CardContent>
-        </Card>
+        <BasicInfoSection control={control} register={register} errors={errors} />
 
         {/* Sender Info */}
         <SenderSection
@@ -1147,252 +991,18 @@ export default function CreateSingleOrderPage() {
         />
 
         {/* Receiver Info */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Receiver
-            </h3>
-
-            {savedReceiverOptions.length > 0 && (
-              <SearchableSelect
-                options={savedReceiverOptions}
-                value={selectedReceiverId ? String(selectedReceiverId) : ""}
-                onValueChange={handleSelectSavedReceiver}
-                placeholder="Choose saved receiver..."
-              />
-            )}
-
-            <FieldGroup>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Field>
-                  <FieldLabel
-                    htmlFor="receiverAddress1"
-                    className="text-xs font-bold text-muted-foreground"
-                  >
-                    Address 1 <span className="text-destructive ml-0.5">*</span>
-                  </FieldLabel>
-                  <Input
-                    id="receiverAddress1"
-                    type="text"
-                    required
-                    {...register("receiverAddress1")}
-                    placeholder="Enter receiver street address 1"
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.receiverAddress1 &&
-                        "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <FieldError errors={[errors.receiverAddress1]} />
-                </Field>
-
-                <Field>
-                  <FieldLabel
-                    htmlFor="receiverAddress2"
-                    className="text-xs font-bold text-muted-foreground"
-                  >
-                    Address 2 (Optional)
-                  </FieldLabel>
-                  <Input
-                    id="receiverAddress2"
-                    type="text"
-                    {...register("receiverAddress2")}
-                    placeholder="Apt, Suite, Unit, etc."
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.receiverAddress2 &&
-                        "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                </Field>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <Field>
-                  <FieldLabel className="text-xs font-bold text-muted-foreground">
-                    Country <span className="text-destructive ml-0.5">*</span>
-                  </FieldLabel>
-                  <Controller
-                    name="receiverCountry"
-                    control={control}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange} disabled>
-                        <SelectTrigger
-                          className={cn(
-                            "w-full bg-background/50 border-input",
-                            errors.receiverCountry && "border-destructive focus:ring-destructive",
-                          )}
-                        >
-                          <SelectValue placeholder="Select country" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="US">United States</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  <FieldError errors={[errors.receiverCountry]} />
-                </Field>
-
-                <Field>
-                  <FieldLabel className="text-xs font-bold text-muted-foreground">
-                    State / Region <span className="text-destructive ml-0.5">*</span>
-                  </FieldLabel>
-                  <Controller
-                    name="receiverState"
-                    control={control}
-                    render={({ field }) => (
-                      <SearchableSelect
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        options={stateOptions}
-                        placeholder="Select state"
-                        searchPlaceholder="Search state..."
-                        allowClear
-                        maxHeight="250px"
-                        serverSearch
-                        onSearchChange={setStateSearch}
-                        loading={statesFetching}
-                        className={cn(
-                          "bg-background/50",
-                          errors.receiverState && "border-destructive",
-                        )}
-                      />
-                    )}
-                  />
-                  <FieldError errors={[errors.receiverState]} />
-                </Field>
-
-                <Field>
-                  <FieldLabel className="text-xs font-bold text-muted-foreground">
-                    City <span className="text-destructive ml-0.5">*</span>
-                  </FieldLabel>
-                  <Controller
-                    name="receiverCity"
-                    control={control}
-                    render={({ field }) => (
-                      <SearchableSelect
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        options={cityOptions}
-                        placeholder="Select city"
-                        searchPlaceholder="Search city..."
-                        disabled={!selectedStateId}
-                        allowClear
-                        maxHeight="250px"
-                        serverSearch
-                        onSearchChange={setCitySearch}
-                        loading={citiesFetching}
-                        className={cn(
-                          "bg-background/50",
-                          errors.receiverCity && "border-destructive",
-                        )}
-                      />
-                    )}
-                  />
-                  <FieldError errors={[errors.receiverCity]} />
-                </Field>
-
-                <Field>
-                  <FieldLabel
-                    htmlFor="receiverZipCode"
-                    className="text-xs font-bold text-muted-foreground"
-                  >
-                    Postcode / Zipcode <span className="text-destructive ml-0.5">*</span>
-                  </FieldLabel>
-                  <Input
-                    id="receiverZipCode"
-                    type="text"
-                    required
-                    {...register("receiverZipCode")}
-                    placeholder="Enter zipcode"
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.receiverZipCode && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <FieldError errors={[errors.receiverZipCode]} />
-                </Field>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <Field className="md:col-span-2">
-                  <FieldLabel
-                    htmlFor="receiverName"
-                    className="text-xs font-bold text-muted-foreground"
-                  >
-                    Receiver Name <span className="text-destructive ml-0.5">*</span>
-                  </FieldLabel>
-                  <Input
-                    id="receiverName"
-                    type="text"
-                    required
-                    {...register("receiverName")}
-                    placeholder="Enter receiver full name"
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.receiverName && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <FieldError errors={[errors.receiverName]} />
-                </Field>
-
-                <Field>
-                  <FieldLabel
-                    htmlFor="receiverPhone"
-                    className="text-xs font-bold text-muted-foreground"
-                  >
-                    Phone Number
-                  </FieldLabel>
-                  <Input
-                    id="receiverPhone"
-                    type="text"
-                    {...register("receiverPhone")}
-                    placeholder="Enter receiver phone number"
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.receiverPhone && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                </Field>
-
-                <Field>
-                  <FieldLabel
-                    htmlFor="receiverEmail"
-                    className="text-xs font-bold text-muted-foreground"
-                  >
-                    Email
-                  </FieldLabel>
-                  <Input
-                    id="receiverEmail"
-                    type="email"
-                    {...register("receiverEmail")}
-                    placeholder="Enter receiver email"
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.receiverEmail && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <FieldError errors={[errors.receiverEmail]} />
-                </Field>
-              </div>
-
-              <Field orientation="horizontal" className="items-center gap-2 mt-2">
-                <Checkbox
-                  id="save-receiver"
-                  checked={saveReceiverSetting}
-                  onCheckedChange={(c) => setSaveReceiverSetting(!!c)}
-                />
-                <FieldLabel
-                  htmlFor="save-receiver"
-                  className="text-xs font-bold text-muted-foreground cursor-pointer select-none"
-                >
-                  Save your setting for repeated use
-                </FieldLabel>
-              </Field>
-            </FieldGroup>
-          </CardContent>
-        </Card>
+        <ReceiverSection
+          control={control}
+          register={register}
+          errors={errors}
+          setValue={setValue}
+          watch={watch}
+          saveReceiverSetting={saveReceiverSetting}
+          setSaveReceiverSetting={setSaveReceiverSetting}
+          selectedReceiverId={selectedReceiverId}
+          setSelectedReceiverId={setSelectedReceiverId}
+          savedReceivers={savedReceivers}
+        />
 
         {/* Package Info */}
         <Card className="rounded-xl border border-border bg-card">
