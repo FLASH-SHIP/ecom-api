@@ -93,4 +93,24 @@ export class CustomerSenderRepository {
       data: { isDefault: false },
     });
   }
+
+  async countByCustomerId(customerId: string): Promise<number> {
+    return this.prisma.customerSender.count({
+      where: { customerId, deletedAt: null },
+    });
+  }
+
+  async findProvincesByCodes(codes: number[]) {
+    return this.prisma.province.findMany({
+      where: { code: { in: codes } },
+      select: { code: true, name: true },
+    });
+  }
+
+  async findWardsByCodes(codes: number[]) {
+    return this.prisma.ward.findMany({
+      where: { code: { in: codes } },
+      select: { code: true, name: true },
+    });
+  }
 }

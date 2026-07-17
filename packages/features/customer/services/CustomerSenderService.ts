@@ -15,7 +15,39 @@ export class CustomerSenderService {
   }
 
   async listByCustomer(customerId: string) {
-    return this.deps.senderRepo.findByCustomerId(customerId);
+    const senders = await this.deps.senderRepo.findByCustomerId(customerId);
+    return this.resolveSenderNames(senders);
+  }
+
+  private async resolveSenderNames<T extends { city: string; ward: string | null }>(senders: T[]) {
+    if (senders.length === 0) return [];
+
+    const cityCodes = Array.from(
+      new Set(senders.map((s) => Number(s.city)).filter((c) => !Number.isNaN(c) && c > 0)),
+    );
+    const wardCodes = Array.from(
+      new Set(
+        senders.map((s) => Number(s.ward)).filter((w) => w !== null && !Number.isNaN(w) && w > 0),
+      ),
+    );
+
+    const [provinces, wards] = await Promise.all([
+      cityCodes.length > 0 ? this.deps.senderRepo.findProvincesByCodes(cityCodes) : [],
+      wardCodes.length > 0 ? this.deps.senderRepo.findWardsByCodes(wardCodes) : [],
+    ]);
+
+    const provinceMap = new Map(provinces.map((p) => [p.code, p.name]));
+    const wardMap = new Map(wards.map((w) => [w.code, w.name]));
+
+    return senders.map((s) => {
+      const cityCodeNum = Number(s.city);
+      const wardCodeNum = Number(s.ward);
+      return {
+        ...s,
+        cityName: !Number.isNaN(cityCodeNum) ? provinceMap.get(cityCodeNum) || s.city : s.city,
+        wardName: !Number.isNaN(wardCodeNum) ? wardMap.get(wardCodeNum) || s.ward : s.ward,
+      };
+    });
   }
 
   async create(
@@ -40,14 +72,21 @@ export class CustomerSenderService {
       throw new ErrorWithCode(ErrorCode.ValidationError, "Sender address is required", 422);
     }
 
-    if (data.isDefault) {
-      return runInTransaction(async () => {
-        await this.deps.senderRepo.resetDefault(customerId);
-        return this.deps.senderRepo.create({ ...data, customerId });
-      });
-    }
+    // Auto-set as default if this is the customer's first sender record
+    const result = await runInTransaction(async () => {
+      const existingCount = await this.deps.senderRepo.countByCustomerId(customerId);
+      const isFirstRecord = existingCount === 0;
+      const finalIsDefault = isFirstRecord || !!data.isDefault;
 
-    return this.deps.senderRepo.create({ ...data, customerId });
+      if (finalIsDefault && !isFirstRecord) {
+        await this.deps.senderRepo.resetDefault(customerId);
+      }
+
+      return this.deps.senderRepo.create({ ...data, customerId, isDefault: finalIsDefault });
+    });
+
+    const resolved = await this.resolveSenderNames([result]);
+    return resolved[0];
   }
 
   async update(
@@ -71,14 +110,19 @@ export class CustomerSenderService {
       throw new ErrorWithCode(ErrorCode.NotFound, "Sender not found", 404);
     }
 
+    let result: Awaited<ReturnType<CustomerSenderRepository["update"]>>;
+
     if (data.isDefault) {
-      return runInTransaction(async () => {
+      result = await runInTransaction(async () => {
         await this.deps.senderRepo.resetDefault(customerId);
         return this.deps.senderRepo.update(id, data);
       });
+    } else {
+      result = await this.deps.senderRepo.update(id, data);
     }
 
-    return this.deps.senderRepo.update(id, data);
+    const resolved = await this.resolveSenderNames([result]);
+    return resolved[0];
   }
 
   async delete(id: number, customerId: string) {

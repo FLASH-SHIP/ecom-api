@@ -156,7 +156,7 @@ function SearchableSelect({
   );
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    <Popover open={open} onOpenChange={handleOpenChange} modal={true}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -215,7 +215,12 @@ function SearchableSelect({
           )}
         </div>
 
-        <div className="overflow-y-auto p-1" style={{ maxHeight }}>
+        <div
+          role="presentation"
+          className="overflow-y-auto p-1"
+          style={{ maxHeight }}
+          onWheel={(e) => e.stopPropagation()}
+        >
           {!loading && filteredOptions.length === 0 ? (
             <div className="py-4 text-center text-sm text-muted-foreground">No results found.</div>
           ) : (

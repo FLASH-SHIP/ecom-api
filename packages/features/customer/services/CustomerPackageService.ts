@@ -38,14 +38,18 @@ export class CustomerPackageService {
       throw new ErrorWithCode(ErrorCode.ValidationError, "Weight must be greater than 0", 422);
     }
 
-    if (data.isDefault) {
-      return runInTransaction(async () => {
-        await this.deps.packageRepo.resetDefault(customerId);
-        return this.deps.packageRepo.create({ ...data, customerId });
-      });
-    }
+    // Auto-set as default if this is the customer's first package record
+    return runInTransaction(async () => {
+      const existingCount = await this.deps.packageRepo.countByCustomerId(customerId);
+      const isFirstRecord = existingCount === 0;
+      const finalIsDefault = isFirstRecord || !!data.isDefault;
 
-    return this.deps.packageRepo.create({ ...data, customerId });
+      if (finalIsDefault && !isFirstRecord) {
+        await this.deps.packageRepo.resetDefault(customerId);
+      }
+
+      return this.deps.packageRepo.create({ ...data, customerId, isDefault: finalIsDefault });
+    });
   }
 
   async update(

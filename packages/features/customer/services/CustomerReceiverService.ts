@@ -41,14 +41,18 @@ export class CustomerReceiverService {
       throw new ErrorWithCode(ErrorCode.ValidationError, "Receiver address is required", 422);
     }
 
-    if (data.isDefault) {
-      return runInTransaction(async () => {
-        await this.deps.receiverRepo.resetDefault(customerId);
-        return this.deps.receiverRepo.create({ ...data, customerId });
-      });
-    }
+    // Auto-set as default if this is the customer's first receiver record
+    return runInTransaction(async () => {
+      const existingCount = await this.deps.receiverRepo.countByCustomerId(customerId);
+      const isFirstRecord = existingCount === 0;
+      const finalIsDefault = isFirstRecord || !!data.isDefault;
 
-    return this.deps.receiverRepo.create({ ...data, customerId });
+      if (finalIsDefault && !isFirstRecord) {
+        await this.deps.receiverRepo.resetDefault(customerId);
+      }
+
+      return this.deps.receiverRepo.create({ ...data, customerId, isDefault: finalIsDefault });
+    });
   }
 
   async update(

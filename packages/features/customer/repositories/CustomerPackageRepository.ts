@@ -87,4 +87,10 @@ export class CustomerPackageRepository {
       data: { isDefault: false },
     });
   }
+
+  async countByCustomerId(customerId: string): Promise<number> {
+    return this.prisma.customerPackage.count({
+      where: { customerId, deletedAt: null },
+    });
+  }
 }

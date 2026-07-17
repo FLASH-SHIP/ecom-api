@@ -96,4 +96,10 @@ export class CustomerReceiverRepository {
       data: { isDefault: false },
     });
   }
+
+  async countByCustomerId(customerId: string): Promise<number> {
+    return this.prisma.customerReceiver.count({
+      where: { customerId, deletedAt: null },
+    });
+  }
 }

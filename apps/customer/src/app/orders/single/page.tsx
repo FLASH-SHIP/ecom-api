@@ -4,8 +4,8 @@ import { trpc } from "@customer/lib/trpc";
 import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent } from "@ecom/ui/components/card";
 import { Checkbox } from "@ecom/ui/components/checkbox";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
-import { Label } from "@ecom/ui/components/label";
 import { SearchableSelect } from "@ecom/ui/components/searchable-select";
 import {
   Select,
@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
+import { SenderSection } from "./SenderSection";
 import { useOrderStore } from "./useOrderStore";
 
 const orderFormSchema = z.object({
@@ -197,51 +198,11 @@ export default function CreateSingleOrderPage() {
     }
   }, [packingTypesData, setValue, watch]);
   // Watch only necessary fields to prevent typing lag
-  const watchedSenderCity = watch("senderCity");
   const watchedReceiverState = watch("receiverState");
   const watchedLength = watch("length");
   const watchedWidth = watch("width");
   const watchedHeight = watch("height");
   const watchedProducts = watch("products");
-
-  // --- Sender: Provinces & Wards (server-side search) ---
-  const [provinceSearch, setProvinceSearch] = useState("");
-  const { data: provincesData, isFetching: provincesFetching } =
-    trpc.customer.divisions.listProvinces.useQuery(
-      { search: provinceSearch || undefined },
-      { placeholderData: (prev) => prev },
-    );
-
-  const provinceOptions = useMemo(
-    () => (provincesData ?? []).map((p) => ({ value: p.name, label: p.name })),
-    [provincesData],
-  );
-
-  const selectedProvinceCode = useMemo(() => {
-    if (!watchedSenderCity || !provincesData) return undefined;
-    const found = provincesData.find((p) => p.name === watchedSenderCity);
-    return found?.code;
-  }, [watchedSenderCity, provincesData]);
-
-  const [wardSearch, setWardSearch] = useState("");
-  const { data: wardsData, isFetching: wardsFetching } = trpc.customer.divisions.listWards.useQuery(
-    { provinceCode: selectedProvinceCode ?? 0, search: wardSearch || undefined },
-    { enabled: !!selectedProvinceCode, placeholderData: (prev) => prev },
-  );
-
-  const wardOptions = useMemo(
-    () => (wardsData ?? []).map((w) => ({ value: w.name, label: w.name })),
-    [wardsData],
-  );
-
-  // Reset ward when city changes
-  const prevSenderCityRef = useRef(watchedSenderCity);
-  useEffect(() => {
-    if (prevSenderCityRef.current !== watchedSenderCity) {
-      setValue("senderWard", "");
-      prevSenderCityRef.current = watchedSenderCity;
-    }
-  }, [watchedSenderCity, setValue]);
 
   // --- Receiver: States & Cities (server-side search) ---
   const [stateSearch, setStateSearch] = useState("");
@@ -309,35 +270,26 @@ export default function CreateSingleOrderPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const [saveSenderSetting, setSaveSenderSetting] = useState(false);
+  const [_saveSenderSetting, setSaveSenderSetting] = useState(false);
   const [selectedSenderId, setSelectedSenderId] = useState<number | null>(null);
   const [saveReceiverSetting, setSaveReceiverSetting] = useState(false);
   const [selectedReceiverId, setSelectedReceiverId] = useState<number | null>(null);
   const [savePackageSetting, setSavePackageSetting] = useState(false);
 
-  // Saved senders from DB
-  const { data: savedSenders = [] } = trpc.customer.senders.list.useQuery();
-  const createSenderMutation = trpc.customer.senders.create.useMutation();
-  const updateSenderMutation = trpc.customer.senders.update.useMutation();
-  const trpcUtils = trpc.useUtils();
-
-  const savedSenderOptions = useMemo(
-    () =>
-      savedSenders.map((s) => ({
-        value: String(s.id),
-        label: s.label || `${s.name} — ${s.city}`,
-      })),
-    [savedSenders],
-  );
-
-  const handleSelectSavedSender = useCallback(
-    (val: string) => {
-      if (!val) {
-        setSelectedSenderId(null);
-        return;
-      }
-      const sender = savedSenders.find((s) => s.id === Number(val));
-      if (!sender) return;
+  // Called by SenderSection when a sender is selected or created
+  const handleSenderSelected = useCallback(
+    (sender: {
+      id: number;
+      name: string;
+      phone: string | null;
+      email: string | null;
+      address: string;
+      city: string;
+      ward: string | null;
+      zipCode: string | null;
+      country: string | null;
+      isDefault: boolean;
+    }) => {
       setSelectedSenderId(sender.id);
       setValue("senderName", sender.name);
       setValue("senderPhone", sender.phone ?? "");
@@ -349,8 +301,10 @@ export default function CreateSingleOrderPage() {
       setValue("senderCountry", sender.country ?? "VN");
       setSaveSenderSetting(true);
     },
-    [savedSenders, setValue],
+    [setValue],
   );
+
+  const trpcUtils = trpc.useUtils();
 
   // Saved receivers from DB
   const { data: savedReceivers = [] } = trpc.customer.receivers.list.useQuery();
@@ -465,22 +419,7 @@ export default function CreateSingleOrderPage() {
           const defaultPackage = localStorage.getItem("default_package_info");
           const newDefaults = JSON.parse(storeValuesString);
 
-          // Auto-fill from default saved sender (DB)
-          const defaultSender = savedSenders.find((s) => s.isDefault);
-          if (defaultSender) {
-            Object.assign(newDefaults, {
-              senderName: defaultSender.name,
-              senderPhone: defaultSender.phone ?? "",
-              senderEmail: defaultSender.email ?? "",
-              senderAddress: defaultSender.address,
-              senderCity: defaultSender.city,
-              senderWard: defaultSender.ward ?? "",
-              senderZipCode: defaultSender.zipCode ?? "",
-              senderCountry: defaultSender.country ?? "VN",
-            });
-            setSelectedSenderId(defaultSender.id);
-            setSaveSenderSetting(true);
-          }
+          // Auto-fill from default saved sender is handled by SenderSection
 
           // Auto-fill from default saved receiver (DB)
           const defaultReceiverDb = savedReceivers.find((r) => r.isDefault);
@@ -541,7 +480,7 @@ export default function CreateSingleOrderPage() {
       setValue("senderCountry", "VN");
       setValue("receiverCountry", "US");
     }
-  }, [isHydrated, reset, storeValuesString, setValue, savedSenders, savedReceivers, savedPackages]);
+  }, [isHydrated, reset, storeValuesString, setValue, savedReceivers, savedPackages]);
 
   // handle step 1 "Get Rates"
   const handleGetRates = async () => {
@@ -612,7 +551,6 @@ export default function CreateSingleOrderPage() {
       senderEmail,
       senderCountry,
       senderCity,
-      senderWard,
       senderZipCode,
       receiverName,
       receiverPhone,
@@ -682,26 +620,7 @@ export default function CreateSingleOrderPage() {
       const promises: Promise<unknown>[] = [];
 
       // Save sender to DB if checkbox is ticked
-      if (saveSenderSetting) {
-        const senderPayload = {
-          name: senderName,
-          phone: senderPhone || null,
-          email: senderEmail || null,
-          address: senderAddress,
-          city: senderCity,
-          ward: senderWard || null,
-          zipCode: senderZipCode || null,
-          country: senderCountry || "VN",
-          isDefault: true,
-        };
-        if (selectedSenderId) {
-          promises.push(
-            updateSenderMutation.mutateAsync({ id: selectedSenderId, data: senderPayload }),
-          );
-        } else {
-          promises.push(createSenderMutation.mutateAsync(senderPayload));
-        }
-      }
+      // Sender is always already saved to DB via SenderSection — skip here
 
       // Save receiver to DB if checkbox is ticked
       console.log("saveReceiverSetting state value in handleCreateOrder:", saveReceiverSetting);
@@ -1137,12 +1056,12 @@ export default function CreateSingleOrderPage() {
             <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
               Basic Info
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <FieldGroup className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Shipping Origin */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Shipping Origin <span className="text-destructive ml-0.5">*</span>
-                </Label>
+              <Field>
+                <FieldLabel className="text-xs font-bold text-muted-foreground">
+                  Shipping Origin <span className="text-destructive">*</span>
+                </FieldLabel>
                 <Controller
                   name="shippingOrigin"
                   control={control}
@@ -1163,16 +1082,14 @@ export default function CreateSingleOrderPage() {
                     </Select>
                   )}
                 />
-                {errors.shippingOrigin && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.shippingOrigin.message}</p>
-                )}
-              </div>
+                <FieldError errors={[errors.shippingOrigin]} />
+              </Field>
 
               {/* Shipping Method */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
+              <Field>
+                <FieldLabel className="text-xs font-bold text-muted-foreground">
                   Shipping Method <span className="text-destructive ml-0.5">*</span>
-                </Label>
+                </FieldLabel>
                 <Controller
                   name="shippingMethod"
                   control={control}
@@ -1193,16 +1110,17 @@ export default function CreateSingleOrderPage() {
                     </Select>
                   )}
                 />
-                {errors.shippingMethod && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.shippingMethod.message}</p>
-                )}
-              </div>
+                <FieldError errors={[errors.shippingMethod]} />
+              </Field>
 
               {/* Order ID */}
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="sellerOrderId" className="text-xs font-bold text-muted-foreground">
+              <Field>
+                <FieldLabel
+                  htmlFor="sellerOrderId"
+                  className="text-xs font-bold text-muted-foreground"
+                >
                   Order ID (Optional Reference)
-                </Label>
+                </FieldLabel>
                 <Input
                   id="sellerOrderId"
                   type="text"
@@ -1213,235 +1131,20 @@ export default function CreateSingleOrderPage() {
                     errors.sellerOrderId && "border-destructive focus-visible:ring-destructive",
                   )}
                 />
-              </div>
+              </Field>
 
               {/* Hidden inputs for auto-calculated values to ensure React Hook Form tracks and validates them */}
               <input type="hidden" {...register("detailDescription")} />
               <input type="hidden" {...register("declaredValue")} />
-            </div>
+            </FieldGroup>
           </CardContent>
         </Card>
 
         {/* Sender Info */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-border pb-2">
-              <h3 className="font-bold text-lg text-foreground">Sender</h3>
-              {savedSenders.length > 0 && (
-                <div className="w-64">
-                  <SearchableSelect
-                    value={selectedSenderId ? String(selectedSenderId) : ""}
-                    onValueChange={handleSelectSavedSender}
-                    options={savedSenderOptions}
-                    placeholder="Choose saved sender..."
-                    searchPlaceholder="Search saved sender..."
-                    allowClear
-                    maxHeight="200px"
-                    className="h-8 text-xs"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Row 1: Address (2/3) + Country (1/3) */}
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="senderAddress" className="text-xs font-bold text-muted-foreground">
-                  Address <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="senderAddress"
-                  type="text"
-                  required
-                  {...register("senderAddress")}
-                  placeholder="Enter sender street address"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderAddress && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderAddress && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderAddress.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Country <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="senderCountry"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.senderCountry && "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="VN">Vietnam</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.senderCountry && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderCountry.message}</p>
-                )}
-              </div>
-
-              {/* Row 2: City/Province select + Ward select */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  City / Province <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="senderCity"
-                  control={control}
-                  render={({ field }) => (
-                    <SearchableSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      options={provinceOptions}
-                      placeholder="Select city / province"
-                      searchPlaceholder="Search province..."
-                      allowClear
-                      maxHeight="250px"
-                      serverSearch
-                      onSearchChange={setProvinceSearch}
-                      loading={provincesFetching}
-                      className={cn("bg-background/50", errors.senderCity && "border-destructive")}
-                    />
-                  )}
-                />
-                {errors.senderCity && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderCity.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Ward <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="senderWard"
-                  control={control}
-                  render={({ field }) => (
-                    <SearchableSelect
-                      value={field.value ?? ""}
-                      onValueChange={field.onChange}
-                      options={wardOptions}
-                      placeholder="Select ward"
-                      searchPlaceholder="Search ward..."
-                      disabled={!selectedProvinceCode}
-                      allowClear
-                      maxHeight="250px"
-                      serverSearch
-                      onSearchChange={setWardSearch}
-                      loading={wardsFetching}
-                      className="bg-background/50"
-                    />
-                  )}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="senderZipCode" className="text-xs font-bold text-muted-foreground">
-                  Postcode / Zipcode <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="senderZipCode"
-                  type="text"
-                  required
-                  {...register("senderZipCode")}
-                  placeholder="Enter zipcode"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderZipCode && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderZipCode && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderZipCode.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="senderName" className="text-xs font-bold text-muted-foreground">
-                  Sender Name <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="senderName"
-                  type="text"
-                  required
-                  {...register("senderName")}
-                  placeholder="Enter sender name"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderName && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderName && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderName.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="senderPhone" className="text-xs font-bold text-muted-foreground">
-                  Phone Number <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="senderPhone"
-                  type="text"
-                  required
-                  {...register("senderPhone")}
-                  placeholder="Enter sender phone number"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderPhone && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderPhone && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderPhone.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="senderEmail" className="text-xs font-bold text-muted-foreground">
-                  Email
-                </Label>
-                <Input
-                  id="senderEmail"
-                  type="email"
-                  {...register("senderEmail")}
-                  placeholder="Enter sender email"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderEmail && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderEmail && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderEmail.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 mt-2">
-              <Checkbox
-                id="save-sender"
-                checked={saveSenderSetting}
-                onCheckedChange={(c) => setSaveSenderSetting(!!c)}
-              />
-              <label
-                htmlFor="save-sender"
-                className="text-xs font-bold text-muted-foreground cursor-pointer select-none"
-              >
-                Save your setting for repeated use
-              </label>
-            </div>
-          </CardContent>
-        </Card>
+        <SenderSection
+          selectedSenderId={selectedSenderId}
+          onSenderSelected={handleSenderSelected}
+        />
 
         {/* Receiver Info */}
         <Card className="rounded-xl border border-border bg-card">
@@ -1459,240 +1162,235 @@ export default function CreateSingleOrderPage() {
               />
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="receiverAddress1"
-                  className="text-xs font-bold text-muted-foreground"
-                >
-                  Address 1 <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="receiverAddress1"
-                  type="text"
-                  required
-                  {...register("receiverAddress1")}
-                  placeholder="Enter receiver street address 1"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverAddress1 && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.receiverAddress1 && (
-                  <p className="text-xs text-destructive mt-0.5">
-                    {errors.receiverAddress1.message}
-                  </p>
-                )}
+            <FieldGroup>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field>
+                  <FieldLabel
+                    htmlFor="receiverAddress1"
+                    className="text-xs font-bold text-muted-foreground"
+                  >
+                    Address 1 <span className="text-destructive ml-0.5">*</span>
+                  </FieldLabel>
+                  <Input
+                    id="receiverAddress1"
+                    type="text"
+                    required
+                    {...register("receiverAddress1")}
+                    placeholder="Enter receiver street address 1"
+                    className={cn(
+                      "w-full bg-background/50",
+                      errors.receiverAddress1 &&
+                        "border-destructive focus-visible:ring-destructive",
+                    )}
+                  />
+                  <FieldError errors={[errors.receiverAddress1]} />
+                </Field>
+
+                <Field>
+                  <FieldLabel
+                    htmlFor="receiverAddress2"
+                    className="text-xs font-bold text-muted-foreground"
+                  >
+                    Address 2 (Optional)
+                  </FieldLabel>
+                  <Input
+                    id="receiverAddress2"
+                    type="text"
+                    {...register("receiverAddress2")}
+                    placeholder="Apt, Suite, Unit, etc."
+                    className={cn(
+                      "w-full bg-background/50",
+                      errors.receiverAddress2 &&
+                        "border-destructive focus-visible:ring-destructive",
+                    )}
+                  />
+                </Field>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="receiverAddress2"
-                  className="text-xs font-bold text-muted-foreground"
-                >
-                  Address 2 (Optional)
-                </Label>
-                <Input
-                  id="receiverAddress2"
-                  type="text"
-                  {...register("receiverAddress2")}
-                  placeholder="Apt, Suite, Unit, etc."
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverAddress2 && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-              </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Field>
+                  <FieldLabel className="text-xs font-bold text-muted-foreground">
+                    Country <span className="text-destructive ml-0.5">*</span>
+                  </FieldLabel>
+                  <Controller
+                    name="receiverCountry"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange} disabled>
+                        <SelectTrigger
+                          className={cn(
+                            "w-full bg-background/50 border-input",
+                            errors.receiverCountry && "border-destructive focus:ring-destructive",
+                          )}
+                        >
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="US">United States</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <FieldError errors={[errors.receiverCountry]} />
+                </Field>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Country <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="receiverCountry"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled>
-                      <SelectTrigger
+                <Field>
+                  <FieldLabel className="text-xs font-bold text-muted-foreground">
+                    State / Region <span className="text-destructive ml-0.5">*</span>
+                  </FieldLabel>
+                  <Controller
+                    name="receiverState"
+                    control={control}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        options={stateOptions}
+                        placeholder="Select state"
+                        searchPlaceholder="Search state..."
+                        allowClear
+                        maxHeight="250px"
+                        serverSearch
+                        onSearchChange={setStateSearch}
+                        loading={statesFetching}
                         className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.receiverCountry && "border-destructive focus:ring-destructive",
+                          "bg-background/50",
+                          errors.receiverState && "border-destructive",
                         )}
-                      >
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="US">United States</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.receiverCountry && (
-                  <p className="text-xs text-destructive mt-0.5">
-                    {errors.receiverCountry.message}
-                  </p>
-                )}
+                      />
+                    )}
+                  />
+                  <FieldError errors={[errors.receiverState]} />
+                </Field>
+
+                <Field>
+                  <FieldLabel className="text-xs font-bold text-muted-foreground">
+                    City <span className="text-destructive ml-0.5">*</span>
+                  </FieldLabel>
+                  <Controller
+                    name="receiverCity"
+                    control={control}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        options={cityOptions}
+                        placeholder="Select city"
+                        searchPlaceholder="Search city..."
+                        disabled={!selectedStateId}
+                        allowClear
+                        maxHeight="250px"
+                        serverSearch
+                        onSearchChange={setCitySearch}
+                        loading={citiesFetching}
+                        className={cn(
+                          "bg-background/50",
+                          errors.receiverCity && "border-destructive",
+                        )}
+                      />
+                    )}
+                  />
+                  <FieldError errors={[errors.receiverCity]} />
+                </Field>
+
+                <Field>
+                  <FieldLabel
+                    htmlFor="receiverZipCode"
+                    className="text-xs font-bold text-muted-foreground"
+                  >
+                    Postcode / Zipcode <span className="text-destructive ml-0.5">*</span>
+                  </FieldLabel>
+                  <Input
+                    id="receiverZipCode"
+                    type="text"
+                    required
+                    {...register("receiverZipCode")}
+                    placeholder="Enter zipcode"
+                    className={cn(
+                      "w-full bg-background/50",
+                      errors.receiverZipCode && "border-destructive focus-visible:ring-destructive",
+                    )}
+                  />
+                  <FieldError errors={[errors.receiverZipCode]} />
+                </Field>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  State / Region <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="receiverState"
-                  control={control}
-                  render={({ field }) => (
-                    <SearchableSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      options={stateOptions}
-                      placeholder="Select state"
-                      searchPlaceholder="Search state..."
-                      allowClear
-                      maxHeight="250px"
-                      serverSearch
-                      onSearchChange={setStateSearch}
-                      loading={statesFetching}
-                      className={cn(
-                        "bg-background/50",
-                        errors.receiverState && "border-destructive",
-                      )}
-                    />
-                  )}
-                />
-                {errors.receiverState && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.receiverState.message}</p>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <Field className="md:col-span-2">
+                  <FieldLabel
+                    htmlFor="receiverName"
+                    className="text-xs font-bold text-muted-foreground"
+                  >
+                    Receiver Name <span className="text-destructive ml-0.5">*</span>
+                  </FieldLabel>
+                  <Input
+                    id="receiverName"
+                    type="text"
+                    required
+                    {...register("receiverName")}
+                    placeholder="Enter receiver full name"
+                    className={cn(
+                      "w-full bg-background/50",
+                      errors.receiverName && "border-destructive focus-visible:ring-destructive",
+                    )}
+                  />
+                  <FieldError errors={[errors.receiverName]} />
+                </Field>
+
+                <Field>
+                  <FieldLabel
+                    htmlFor="receiverPhone"
+                    className="text-xs font-bold text-muted-foreground"
+                  >
+                    Phone Number
+                  </FieldLabel>
+                  <Input
+                    id="receiverPhone"
+                    type="text"
+                    {...register("receiverPhone")}
+                    placeholder="Enter receiver phone number"
+                    className={cn(
+                      "w-full bg-background/50",
+                      errors.receiverPhone && "border-destructive focus-visible:ring-destructive",
+                    )}
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel
+                    htmlFor="receiverEmail"
+                    className="text-xs font-bold text-muted-foreground"
+                  >
+                    Email
+                  </FieldLabel>
+                  <Input
+                    id="receiverEmail"
+                    type="email"
+                    {...register("receiverEmail")}
+                    placeholder="Enter receiver email"
+                    className={cn(
+                      "w-full bg-background/50",
+                      errors.receiverEmail && "border-destructive focus-visible:ring-destructive",
+                    )}
+                  />
+                  <FieldError errors={[errors.receiverEmail]} />
+                </Field>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  City <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="receiverCity"
-                  control={control}
-                  render={({ field }) => (
-                    <SearchableSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      options={cityOptions}
-                      placeholder="Select city"
-                      searchPlaceholder="Search city..."
-                      disabled={!selectedStateId}
-                      allowClear
-                      maxHeight="250px"
-                      serverSearch
-                      onSearchChange={setCitySearch}
-                      loading={citiesFetching}
-                      className={cn(
-                        "bg-background/50",
-                        errors.receiverCity && "border-destructive",
-                      )}
-                    />
-                  )}
+              <Field orientation="horizontal" className="items-center gap-2 mt-2">
+                <Checkbox
+                  id="save-receiver"
+                  checked={saveReceiverSetting}
+                  onCheckedChange={(c) => setSaveReceiverSetting(!!c)}
                 />
-                {errors.receiverCity && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.receiverCity.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="receiverZipCode"
-                  className="text-xs font-bold text-muted-foreground"
+                <FieldLabel
+                  htmlFor="save-receiver"
+                  className="text-xs font-bold text-muted-foreground cursor-pointer select-none"
                 >
-                  Postcode / Zipcode <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="receiverZipCode"
-                  type="text"
-                  required
-                  {...register("receiverZipCode")}
-                  placeholder="Enter zipcode"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverZipCode && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.receiverZipCode && (
-                  <p className="text-xs text-destructive mt-0.5">
-                    {errors.receiverZipCode.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="receiverName" className="text-xs font-bold text-muted-foreground">
-                  Receiver Name <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="receiverName"
-                  type="text"
-                  required
-                  {...register("receiverName")}
-                  placeholder="Enter receiver full name"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverName && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.receiverName && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.receiverName.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="receiverPhone" className="text-xs font-bold text-muted-foreground">
-                  Phone Number
-                </Label>
-                <Input
-                  id="receiverPhone"
-                  type="text"
-                  {...register("receiverPhone")}
-                  placeholder="Enter receiver phone number"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverPhone && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="receiverEmail" className="text-xs font-bold text-muted-foreground">
-                  Email
-                </Label>
-                <Input
-                  id="receiverEmail"
-                  type="email"
-                  {...register("receiverEmail")}
-                  placeholder="Enter receiver email"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverEmail && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.receiverEmail && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.receiverEmail.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 mt-2">
-              <Checkbox
-                id="save-receiver"
-                checked={saveReceiverSetting}
-                onCheckedChange={(c) => setSaveReceiverSetting(!!c)}
-              />
-              <label
-                htmlFor="save-receiver"
-                className="text-xs font-bold text-muted-foreground cursor-pointer select-none"
-              >
-                Save your setting for repeated use
-              </label>
-            </div>
+                  Save your setting for repeated use
+                </FieldLabel>
+              </Field>
+            </FieldGroup>
           </CardContent>
         </Card>
 
@@ -1716,11 +1414,11 @@ export default function CreateSingleOrderPage() {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex flex-col gap-1.5 md:col-span-3">
-                <Label className="text-xs font-bold text-muted-foreground">
+            <FieldGroup className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Field className="md:col-span-3">
+                <FieldLabel className="text-xs font-bold text-muted-foreground">
                   Type of Packaging <span className="text-destructive ml-0.5">*</span>
-                </Label>
+                </FieldLabel>
                 <Controller
                   name="packingTypeId"
                   control={control}
@@ -1776,15 +1474,13 @@ export default function CreateSingleOrderPage() {
                     );
                   }}
                 />
-                {errors.packingTypeId && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.packingTypeId.message}</p>
-                )}
-              </div>
+                <FieldError errors={[errors.packingTypeId]} />
+              </Field>
 
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label className="text-xs font-bold text-muted-foreground">
+              <Field className="md:col-span-2">
+                <FieldLabel className="text-xs font-bold text-muted-foreground">
                   Package Dimensions (cm) <span className="text-destructive ml-0.5">*</span>
-                </Label>
+                </FieldLabel>
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
@@ -1816,12 +1512,12 @@ export default function CreateSingleOrderPage() {
                     )}
                   />
                 </div>
-              </div>
+              </Field>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="weight" className="text-xs font-bold text-muted-foreground">
+              <Field>
+                <FieldLabel htmlFor="weight" className="text-xs font-bold text-muted-foreground">
                   Package Weight (gr) <span className="text-destructive ml-0.5">*</span>
-                </Label>
+                </FieldLabel>
                 <div className="flex gap-2">
                   <Input
                     id="weight"
@@ -1843,17 +1539,15 @@ export default function CreateSingleOrderPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                {errors.weight && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.weight.message}</p>
-                )}
-              </div>
+                <FieldError errors={[errors.weight]} />
+              </Field>
 
-              <div className="flex flex-col gap-1.5 md:col-span-3">
+              <Field className="md:col-span-3">
                 <div className="flex justify-between items-center text-xs font-bold">
-                  <Label htmlFor="packageName" className="text-muted-foreground">
+                  <FieldLabel htmlFor="packageName" className="text-muted-foreground">
                     Package Name <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <span className="text-cyan-600 dark:text-cyan-400">
+                  </FieldLabel>
+                  <span className="text-cyan-600 dark:text-cyan-400 font-medium">
                     Volume weight: {(liveVolumeWeight / 1000).toFixed(2)} kg ({liveVolumeWeight} gr)
                   </span>
                 </div>
@@ -1868,11 +1562,9 @@ export default function CreateSingleOrderPage() {
                     errors.packageName && "border-destructive focus-visible:ring-destructive",
                   )}
                 />
-                {errors.packageName && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.packageName.message}</p>
-                )}
-              </div>
-            </div>
+                <FieldError errors={[errors.packageName]} />
+              </Field>
+            </FieldGroup>
 
             <div className="flex items-center space-x-2 mt-2">
               <Checkbox
@@ -1923,167 +1615,154 @@ export default function CreateSingleOrderPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                      <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Details Description <span className="text-destructive ml-0.5">*</span>
-                        </Label>
-                        <Input
-                          type="text"
-                          required
-                          placeholder="Enter details description"
-                          {...register(`products.${index}.description` as const)}
-                          className={cn(
-                            "w-full bg-background/50",
-                            errors.products?.[index]?.description &&
-                              "border-destructive focus-visible:ring-destructive",
-                          )}
-                        />
-                        {errors.products?.[index]?.description && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.description?.message}
-                          </p>
-                        )}
+                    <FieldGroup>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <Field className="md:col-span-2">
+                          <FieldLabel className="text-xs font-bold text-muted-foreground">
+                            Details Description <span className="text-destructive ml-0.5">*</span>
+                          </FieldLabel>
+                          <Input
+                            type="text"
+                            required
+                            placeholder="Enter details description"
+                            {...register(`products.${index}.description` as const)}
+                            className={cn(
+                              "w-full bg-background/50",
+                              errors.products?.[index]?.description &&
+                                "border-destructive focus-visible:ring-destructive",
+                            )}
+                          />
+                          <FieldError errors={[errors.products?.[index]?.description]} />
+                        </Field>
+
+                        <Field>
+                          <FieldLabel className="text-xs font-bold text-muted-foreground">
+                            Quantity <span className="text-destructive ml-0.5">*</span>
+                          </FieldLabel>
+                          <Input
+                            type="number"
+                            required
+                            placeholder="Enter quantity"
+                            {...register(`products.${index}.quantity` as const)}
+                            className={cn(
+                              "w-full bg-background/50",
+                              errors.products?.[index]?.quantity &&
+                                "border-destructive focus-visible:ring-destructive",
+                            )}
+                          />
+                          <FieldError errors={[errors.products?.[index]?.quantity]} />
+                        </Field>
+
+                        <Field>
+                          <FieldLabel className="text-xs font-bold text-muted-foreground">
+                            Value <span className="text-destructive ml-0.5">*</span>
+                          </FieldLabel>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            required
+                            placeholder="Enter value"
+                            {...register(`products.${index}.value` as const)}
+                            className={cn(
+                              "w-full bg-background/50",
+                              errors.products?.[index]?.value &&
+                                "border-destructive focus-visible:ring-destructive",
+                            )}
+                          />
+                          <FieldError errors={[errors.products?.[index]?.value]} />
+                        </Field>
                       </div>
 
-                      <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Quantity <span className="text-destructive ml-0.5">*</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          required
-                          placeholder="Enter quantity"
-                          {...register(`products.${index}.quantity` as const)}
-                          className={cn(
-                            "w-full bg-background/50",
-                            errors.products?.[index]?.quantity &&
-                              "border-destructive focus-visible:ring-destructive",
-                          )}
-                        />
-                        {errors.products?.[index]?.quantity && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.quantity?.message}
-                          </p>
-                        )}
-                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <Field className="md:col-span-2">
+                          <FieldLabel className="text-xs font-bold text-muted-foreground">
+                            HS Code
+                          </FieldLabel>
+                          <div className="flex gap-2">
+                            <Controller
+                              name={prefixId}
+                              control={control}
+                              render={({ field: selectField }) => (
+                                <Select
+                                  value={selectField.value}
+                                  onValueChange={selectField.onChange}
+                                >
+                                  <SelectTrigger className="w-1/3 bg-background/50 border-input">
+                                    <SelectValue placeholder="US" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="US">US</SelectItem>
+                                    <SelectItem value="VN">VN</SelectItem>
+                                    <SelectItem value="CA">CA</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                            <Input
+                              type="text"
+                              placeholder="Enter HS code number"
+                              {...register(numberId)}
+                              className="w-2/3 bg-background/50"
+                            />
+                          </div>
+                        </Field>
 
-                      <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Value <span className="text-destructive ml-0.5">*</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          required
-                          placeholder="Enter value"
-                          {...register(`products.${index}.value` as const)}
-                          className={cn(
-                            "w-full bg-background/50",
-                            errors.products?.[index]?.value &&
-                              "border-destructive focus-visible:ring-destructive",
-                          )}
-                        />
-                        {errors.products?.[index]?.value && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.value?.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                      <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <Label className="text-xs font-bold text-muted-foreground">HS Code</Label>
-                        <div className="flex gap-2">
+                        <Field>
+                          <FieldLabel className="text-xs font-bold text-muted-foreground">
+                            Origin Country <span className="text-destructive ml-0.5">*</span>
+                          </FieldLabel>
                           <Controller
-                            name={prefixId}
+                            name={`products.${index}.originCountry` as const}
                             control={control}
                             render={({ field: selectField }) => (
                               <Select
                                 value={selectField.value}
                                 onValueChange={selectField.onChange}
                               >
-                                <SelectTrigger className="w-1/3 bg-background/50 border-input">
-                                  <SelectValue placeholder="US" />
+                                <SelectTrigger className="w-full bg-background/50 border-input">
+                                  <SelectValue placeholder="Select country" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="US">US</SelectItem>
-                                  <SelectItem value="VN">VN</SelectItem>
-                                  <SelectItem value="CA">CA</SelectItem>
+                                  <SelectItem value="VN">Vietnam</SelectItem>
+                                  <SelectItem value="CN">China</SelectItem>
+                                  <SelectItem value="US">United States</SelectItem>
+                                  <SelectItem value="JP">Japan</SelectItem>
+                                  <SelectItem value="KR">South Korea</SelectItem>
                                 </SelectContent>
                               </Select>
                             )}
                           />
+                          <FieldError errors={[errors.products?.[index]?.originCountry]} />
+                        </Field>
+
+                        <Field>
+                          <FieldLabel className="text-xs font-bold text-muted-foreground">
+                            Unit Weight (gr)
+                          </FieldLabel>
+                          <Input
+                            type="number"
+                            placeholder="Weight"
+                            {...register(`products.${index}.weight` as const)}
+                            className="w-full bg-background/50"
+                          />
+                          <FieldError errors={[errors.products?.[index]?.weight]} />
+                        </Field>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <Field className="md:col-span-2">
+                          <FieldLabel className="text-xs font-bold text-muted-foreground">
+                            SKU (Optional)
+                          </FieldLabel>
                           <Input
                             type="text"
-                            placeholder="Enter HS code number"
-                            {...register(numberId)}
-                            className="w-2/3 bg-background/50"
+                            placeholder="Enter SKU catalog code"
+                            {...register(`products.${index}.sku` as const)}
+                            className="w-full bg-background/50"
                           />
-                        </div>
+                        </Field>
                       </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Origin Country <span className="text-destructive ml-0.5">*</span>
-                        </Label>
-                        <Controller
-                          name={`products.${index}.originCountry` as const}
-                          control={control}
-                          render={({ field: selectField }) => (
-                            <Select value={selectField.value} onValueChange={selectField.onChange}>
-                              <SelectTrigger className="w-full bg-background/50 border-input">
-                                <SelectValue placeholder="Select country" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="VN">Vietnam</SelectItem>
-                                <SelectItem value="CN">China</SelectItem>
-                                <SelectItem value="US">United States</SelectItem>
-                                <SelectItem value="JP">Japan</SelectItem>
-                                <SelectItem value="KR">South Korea</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                        {errors.products?.[index]?.originCountry && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.originCountry?.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Unit Weight (gr)
-                        </Label>
-                        <Input
-                          type="number"
-                          placeholder="Weight"
-                          {...register(`products.${index}.weight` as const)}
-                          className="w-full bg-background/50"
-                        />
-                        {errors.products?.[index]?.weight && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.weight?.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                      <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          SKU (Optional)
-                        </Label>
-                        <Input
-                          type="text"
-                          placeholder="Enter SKU catalog code"
-                          {...register(`products.${index}.sku` as const)}
-                          className="w-full bg-background/50"
-                        />
-                      </div>
-                    </div>
+                    </FieldGroup>
                   </div>
                 );
               })}
