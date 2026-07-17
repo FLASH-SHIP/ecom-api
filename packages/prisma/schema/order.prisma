@@ -69,6 +69,7 @@ model Order {
   senderCountry String? @map("sender_country")
   senderState   String? @map("sender_state")
   senderCity    String? @map("sender_city")
+  senderWard           String?        @map("sender_ward")
   senderZipCode String? @map("sender_zip_code")
 
   // Recipient Details
@@ -90,6 +91,8 @@ model Order {
   dimensionWidth    Decimal? @map("dimension_width") @db.Decimal(10, 2)
   dimensionHeight   Decimal? @map("dimension_height") @db.Decimal(10, 2)
   declaredValue     Decimal  @map("declared_value") @db.Decimal(12, 2)
+  packingTypeId        Int?           @map("packing_type_id")
+  packingType          PackingType?   @relation(fields: [packingTypeId], references: [id], onDelete: SetNull)
   packagingCode     String?  @map("packaging_code")
 
   // Warehouse Measurements (populated during fulfillment)

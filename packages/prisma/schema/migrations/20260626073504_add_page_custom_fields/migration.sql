@@ -1,27 +1,18 @@
-/*
-  Warnings:
-
-  - The primary key for the `post_categories` table will be changed. If it partially fails, the table could be left without primary key constraint.
-  - The primary key for the `post_tags` table will be changed. If it partially fails, the table could be left without primary key constraint.
-  - A unique constraint covering the columns `[postId,categoryId]` on the table `post_categories` will be added. If there are existing duplicate values, this will fail.
-  - A unique constraint covering the columns `[postId,tagId]` on the table `post_tags` will be added. If there are existing duplicate values, this will fail.
-
-*/
 -- AlterTable
-ALTER TABLE "page_translations" ADD COLUMN     "ctaLink" TEXT,
-ADD COLUMN     "ctaText" TEXT,
+ALTER TABLE "page_translations" ADD COLUMN     "cta_link" TEXT,
+ADD COLUMN     "cta_text" TEXT,
 ADD COLUMN     "subtitle" TEXT;
 
 -- AlterTable
-ALTER TABLE "pages" ADD COLUMN     "bannerImage" TEXT,
-ADD COLUMN     "ctaLink" TEXT,
-ADD COLUMN     "ctaText" TEXT,
+ALTER TABLE "pages" ADD COLUMN     "banner_image" TEXT,
+ADD COLUMN     "cta_link" TEXT,
+ADD COLUMN     "cta_text" TEXT,
 ADD COLUMN     "gallery" JSONB,
-ADD COLUMN     "heroBanner" TEXT,
-ADD COLUMN     "hideBreadcrumb" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "hideFooter" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "hideSidebar" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "hideTitle" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "hero_banner" TEXT,
+ADD COLUMN     "hide_breadcrumb" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "hide_footer" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "hide_sidebar" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "hide_title" BOOLEAN NOT NULL DEFAULT false,
 ADD COLUMN     "layout" TEXT DEFAULT 'default',
 ADD COLUMN     "subtitle" TEXT;
 
@@ -36,11 +27,11 @@ ADD COLUMN     "id" SERIAL NOT NULL,
 ADD CONSTRAINT "post_tags_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "posts" ADD COLUMN     "externalSource" TEXT,
-ADD COLUMN     "sponsoredBy" TEXT;
+ALTER TABLE "posts" ADD COLUMN     "external_source" TEXT,
+ADD COLUMN     "sponsored_by" TEXT;
 
 -- CreateIndex
-CREATE UNIQUE INDEX "post_categories_postId_categoryId_key" ON "post_categories"("postId", "categoryId");
+CREATE UNIQUE INDEX "post_categories_post_id_category_id_key" ON "post_categories"("post_id", "category_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "post_tags_postId_tagId_key" ON "post_tags"("postId", "tagId");
+CREATE UNIQUE INDEX "post_tags_post_id_tag_id_key" ON "post_tags"("post_id", "tag_id");

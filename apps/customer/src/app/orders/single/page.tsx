@@ -4,24 +4,17 @@ import { trpc } from "@customer/lib/trpc";
 import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent } from "@ecom/ui/components/card";
 import { Checkbox } from "@ecom/ui/components/checkbox";
-import { Input } from "@ecom/ui/components/input";
-import { Label } from "@ecom/ui/components/label";
-import { SearchableSelect } from "@ecom/ui/components/searchable-select";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ecom/ui/components/select";
-import { cn } from "@ecom/ui/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
+import { BasicInfoSection } from "./BasicInfoSection";
+import { ItemListSection } from "./ItemListSection";
+import { PackageInfoSection } from "./PackageInfoSection";
+import { ReceiverSection } from "./ReceiverSection";
+import { SenderSection } from "./SenderSection";
 import { useOrderStore } from "./useOrderStore";
 
 const orderFormSchema = z.object({
@@ -43,7 +36,9 @@ const orderFormSchema = z.object({
   senderEmail: z.string().email("Email người gửi không hợp lệ.").or(z.literal("")),
   senderAddress: z.string().min(1, "Vui lòng nhập địa chỉ người gửi."),
   senderCity: z.string().min(1, "Vui lòng chọn tỉnh/thành phố người gửi."),
+  senderCityName: z.string().optional(),
   senderWard: z.string().optional(),
+  senderWardName: z.string().optional(),
   senderZipCode: z.string().min(1, "Vui lòng nhập mã zip người gửi."),
   senderCountry: z.string().min(1, "Vui lòng chọn quốc gia người gửi."),
 
@@ -54,12 +49,14 @@ const orderFormSchema = z.object({
   receiverAddress1: z.string().min(1, "Vui lòng nhập địa chỉ người nhận."),
   receiverAddress2: z.string().optional(),
   receiverCity: z.string().min(1, "Vui lòng nhập thành phố người nhận."),
+  receiverCityName: z.string().optional(),
   receiverState: z.string().min(1, "Vui lòng nhập bang/tỉnh người nhận."),
+  receiverStateName: z.string().optional(),
   receiverZipCode: z.string().min(1, "Vui lòng nhập mã zip người nhận."),
   receiverCountry: z.string().min(1, "Vui lòng chọn quốc gia người nhận."),
 
   // Package Info
-  packagingCode: z.string().min(1, "Vui lòng chọn loại đóng gói."),
+  packingTypeId: z.number({ message: "Vui lòng chọn loại đóng gói." }).int().positive(),
   length: z.string().optional(),
   width: z.string().optional(),
   height: z.string().optional(),
@@ -105,7 +102,7 @@ const orderFormSchema = z.object({
     .min(1, "Vui lòng khai báo ít nhất 1 sản phẩm."),
 });
 
-type OrderFormValues = z.infer<typeof orderFormSchema>;
+export type OrderFormValues = z.infer<typeof orderFormSchema>;
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: single order creation form complexity
 export default function CreateSingleOrderPage() {
@@ -134,6 +131,7 @@ export default function CreateSingleOrderPage() {
     watch,
     reset,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
@@ -148,7 +146,9 @@ export default function CreateSingleOrderPage() {
       senderEmail: "",
       senderAddress: "",
       senderCity: "",
+      senderCityName: "",
       senderWard: "",
+      senderWardName: "",
       senderZipCode: "",
       senderCountry: "VN",
       receiverName: "",
@@ -157,10 +157,12 @@ export default function CreateSingleOrderPage() {
       receiverAddress1: "",
       receiverAddress2: "",
       receiverCity: "",
+      receiverCityName: "",
       receiverState: "",
+      receiverStateName: "",
       receiverZipCode: "",
       receiverCountry: "US",
-      packagingCode: "cardboard_box",
+      packingTypeId: 0,
       length: "",
       width: "",
       height: "",
@@ -181,155 +183,23 @@ export default function CreateSingleOrderPage() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "products",
-  });
-  const { data: packingTypesData } = trpc.customer.orders.listPackingTypes.useQuery();
+  // Watch only necessary fields to prevent typing lag
+  const watchedProducts = watch("products");
 
-  useEffect(() => {
-    if (packingTypesData?.items && packingTypesData.items.length > 0) {
-      const currentVal = watch("packagingCode");
-      const exists = packingTypesData.items.some((item) => item.name === currentVal);
-      if (!exists) {
-        const matchedItem = packingTypesData.items.find(
-          (item) => item.name.toLowerCase().replace(/\s+/g, "_") === currentVal.toLowerCase(),
-        );
-        if (matchedItem) {
-          setValue("packagingCode", matchedItem.name);
-        } else {
-          setValue("packagingCode", packingTypesData.items[0]?.name ?? "");
-        }
-      }
-    }
-  }, [packingTypesData, setValue, watch]);
-  // Extract watched values for Step 2 and live calculations
-  const watched = watch();
-  const {
-    shippingMethod,
-    shippingOrigin,
-    detailDescription,
-    declaredValue,
-    sellerOrderId,
-    senderName,
-    senderPhone,
-    senderEmail,
-    senderAddress,
-    senderCity,
-    senderWard,
-    senderZipCode,
-    senderCountry,
-    receiverName,
-    receiverPhone,
-    receiverEmail,
-    receiverAddress1,
-    receiverAddress2,
-    receiverCity,
-    receiverState,
-    receiverZipCode,
-    receiverCountry,
-    packagingCode,
-    length,
-    width,
-    height,
-    weight,
-    packageName,
-    products,
-  } = watched;
-
-  // --- Sender: Provinces & Wards (server-side search) ---
-  const [provinceSearch, setProvinceSearch] = useState("");
-  const { data: provincesData, isFetching: provincesFetching } =
-    trpc.customer.divisions.listProvinces.useQuery(
-      { search: provinceSearch || undefined },
-      { placeholderData: (prev) => prev },
-    );
-
-  const provinceOptions = useMemo(
-    () => (provincesData ?? []).map((p) => ({ value: p.name, label: p.name })),
-    [provincesData],
-  );
-
-  const selectedProvinceCode = useMemo(() => {
-    if (!senderCity || !provincesData) return undefined;
-    const found = provincesData.find((p) => p.name === senderCity);
-    return found?.code;
-  }, [senderCity, provincesData]);
-
-  const [wardSearch, setWardSearch] = useState("");
-  const { data: wardsData, isFetching: wardsFetching } = trpc.customer.divisions.listWards.useQuery(
-    { provinceCode: selectedProvinceCode ?? 0, search: wardSearch || undefined },
-    { enabled: !!selectedProvinceCode, placeholderData: (prev) => prev },
-  );
-
-  const wardOptions = useMemo(
-    () => (wardsData ?? []).map((w) => ({ value: w.name, label: w.name })),
-    [wardsData],
-  );
-
-  // Reset ward when city changes
-  const prevSenderCityRef = useRef(senderCity);
-  useEffect(() => {
-    if (prevSenderCityRef.current !== senderCity) {
-      setValue("senderWard", "");
-      prevSenderCityRef.current = senderCity;
-    }
-  }, [senderCity, setValue]);
-
-  // --- Receiver: States & Cities (server-side search) ---
-  const [stateSearch, setStateSearch] = useState("");
-  const { data: statesData, isFetching: statesFetching } =
-    trpc.customer.divisions.listStates.useQuery(
-      { search: stateSearch || undefined },
-      { placeholderData: (prev) => prev },
-    );
-
-  const stateOptions = useMemo(
-    () => (statesData ?? []).map((s) => ({ value: s.name, label: s.name })),
-    [statesData],
-  );
-
-  const selectedStateId = useMemo(() => {
-    if (!receiverState || !statesData) return undefined;
-    const found = statesData.find((s) => s.name === receiverState);
-    return found?.id;
-  }, [receiverState, statesData]);
-
-  const [citySearch, setCitySearch] = useState("");
-  const { data: citiesData, isFetching: citiesFetching } =
-    trpc.customer.divisions.listCities.useQuery(
-      { parentId: selectedStateId ?? 0, search: citySearch || undefined },
-      { enabled: !!selectedStateId, placeholderData: (prev) => prev },
-    );
-
-  const cityOptions = useMemo(
-    () => (citiesData ?? []).map((c) => ({ value: c.name, label: c.name })),
-    [citiesData],
-  );
-
-  // Reset city when state changes
-  const prevReceiverStateRef = useRef(receiverState);
-  useEffect(() => {
-    if (prevReceiverStateRef.current !== receiverState) {
-      setValue("receiverCity", "");
-      prevReceiverStateRef.current = receiverState;
-    }
-  }, [receiverState, setValue]);
-
-  const productsString = JSON.stringify(products);
+  const productsString = JSON.stringify(watchedProducts);
 
   // Sync declaredValue, detailDescription, and hsCode automatically when products change
   // biome-ignore lint/correctness/useExhaustiveDependencies: use productsString for deep change tracking
   useEffect(() => {
-    if (!products) return;
-    const totalVal = products.reduce((sum, p) => {
+    if (!watchedProducts) return;
+    const totalVal = watchedProducts.reduce((sum, p) => {
       const q = Number(p.quantity) || 0;
       const v = Number(p.value) || 0;
       return sum + q * v;
     }, 0);
     setValue("declaredValue", totalVal > 0 ? totalVal.toFixed(2) : "", { shouldValidate: true });
 
-    const desc = products
+    const desc = watchedProducts
       .filter((p) => p.description && p.description.trim() !== "")
       .map((p) => `${p.description.trim()} (x${p.quantity})`)
       .join(", ");
@@ -342,22 +212,57 @@ export default function CreateSingleOrderPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const [saveSenderSetting, setSaveSenderSetting] = useState(false);
+  const [_saveSenderSetting, setSaveSenderSetting] = useState(false);
+  const [selectedSenderId, setSelectedSenderId] = useState<number | null>(null);
   const [saveReceiverSetting, setSaveReceiverSetting] = useState(false);
+  const [selectedReceiverId, setSelectedReceiverId] = useState<number | null>(null);
   const [savePackageSetting, setSavePackageSetting] = useState(false);
 
+  // Called by SenderSection when a sender is selected or created
+  const handleSenderSelected = useCallback(
+    (sender: {
+      id: number;
+      name: string;
+      phone: string | null;
+      email: string | null;
+      address: string;
+      city: string;
+      cityName?: string | null;
+      ward: string | null;
+      wardName?: string | null;
+      zipCode: string | null;
+      country: string | null;
+      isDefault: boolean;
+    }) => {
+      setSelectedSenderId(sender.id);
+      setValue("senderName", sender.name);
+      setValue("senderPhone", sender.phone ?? "");
+      setValue("senderEmail", sender.email ?? "");
+      setValue("senderAddress", sender.address);
+      setValue("senderCity", sender.city);
+      setValue("senderCityName", sender.cityName ?? sender.city);
+      setValue("senderWard", sender.ward ?? "");
+      setValue("senderWardName", sender.wardName ?? sender.ward ?? "");
+      setValue("senderZipCode", sender.zipCode ?? "");
+      setValue("senderCountry", sender.country ?? "VN");
+      setSaveSenderSetting(true);
+    },
+    [setValue],
+  );
+
+  const trpcUtils = trpc.useUtils();
+
+  // Saved receivers from DB
+  const { data: savedReceivers = [] } = trpc.customer.receivers.list.useQuery();
+  const createReceiverMutation = trpc.customer.receivers.create.useMutation();
+  const updateReceiverMutation = trpc.customer.receivers.update.useMutation();
+
+  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
+
+  // Saved packages from DB
+  const { data: savedPackages = [] } = trpc.customer.packages.list.useQuery();
+
   const [isGetLabel, setIsGetLabel] = useState(false);
-
-  // Live volume weight calculation (gr)
-  const [liveVolumeWeight, setLiveVolumeWeight] = useState(0);
-
-  useEffect(() => {
-    const l = Number(length) || 0;
-    const w = Number(width) || 0;
-    const h = Number(height) || 0;
-    const computedGrams = Math.round((l * w * h) / 5);
-    setLiveVolumeWeight(computedGrams);
-  }, [length, width, height]);
 
   // Set hydration status
   useEffect(() => {
@@ -380,22 +285,30 @@ export default function CreateSingleOrderPage() {
           }
         } else {
           // Prefill from localStorage defaults if no draft session exists
-          const defaultSender = localStorage.getItem("default_sender_info");
           const defaultReceiver = localStorage.getItem("default_receiver_info");
           const defaultPackage = localStorage.getItem("default_package_info");
           const newDefaults = JSON.parse(storeValuesString);
 
-          if (defaultSender) {
-            try {
-              const senderObj = JSON.parse(defaultSender);
-              Object.assign(newDefaults, senderObj);
-              setSaveSenderSetting(true);
-            } catch (e) {
-              console.error("Failed to parse default sender info", e);
-            }
-          }
+          // Auto-fill from default saved sender is handled by SenderSection
 
-          if (defaultReceiver) {
+          // Auto-fill from default saved receiver (DB)
+          const defaultReceiverDb = savedReceivers.find((r) => r.isDefault);
+          if (defaultReceiverDb) {
+            Object.assign(newDefaults, {
+              receiverName: defaultReceiverDb.name,
+              receiverPhone: defaultReceiverDb.phone ?? "",
+              receiverEmail: defaultReceiverDb.email ?? "",
+              receiverAddress1: defaultReceiverDb.address1,
+              receiverAddress2: defaultReceiverDb.address2 ?? "",
+              receiverCity: defaultReceiverDb.city,
+              receiverState: defaultReceiverDb.state,
+              receiverZipCode: defaultReceiverDb.zipCode,
+              receiverCountry: defaultReceiverDb.country ?? "US",
+            });
+            setSelectedReceiverId(defaultReceiverDb.id);
+            setSaveReceiverSetting(true);
+          } else if (defaultReceiver) {
+            // Fallback: migrate from localStorage (one-time)
             try {
               const receiverObj = JSON.parse(defaultReceiver);
               Object.assign(newDefaults, receiverObj);
@@ -405,7 +318,21 @@ export default function CreateSingleOrderPage() {
             }
           }
 
-          if (defaultPackage) {
+          // Auto-fill from default saved package (DB)
+          const defaultPackageDb = savedPackages.find((p) => p.isDefault);
+          if (defaultPackageDb) {
+            Object.assign(newDefaults, {
+              packageName: defaultPackageDb.packageName,
+              packingTypeId: defaultPackageDb.packingTypeId,
+              length: defaultPackageDb.length !== null ? String(defaultPackageDb.length) : "",
+              width: defaultPackageDb.width !== null ? String(defaultPackageDb.width) : "",
+              height: defaultPackageDb.height !== null ? String(defaultPackageDb.height) : "",
+              weight: String(defaultPackageDb.weight),
+            });
+            setSelectedPackageId(defaultPackageDb.id);
+            setSavePackageSetting(true);
+          } else if (defaultPackage) {
+            // Fallback: migrate from localStorage (one-time)
             try {
               const packageObj = JSON.parse(defaultPackage);
               Object.assign(newDefaults, packageObj);
@@ -423,34 +350,35 @@ export default function CreateSingleOrderPage() {
       setValue("senderCountry", "VN");
       setValue("receiverCountry", "US");
     }
-  }, [isHydrated, reset, storeValuesString, setValue]);
-
-  // Save draft to Zustand store on field change
-  const watchedString = JSON.stringify(watched);
-  useEffect(() => {
-    if (isHydrated && isRestored.current) {
-      try {
-        const parsed = JSON.parse(watchedString);
-        setValues(parsed);
-      } catch (e) {
-        console.error("Failed to parse watched values", e);
-      }
-    }
-  }, [watchedString, isHydrated, setValues]);
+  }, [isHydrated, reset, storeValuesString, setValue, savedReceivers, savedPackages]);
 
   // handle step 1 "Get Rates"
   const handleGetRates = async () => {
     setError(null);
     setLoading(true);
+
+    const formValues = getValues();
+
+    // Save draft to Zustand store (persisted to sessionStorage) only on Get Rates
+    setValues({
+      ...formValues,
+      products: formValues.products.map((p: OrderFormValues["products"][number]) => ({
+        ...p,
+        hsCodeNumber: p.hsCodeNumber ?? "",
+        weight: p.weight ?? "",
+        sku: p.sku ?? "",
+      })),
+    });
+
     try {
       const res = await trpcContext.client.customer.orders.calculateFreight.query({
-        shippingMethod,
-        country: receiverCountry,
-        declaredWeight: Number(weight),
-        dimensionLength: length ? Number(length) : null,
-        dimensionWidth: width ? Number(width) : null,
-        dimensionHeight: height ? Number(height) : null,
-        origin: shippingOrigin,
+        shippingMethod: formValues.shippingMethod,
+        country: formValues.receiverCountry,
+        declaredWeight: Number(formValues.weight),
+        dimensionLength: formValues.length ? Number(formValues.length) : null,
+        dimensionWidth: formValues.width ? Number(formValues.width) : null,
+        dimensionHeight: formValues.height ? Number(formValues.height) : null,
+        origin: formValues.shippingOrigin,
       });
 
       setPricing({
@@ -476,113 +404,160 @@ export default function CreateSingleOrderPage() {
   };
 
   // create order mutation
-  const createOrderMutation = trpc.customer.orders.create.useMutation({
-    onSuccess: () => {
-      // Save or remove defaults based on checkbox states
-      if (typeof window !== "undefined") {
-        if (saveSenderSetting) {
-          const senderInfo = {
-            senderName,
-            senderPhone,
-            senderEmail,
-            senderAddress,
-            senderCity,
-            senderWard,
-            senderZipCode,
-            senderCountry,
-          };
-          localStorage.setItem("default_sender_info", JSON.stringify(senderInfo));
-        } else {
-          localStorage.removeItem("default_sender_info");
-        }
+  const createOrderMutation = trpc.customer.orders.create.useMutation();
 
-        if (saveReceiverSetting) {
-          const receiverInfo = {
-            receiverName,
-            receiverPhone,
-            receiverEmail,
-            receiverAddress1,
-            receiverAddress2,
-            receiverCity,
-            receiverState,
-            receiverZipCode,
-            receiverCountry,
-          };
-          localStorage.setItem("default_receiver_info", JSON.stringify(receiverInfo));
-        } else {
-          localStorage.removeItem("default_receiver_info");
-        }
-
-        if (savePackageSetting) {
-          const packageInfo = {
-            packagingCode,
-            length,
-            width,
-            height,
-            weight,
-            packageName,
-          };
-          localStorage.setItem("default_package_info", JSON.stringify(packageInfo));
-        } else {
-          localStorage.removeItem("default_package_info");
-        }
-      }
-
-      clearStore();
-      // Refresh context cache and navigate back to list
-      trpcContext.customer.orders.list.invalidate();
-      router.push("/orders");
-    },
-    onError: (err) => {
-      triggerError(err.message || "Tạo đơn hàng thất bại. Vui lòng thử lại.");
-    },
-  });
-
-  const handleCreateOrder = () => {
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: single order creation logic complexity
+  const handleCreateOrder = async () => {
     setError(null);
-    createOrderMutation.mutate({
+    setLoading(true);
+
+    const formValues = getValues();
+    const {
       shippingMethod,
       shippingOrigin,
-      sellerOrderId: sellerOrderId || null,
-      importId: null,
-
+      sellerOrderId,
       senderName,
       senderAddress,
       senderPhone,
       senderEmail,
       senderCountry,
-      senderState: "",
       senderCity,
+      senderCityName,
+      senderWard,
+      senderWardName,
       senderZipCode,
-
       receiverName,
-      receiverPhone: receiverPhone || null,
+      receiverPhone,
       receiverEmail,
       receiverCity,
+      receiverCityName,
       receiverState,
+      receiverStateName,
       receiverAddress1,
-      receiverAddress2: receiverAddress2 || null,
+      receiverAddress2,
       receiverCountry,
       receiverZipCode,
-
       detailDescription,
-      declaredWeight: Number(weight),
-      dimensionLength: length ? Number(length) : null,
-      dimensionWidth: width ? Number(width) : null,
-      dimensionHeight: height ? Number(height) : null,
-      declaredValue: Number(declaredValue),
-      packagingCode,
-      isGetLabel: isGetLabel ? 1 : 0,
-      products: products.map((p) => ({
-        description: p.description,
-        quantity: Number(p.quantity),
-        value: Number(p.value),
-        hsCode: p.hsCodeNumber ? `${p.hsCodePrefix}-${p.hsCodeNumber}` : null,
-        originCountry: p.originCountry || null,
-        weight: p.weight ? Number(p.weight) : null,
-        sku: p.sku || null,
-      })),
-    });
+      weight,
+      length,
+      width,
+      height,
+      declaredValue,
+      packingTypeId,
+      products,
+    } = formValues;
+
+    try {
+      await createOrderMutation.mutateAsync({
+        shippingMethod,
+        shippingOrigin,
+        sellerOrderId: sellerOrderId || null,
+        importId: null,
+
+        senderName,
+        senderAddress,
+        senderPhone,
+        senderEmail,
+        senderCountry,
+        senderState: "",
+        senderCity: senderCityName || senderCity || null,
+        senderWard: senderWardName || senderWard || null,
+        senderZipCode,
+
+        receiverName,
+        receiverPhone: receiverPhone || null,
+        receiverEmail,
+        receiverCity: receiverCityName || receiverCity,
+        receiverState: receiverStateName || receiverState,
+        receiverAddress1,
+        receiverAddress2: receiverAddress2 || null,
+        receiverCountry,
+        receiverZipCode,
+
+        detailDescription,
+        declaredWeight: Number(weight),
+        dimensionLength: length ? Number(length) : null,
+        dimensionWidth: width ? Number(width) : null,
+        dimensionHeight: height ? Number(height) : null,
+        declaredValue: Number(declaredValue),
+        packingTypeId: packingTypeId || null,
+        isGetLabel: isGetLabel ? 1 : 0,
+        products: products.map((p: OrderFormValues["products"][number]) => ({
+          description: p.description,
+          quantity: Number(p.quantity),
+          value: Number(p.value),
+          hsCode: p.hsCodeNumber ? `${p.hsCodePrefix}-${p.hsCodeNumber}` : null,
+          originCountry: p.originCountry || null,
+          weight: p.weight ? Number(p.weight) : null,
+          sku: p.sku || null,
+        })),
+      });
+
+      const promises: Promise<unknown>[] = [];
+
+      // Save sender to DB if checkbox is ticked
+      // Sender is always already saved to DB via SenderSection — skip here
+
+      // Save receiver to DB if checkbox is ticked
+      console.log("saveReceiverSetting state value in handleCreateOrder:", saveReceiverSetting);
+      if (saveReceiverSetting) {
+        const receiverPayload = {
+          name: receiverName,
+          phone: receiverPhone || null,
+          email: receiverEmail || null,
+          address1: receiverAddress1,
+          address2: receiverAddress2 || null,
+          city: receiverCity,
+          state: receiverState,
+          zipCode: receiverZipCode,
+          country: receiverCountry || "US",
+        };
+        console.log("receiverPayload constructed:", receiverPayload);
+        if (selectedReceiverId) {
+          console.log("Updating receiver settings for id:", selectedReceiverId);
+          promises.push(
+            updateReceiverMutation.mutateAsync({ id: selectedReceiverId, data: receiverPayload }),
+          );
+        } else {
+          console.log("Creating new receiver settings");
+          promises.push(
+            createReceiverMutation.mutateAsync({ ...receiverPayload, isDefault: false }),
+          );
+        }
+      }
+
+      if (promises.length > 0) {
+        try {
+          console.log("Waiting for settings save promises:", promises.length);
+          const results = await Promise.all(promises);
+          console.log("Settings save results:", results);
+          // Invalidate list queries
+          await Promise.all([
+            trpcUtils.customer.senders.list.invalidate(),
+            trpcUtils.customer.receivers.list.invalidate(),
+            trpcUtils.customer.packages.list.invalidate(),
+          ]);
+        } catch (e) {
+          console.error("Failed to save settings:", e);
+        }
+      }
+
+      if (typeof window !== "undefined") {
+        // Clear legacy package settings from localStorage
+        localStorage.removeItem("default_package_info");
+      }
+
+      clearStore();
+      toast("Created order successfully", "success");
+      // Refresh context cache and navigate back to list
+      trpcContext.customer.orders.list.invalidate();
+      router.push("/orders");
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      triggerError(errMsg || "Tạo đơn hàng thất bại. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isHydrated) {
@@ -594,6 +569,46 @@ export default function CreateSingleOrderPage() {
   }
 
   if (step === 2 && pricing) {
+    // Read details from storeValues in Step 2 to avoid watching them during Step 1 typing
+    const {
+      senderName,
+      senderCity,
+      senderCityName,
+      senderWard,
+      senderWardName,
+      senderCountry,
+      senderAddress,
+      senderZipCode,
+      senderPhone,
+      senderEmail,
+      shippingOrigin,
+      shippingMethod,
+      sellerOrderId,
+      detailDescription,
+      declaredValue,
+      length,
+      width,
+      height,
+      weight,
+      products,
+      receiverName,
+      receiverCity,
+      receiverCityName,
+      receiverState,
+      receiverStateName,
+      receiverCountry,
+      receiverAddress1,
+      receiverAddress2,
+      receiverZipCode,
+      receiverPhone,
+      receiverEmail,
+    } = storeValues;
+
+    const displayReceiverCity = receiverCityName || receiverCity;
+    const displayReceiverState = receiverStateName || receiverState;
+    const displaySenderCity = senderCityName || senderCity;
+    const displaySenderWard = senderWardName || senderWard;
+
     // Render Step 2: Review & Payment
     return (
       <div className="flex flex-col gap-6 w-full pb-10">
@@ -623,7 +638,7 @@ export default function CreateSingleOrderPage() {
 
                     <div className="text-muted-foreground">City/State/Country</div>
                     <div className="col-span-2 font-medium text-foreground">
-                      {receiverCity}, {receiverState}, {receiverCountry}
+                      {displayReceiverCity}, {displayReceiverState}, {receiverCountry}
                     </div>
 
                     <div className="text-muted-foreground">Address 1</div>
@@ -664,10 +679,10 @@ export default function CreateSingleOrderPage() {
                     <div className="text-muted-foreground">Sender Name</div>
                     <div className="col-span-2 font-medium text-foreground">{senderName}</div>
 
-                    <div className="text-muted-foreground">City/Ward/Country</div>
+                    <div className="text-muted-foreground">Ward/City/Country</div>
                     <div className="col-span-2 font-medium text-foreground">
-                      {senderCity}
-                      {senderWard ? `, ${senderWard}` : ""}, {senderCountry}
+                      {displaySenderWard}
+                      {displaySenderCity ? `, ${displaySenderCity}` : ""}, {senderCountry}
                     </div>
 
                     <div className="text-muted-foreground">Address</div>
@@ -903,955 +918,54 @@ export default function CreateSingleOrderPage() {
 
       <form onSubmit={handleSubmit(handleGetRates, onInvalid)} className="flex flex-col gap-6">
         {/* Basic Info */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Basic Info
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Shipping Origin */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Shipping Origin <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="shippingOrigin"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.shippingOrigin && "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select shipping origin" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="HAN">HAN (Hà Nội)</SelectItem>
-                        <SelectItem value="SGN">SGN (TP. HCM)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.shippingOrigin && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.shippingOrigin.message}</p>
-                )}
-              </div>
-
-              {/* Shipping Method */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Shipping Method <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="shippingMethod"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.shippingMethod && "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select shipping method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EPACKET">ePacket</SelectItem>
-                        <SelectItem value="EXPRESS">Express</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.shippingMethod && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.shippingMethod.message}</p>
-                )}
-              </div>
-
-              {/* Order ID */}
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="sellerOrderId" className="text-xs font-bold text-muted-foreground">
-                  Order ID (Optional Reference)
-                </Label>
-                <Input
-                  id="sellerOrderId"
-                  type="text"
-                  {...register("sellerOrderId")}
-                  placeholder="Enter order id reference"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.sellerOrderId && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-              </div>
-
-              {/* Hidden inputs for auto-calculated values to ensure React Hook Form tracks and validates them */}
-              <input type="hidden" {...register("detailDescription")} />
-              <input type="hidden" {...register("declaredValue")} />
-            </div>
-          </CardContent>
-        </Card>
+        <BasicInfoSection control={control} register={register} errors={errors} />
 
         {/* Sender Info */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Sender
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Row 1: Address (2/3) + Country (1/3) */}
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="senderAddress" className="text-xs font-bold text-muted-foreground">
-                  Address <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="senderAddress"
-                  type="text"
-                  required
-                  {...register("senderAddress")}
-                  placeholder="Enter sender street address"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderAddress && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderAddress && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderAddress.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Country <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="senderCountry"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.senderCountry && "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="VN">Vietnam</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.senderCountry && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderCountry.message}</p>
-                )}
-              </div>
-
-              {/* Row 2: City/Province select + Ward select */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  City / Province <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="senderCity"
-                  control={control}
-                  render={({ field }) => (
-                    <SearchableSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      options={provinceOptions}
-                      placeholder="Select city / province"
-                      searchPlaceholder="Search province..."
-                      allowClear
-                      maxHeight="250px"
-                      serverSearch
-                      onSearchChange={setProvinceSearch}
-                      loading={provincesFetching}
-                      className={cn("bg-background/50", errors.senderCity && "border-destructive")}
-                    />
-                  )}
-                />
-                {errors.senderCity && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderCity.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Ward <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="senderWard"
-                  control={control}
-                  render={({ field }) => (
-                    <SearchableSelect
-                      value={field.value ?? ""}
-                      onValueChange={field.onChange}
-                      options={wardOptions}
-                      placeholder="Select ward"
-                      searchPlaceholder="Search ward..."
-                      disabled={!selectedProvinceCode}
-                      allowClear
-                      maxHeight="250px"
-                      serverSearch
-                      onSearchChange={setWardSearch}
-                      loading={wardsFetching}
-                      className="bg-background/50"
-                    />
-                  )}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="senderZipCode" className="text-xs font-bold text-muted-foreground">
-                  Postcode / Zipcode <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="senderZipCode"
-                  type="text"
-                  required
-                  {...register("senderZipCode")}
-                  placeholder="Enter zipcode"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderZipCode && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderZipCode && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderZipCode.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="senderName" className="text-xs font-bold text-muted-foreground">
-                  Sender Name <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="senderName"
-                  type="text"
-                  required
-                  {...register("senderName")}
-                  placeholder="Enter sender name"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderName && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderName && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderName.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="senderPhone" className="text-xs font-bold text-muted-foreground">
-                  Phone Number <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="senderPhone"
-                  type="text"
-                  required
-                  {...register("senderPhone")}
-                  placeholder="Enter sender phone number"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderPhone && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderPhone && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderPhone.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="senderEmail" className="text-xs font-bold text-muted-foreground">
-                  Email
-                </Label>
-                <Input
-                  id="senderEmail"
-                  type="email"
-                  {...register("senderEmail")}
-                  placeholder="Enter sender email"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.senderEmail && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.senderEmail && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.senderEmail.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 mt-2">
-              <Checkbox
-                id="save-sender"
-                checked={saveSenderSetting}
-                onCheckedChange={(c) => setSaveSenderSetting(!!c)}
-              />
-              <label
-                htmlFor="save-sender"
-                className="text-xs font-bold text-muted-foreground cursor-pointer select-none"
-              >
-                Save your setting for repeated use
-              </label>
-            </div>
-          </CardContent>
-        </Card>
+        <SenderSection
+          selectedSenderId={selectedSenderId}
+          onSenderSelected={handleSenderSelected}
+        />
 
         {/* Receiver Info */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Receiver
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="receiverAddress1"
-                  className="text-xs font-bold text-muted-foreground"
-                >
-                  Address 1 <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="receiverAddress1"
-                  type="text"
-                  required
-                  {...register("receiverAddress1")}
-                  placeholder="Enter receiver street address 1"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverAddress1 && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.receiverAddress1 && (
-                  <p className="text-xs text-destructive mt-0.5">
-                    {errors.receiverAddress1.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="receiverAddress2"
-                  className="text-xs font-bold text-muted-foreground"
-                >
-                  Address 2 (Optional)
-                </Label>
-                <Input
-                  id="receiverAddress2"
-                  type="text"
-                  {...register("receiverAddress2")}
-                  placeholder="Apt, Suite, Unit, etc."
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverAddress2 && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Country <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="receiverCountry"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errors.receiverCountry && "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="US">United States</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.receiverCountry && (
-                  <p className="text-xs text-destructive mt-0.5">
-                    {errors.receiverCountry.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="receiverZipCode"
-                  className="text-xs font-bold text-muted-foreground"
-                >
-                  Postcode / Zipcode <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="receiverZipCode"
-                  type="text"
-                  required
-                  {...register("receiverZipCode")}
-                  placeholder="Enter zipcode"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverZipCode && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.receiverZipCode && (
-                  <p className="text-xs text-destructive mt-0.5">
-                    {errors.receiverZipCode.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  State / Region <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="receiverState"
-                  control={control}
-                  render={({ field }) => (
-                    <SearchableSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      options={stateOptions}
-                      placeholder="Select state"
-                      searchPlaceholder="Search state..."
-                      allowClear
-                      maxHeight="250px"
-                      serverSearch
-                      onSearchChange={setStateSearch}
-                      loading={statesFetching}
-                      className={cn(
-                        "bg-background/50",
-                        errors.receiverState && "border-destructive",
-                      )}
-                    />
-                  )}
-                />
-                {errors.receiverState && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.receiverState.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  City <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="receiverCity"
-                  control={control}
-                  render={({ field }) => (
-                    <SearchableSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      options={cityOptions}
-                      placeholder="Select city"
-                      searchPlaceholder="Search city..."
-                      disabled={!selectedStateId}
-                      allowClear
-                      maxHeight="250px"
-                      serverSearch
-                      onSearchChange={setCitySearch}
-                      loading={citiesFetching}
-                      className={cn(
-                        "bg-background/50",
-                        errors.receiverCity && "border-destructive",
-                      )}
-                    />
-                  )}
-                />
-                {errors.receiverCity && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.receiverCity.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label htmlFor="receiverName" className="text-xs font-bold text-muted-foreground">
-                  Receiver Name <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Input
-                  id="receiverName"
-                  type="text"
-                  required
-                  {...register("receiverName")}
-                  placeholder="Enter receiver full name"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverName && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.receiverName && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.receiverName.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="receiverPhone" className="text-xs font-bold text-muted-foreground">
-                  Phone Number
-                </Label>
-                <Input
-                  id="receiverPhone"
-                  type="text"
-                  {...register("receiverPhone")}
-                  placeholder="Enter receiver phone number"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverPhone && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="receiverEmail" className="text-xs font-bold text-muted-foreground">
-                  Email
-                </Label>
-                <Input
-                  id="receiverEmail"
-                  type="email"
-                  {...register("receiverEmail")}
-                  placeholder="Enter receiver email"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.receiverEmail && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.receiverEmail && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.receiverEmail.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 mt-2">
-              <Checkbox
-                id="save-receiver"
-                checked={saveReceiverSetting}
-                onCheckedChange={(c) => setSaveReceiverSetting(!!c)}
-              />
-              <label
-                htmlFor="save-receiver"
-                className="text-xs font-bold text-muted-foreground cursor-pointer select-none"
-              >
-                Save your setting for repeated use
-              </label>
-            </div>
-          </CardContent>
-        </Card>
+        <ReceiverSection
+          control={control}
+          register={register}
+          errors={errors}
+          setValue={setValue}
+          watch={watch}
+          saveReceiverSetting={saveReceiverSetting}
+          setSaveReceiverSetting={setSaveReceiverSetting}
+          selectedReceiverId={selectedReceiverId}
+          setSelectedReceiverId={setSelectedReceiverId}
+          savedReceivers={savedReceivers}
+        />
 
         {/* Package Info */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Package Info
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex flex-col gap-1.5 md:col-span-3">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Type of Packaging <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <Controller
-                  name="packagingCode"
-                  control={control}
-                  render={({ field }) => {
-                    const selectedPt = packingTypesData?.items.find(
-                      (item) => item.name === field.value,
-                    );
-                    return (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger
-                          className={cn(
-                            "w-full bg-background/50 border-input h-[52px]",
-                            errors.packagingCode && "border-destructive focus:ring-destructive",
-                          )}
-                        >
-                          {selectedPt ? (
-                            <div className="flex items-center gap-3">
-                              {selectedPt.image && (
-                                // biome-ignore lint/performance/noImgElement: dynamic svg/png package image
-                                <img
-                                  src={selectedPt.image}
-                                  alt={selectedPt.name}
-                                  className="h-9 w-9 object-contain"
-                                />
-                              )}
-                              <span className="text-sm">{selectedPt.name}</span>
-                            </div>
-                          ) : (
-                            <SelectValue placeholder="Select type of packaging" />
-                          )}
-                        </SelectTrigger>
-                        <SelectContent>
-                          {packingTypesData?.items.map((pt) => (
-                            <SelectItem key={pt.name} value={pt.name}>
-                              <div className="flex items-center gap-3 py-0.5">
-                                {pt.image && (
-                                  // biome-ignore lint/performance/noImgElement: dynamic svg/png package image
-                                  <img
-                                    src={pt.image}
-                                    alt={pt.name}
-                                    className="h-9 w-9 object-contain"
-                                  />
-                                )}
-                                <span className="text-sm">{pt.name}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    );
-                  }}
-                />
-                {errors.packagingCode && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.packagingCode.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <Label className="text-xs font-bold text-muted-foreground">
-                  Package Dimensions (cm) <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Length"
-                    {...register("length")}
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.length && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <span className="text-muted-foreground">×</span>
-                  <Input
-                    type="number"
-                    placeholder="Width"
-                    {...register("width")}
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.width && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <span className="text-muted-foreground">×</span>
-                  <Input
-                    type="number"
-                    placeholder="Height"
-                    {...register("height")}
-                    className={cn(
-                      "w-full bg-background/50",
-                      errors.height && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="weight" className="text-xs font-bold text-muted-foreground">
-                  Package Weight (gr) <span className="text-destructive ml-0.5">*</span>
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="weight"
-                    type="number"
-                    required
-                    placeholder="0.00"
-                    {...register("weight")}
-                    className={cn(
-                      "w-2/3 bg-background/50",
-                      errors.weight && "border-destructive focus-visible:ring-destructive",
-                    )}
-                  />
-                  <Select defaultValue="gram">
-                    <SelectTrigger className="w-1/3 bg-background/50 border-input">
-                      <SelectValue placeholder="Unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gram">Gram</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {errors.weight && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.weight.message}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5 md:col-span-3">
-                <div className="flex justify-between items-center text-xs font-bold">
-                  <Label htmlFor="packageName" className="text-muted-foreground">
-                    Package Name <span className="text-destructive ml-0.5">*</span>
-                  </Label>
-                  <span className="text-cyan-600 dark:text-cyan-400">
-                    Volume weight: {(liveVolumeWeight / 1000).toFixed(2)} kg ({liveVolumeWeight} gr)
-                  </span>
-                </div>
-                <Input
-                  id="packageName"
-                  type="text"
-                  required
-                  placeholder="Enter package name"
-                  {...register("packageName")}
-                  className={cn(
-                    "w-full bg-background/50",
-                    errors.packageName && "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
-                {errors.packageName && (
-                  <p className="text-xs text-destructive mt-0.5">{errors.packageName.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 mt-2">
-              <Checkbox
-                id="save-package"
-                checked={savePackageSetting}
-                onCheckedChange={(c) => setSavePackageSetting(!!c)}
-              />
-              <label
-                htmlFor="save-package"
-                className="text-xs font-bold text-muted-foreground cursor-pointer select-none"
-              >
-                Save your setting for repeated use
-              </label>
-            </div>
-          </CardContent>
-        </Card>
+        <PackageInfoSection
+          control={control}
+          register={register}
+          errors={errors}
+          setValue={setValue}
+          watch={watch}
+          savePackageSetting={savePackageSetting}
+          setSavePackageSetting={setSavePackageSetting}
+          selectedPackageId={selectedPackageId}
+          setSelectedPackageId={setSelectedPackageId}
+          savedPackages={savedPackages}
+        />
 
         {/* Item List */}
-        <Card className="rounded-xl border border-border bg-card">
-          <CardContent className="p-6 flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-foreground border-b border-border pb-2">
-              Item List
-            </h3>
-
-            <div className="flex flex-col gap-6">
-              {fields.map((field, index) => {
-                const prefixId =
-                  `products.${index}.hsCodePrefix` as `products.${number}.hsCodePrefix`;
-                const numberId =
-                  `products.${index}.hsCodeNumber` as `products.${number}.hsCodeNumber`;
-                return (
-                  <div
-                    key={field.id}
-                    className="flex flex-col gap-4 pb-6 border-b border-dashed border-border last:border-0 last:pb-0"
-                  >
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-sm font-bold text-foreground">Item {index + 1}</h4>
-                      {fields.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => remove(index)}
-                          className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 p-1 h-auto cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                      <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Details Description <span className="text-destructive ml-0.5">*</span>
-                        </Label>
-                        <Input
-                          type="text"
-                          required
-                          placeholder="Enter details description"
-                          {...register(`products.${index}.description` as const)}
-                          className={cn(
-                            "w-full bg-background/50",
-                            errors.products?.[index]?.description &&
-                              "border-destructive focus-visible:ring-destructive",
-                          )}
-                        />
-                        {errors.products?.[index]?.description && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.description?.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Quantity <span className="text-destructive ml-0.5">*</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          required
-                          placeholder="Enter quantity"
-                          {...register(`products.${index}.quantity` as const)}
-                          className={cn(
-                            "w-full bg-background/50",
-                            errors.products?.[index]?.quantity &&
-                              "border-destructive focus-visible:ring-destructive",
-                          )}
-                        />
-                        {errors.products?.[index]?.quantity && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.quantity?.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Value <span className="text-destructive ml-0.5">*</span>
-                        </Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          required
-                          placeholder="Enter value"
-                          {...register(`products.${index}.value` as const)}
-                          className={cn(
-                            "w-full bg-background/50",
-                            errors.products?.[index]?.value &&
-                              "border-destructive focus-visible:ring-destructive",
-                          )}
-                        />
-                        {errors.products?.[index]?.value && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.value?.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                      <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <Label className="text-xs font-bold text-muted-foreground">HS Code</Label>
-                        <div className="flex gap-2">
-                          <Controller
-                            name={prefixId}
-                            control={control}
-                            render={({ field: selectField }) => (
-                              <Select
-                                value={selectField.value}
-                                onValueChange={selectField.onChange}
-                              >
-                                <SelectTrigger className="w-1/3 bg-background/50 border-input">
-                                  <SelectValue placeholder="US" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="US">US</SelectItem>
-                                  <SelectItem value="VN">VN</SelectItem>
-                                  <SelectItem value="CA">CA</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                          <Input
-                            type="text"
-                            placeholder="Enter HS code number"
-                            {...register(numberId)}
-                            className="w-2/3 bg-background/50"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Origin Country <span className="text-destructive ml-0.5">*</span>
-                        </Label>
-                        <Controller
-                          name={`products.${index}.originCountry` as const}
-                          control={control}
-                          render={({ field: selectField }) => (
-                            <Select value={selectField.value} onValueChange={selectField.onChange}>
-                              <SelectTrigger className="w-full bg-background/50 border-input">
-                                <SelectValue placeholder="Select country" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="VN">Vietnam</SelectItem>
-                                <SelectItem value="CN">China</SelectItem>
-                                <SelectItem value="US">United States</SelectItem>
-                                <SelectItem value="JP">Japan</SelectItem>
-                                <SelectItem value="KR">South Korea</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                        {errors.products?.[index]?.originCountry && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.originCountry?.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-1.5">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          Unit Weight (gr)
-                        </Label>
-                        <Input
-                          type="number"
-                          placeholder="Weight"
-                          {...register(`products.${index}.weight` as const)}
-                          className="w-full bg-background/50"
-                        />
-                        {errors.products?.[index]?.weight && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.products[index]?.weight?.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                      <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <Label className="text-xs font-bold text-muted-foreground">
-                          SKU (Optional)
-                        </Label>
-                        <Input
-                          type="text"
-                          placeholder="Enter SKU catalog code"
-                          {...register(`products.${index}.sku` as const)}
-                          className="w-full bg-background/50"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex justify-start mt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  append({
-                    description: "",
-                    quantity: "1",
-                    value: "",
-                    hsCodePrefix: "US",
-                    hsCodeNumber: "",
-                    originCountry: "VN",
-                    weight: "",
-                    sku: "",
-                  })
-                }
-                className="border-[#0F798C] text-[#0F798C] hover:bg-[#e6f7f9] dark:hover:bg-cyan-950/40 px-4 py-2 text-xs font-bold flex items-center gap-1.5 rounded-lg cursor-pointer"
-              >
-                <Plus className="h-4 w-4" /> Add Item
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <ItemListSection control={control} register={register} errors={errors} />
 
         {/* Buttons */}
         <div className="flex justify-end mt-4">
           <Button
             type="submit"
             disabled={loading}
-            className="bg-[#0F798C] hover:bg-[#0F798C]/90 text-white px-8 py-2.5 font-semibold rounded-lg"
+            className="bg-[#0F798C] hover:bg-[#0F798C]/90 text-white font-semibold rounded-lg"
           >
             {loading && (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+              <span className="animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
             )}
             Get Rates
           </Button>

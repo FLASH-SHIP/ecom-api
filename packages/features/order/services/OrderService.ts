@@ -43,6 +43,7 @@ export interface CreateOrderParams {
   senderCountry?: string | null;
   senderState?: string | null;
   senderCity?: string | null;
+  senderWard?: string | null;
   senderZipCode?: string | null;
 
   // Receiver info
@@ -63,6 +64,7 @@ export interface CreateOrderParams {
   dimensionWidth?: number | null;
   dimensionHeight?: number | null;
   declaredValue: number;
+  packingTypeId?: number | null;
   packagingCode?: string | null;
   isGetLabel?: number;
   products?: {
@@ -316,6 +318,7 @@ export class OrderService {
       senderCountry: params.senderCountry,
       senderState: params.senderState,
       senderCity: params.senderCity,
+      senderWard: params.senderWard,
       senderZipCode: params.senderZipCode,
 
       receiverName: params.receiverName,
@@ -335,6 +338,7 @@ export class OrderService {
       dimensionWidth: dimensionWidth ?? null,
       dimensionHeight: dimensionHeight ?? null,
       declaredValue,
+      packingTypeId: params.packingTypeId ?? null,
       packagingCode: params.packagingCode,
 
       volumeWeight: pricing.volumeWeight,

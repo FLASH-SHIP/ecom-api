@@ -34,6 +34,7 @@ export interface CreateOrderInput {
   senderCountry?: string | null;
   senderState?: string | null;
   senderCity?: string | null;
+  senderWard?: string | null;
   senderZipCode?: string | null;
 
   // Receiver details
@@ -55,6 +56,7 @@ export interface CreateOrderInput {
   dimensionWidth?: Prisma.Decimal | number | null;
   dimensionHeight?: Prisma.Decimal | number | null;
   declaredValue: Prisma.Decimal | number;
+  packingTypeId?: number | null;
   packagingCode?: string | null;
 
   // Warehouse measurement
@@ -138,6 +140,7 @@ export class OrderRepository {
         senderCountry: true,
         senderState: true,
         senderCity: true,
+        senderWard: true,
         senderZipCode: true,
         receiverName: true,
         receiverPhone: true,
@@ -155,6 +158,7 @@ export class OrderRepository {
         dimensionWidth: true,
         dimensionHeight: true,
         declaredValue: true,
+        packingTypeId: true,
         packagingCode: true,
         actualWeight: true,
         volumeWeight: true,

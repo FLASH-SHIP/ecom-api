@@ -112,6 +112,7 @@ export const create = authedProcedure
       senderCountry: z.string().optional().nullable(),
       senderState: z.string().optional().nullable(),
       senderCity: z.string().optional().nullable(),
+      senderWard: z.string().optional().nullable(),
       senderZipCode: z.string().optional().nullable(),
 
       receiverName: z.string().min(1),
@@ -130,7 +131,7 @@ export const create = authedProcedure
       dimensionWidth: z.number().positive().optional().nullable(),
       dimensionHeight: z.number().positive().optional().nullable(),
       declaredValue: z.number().positive(),
-      packagingCode: z.string().optional().nullable(),
+      packingTypeId: z.number().int().positive().optional().nullable(),
       isGetLabel: z.number().int().optional(),
       products: z
         .array(
@@ -149,9 +150,19 @@ export const create = authedProcedure
   )
   .mutation(async ({ input, ctx }) => {
     const service = getOrderService();
+
+    // Snapshot packing type name if packingTypeId is provided
+    let packagingCode: string | null = null;
+    if (input.packingTypeId) {
+      const packingService = getPackingService();
+      const pt = await packingService.getPackingType(input.packingTypeId);
+      packagingCode = pt.name;
+    }
+
     return await service.createOrder({
       ...input,
       customerId: ctx.user.id,
+      packagingCode,
     });
   });
 

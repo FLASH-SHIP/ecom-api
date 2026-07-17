@@ -11,12 +11,15 @@ interface SearchableSelectOption {
   value: string;
   label: string;
   icon?: string;
+  /** Optional image URL rendered as a thumbnail beside the label */
+  image?: string | null;
   separatorAfter?: boolean;
 }
 
 interface SearchableSelectProps {
   value?: string;
   onValueChange?: (value: string) => void;
+  onOptionSelect?: (option: SearchableSelectOption) => void;
   options: SearchableSelectOption[];
   placeholder?: string;
   searchPlaceholder?: string;
@@ -35,9 +38,46 @@ interface SearchableSelectProps {
   loading?: boolean;
 }
 
+// Memoized option item to prevent re-renders of the entire list when selection changes
+const OptionItem = React.memo(function OptionItem({
+  opt,
+  isSelected,
+  onSelect,
+}: {
+  opt: SearchableSelectOption;
+  isSelected: boolean;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => onSelect(opt.value)}
+        className={cn(
+          "flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+          isSelected && "font-medium",
+        )}
+      >
+        <Check className={cn("size-3.5 shrink-0", isSelected ? "opacity-100" : "opacity-0")} />
+        {opt.image && (
+          <img src={opt.image} alt={opt.label} className="size-7 shrink-0 object-contain" />
+        )}
+        {opt.icon && (
+          <span className="inline-block w-4 text-center font-mono text-xs text-muted-foreground">
+            {opt.icon}
+          </span>
+        )}
+        <span className="truncate">{opt.label}</span>
+      </button>
+      {opt.separatorAfter && <div className="my-1 h-px bg-border" />}
+    </div>
+  );
+});
+
 function SearchableSelect({
   value,
   onValueChange,
+  onOptionSelect,
   options,
   placeholder = "Select...",
   searchPlaceholder = "Search...",
@@ -53,10 +93,25 @@ function SearchableSelect({
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [recordedValue, setRecordedValue] = React.useState<string>("");
+  const [lastSelectedLabel, setLastSelectedLabel] = React.useState<string>("");
 
   const selectedOption = options.find((opt) => opt.value === value);
+
+  React.useEffect(() => {
+    if (selectedOption) {
+      setRecordedValue(selectedOption.value);
+      setLastSelectedLabel(selectedOption.label);
+    }
+  }, [selectedOption]);
+
   const hasValue = !!value;
-  const displayLabel = selectedOption?.label ?? (hasValue ? value : placeholder);
+  const displayLabel =
+    selectedOption?.label ??
+    (value && value === recordedValue ? lastSelectedLabel : null) ??
+    (hasValue ? value : placeholder);
   const showClear = allowClear && hasValue && !disabled;
 
   const resetSearch = React.useCallback(() => {
@@ -92,17 +147,30 @@ function SearchableSelect({
 
   const handleSelect = React.useCallback(
     (optionValue: string) => {
-      onValueChange?.(optionValue === value ? "" : optionValue);
+      const isSelected = optionValue === value;
+      const newValue = isSelected ? "" : optionValue;
+      onValueChange?.(newValue);
+      if (!isSelected) {
+        const found = options.find((opt) => opt.value === optionValue);
+        if (found) {
+          onOptionSelect?.(found);
+        }
+      }
       setOpen(false);
       resetSearch();
     },
-    [onValueChange, value, resetSearch],
+    [onValueChange, value, resetSearch, options, onOptionSelect],
   );
 
   const handleOpenChange = React.useCallback(
     (isOpen: boolean) => {
       setOpen(isOpen);
-      if (!isOpen) resetSearch();
+      if (isOpen) {
+        // Auto-focus search input when dropdown opens
+        requestAnimationFrame(() => searchInputRef.current?.focus());
+      } else {
+        resetSearch();
+      }
     },
     [resetSearch],
   );
@@ -117,7 +185,7 @@ function SearchableSelect({
   );
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    <Popover open={open} onOpenChange={handleOpenChange} modal={true}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -125,12 +193,19 @@ function SearchableSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal",
+            "h-9 lg:h-10 xl:h-11 2xl:h-[52px] w-full justify-between font-normal text-sm lg:text-sm xl:text-sm 2xl:text-sm",
             !hasValue && "text-muted-foreground",
             className,
           )}
         >
-          <span className="truncate">
+          <span className="flex items-center gap-2 truncate">
+            {selectedOption?.image && (
+              <img
+                src={selectedOption.image}
+                alt={selectedOption.label}
+                className="size-7 shrink-0 object-contain"
+              />
+            )}
             {selectedOption?.icon && (
               <span className="mr-1.5 inline-block w-4 text-center font-mono text-xs text-muted-foreground">
                 {selectedOption.icon}
@@ -165,6 +240,7 @@ function SearchableSelect({
         <div className="flex items-center border-b border-border px-2.5 py-2">
           <Search className="mr-2 size-3.5 shrink-0 text-muted-foreground" />
           <input
+            ref={searchInputRef}
             value={search}
             onChange={(e) => handleSearchInput(e.target.value)}
             placeholder={searchPlaceholder}
@@ -175,36 +251,23 @@ function SearchableSelect({
           )}
         </div>
 
-        <div className="overflow-y-auto p-1" style={{ maxHeight }}>
+        <div
+          role="presentation"
+          className="overflow-y-auto p-1"
+          style={{ maxHeight }}
+          onWheel={(e) => e.stopPropagation()}
+        >
           {!loading && filteredOptions.length === 0 ? (
             <div className="py-4 text-center text-sm text-muted-foreground">No results found.</div>
           ) : (
             filteredOptions.map((opt, idx) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: options may have duplicate values (e.g. same city name)
-              <div key={`${opt.value}-${idx}`}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(opt.value)}
-                  className={cn(
-                    "flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                    value === opt.value && "font-medium",
-                  )}
-                >
-                  <Check
-                    className={cn(
-                      "size-3.5 shrink-0",
-                      value === opt.value ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  {opt.icon && (
-                    <span className="inline-block w-4 text-center font-mono text-xs text-muted-foreground">
-                      {opt.icon}
-                    </span>
-                  )}
-                  <span className="truncate">{opt.label}</span>
-                </button>
-                {opt.separatorAfter && <div className="my-1 h-px bg-border" />}
-              </div>
+              <OptionItem
+                // biome-ignore lint/suspicious/noArrayIndexKey: options may have duplicate values (e.g. same city name)
+                key={`${opt.value}-${idx}`}
+                opt={opt}
+                isSelected={value === opt.value}
+                onSelect={handleSelect}
+              />
             ))
           )}
         </div>
