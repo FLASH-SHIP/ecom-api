@@ -198,22 +198,20 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
             )}
           >
             <CustomerSidebar isCollapsed={!sidebarOpen} />
-          </aside>
-        )}
 
-        {/* Floating Sidebar Toggle Button for Desktop */}
-        {!isMobile && (
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={cn(
-              "absolute top-6 z-50 transition-all duration-300 ease-out focus:outline-none hover:scale-105 active:scale-95 cursor-pointer",
-              sidebarOpen ? "left-[calc(var(--sidebar-width)-12px)]" : "left-[60px]",
-            )}
-            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            <SidebarToggleIcon isOpen={sidebarOpen} className="size-6 drop-shadow-sm" />
-          </button>
+            {/* Floating Sidebar Toggle Button for Desktop */}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={cn(
+                "absolute top-6 z-50 transition-all duration-300 ease-out focus:outline-none hover:scale-105 active:scale-95 cursor-pointer",
+                sidebarOpen ? "left-[calc(var(--sidebar-width)-12px)]" : "left-[60px]",
+              )}
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              <SidebarToggleIcon isOpen={sidebarOpen} className="size-6 drop-shadow-sm" />
+            </button>
+          </aside>
         )}
 
         {/* Mobile Sidebar backdrop */}
