@@ -10,7 +10,9 @@
  *   ALLOW_PROD_SEED=1 NODE_ENV=production yarn prisma:seed → explicit override
  */
 
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 import { PrismaPg } from "@prisma/adapter-pg";
 import { SEEDERS } from "./seeders/index";
 import { PrismaClient } from "./src/generated/prisma/client";

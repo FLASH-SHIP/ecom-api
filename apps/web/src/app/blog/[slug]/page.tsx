@@ -5,7 +5,7 @@ import Image from "next/image";
 import NextLink from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { trpc } from "../../../lib/trpc";
+import { trpc } from "@web/lib/trpc";
 
 function CommentForm({ postId }: { postId: number }) {
   const [name, setName] = useState("");

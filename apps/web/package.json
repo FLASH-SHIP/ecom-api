@@ -18,7 +18,7 @@
     "@ecom/trpc": "workspace:*",
     "@ecom/types": "workspace:*",
     "@ecom/ui": "workspace:*",
-    "@prisma/client": "^6.8.0",
+    "@prisma/client": "^7.8.0",
     "@tanstack/react-query": "^5.75.0",
     "@trpc/client": "^11.1.0",
     "@trpc/react-query": "^11.1.0",
