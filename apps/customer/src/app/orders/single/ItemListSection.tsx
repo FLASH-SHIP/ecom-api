@@ -128,7 +128,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                       </FieldLabel>
                       <div
                         className={cn(
-                          "flex h-[52px] items-center rounded-lg border border-input bg-background/50 focus-within:ring-1 focus-within:ring-ring overflow-hidden",
+                          "flex items-center rounded-lg border border-input bg-background/50 focus-within:ring-1 focus-within:ring-ring overflow-hidden",
                           errors.products?.[index]?.hsCodeNumber &&
                             "border-destructive focus-within:ring-destructive",
                         )}
@@ -143,8 +143,6 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="US">US</SelectItem>
-                                <SelectItem value="VN">VN</SelectItem>
-                                <SelectItem value="CA">CA</SelectItem>
                               </SelectContent>
                             </Select>
                           )}

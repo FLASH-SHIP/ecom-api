@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@ecom/ui/components/dialog";
+import { ThreeDotsVerticalIcon } from "@ecom/ui/components/icons";
 import { Input } from "@ecom/ui/components/input";
 import { PaginationBase } from "@ecom/ui/components/pagination-base";
 import {
@@ -25,7 +26,7 @@ import {
 } from "@ecom/ui/components/select";
 import { TableBase } from "@ecom/ui/components/table-base";
 import { format } from "date-fns";
-import { Eye, RefreshCcw, Search } from "lucide-react";
+import { RefreshCcw, Search } from "lucide-react";
 import NextLink from "next/link";
 import { useState } from "react";
 
@@ -99,7 +100,44 @@ export default function CustomerOrdersPage() {
   type OrderType = NonNullable<typeof listData>["data"][number];
   const columns = [
     {
-      header: "Order Code",
+      header: "Time",
+      width: 120,
+      cell: (order: OrderType) => (
+        <div className={"flex flex-col"}>
+          <span>{format(new Date(order.createdAt), "dd/MM/yyyy")}</span>
+          <span className={"text-[#7B7B7B]"}>{format(new Date(order.createdAt), "HH:mm")}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Reception",
+      width: 320,
+      cell: (order: OrderType) => (
+        <div className={"flex flex-col"}>
+          <span>{order?.receiverName}</span>
+          <span className={"text-[#7B7B7B]"}>{order?.receiverPhone}</span>
+          <span className={"text-[#7B7B7B]"}>
+            {order?.receiverAddress1 +
+              ", " +
+              order?.receiverCity +
+              ", " +
+              order?.receiverState +
+              ", " +
+              order?.receiverZipCode +
+              ", " +
+              order?.receiverCountry}
+          </span>
+        </div>
+      ),
+    },
+    {
+      header: "Status",
+      width: 100,
+      cell: () => <span></span>,
+    },
+    {
+      header: "Order ID",
+      width: 180,
       cell: (order: OrderType) => (
         <span className="font-semibold text-[#0F798C] hover:underline cursor-pointer">
           <NextLink href={`/orders/${order.id}`}>{order.orderCode}</NextLink>
@@ -107,27 +145,8 @@ export default function CustomerOrdersPage() {
       ),
     },
     {
-      header: "Created Date",
-      cell: (order: OrderType) => (
-        <span className="text-muted-foreground">
-          {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}
-        </span>
-      ),
-    },
-    {
-      header: "Seller Ref",
-      cell: (order: OrderType) => order.sellerOrderId || "-",
-    },
-    {
-      header: "Destination",
-      cell: (order: OrderType) => `${order.receiverCity}, ${order.receiverCountry}`,
-    },
-    {
-      header: "Weight (gr)",
-      cell: (order: OrderType) => order.declaredWeight,
-    },
-    {
-      header: "Total Fee",
+      header: "Fee",
+      width: 100,
       cell: (order: OrderType) => (
         <span className="font-semibold text-foreground">
           $
@@ -138,11 +157,19 @@ export default function CustomerOrdersPage() {
       ),
     },
     {
-      header: "Status",
-      cell: (order: OrderType) => getStatusBadge(order.status),
+      header: "Shipping Methods",
+      width: 160,
+      cell: (order: OrderType) => <span>{order?.shippingMethod}</span>,
+    },
+    {
+      header: "Tracking number",
+      width: 180,
+      cell: (order: OrderType) => <span>{order?.trackingNumber}</span>,
     },
     {
       header: "Action",
+      width: 80,
+      fixed: "right" as const,
       headerClassName: "text-right",
       className: "text-right",
       cell: (order: OrderType) => (
@@ -153,7 +180,7 @@ export default function CustomerOrdersPage() {
             className="hover:bg-accent text-primary h-8 w-8 rounded-lg cursor-pointer"
             title="View tracking and details"
           >
-            <Eye className="h-4 w-4" />
+            <ThreeDotsVerticalIcon />
           </Button>
         </NextLink>
       ),
@@ -234,6 +261,7 @@ export default function CustomerOrdersPage() {
           enableRowSelection={true}
           selectedRowIds={selectedRowIds}
           onSelectedRowIdsChange={setSelectedRowIds}
+          minWidth={1200}
         />
 
         {/* Pagination Controls */}
