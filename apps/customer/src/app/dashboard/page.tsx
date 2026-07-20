@@ -371,7 +371,6 @@ export default function CustomerDashboardPage() {
               type="submit"
               disabled={updateProfileMutation.isPending}
               className="w-full mt-4"
-              size="lg"
             >
               {updateProfileMutation.isPending && (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />

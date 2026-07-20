@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
           )}
         />
 
-        <Button type="submit" disabled={isSubmitting} className="w-full mt-2" size="lg">
+        <Button type="submit" disabled={isSubmitting} className="w-full mt-2">
           {isSubmitting && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
           )}

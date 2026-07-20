@@ -36,8 +36,8 @@ export class CustomerSenderService {
       wardCodes.length > 0 ? this.deps.senderRepo.findWardsByCodes(wardCodes) : [],
     ]);
 
-    const provinceMap = new Map(provinces.map((p) => [p.code, p.name]));
-    const wardMap = new Map(wards.map((w) => [w.code, w.name]));
+    const provinceMap = new Map<number, string>(provinces.map((p) => [p.code, p.name] as const));
+    const wardMap = new Map<number, string>(wards.map((w) => [w.code, w.name] as const));
 
     return senders.map((s) => {
       const cityCodeNum = Number(s.city);

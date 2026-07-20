@@ -147,7 +147,6 @@ export default function LoginForm() {
                 aria-label={t("loginButton")}
                 disabled={isSubmitting || !dirtyFields.email}
                 type="submit"
-                size="lg"
               >
                 {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
                 {isSubmitting ? t("loginLoading") : t("loginButton")}
