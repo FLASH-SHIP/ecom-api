@@ -31,6 +31,7 @@ import { QueuesModule } from "./modules/queues/queues.module";
 import { RequestLoggerMiddleware } from "./modules/request-logger/request-logger.middleware";
 import { SystemModule } from "./modules/system/system.module";
 import { UsersModule } from "./modules/users/users.module";
+import { HscodesModule } from "./modules/hscodes/hscodes.module";
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { UsersModule } from "./modules/users/users.module";
     SystemModule,
     CustomerOrderModule,
     CustomerWebhookModule,
+    HscodesModule,
   ],
   providers: [
     {
