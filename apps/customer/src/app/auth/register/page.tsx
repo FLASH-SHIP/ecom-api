@@ -256,7 +256,7 @@ export default function RegisterPage() {
         />
 
         {/* Submit button */}
-        <Button type="submit" disabled={isPending} className="w-full mt-2" size="lg">
+        <Button type="submit" disabled={isPending} className="w-full mt-2">
           {isPending && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
           )}
