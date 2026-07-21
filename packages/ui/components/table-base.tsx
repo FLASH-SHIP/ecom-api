@@ -196,34 +196,43 @@ export function TableBase<T extends { id: string | number }>({
     [isCheckboxFixed, lastLeftFixedIdx],
   );
 
+  const checkboxShadowStyle = React.useMemo(() => {
+    if (!isCheckboxFixed) return undefined;
+    const baseBorder = "inset -1px 0 0 0 var(--border)";
+    if (isCheckboxRightmostFixedLeft && showLeftShadow) {
+      return {
+        boxShadow: `${baseBorder}, inset -10px 0 8px -8px rgba(0, 0, 0, 0.15)`,
+      };
+    }
+    return { boxShadow: baseBorder };
+  }, [isCheckboxFixed, isCheckboxRightmostFixedLeft, showLeftShadow]);
+
   const colSpanCount = enableRowSelection ? columns.length + 1 : columns.length;
 
   return (
     <div ref={containerRef} className={cn("overflow-x-auto w-full relative", className)}>
       <Table
+        className="border-separate border-spacing-0"
         style={
           minWidth
             ? { minWidth: typeof minWidth === "number" ? `${minWidth}px` : minWidth }
             : undefined
         }
       >
-        <TableHeader className="bg-muted/40">
-          <TableRow className="hover:bg-transparent border-b border-border">
+        <TableHeader className="bg-[#F4F4F5] dark:bg-[#27272A]">
+          <TableRow className="hover:bg-transparent">
             {enableRowSelection && (
               <TableHead
                 className={cn(
-                  "w-12 p-0 text-center align-middle h-11",
-                  isCheckboxFixed &&
-                    "sticky left-0 z-20 bg-[#F4F4F5] dark:bg-[#27272A] border-r border-border/50",
+                  "w-12 p-0 text-center align-middle h-11 border-b border-border bg-[#F4F4F5] dark:bg-[#27272A]",
+                  isCheckboxFixed && "sticky left-0 z-20",
                 )}
                 style={{
                   width: "48px",
                   minWidth: "48px",
                   maxWidth: "48px",
                   ...(isCheckboxFixed ? { left: 0 } : undefined),
-                  ...(isCheckboxRightmostFixedLeft && showLeftShadow
-                    ? { boxShadow: "inset -10px 0 8px -8px rgba(0, 0, 0, 0.15)" }
-                    : undefined),
+                  ...checkboxShadowStyle,
                 }}
               >
                 <div className="flex items-center justify-center">
@@ -246,23 +255,33 @@ export function TableBase<T extends { id: string | number }>({
                   }
                 : undefined;
 
-              const shadowStyle =
-                idx === lastLeftFixedIdx && showLeftShadow
-                  ? { boxShadow: "inset -10px 0 8px -8px rgba(0, 0, 0, 0.15)" }
-                  : idx === firstRightFixedIdx && showRightShadow
-                    ? { boxShadow: "inset 10px 0 8px -8px rgba(0, 0, 0, 0.15)" }
-                    : undefined;
+              let stickyBorder = "";
+              if (isSticky && fixedDir === "left") {
+                stickyBorder = "inset -1px 0 0 0 var(--border)";
+              } else if (isSticky && fixedDir === "right") {
+                stickyBorder = "inset 1px 0 0 0 var(--border)";
+              }
+
+              let shadowPart = "";
+              if (idx === lastLeftFixedIdx && showLeftShadow) {
+                shadowPart = "inset -10px 0 8px -8px rgba(0, 0, 0, 0.15)";
+              } else if (idx === firstRightFixedIdx && showRightShadow) {
+                shadowPart = "inset 10px 0 8px -8px rgba(0, 0, 0, 0.15)";
+              }
+
+              const shadowStyle = isSticky
+                ? {
+                    boxShadow: [stickyBorder, shadowPart].filter(Boolean).join(", "),
+                  }
+                : undefined;
 
               return (
                 <TableHead
                   // biome-ignore lint/suspicious/noArrayIndexKey: column headers are static
                   key={idx}
                   className={cn(
-                    "font-medium text-[#232323] h-11 xl:h-12 2xl:h-[52px] text-sm lg:text-base xl:text-lg 2xl:text-xl whitespace-nowrap align-middle",
-                    isSticky &&
-                      "sticky z-20 bg-[#F4F4F5] dark:bg-[#27272A] transition-colors duration-150",
-                    col.fixed === "left" && "border-r border-border/50",
-                    col.fixed === "right" && "border-l border-border/50",
+                    "font-medium text-[#232323] h-11 xl:h-12 2xl:h-[52px] text-sm lg:text-base xl:text-lg 2xl:text-xl whitespace-nowrap align-middle border-b border-border bg-[#F4F4F5] dark:bg-[#27272A]",
+                    isSticky && "sticky z-20 transition-colors duration-150",
                     col.headerClassName,
                   )}
                   style={{
@@ -279,7 +298,7 @@ export function TableBase<T extends { id: string | number }>({
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            <TableRow className="hover:bg-transparent border-none">
+            <TableRow className="hover:bg-transparent">
               <TableCell colSpan={colSpanCount} className="text-center py-16 text-muted-foreground">
                 <div className="flex flex-col items-center justify-center gap-2">
                   <span className="h-7 w-7 animate-spin rounded-full border-2 border-[#0F798C] border-t-transparent" />
@@ -288,7 +307,7 @@ export function TableBase<T extends { id: string | number }>({
               </TableCell>
             </TableRow>
           ) : data.length === 0 ? (
-            <TableRow className="hover:bg-transparent border-none">
+            <TableRow className="hover:bg-transparent">
               <TableCell colSpan={colSpanCount} className="text-center py-20">
                 <div className="flex flex-col items-center justify-center gap-3">
                   <div className="p-3 bg-muted/30 rounded-full">
@@ -306,25 +325,23 @@ export function TableBase<T extends { id: string | number }>({
                 key={item.id}
                 onClick={() => onRowClick?.(item)}
                 className={cn(
-                  "group border-b border-border transition-colors duration-150 hover:bg-muted/20",
+                  "group transition-colors duration-150 hover:bg-muted/20",
                   onRowClick && "cursor-pointer",
                 )}
               >
                 {enableRowSelection && (
                   <TableCell
                     className={cn(
-                      "w-12 p-0 text-center align-middle",
+                      "w-12 p-0 text-center align-middle border-b border-border",
                       isCheckboxFixed &&
-                        "sticky left-0 z-10 bg-background group-hover:bg-[#F4F4F5] dark:group-hover:bg-[#27272A] border-r border-border/50 transition-colors duration-150",
+                        "sticky left-0 z-10 bg-background group-hover:bg-[#FAFAFC] dark:group-hover:bg-[#141416] transition-colors duration-150",
                     )}
                     style={{
                       width: "48px",
                       minWidth: "48px",
                       maxWidth: "48px",
                       ...(isCheckboxFixed ? { left: 0 } : undefined),
-                      ...(isCheckboxRightmostFixedLeft && showLeftShadow
-                        ? { boxShadow: "inset -10px 0 8px -8px rgba(0, 0, 0, 0.15)" }
-                        : undefined),
+                      ...checkboxShadowStyle,
                     }}
                     onClick={(e) => e.stopPropagation()} // Prevent row click details modal
                   >
@@ -350,23 +367,34 @@ export function TableBase<T extends { id: string | number }>({
                       }
                     : undefined;
 
-                  const shadowStyle =
-                    colIdx === lastLeftFixedIdx && showLeftShadow
-                      ? { boxShadow: "inset -10px 0 8px -8px rgba(0, 0, 0, 0.15)" }
-                      : colIdx === firstRightFixedIdx && showRightShadow
-                        ? { boxShadow: "inset 10px 0 8px -8px rgba(0, 0, 0, 0.15)" }
-                        : undefined;
+                  let stickyBorder = "";
+                  if (isSticky && fixedDir === "left") {
+                    stickyBorder = "inset -1px 0 0 0 var(--border)";
+                  } else if (isSticky && fixedDir === "right") {
+                    stickyBorder = "inset 1px 0 0 0 var(--border)";
+                  }
+
+                  let shadowPart = "";
+                  if (colIdx === lastLeftFixedIdx && showLeftShadow) {
+                    shadowPart = "inset -10px 0 8px -8px rgba(0, 0, 0, 0.15)";
+                  } else if (colIdx === firstRightFixedIdx && showRightShadow) {
+                    shadowPart = "inset 10px 0 8px -8px rgba(0, 0, 0, 0.15)";
+                  }
+
+                  const shadowStyle = isSticky
+                    ? {
+                        boxShadow: [stickyBorder, shadowPart].filter(Boolean).join(", "),
+                      }
+                    : undefined;
 
                   return (
                     <TableCell
                       // biome-ignore lint/suspicious/noArrayIndexKey: row cells are stable within structured column definitions
                       key={colIdx}
                       className={cn(
-                        "py-3.5 px-4 text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#232323] align-middle",
+                        "py-3.5 px-4 text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#232323] align-middle border-b border-border",
                         isSticky &&
-                          "sticky z-10 bg-background group-hover:bg-[#F4F4F5] dark:group-hover:bg-[#27272A] transition-colors duration-150",
-                        col.fixed === "left" && "border-r border-border/50",
-                        col.fixed === "right" && "border-l border-border/50",
+                          "sticky z-10 bg-background group-hover:bg-[#FAFAFC] dark:group-hover:bg-[#141416] transition-colors duration-150",
                         col.className,
                       )}
                       style={{
