@@ -170,8 +170,8 @@ export default function CustomerOrdersPage() {
       header: "Action",
       width: 80,
       fixed: "right" as const,
-      headerClassName: "text-right",
-      className: "text-right",
+      headerClassName: "text-center",
+      className: "text-center",
       cell: (order: OrderType) => (
         <NextLink href={`/orders/${order.id}`}>
           <Button

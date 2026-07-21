@@ -212,45 +212,21 @@ export default function CreateSingleOrderPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const [_saveSenderSetting, setSaveSenderSetting] = useState(false);
+  const [saveSenderSetting, setSaveSenderSetting] = useState(false);
   const [selectedSenderId, setSelectedSenderId] = useState<number | null>(null);
   const [saveReceiverSetting, setSaveReceiverSetting] = useState(false);
   const [selectedReceiverId, setSelectedReceiverId] = useState<number | null>(null);
   const [savePackageSetting, setSavePackageSetting] = useState(false);
 
-  // Called by SenderSection when a sender is selected or created
-  const handleSenderSelected = useCallback(
-    (sender: {
-      id: number;
-      name: string;
-      phone: string | null;
-      email: string | null;
-      address: string;
-      city: string;
-      cityName?: string | null;
-      ward: string | null;
-      wardName?: string | null;
-      zipCode: string | null;
-      country: string | null;
-      isDefault: boolean;
-    }) => {
-      setSelectedSenderId(sender.id);
-      setValue("senderName", sender.name);
-      setValue("senderPhone", sender.phone ?? "");
-      setValue("senderEmail", sender.email ?? "");
-      setValue("senderAddress", sender.address);
-      setValue("senderCity", sender.city);
-      setValue("senderCityName", sender.cityName ?? sender.city);
-      setValue("senderWard", sender.ward ?? "");
-      setValue("senderWardName", sender.wardName ?? sender.ward ?? "");
-      setValue("senderZipCode", sender.zipCode ?? "");
-      setValue("senderCountry", sender.country ?? "VN");
-      setSaveSenderSetting(true);
-    },
-    [setValue],
-  );
+  // No longer needed, handled by SenderSection internally or directly by props
+
 
   const trpcUtils = trpc.useUtils();
+
+  // Saved senders from DB
+  const { data: savedSenders = [] } = trpc.customer.senders.list.useQuery();
+  const createSenderMutation = trpc.customer.senders.create.useMutation();
+  const updateSenderMutation = trpc.customer.senders.update.useMutation();
 
   // Saved receivers from DB
   const { data: savedReceivers = [] } = trpc.customer.receivers.list.useQuery();
@@ -496,8 +472,31 @@ export default function CreateSingleOrderPage() {
       const promises: Promise<unknown>[] = [];
 
       // Save sender to DB if checkbox is ticked
-      // Sender is always already saved to DB via SenderSection — skip here
-
+      console.log("saveSenderSetting state value in handleCreateOrder:", saveSenderSetting);
+      if (saveSenderSetting) {
+        const senderPayload = {
+          name: senderName,
+          phone: senderPhone || null,
+          email: senderEmail || null,
+          address: senderAddress,
+          city: senderCity,
+          ward: senderWard || null,
+          zipCode: senderZipCode || null,
+          country: senderCountry || "VN",
+        };
+        console.log("senderPayload constructed:", senderPayload);
+        if (selectedSenderId) {
+          console.log("Updating sender settings for id:", selectedSenderId);
+          promises.push(
+            updateSenderMutation.mutateAsync({ id: selectedSenderId, data: senderPayload }),
+          );
+        } else {
+          console.log("Creating new sender settings");
+          promises.push(
+            createSenderMutation.mutateAsync({ ...senderPayload, isDefault: false }),
+          );
+        }
+      }
       // Save receiver to DB if checkbox is ticked
       console.log("saveReceiverSetting state value in handleCreateOrder:", saveReceiverSetting);
       if (saveReceiverSetting) {
@@ -922,10 +921,17 @@ export default function CreateSingleOrderPage() {
 
         {/* Sender Info */}
         <SenderSection
+          control={control}
+          register={register}
+          errors={errors}
+          setValue={setValue}
+          watch={watch}
+          saveSenderSetting={saveSenderSetting}
+          setSaveSenderSetting={setSaveSenderSetting}
           selectedSenderId={selectedSenderId}
-          onSenderSelected={handleSenderSelected}
+          setSelectedSenderId={setSelectedSenderId}
+          savedSenders={savedSenders}
         />
-
         {/* Receiver Info */}
         <ReceiverSection
           control={control}
