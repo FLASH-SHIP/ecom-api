@@ -1,9 +1,9 @@
 "use client";
 
 import { cn } from "@ecom/ui/lib/utils";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import * as React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import {ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon} from "./icons";
 
 export interface PaginationBaseProps {
   currentPage: number;
@@ -67,7 +67,7 @@ export function PaginationBase({
       <div className="flex items-center gap-3 text-sm text-[#4E4E4E]">
         {onPerPageChange && (
           <Select value={String(perPage)} onValueChange={(val) => onPerPageChange(Number(val))}>
-            <SelectTrigger className="h-8 w-[58px] px-2.5 bg-white border-[#DADADA] text-xs font-semibold rounded-md shadow-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none">
+            <SelectTrigger className="!h-[28px] w-[56px] px-2.5 bg-white border-[#DADADA] text-xs font-semibold rounded-md shadow-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none">
               <SelectValue placeholder={String(perPage)} />
             </SelectTrigger>
             <SelectContent className="min-w-[60px]">
@@ -80,7 +80,7 @@ export function PaginationBase({
           </Select>
         )}
 
-        <span className="font-medium text-xs">
+        <span className="text-sm">
           Showing {fromItem}-{toItem} of{" "}
           <span className="text-[#0F798C] font-semibold">{totalItems}</span> {itemType}
         </span>
@@ -93,10 +93,10 @@ export function PaginationBase({
           type="button"
           onClick={() => onPageChange(1)}
           disabled={currentPage <= 1}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#DADADA] bg-white text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#DADADA] bg-white text-[#232323] hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           aria-label="First page"
         >
-          <ChevronsLeft className="h-4 w-4" />
+          <ChevronLeftIcon />
         </button>
 
         {/* Previous Page Button */}
@@ -104,10 +104,10 @@ export function PaginationBase({
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#DADADA] bg-white text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#DADADA] bg-white text-[#232323] hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           aria-label="Previous page"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronsLeftIcon />
         </button>
 
         {/* Page Buttons */}
@@ -149,10 +149,10 @@ export function PaginationBase({
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#DADADA] bg-white text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#DADADA] bg-white text-[#232323] hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           aria-label="Next page"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRightIcon />
         </button>
 
         {/* Last Page Button */}
@@ -160,10 +160,10 @@ export function PaginationBase({
           type="button"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage >= totalPages}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#DADADA] bg-white text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[4px] border border-[#DADADA] bg-white text-[#232323] hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           aria-label="Last page"
         >
-          <ChevronsRight className="h-4 w-4" />
+          <ChevronsRightIcon />
         </button>
       </nav>
     </div>

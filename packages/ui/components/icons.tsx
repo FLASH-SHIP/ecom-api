@@ -21,3 +21,8 @@ export { WalletSolidIcon } from "./icon-component/WalletSolidIcon";
 export { WhatsappIcon } from "./icon-component/WhatsappIcon";
 export { SaveIcon } from "./icon-component/SaveIcon";
 export { TrashIcon } from "./icon-component/TrashIcon";
+export { ChevronLeftIcon } from "./icon-component/ChevronLeftIcon";
+export { ChevronsLeftIcon } from "./icon-component/ChevronsLeftIcon";
+export { ChevronRightIcon } from "./icon-component/ChevronRightIcon";
+export { ChevronsRightIcon } from "./icon-component/ChevronsRightIcon";
+export { ThreeDotsVerticalIcon } from "./icon-component/ThreeDotsVerticalIcon";
