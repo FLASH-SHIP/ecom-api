@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import type { JwtPayload } from "@ecom/lib/jwt";
 import { verifyToken } from "@ecom/lib/jwt";
@@ -15,6 +16,7 @@ const TOKEN_BLACKLIST_PREFIX = "auth:blacklist:";
 interface IApiAuthServiceDeps {
   apiKeyRepo: ApiKeyRepository;
   userRepo: UserRepository;
+  customerRepo: CustomerRepository;
 }
 
 export interface AuthenticatedUser {
@@ -23,9 +25,10 @@ export interface AuthenticatedUser {
   name: string | null;
   authMethod: "api_key" | "jwt" | "session";
   permissions: string[];
+  ownerType: "User" | "Customer";
 }
 
-const permissionsCache = new RedisCache<string[]>("user-permissions", 3600); // 1 hour TTL
+const permissionsCache = new RedisCache<string[]>("user-permissions", 3600);
 
 async function resolveUserPermissions(userId: string, userRepo: UserRepository): Promise<string[]> {
   const cacheKey = `user:${userId}`;
@@ -53,6 +56,65 @@ async function resolveUserPermissions(userId: string, userRepo: UserRepository):
   return uniquePermissions;
 }
 
+function normalizeIp(ip: string): string {
+  const trimmed = ip.trim();
+  if (trimmed.startsWith("::ffff:")) {
+    return trimmed.slice(7);
+  }
+  return trimmed;
+}
+
+function ipToLong(ip: string): number | null {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return null;
+  let num = 0;
+  for (let i = 0; i < 4; i++) {
+    const partStr = parts[i];
+    if (partStr === undefined) return null;
+    const part = parseInt(partStr, 10);
+    if (Number.isNaN(part) || part < 0 || part > 255) return null;
+    num = (num << 8) + part;
+  }
+  return num >>> 0;
+}
+
+function matchCidr(ip: string, cidr: string): boolean {
+  const parts = cidr.split("/");
+  const range = parts[0];
+  const bitsStr = parts[1];
+  if (range === undefined) {
+    return false;
+  }
+  if (bitsStr === undefined) {
+    return ip === range;
+  }
+  const bits = parseInt(bitsStr, 10);
+  if (Number.isNaN(bits) || bits < 0 || bits > 32) {
+    return false;
+  }
+  const ipNum = ipToLong(ip);
+  const rangeNum = ipToLong(range);
+  if (ipNum === null || rangeNum === null) {
+    return false;
+  }
+  const mask = bits === 0 ? 0 : ~0 << (32 - bits);
+  return (ipNum & mask) === (rangeNum & mask);
+}
+
+function isIpAllowed(
+  clientIp: string | undefined,
+  allowedIps: string[] | null | undefined,
+): boolean {
+  if (!allowedIps || allowedIps.length === 0) {
+    return true;
+  }
+  if (!clientIp) {
+    return false;
+  }
+  const normalizedClient = normalizeIp(clientIp);
+  return allowedIps.some((allowed) => matchCidr(normalizedClient, normalizeIp(allowed)));
+}
+
 export class ApiAuthService {
   private deps: IApiAuthServiceDeps;
   constructor(deps: IApiAuthServiceDeps) {
@@ -65,14 +127,14 @@ export class ApiAuthService {
    *   Token starts with "ecom_" → API Key
    *   Otherwise → JWT Access Token
    */
-  async authenticateBearer(token: string): Promise<AuthenticatedUser> {
+  async authenticateBearer(token: string, clientIp?: string): Promise<AuthenticatedUser> {
     if (token.startsWith("ecom_")) {
-      return this.authenticateApiKey(token);
+      return this.authenticateApiKey(token, clientIp);
     }
     return this.authenticateJwt(token);
   }
 
-  private async authenticateApiKey(rawKey: string): Promise<AuthenticatedUser> {
+  private async authenticateApiKey(rawKey: string, clientIp?: string): Promise<AuthenticatedUser> {
     const hashedKey = createHash("sha256").update(rawKey).digest("hex");
     const apiKey = await this.deps.apiKeyRepo.findByHashedKey(hashedKey);
 
@@ -84,22 +146,49 @@ export class ApiAuthService {
       throw ErrorWithCode.Factory.Unauthorized("API key expired");
     }
 
-    if (apiKey.user.status !== "ACTIVE") {
-      throw ErrorWithCode.Factory.Forbidden("User account is not active");
+    if (!isIpAllowed(clientIp, apiKey.allowedIps)) {
+      throw ErrorWithCode.Factory.Forbidden("IP address not allowed");
     }
 
     // Fire-and-forget lastUsed update
     this.deps.apiKeyRepo.updateLastUsed(apiKey.id).catch(() => {});
 
-    const userPermissions = await resolveUserPermissions(apiKey.user.id, this.deps.userRepo);
+    if (apiKey.ownerType === "User") {
+      const user = await this.deps.userRepo.findById(apiKey.ownerId);
+      if (!user) {
+        throw ErrorWithCode.Factory.Unauthorized("User not found");
+      }
+      if (user.status !== "ACTIVE") {
+        throw ErrorWithCode.Factory.Forbidden("User account is not active");
+      }
+      const userPermissions = await resolveUserPermissions(user.id, this.deps.userRepo);
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        authMethod: "api_key",
+        permissions: userPermissions,
+        ownerType: "User",
+      };
+    } else if (apiKey.ownerType === "Customer") {
+      const customer = await this.deps.customerRepo.findById(apiKey.ownerId);
+      if (!customer) {
+        throw ErrorWithCode.Factory.Unauthorized("Customer not found");
+      }
+      if (customer.status !== "ACTIVE") {
+        throw ErrorWithCode.Factory.Forbidden("Customer account is not active");
+      }
+      return {
+        id: customer.id,
+        email: customer.email,
+        name: customer.name,
+        authMethod: "api_key",
+        permissions: ["customer"],
+        ownerType: "Customer",
+      };
+    }
 
-    return {
-      id: apiKey.user.id,
-      email: apiKey.user.email,
-      name: apiKey.user.name,
-      authMethod: "api_key",
-      permissions: userPermissions,
-    };
+    throw ErrorWithCode.Factory.Unauthorized("Invalid API key owner type");
   }
 
   private async authenticateJwt(token: string): Promise<AuthenticatedUser> {
@@ -137,6 +226,7 @@ export class ApiAuthService {
       name: user.name,
       authMethod: "jwt",
       permissions: userPermissions,
+      ownerType: "User",
     };
   }
 

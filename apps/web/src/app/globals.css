@@ -2,6 +2,45 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @plugin "@tailwindcss/typography";
 
+/* SVN-Gilroy local and web font declarations */
+@font-face {
+  font-family: 'SVN-Gilroy';
+  font-weight: 300;
+  src: local('SVN-Gilroy Light'), local('SVN Gilroy Light'), url('/fonts/SVN-Gilroy Light.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SVN-Gilroy';
+  font-weight: 400;
+  src: local('SVN-Gilroy Regular'), local('SVN Gilroy Regular'), local('SVN-Gilroy'), local('SVN Gilroy'), url('/fonts/SVN-Gilroy Regular.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SVN-Gilroy';
+  font-weight: 500;
+  src: local('SVN-Gilroy Medium'), local('SVN Gilroy Medium'), url('/fonts/SVN-Gilroy Medium.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SVN-Gilroy';
+  font-weight: 600;
+  src: local('SVN-Gilroy SemiBold'), local('SVN Gilroy SemiBold'), url('/fonts/SVN-Gilroy SemiBold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SVN-Gilroy';
+  font-weight: 700;
+  src: local('SVN-Gilroy Bold'), local('SVN Gilroy Bold'), url('/fonts/SVN-Gilroy Bold.otf') format('opentype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SVN-Gilroy';
+  font-weight: 800;
+  src: local('SVN-Gilroy ExtraBold'), local('SVN Gilroy ExtraBold'), url('/fonts/SVN-Gilroy Bold.otf') format('opentype');
+  font-display: swap;
+}
+
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -75,6 +114,7 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  --font-sans: "SVN-Gilroy", var(--font-inter), sans-serif;
 }
 
 @layer base {
@@ -86,6 +126,7 @@
     background: var(--background);
     color: var(--foreground);
     font-family:
+      "SVN-Gilroy",
       var(--font-inter),
       system-ui,
       -apple-system,
@@ -115,6 +156,121 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+      scroll-behavior: auto !important;
     }
   }
+}
+
+.custom-container {
+  width: 100%;
+  max-width: 1520px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@media (min-width: 1024px) {
+  .custom-container {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+}
+
+.animate-plane-wing {
+  animation: kf_131_380_translate_0 3s ease-in-out infinite alternate;
+}
+
+@keyframes kf_131_380_translate_0 {
+  0% {
+    transform: translateY(64px);
+  }
+  100% {
+    transform: translateY(98px);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 35s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-draw-line {
+  stroke-dasharray: 6 4;
+  animation: draw-reveal 4s linear infinite;
+}
+
+@keyframes draw-reveal {
+  0% {
+    stroke-dashoffset: 200;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  75% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  90% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+.animate-mask-draw {
+  stroke-dasharray: 250;
+  animation: mask-draw-reveal 3.5s ease-in-out infinite;
+}
+
+@keyframes mask-draw-reveal {
+  0% {
+    stroke-dashoffset: 250;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  60% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  75% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  90% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 250;
+    opacity: 0;
+  }
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

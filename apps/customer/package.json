@@ -9,7 +9,8 @@
     "type-check": "tsc --noEmit",
     "lint": "biome check",
     "format": "biome format --write",
-    "clean": "rm -rf .next .turbo"
+    "clean": "rm -rf .next .turbo",
+    "generate-template": "node scripts/generate-template.js"
   },
   "dependencies": {
     "@ecom/config": "workspace:*",
@@ -34,6 +35,7 @@
     "react-dom": "19.2.4",
     "react-hook-form": "^7.71.1",
     "superjson": "^2.2.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.1",
     "zustand": "^5.0.0"
   },
@@ -44,6 +46,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "exceljs": "^4.4.0",
     "tailwindcss": "^4",
     "typescript": "^5.8.0"
   }

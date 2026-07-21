@@ -1,3 +1,4 @@
+import { eventBus } from "@ecom/features/events/EventBus";
 import type { RateCardService } from "@ecom/features/rate-card/services/RateCardService";
 import { ErrorCode } from "@ecom/lib/errorCodes";
 import { ErrorWithCode } from "@ecom/lib/errors";
@@ -378,8 +379,7 @@ export class OrderService {
         : undefined,
     };
 
-    // 5. Execute creation inside transaction
-    return runInTransaction(async () => {
+    const result = await runInTransaction(async () => {
       const createdOrder = await this.deps.orderRepo.create(inputData);
 
       const actorInfo = await this.resolveActorInfo("CUSTOMER", customerId.toString());
@@ -405,6 +405,19 @@ export class OrderService {
         dimensionText,
       };
     });
+
+    eventBus
+      .emit("order.created", {
+        orderId: result.id,
+        customerId: customerId,
+        status: result.status,
+        orderCode: result.orderCode,
+      })
+      .catch((err) => {
+        console.error("Failed to emit order.created event:", err);
+      });
+
+    return result;
   }
 
   /**
@@ -427,7 +440,7 @@ export class OrderService {
       return order;
     }
 
-    return runInTransaction(async () => {
+    const result = await runInTransaction(async () => {
       const updated = await this.deps.orderRepo.update(id, {
         status: newStatus,
         expectedVersion,
@@ -451,6 +464,19 @@ export class OrderService {
 
       return updated;
     });
+
+    eventBus
+      .emit("order.status_updated", {
+        orderId: result.id,
+        customerId: order.customerId,
+        status: result.status,
+        orderCode: result.orderCode,
+      })
+      .catch((err) => {
+        console.error("Failed to emit order.status_updated event:", err);
+      });
+
+    return result;
   }
 
   /**
@@ -471,7 +497,7 @@ export class OrderService {
       throw new ErrorWithCode(ErrorCode.NotFound, "Đơn hàng không tồn tại", 404);
     }
 
-    return runInTransaction(async () => {
+    const result = await runInTransaction(async () => {
       const savedCheckpoint = await this.deps.orderRepo.upsertTrackingCheckpoint({
         orderId,
         checkpointDate: checkpoint.checkpointDate,
@@ -497,6 +523,20 @@ export class OrderService {
 
       return savedCheckpoint;
     });
+
+    eventBus
+      .emit("order.checkpoint_added", {
+        orderId: orderId,
+        customerId: order.customerId,
+        status: order.status,
+        orderCode: order.orderCode,
+        checkpoint: checkpoint.description,
+      })
+      .catch((err) => {
+        console.error("Failed to emit order.checkpoint_added event:", err);
+      });
+
+    return result;
   }
 
   /**

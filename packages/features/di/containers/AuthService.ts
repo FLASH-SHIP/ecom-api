@@ -3,6 +3,7 @@ import { UserRepository } from "@ecom/features/auth/repositories/UserRepository"
 import { ApiAuthService } from "@ecom/features/auth/services/ApiAuthService";
 import { AuthService } from "@ecom/features/auth/services/AuthService";
 import { prisma } from "@ecom/prisma";
+import { getCustomerRepository } from "./CustomerService";
 
 let _authService: AuthService | null = null;
 let _apiAuthService: ApiAuthService | null = null;
@@ -28,14 +29,13 @@ export function getAuthService(): AuthService {
     // Lazy-require MediaFileService to avoid pulling the full media module graph
     // into API v2's tsconfig scope (which has pre-existing module-resolution limits).
     // API v2 only calls getApiAuthService(), so this path is never reached there.
-    let mediaFileService: { deleteByUrl: (url: string) => Promise<boolean> } | undefined;
+    let _mediaFileService: { deleteByUrl: (url: string) => Promise<boolean> } | undefined;
     try {
       // Handle both CJS and ESM module formats (Turbopack wraps ESM differently)
-      // biome-ignore lint/style/noCommaOperator: intentional require
       const mod = require("@ecom/features/di/containers/MediaService");
       const fn = mod.getMediaFileService ?? mod.default?.getMediaFileService;
       if (typeof fn === "function") {
-        mediaFileService = fn();
+        _mediaFileService = fn();
       }
     } catch {
       // MediaFileService is optional — avatar cleanup will be skipped
@@ -52,6 +52,7 @@ export function getApiAuthService(): ApiAuthService {
     _apiAuthService = new ApiAuthService({
       apiKeyRepo: getApiKeyRepository(),
       userRepo: getUserRepository(),
+      customerRepo: getCustomerRepository(),
     });
   }
   return _apiAuthService;

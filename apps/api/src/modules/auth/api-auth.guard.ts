@@ -43,7 +43,7 @@ export class ApiAuthGuard implements CanActivate {
 
     try {
       const apiAuthService = getApiAuthService();
-      request.apiUser = await apiAuthService.authenticateBearer(token);
+      request.apiUser = await apiAuthService.authenticateBearer(token, request.ip);
 
       const store = loggerContext.getStore();
       if (store) {

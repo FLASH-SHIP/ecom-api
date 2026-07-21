@@ -23,7 +23,6 @@ model User {
   password     UserPassword?
   sessions     Session[]
   accounts     Account[]
-  apiKeys      ApiKey[]
   accessTokens AccessToken[]
 
   // Authorization
@@ -112,21 +111,6 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
-}
-
-model ApiKey {
-  id         String    @id @default(uuid(7)) @db.Uuid
-  userId     String    @db.Uuid
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  hashedKey  String    @unique
-  label      String?
-  expiresAt  DateTime?
-  lastUsedAt DateTime?
-  createdAt  DateTime  @default(now())
-
-  @@index([hashedKey])
-  @@index([userId])
-  @@map("api_keys")
 }
 
 model AccessToken {

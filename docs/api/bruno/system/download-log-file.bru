@@ -1,0 +1,27 @@
+meta {
+  name: Download Log File
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/system/logs/download/app-2026-07-15.log?sudoPassword=password123&maintenanceKey={{maintenanceKey}}&token={{accessToken}}
+  body: none
+  auth: none
+}
+
+docs {
+  # Download Log File
+  
+  Tải tệp nhật ký ứng dụng nén dạng gzip (`.log.gz`) trực tiếp qua giao thức HTTP Stream.
+  
+  **Yêu cầu môi trường:** Không phải production (`NODE_ENV !== "production"`).
+  **Quyền hạn:** Yêu cầu người dùng đăng nhập và có quyền `system.manage`.
+  
+  ## Query Parameters
+  *   `sudoPassword` (bắt buộc): Mật khẩu xác thực admin.
+  *   `maintenanceKey` (bắt buộc): Key bảo trì hệ thống.
+  *   `token` (bắt buộc nếu không gửi qua Header): Mã truy cập Access Token để xác thực danh tính.
+  
+  *Ghi chú:* Endpoint hỗ trợ cả việc truyền mã Access Token qua Query parameter `?token=...` hoặc qua Header `Authorization: Bearer <token>` để giúp tích hợp trực tiếp vào thẻ tải xuống `<a href="...">` của Admin CMS.
+}

@@ -36,6 +36,8 @@ async function bootstrap() {
     logger: new NestLogger(),
   });
 
+  app.set("trust proxy", true);
+
   app.useStaticAssets(join(process.cwd(), "public"), {
     prefix: "/public/",
   });
@@ -143,6 +145,12 @@ async function bootstrap() {
     console.warn("⚠️ Failed to schedule background database cleanup job:", err);
   });
   console.log("🧹 Database cleanup worker started");
+
+  // Start background webhook delivery worker
+  const { registerWebhookWorker } = await import("@ecom/features/queue/workers/webhookWorker");
+  registerWebhookWorker();
+  JobQueue.startWorker("webhook-delivery");
+  console.log("🔗 Webhook queue worker started");
 }
 
 bootstrap();

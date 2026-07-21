@@ -14,6 +14,7 @@ import {
   type Order,
   type OrderActivityLog,
   type OrderFeeItem,
+  type OrderImport,
   type OrderProduct,
   OrderStatus,
   type OrderTrackingCheckpoint,
@@ -438,6 +439,7 @@ export type {
   Order,
   OrderActivityLog,
   OrderFeeItem,
+  OrderImport,
   OrderProduct,
   OrderTrackingCheckpoint,
 };

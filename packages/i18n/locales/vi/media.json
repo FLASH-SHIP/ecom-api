@@ -83,7 +83,7 @@
   "title": "Quản lý tệp",
   "subtitle": "Quản lý tệp và thư mục",
   "statsInfo": "· {totalFiles} tệp · {totalSize}",
-  "uploadFiles": "Tải tệp lên",
+  "uploadFiles": "Tải lên",
   "newFolder": "Thư mục mới",
   "allFiles": "Tất cả tệp",
   "folders": "Thư mục",

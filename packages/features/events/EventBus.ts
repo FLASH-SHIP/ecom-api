@@ -7,6 +7,22 @@ const log = createLogger("EventBus");
  * Inspired by Laravel Events/Listeners pattern.
  */
 export interface EventMap {
+  // Order lifecycle
+  "order.created": { orderId: string; customerId: string; status: string; orderCode: string };
+  "order.status_updated": {
+    orderId: string;
+    customerId: string;
+    status: string;
+    orderCode: string;
+  };
+  "order.checkpoint_added": {
+    orderId: string;
+    customerId: string;
+    status: string;
+    orderCode: string;
+    checkpoint: string;
+  };
+
   // Post lifecycle
   "post.created": { postId: number; authorId: string; title: string };
   "post.updated": { postId: number; authorId: string; changes: string[] };
@@ -62,6 +78,16 @@ export interface EventMap {
   "system.backup.created": { exportedAt: string };
   "system.backup.restored": { importedAt: string };
   "cache.cleared": { pattern?: string };
+
+  // Webhook lifecycle
+  "webhook.deactivated": {
+    webhookId: number;
+    name: string;
+    url: string;
+    ownerId: string | null;
+    ownerType: string | null;
+    reason: string;
+  };
 }
 
 type EventHandler<T> = (payload: T) => Promise<void> | void;

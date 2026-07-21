@@ -11,6 +11,7 @@
     "./@auth/*": "./src/@auth/*",
     "./contexts/*": "./src/contexts/*",
     "./configs/*": "./src/configs/*",
+    "./hooks/*": "./src/hooks/*",
     "./components/theme-layouts/*": "./src/components/theme-layouts/*"
   },
   "scripts": {

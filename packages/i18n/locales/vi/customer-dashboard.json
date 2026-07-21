@@ -28,6 +28,7 @@
     "singleOrder": "Tạo đơn lẻ",
     "importOrder": "Nhập excel",
     "api": "API",
+    "developerSettings": "Cấu hình Developer",
     "language": "Ngôn ngữ:",
     "changeLanguage": "Đổi ngôn ngữ"
   }

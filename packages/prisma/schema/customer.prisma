@@ -41,6 +41,7 @@ model Customer {
   comments       Comment[]
   sessions       CustomerSession[]
   orders         Order[]
+  orderImports   OrderImport[]
   senders        CustomerSender[]
   receivers      CustomerReceiver[]
   packages       CustomerPackage[]

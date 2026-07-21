@@ -28,9 +28,19 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   error: 3,
 };
 
-const currentLevel: LogLevel =
+let currentLevel: LogLevel =
   (process.env.LOG_LEVEL as LogLevel | undefined) ??
   (process.env.NODE_ENV === "production" ? "info" : "debug");
+
+export function setLogLevel(level: LogLevel): void {
+  if (LOG_LEVELS[level] !== undefined) {
+    currentLevel = level;
+  }
+}
+
+export function getLogLevel(): LogLevel {
+  return currentLevel;
+}
 
 // PERF-08: Cache NODE_ENV at module init (doesn't change at runtime)
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
