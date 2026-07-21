@@ -1,23 +1,33 @@
 "use client";
 
 import { trpc } from "@customer/lib/trpc";
-import { Button } from "@ecom/ui/components/button";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
-import { BaseModal, BaseModalClose, BaseModalContent } from "@ecom/ui/components/modals/base-modal";
 import { SearchableSelect } from "@ecom/ui/components/searchable-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@ecom/ui/components/select";
 import { cn } from "@ecom/ui/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  type Control,
+  Controller,
+  type FieldErrors,
+  type FieldValues,
+  type UseFormRegister,
+  type UseFormSetValue,
+  type UseFormWatch,
+} from "react-hook-form";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-type SavedSender = {
+export type SavedSender = {
   id: number;
   label: string | null;
   name: string;
@@ -33,98 +43,56 @@ type SavedSender = {
   isDefault: boolean;
 };
 
-// Helper to format full address with ward and city names
-function formatSenderAddress(sender: {
-  address: string;
-  city: string;
-  cityName?: string | null;
-  ward: string | null;
-  wardName?: string | null;
-  country: string | null;
-}) {
-  const parts = [sender.address];
-  const wardText = sender.wardName || sender.ward;
-  if (wardText) parts.push(wardText);
-  const cityText = sender.cityName || sender.city;
-  if (cityText) parts.push(cityText);
-
-  const addressString = parts.join(", ");
-  return sender.country ? `${addressString} (${sender.country})` : addressString;
+export interface SenderFormFields {
+  senderName: string;
+  senderPhone?: string;
+  senderEmail?: string;
+  senderAddress: string;
+  senderCity: string;
+  senderCityName?: string;
+  senderWard?: string;
+  senderWardName?: string;
+  senderZipCode: string;
+  senderCountry: string;
 }
 
-// ---------------------------------------------------------------------------
-// Add / Edit form schema
-// ---------------------------------------------------------------------------
-const senderFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  phone: z.string().optional(),
-  email: z.string().email("Invalid email").or(z.literal("")).optional(),
-  address: z.string().min(1, "Address is required"),
-  city: z.string().min(1, "City is required"),
-  ward: z.string().min(1, "Ward is required"),
-  zipCode: z.string().optional(),
-  country: z.string(),
-  isDefault: z.boolean(),
-});
-type SenderFormValues = z.infer<typeof senderFormSchema>;
-
-// ---------------------------------------------------------------------------
-// Radio indicator for the select list
-// ---------------------------------------------------------------------------
-function RadioIndicator({ selected }: { selected: boolean }) {
-  return (
-    <span
-      className={cn(
-        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-        selected ? "border-[#0F798C] bg-[#FDFFFF]" : "border-[#DADADA] bg-[#FDFFFF]",
-      )}
-    >
-      {selected && <span className="h-3 w-3 rounded-full bg-[#0F798C]" />}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
-export interface SenderSectionProps {
+export interface SenderSectionProps<
+  TFieldValues extends FieldValues & SenderFormFields = FieldValues & SenderFormFields,
+> {
+  control: Control<TFieldValues>;
+  register: UseFormRegister<TFieldValues>;
+  errors: FieldErrors<TFieldValues>;
+  setValue: UseFormSetValue<TFieldValues>;
+  watch: UseFormWatch<TFieldValues>;
+  saveSenderSetting: boolean;
+  setSaveSenderSetting: (val: boolean) => void;
   selectedSenderId: number | null;
-  onSenderSelected: (sender: SavedSender) => void;
+  setSelectedSenderId: (val: number | null) => void;
+  savedSenders: SavedSender[];
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSectionProps) {
-  const trpcUtils = trpc.useUtils();
-  const { data: savedSenders = [], isLoading } = trpc.customer.senders.list.useQuery();
-  const createMutation = trpc.customer.senders.create.useMutation({
-    onSuccess: () => trpcUtils.customer.senders.list.invalidate(),
-  });
-  const updateMutation = trpc.customer.senders.update.useMutation({
-    onSuccess: () => trpcUtils.customer.senders.list.invalidate(),
-  });
-  const deleteMutation = trpc.customer.senders.delete.useMutation({
-    onSuccess: () => trpcUtils.customer.senders.list.invalidate(),
-  });
+export function SenderSection<
+  TFieldValues extends FieldValues & SenderFormFields = FieldValues & SenderFormFields,
+>({
+  control,
+  register,
+  errors,
+  setValue,
+  watch,
+  saveSenderSetting,
+  setSaveSenderSetting,
+  selectedSenderId,
+  setSelectedSenderId,
+  savedSenders,
+}: SenderSectionProps<TFieldValues>) {
+  const controlParent = control as unknown as Control<SenderFormFields>;
+  const registerParent = register as unknown as UseFormRegister<SenderFormFields>;
+  const setValueParent = setValue as unknown as UseFormSetValue<SenderFormFields>;
+  const watchParent = watch as unknown as UseFormWatch<SenderFormFields>;
+  const errorsParent = errors as unknown as FieldErrors<SenderFormFields>;
 
-  // ── Modal states ──────────────────────────────────────────────────────────
-  // isSelectOpen: the "Select Saved Sender" list modal
-  const [isSelectOpen, setIsSelectOpen] = useState(false);
-  // isFormOpen: the "New Sender / Edit Sender" form modal
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  // editingSender: null = create new, sender = edit mode
-  const [editingSender, setEditingSender] = useState<SavedSender | null>(null);
-  // After form submit, should we re-open the select modal?
-  const returnToSelectRef = useRef(false);
-
-  const [senderSearch, setSenderSearch] = useState("");
-
-  // ── Derived ───────────────────────────────────────────────────────────────
-  const selectedSender = useMemo(
-    () => savedSenders.find((s) => s.id === selectedSenderId) ?? null,
-    [savedSenders, selectedSenderId],
-  );
+  const [selectedCityLabel, setSelectedCityLabel] = useState<string>("");
+  const [selectedWardLabel, setSelectedWardLabel] = useState<string>("");
 
   // Auto-select the default sender on first load
   const autoSelectedRef = useRef(false);
@@ -132,39 +100,26 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
     if (autoSelectedRef.current || savedSenders.length === 0) return;
     const defaultSender = savedSenders.find((s) => s.isDefault);
     if (defaultSender) {
-      onSenderSelected(defaultSender);
+      handleSelectSavedSender(defaultSender.id.toString());
     }
     autoSelectedRef.current = true;
-  }, [savedSenders, onSenderSelected]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedSenders]);
 
-  // ── Form ──────────────────────────────────────────────────────────────────
-  const {
-    register,
-    handleSubmit,
-    formState: { errors: formErrors, isSubmitting },
-    reset: resetForm,
-    control: formControl,
-    watch: watchForm,
-    setValue: setFormValue,
-  } = useForm<SenderFormValues>({
-    resolver: zodResolver(senderFormSchema),
-    defaultValues: { country: "VN", isDefault: false },
-  });
-
-  // Province / ward for the form modal (React Query caches — no double fetch)
-  const watchedFormCity = watchForm("city");
+  // Province / ward logic
+  const watchedFormCity = watchParent("senderCity");
   const [provinceSearch, setProvinceSearch] = useState("");
   const { data: provincesData, isFetching: provincesFetching } =
     trpc.customer.divisions.listProvinces.useQuery(
       { search: provinceSearch || undefined },
       { placeholderData: (prev) => prev },
     );
-  // Use province code (number string) as option value for accurate pre-fill
+
   const provinceOptions = useMemo(
     () => (provincesData ?? []).map((p) => ({ value: String(p.code), label: p.name })),
     [provincesData],
   );
-  // watchedFormCity is now a code string — parse directly
+
   const selectedProvinceCode = useMemo(() => {
     const n = Number(watchedFormCity);
     return n > 0 ? n : undefined;
@@ -175,7 +130,7 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
     { provinceCode: selectedProvinceCode ?? 0, search: wardSearch || undefined },
     { enabled: !!selectedProvinceCode, placeholderData: (prev) => prev },
   );
-  // Use ward code (number string) as option value
+
   const wardOptions = useMemo(
     () => (wardsData ?? []).map((w) => ({ value: String(w.code), label: w.name })),
     [wardsData],
@@ -185,510 +140,320 @@ export function SenderSection({ selectedSenderId, onSenderSelected }: SenderSect
   const prevFormCityRef = useRef(watchedFormCity);
   useEffect(() => {
     if (prevFormCityRef.current !== watchedFormCity) {
-      setFormValue("ward", "");
+      setValueParent("senderWard", "");
       prevFormCityRef.current = watchedFormCity;
     }
-  }, [watchedFormCity, setFormValue]);
+  }, [watchedFormCity, setValueParent]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
-  /** Open the form modal for creating a new sender */
-  const openAddForm = useCallback(
-    (returnToSelect: boolean) => {
-      setEditingSender(null);
-      resetForm({ country: "VN", isDefault: false });
-      returnToSelectRef.current = returnToSelect;
-      setIsSelectOpen(false);
-      setIsFormOpen(true);
-    },
-    [resetForm],
-  );
-
-  /** Open the form modal for editing an existing sender */
-  const openEditForm = useCallback(
-    (sender: SavedSender) => {
-      setEditingSender(sender);
-
-      // Smart city code resolution: supports both new (code) and old (name) stored values
-      const cityEntry = provincesData?.find(
-        (p) => String(p.code) === sender.city || p.name === sender.city,
-      );
-      const cityCode = cityEntry ? String(cityEntry.code) : "";
-
-      // Ward: use stored value if it looks like a code; otherwise empty
-      // (old name-based records will show empty — user re-selects ward)
-      const wardCode = sender.ward && !Number.isNaN(Number(sender.ward)) ? sender.ward : "";
-
-      // Pre-update the city ref so the ward-reset effect doesn't fire
-      // when resetForm changes watchedFormCity to cityCode.
-      // Without this, the effect sees city as "changed" and clears ward immediately.
-      prevFormCityRef.current = cityCode;
-
-      resetForm({
-        name: sender.name,
-        phone: sender.phone ?? "",
-        email: sender.email ?? "",
-        address: sender.address,
-        city: cityCode,
-        ward: wardCode,
-        zipCode: sender.zipCode ?? "",
-        country: sender.country ?? "VN",
-        isDefault: sender.isDefault,
-      });
-      returnToSelectRef.current = true;
-      setIsSelectOpen(false);
-      setIsFormOpen(true);
-    },
-    [resetForm, provincesData],
-  );
-
-  /** Close the form and return to the Select Saved Sender modal (Edit mode Back) */
-  const handleBackToSelect = useCallback(() => {
-    setIsFormOpen(false);
-    resetForm({ country: "VN", isDefault: false });
-    // Small delay to avoid modal animation conflict
-    setTimeout(() => setIsSelectOpen(true), 150);
-  }, [resetForm]);
-
-  /** Submit handler for both Create and Edit */
-  const handleFormSubmit = async (data: SenderFormValues) => {
-    if (editingSender) {
-      // ── Edit mode
-      const updatedSender = await updateMutation.mutateAsync({
-        id: editingSender.id,
-        data: {
-          name: data.name,
-          phone: data.phone || null,
-          email: data.email || null,
-          address: data.address,
-          city: data.city,
-          ward: data.ward || null,
-          zipCode: data.zipCode || null,
-          country: data.country,
-          isDefault: data.isDefault,
-        },
-      });
-      if (selectedSenderId === editingSender.id) {
-        onSenderSelected(updatedSender as SavedSender);
+  // Track labels
+  useEffect(() => {
+    if (watchedFormCity && provincesData) {
+      const p = provincesData.find((c) => String(c.code) === watchedFormCity);
+      if (p) {
+        setSelectedCityLabel(p.name);
+        setValueParent("senderCityName", p.name);
       }
-    } else {
-      // ── Create mode
-      await createMutation.mutateAsync({
-        name: data.name,
-        phone: data.phone || null,
-        email: data.email || null,
-        address: data.address,
-        city: data.city,
-        ward: data.ward || null,
-        zipCode: data.zipCode || null,
-        country: data.country,
-        isDefault: data.isDefault,
-      });
+    }
+  }, [watchedFormCity, provincesData, setValueParent]);
+
+  const watchedFormWard = watchParent("senderWard");
+  useEffect(() => {
+    if (watchedFormWard && wardsData) {
+      const w = wardsData.find((w) => String(w.code) === watchedFormWard);
+      if (w) {
+        setSelectedWardLabel(w.name);
+        setValueParent("senderWardName", w.name);
+      }
+    }
+  }, [watchedFormWard, wardsData, setValueParent]);
+
+  const handleSelectSavedSender = (value: string) => {
+    if (value === "new") {
+      setSelectedSenderId(null);
+      // Clear form except country
+      setValueParent("senderName", "");
+      setValueParent("senderPhone", "");
+      setValueParent("senderEmail", "");
+      setValueParent("senderAddress", "");
+      setValueParent("senderCity", "");
+      setValueParent("senderCityName", "");
+      setValueParent("senderWard", "");
+      setValueParent("senderWardName", "");
+      setValueParent("senderZipCode", "");
+      setValueParent("senderCountry", "VN");
+      setSaveSenderSetting(false);
+      return;
     }
 
-    setIsFormOpen(false);
-    resetForm({ country: "VN", isDefault: false });
+    const id = Number(value);
+    const sender = savedSenders.find((s) => s.id === id);
+    if (!sender) return;
 
-    // After form closes, open select modal if flow requires
-    if (returnToSelectRef.current) {
-      setIsSelectOpen(true);
-    }
+    setSelectedSenderId(id);
+
+    // Auto-fill form
+    setValueParent("senderName", sender.name);
+    setValueParent("senderPhone", sender.phone ?? "");
+    setValueParent("senderEmail", sender.email ?? "");
+    setValueParent("senderAddress", sender.address);
+
+    // Resolve old values
+    const cityEntry = provincesData?.find(
+      (p) => String(p.code) === sender.city || p.name === sender.city,
+    );
+    const cityCode = cityEntry ? String(cityEntry.code) : sender.city;
+
+    const wardCode = sender.ward && !Number.isNaN(Number(sender.ward)) ? sender.ward : "";
+
+    prevFormCityRef.current = cityCode; // prevent auto-clearing ward
+    setValueParent("senderCity", cityCode);
+    setValueParent("senderCityName", cityEntry?.name ?? sender.city);
+    setValueParent("senderWard", wardCode);
+    setValueParent("senderWardName", sender.wardName ?? sender.ward ?? "");
+    setValueParent("senderZipCode", sender.zipCode ?? "");
+    setValueParent("senderCountry", sender.country ?? "VN");
+
+    setSaveSenderSetting(false);
   };
 
-  /** Delete a sender (soft-delete via tRPC) */
-  const handleDelete = useCallback(
-    async (sender: SavedSender) => {
-      await deleteMutation.mutateAsync({ id: sender.id });
-      // If deleted was the currently selected sender, clear it
-      if (sender.id === selectedSenderId) {
-        // Let parent know via selecting the next default if any
-        const remaining = savedSenders.filter((s) => s.id !== sender.id);
-        const next = remaining.find((s) => s.isDefault) ?? remaining[0];
-        if (next) onSenderSelected(next);
-      }
-    },
-    [deleteMutation, selectedSenderId, savedSenders, onSenderSelected],
-  );
+  const isNewSender = selectedSenderId === null;
 
-  /** Select a sender from the list modal */
-  const handleSelectFromList = useCallback(
-    (sender: SavedSender) => {
-      onSenderSelected(sender);
-      setIsSelectOpen(false);
-      setSenderSearch("");
-    },
-    [onSenderSelected],
-  );
-
-  // Filtered list for search
-  const filteredSenders = useMemo(() => {
-    const q = senderSearch.trim().toLowerCase();
-    if (!q) return savedSenders;
-    return savedSenders.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        (s.phone ?? "").toLowerCase().includes(q) ||
-        s.address.toLowerCase().includes(q),
-    );
-  }, [savedSenders, senderSearch]);
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <>
-      {/* ── Sender card ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
-        {/* Header */}
-        <div className="flex items-center px-4 py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-          <h3 className="text-lg 2xl:text-xl leading-6 font-semibold text-foreground">Sender</h3>
-        </div>
-
-        {/* Body */}
-        <div className="flex items-center justify-between gap-4 px-4 py-4 min-h-[84px]">
-          {isLoading ? (
-            <div className="flex flex-1 flex-col gap-2">
-              <div className="h-5 w-48 animate-pulse rounded bg-muted" />
-              <div className="h-4 w-64 animate-pulse rounded bg-muted" />
-            </div>
-          ) : selectedSender ? (
-            /* ── Selected state ── */
-            <>
-              <div className="flex flex-col gap-1 flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-base font-medium text-foreground">
-                    {selectedSender.name}
-                  </span>
-                  {selectedSender.phone && (
-                    <>
-                      <span className="text-base text-muted-foreground">|</span>
-                      <span className="text-base text-muted-foreground">
-                        {selectedSender.phone}
-                      </span>
-                    </>
-                  )}
-                </div>
-                <span className="text-sm text-muted-foreground truncate">
-                  {formatSenderAddress(selectedSender)}
-                </span>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="h-9 lg:h-10 xl:h-11 2xl:h-[52px] shrink-0 rounded-lg px-4 text-base 2xl:text-xl text-base font-medium"
-                onClick={() => setIsSelectOpen(true)}
-              >
-                Change Sender
-              </Button>
-            </>
-          ) : (
-            /* ── Empty state ── */
-            <>
-              <p className="text-base text-muted-foreground flex-1">
-                No sender data available. Please click &lsquo;Add New&rsquo; to create a sender.
-              </p>
-              <Button
-                type="button"
-                className="h-9 lg:h-10 xl:h-11 2xl:h-[52px] shrink-0 rounded-[10px] px-4 text-xl font-medium"
-                onClick={() => openAddForm(false)}
-              >
-                <Plus data-icon="inline-start" />
-                Add New
-              </Button>
-            </>
-          )}
-        </div>
+    <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
+        <h3 className="text-lg 2xl:text-xl font-semibold text-[#232323] leading-6">Sender</h3>
       </div>
 
-      {/* ── Select Saved Sender modal ────────────────────────────────────── */}
-      <BaseModal open={isSelectOpen} onOpenChange={setIsSelectOpen}>
-        <BaseModalContent
-          title="Select Saved Sender"
-          searchValue={senderSearch}
-          onSearchChange={setSenderSearch}
-          searchPlaceholder="Search by name / phone number…"
-          createLabel="Create new"
-          onCreateNew={() => openAddForm(true)}
-          isLoading={isLoading}
-          listMaxHeight="460px"
-          emptyState={
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No saved senders found.
-            </p>
-          }
-        >
-          {filteredSenders.map((sender) => {
-            const isSelected = sender.id === selectedSenderId;
-            return (
-              <div
-                key={sender.id}
-                className={cn(
-                  "flex items-center justify-between gap-4 rounded-lg border bg-background px-4 py-[14px]",
-                  "shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)] transition-colors duration-150",
-                  isSelected ? "border-[#0F798C]" : "border-border",
-                )}
-              >
-                {/* Left: radio + info — clickable to select */}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="flex flex-1 h-auto min-w-0 items-center justify-start gap-3 p-0 hover:bg-transparent hover:text-foreground text-left font-normal border-none shadow-none rounded cursor-pointer"
-                  onClick={() => handleSelectFromList(sender)}
-                >
-                  <RadioIndicator selected={isSelected} />
-                  <div className="flex flex-col gap-1 min-w-0">
-                    {/* Name | Phone */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-base font-medium text-foreground">{sender.name}</span>
-                      {sender.phone && (
-                        <>
-                          <span className="text-sm text-muted-foreground">|</span>
-                          <span className="text-sm text-muted-foreground">{sender.phone}</span>
-                        </>
-                      )}
-                      {sender.isDefault && (
-                        <span className="inline-flex items-center rounded bg-[#0F798C]/10 px-1.5 py-0.5 text-xs font-semibold text-[#0F798C]">
-                          Default
-                        </span>
-                      )}
-                    </div>
-                    {/* Address */}
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-sm text-muted-foreground truncate font-normal">
-                        {formatSenderAddress(sender)}
-                      </span>
-                    </div>
+      {/* Body */}
+      <div className="p-4 flex flex-col gap-4 bg-[#FDFFFF]">
+        <FieldGroup>
+          {/* Dropdown for sender selection */}
+          <Field>
+            <Select
+              value={selectedSenderId ? String(selectedSenderId) : "new"}
+              onValueChange={handleSelectSavedSender}
+            >
+              <SelectTrigger className="w-full h-auto min-h-[68px] py-3 bg-background/50 border-input items-center">
+                <SelectValue placeholder="Select Sender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="new" className="py-3 cursor-pointer">
+                  <div className="flex flex-col text-left">
+                    <span className="text-base xl:text-lg 2xl:text-2xl text-[#232323]">New Sender</span>
+                    <span className="text-sm xl:text-base text-[#7B7B7B]">Input details to create a new Sender</span>
                   </div>
-                </Button>
+                </SelectItem>
+                {savedSenders.map((s) => {
+                  const addressParts = [
+                    s.address,
+                    s.wardName,
+                    s.cityName,
+                    s.zipCode,
+                  ]
+                    .filter(Boolean)
+                    .join(", ");
+                  return (
+                    <SelectItem key={s.id} value={String(s.id)} className="py-3 cursor-pointer">
+                      <div className="flex flex-col text-left">
+                        <span className="text-base xl:text-lg 2xl:text-2xl text-[#232323]">
+                          {s.name}
+                        </span>
+                        <span className="text-sm xl:text-base text-[#7B7B7B] line-clamp-1 break-all">
+                          {addressParts}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </Field>
 
-                {/* Right: Delete + Edit */}
-                <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={deleteMutation.isPending}
-                    className="h-11 w-[82px] rounded-[10px] border-[#D32D20] text-[#D32D20] text-base font-normal hover:bg-[#D32D20]/10 hover:text-[#D32D20] cursor-pointer"
-                    onClick={() => handleDelete(sender)}
-                  >
-                    Delete
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-11 w-[82px] rounded-[10px] text-base font-normal cursor-pointer"
-                    onClick={() => openEditForm(sender)}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </BaseModalContent>
-      </BaseModal>
+          {/* Form fields: We hide them when !isNewSender to preserve RHF state without visual clutter */}
+          <div className={cn("flex flex-col gap-4", !isNewSender && "hidden")}>
+            {/* Row 1: Name + Phone */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+              <Field>
+                <FieldLabel htmlFor="senderName">
+                  Sender Name <span className="text-destructive">*</span>
+                </FieldLabel>
+                <Input
+                  id="senderName"
+                  type="text"
+                  required
+                  {...registerParent("senderName")}
+                  placeholder="Enter sender name"
+                  className={cn(
+                    "w-full bg-background/50",
+                    errorsParent.senderName && "border-destructive focus-visible:ring-destructive",
+                  )}
+                />
+                <FieldError errors={[errorsParent.senderName]} />
+              </Field>
 
-      {/* ── Add / Edit Sender form modal ─────────────────────────────────── */}
-      <BaseModal open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <BaseModalContent
-          title={editingSender ? "Edit Sender" : "New Sender"}
-          hideSearch
-          listMaxHeight="70vh"
-          footer={
-            <>
-              {editingSender ? (
-                /* Edit mode: Back button returns to Select Saved Sender modal */
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-9 lg:h-10 xl:h-11 2xl:h-[52px] px-6 text-xl font-medium rounded-lg"
-                  onClick={handleBackToSelect}
-                >
-                  Back
-                </Button>
-              ) : (
-                /* New mode: Cancel closes the form */
-                <BaseModalClose asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 lg:h-10 xl:h-11 2xl:h-[52px] px-6 text-xl font-medium rounded-lg"
-                  >
-                    Cancel
-                  </Button>
-                </BaseModalClose>
-              )}
-              <Button
-                type="button"
-                disabled={isSubmitting}
-                className="h-9 lg:h-10 xl:h-11 2xl:h-[52px] w-[98px] text-xl font-medium rounded-lg"
-                onClick={handleSubmit(handleFormSubmit)}
-              >
-                {isSubmitting ? "Saving…" : "Submit"}
-              </Button>
-            </>
-          }
-        >
-          <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <FieldGroup>
-              {/* Row 1: Country + City — equal 1/2 width each */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/*Country*/}
-                <Field>
-                  <FieldLabel>Country</FieldLabel>
-                  <Input value="Vietnam" disabled className="bg-muted/50" />
-                  <input type="hidden" {...register("country")} />
-                </Field>
+              <Field>
+                <FieldLabel htmlFor="senderPhone">Phone number <span className="text-destructive">*</span></FieldLabel>
+                <Input
+                  id="senderPhone"
+                  type="tel"
+                  {...registerParent("senderPhone")}
+                  placeholder="Enter phone number"
+                  className={cn(
+                    "w-full bg-background/50",
+                    errorsParent.senderPhone && "border-destructive focus-visible:ring-destructive",
+                  )}
+                />
+                <FieldError errors={[errorsParent.senderPhone]} />
+              </Field>
+            </div>
 
-                {/*City*/}
-                <Field>
-                  <FieldLabel>
-                    City <span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <Controller
-                    name="city"
-                    control={formControl}
-                    render={({ field }) => (
-                      <SearchableSelect
-                        value={field.value ?? ""}
-                        onValueChange={field.onChange}
-                        options={provinceOptions}
-                        placeholder="Select city"
-                        searchPlaceholder="Search province…"
-                        allowClear
-                        serverSearch
-                        onSearchChange={setProvinceSearch}
-                        loading={provincesFetching}
-                        className={cn(formErrors.city && "border-destructive")}
-                      />
-                    )}
-                  />
-                  <FieldError errors={[formErrors.city]} />
-                </Field>
-              </div>
+            {/* Row 2: Email + Address */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field>
+                <FieldLabel htmlFor="senderEmail">Email</FieldLabel>
+                <Input
+                  id="senderEmail"
+                  type="email"
+                  {...registerParent("senderEmail")}
+                  placeholder="Enter email"
+                  className={cn(
+                    "w-full bg-background/50",
+                    errorsParent.senderEmail && "border-destructive focus-visible:ring-destructive",
+                  )}
+                />
+                <FieldError errors={[errorsParent.senderEmail]} />
+              </Field>
 
-              {/* Row 2: Ward + Address */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/*Ward*/}
-                <Field>
-                  <FieldLabel htmlFor="sender-form-ward">
-                    Ward <span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <Controller
-                    name="ward"
-                    control={formControl}
-                    render={({ field }) => (
-                      <SearchableSelect
-                        value={field.value ?? ""}
-                        onValueChange={field.onChange}
-                        options={wardOptions}
-                        placeholder="Enter ward"
-                        searchPlaceholder="Search ward…"
-                        disabled={!selectedProvinceCode}
-                        allowClear
-                        serverSearch
-                        onSearchChange={setWardSearch}
-                        loading={wardsFetching}
-                        className={cn(formErrors.ward && "border-destructive")}
-                      />
-                    )}
-                  />
-                  <FieldError errors={[formErrors.ward]} />
-                </Field>
+              <Field>
+                <FieldLabel htmlFor="senderAddress">
+                  Address <span className="text-destructive">*</span>
+                </FieldLabel>
+                <Input
+                  id="senderAddress"
+                  type="text"
+                  required
+                  {...registerParent("senderAddress")}
+                  placeholder="Enter address"
+                  className={cn(
+                    "w-full bg-background/50",
+                    errorsParent.senderAddress && "border-destructive focus-visible:ring-destructive",
+                  )}
+                />
+                <FieldError errors={[errorsParent.senderAddress]} />
+              </Field>
+            </div>
 
-                {/*Address*/}
-                <Field>
-                  <FieldLabel htmlFor="sender-form-address">
-                    Address <span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <Input
-                    id="sender-form-address"
-                    placeholder="Enter address"
-                    {...register("address")}
-                    className={cn(formErrors.address && "border-destructive")}
-                  />
-                  <FieldError errors={[formErrors.address]} />
-                </Field>
-              </div>
+            {/* Row 3: City, Ward, Postcode, Country */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Field>
+                <FieldLabel>
+                  Country <span className="text-destructive">*</span>
+                </FieldLabel>
+                <Input value="Vietnam" disabled className="bg-muted/50 w-full" />
+                <input type="hidden" {...registerParent("senderCountry")} value="VN" />
+              </Field>
 
-              {/* Row 3: Postcode + Sender Name */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/*ZipCode*/}
-                <Field>
-                  <FieldLabel htmlFor="sender-form-zip">Postcode / Zipcode</FieldLabel>
-                  <Input
-                    id="sender-form-zip"
-                    placeholder="Enter postcode/zipcode"
-                    {...register("zipCode")}
-                  />
-                </Field>
-
-                {/*Name*/}
-                <Field>
-                  <FieldLabel htmlFor="sender-form-name">
-                    Sender Name <span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <Input
-                    id="sender-form-name"
-                    placeholder="Enter sender name"
-                    {...register("name")}
-                    className={cn(formErrors.name && "border-destructive")}
-                  />
-                  <FieldError errors={[formErrors.name]} />
-                </Field>
-              </div>
-
-              {/* Row 4: Phone + Email */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/*Phone*/}
-                <Field>
-                  <FieldLabel htmlFor="sender-form-phone">
-                    Phone number <span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <Input
-                    id="sender-form-phone"
-                    type="tel"
-                    placeholder="Enter phone number"
-                    {...register("phone")}
-                  />
-                </Field>
-
-                {/*Email*/}
-                <Field>
-                  <FieldLabel htmlFor="sender-form-email">Email</FieldLabel>
-                  <Input
-                    id="sender-form-email"
-                    type="email"
-                    placeholder="Enter email"
-                    {...register("email")}
-                    className={cn(formErrors.email && "border-destructive")}
-                  />
-                  <FieldError errors={[formErrors.email]} />
-                </Field>
-              </div>
-
-              {/* Set as Default */}
-              <Field orientation="horizontal" className="items-center gap-2">
+              <Field>
+                <FieldLabel>
+                  City <span className="text-destructive">*</span>
+                </FieldLabel>
                 <Controller
-                  name="isDefault"
-                  control={formControl}
+                  name="senderCity"
+                  control={controlParent}
                   render={({ field }) => (
-                    <Checkbox
-                      id="sender-form-default"
-                      checked={field.value}
-                      onCheckedChange={(c) => field.onChange(!!c)}
+                    <SearchableSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onOptionSelect={(opt) => setSelectedCityLabel(opt.label)}
+                      options={provinceOptions}
+                      placeholder="Select city"
+                      searchPlaceholder="Search province..."
+                      allowClear
+                      maxHeight="250px"
+                      serverSearch
+                      onSearchChange={setProvinceSearch}
+                      loading={provincesFetching}
+                      className={cn(
+                        "bg-background/50",
+                        errorsParent.senderCity && "border-destructive",
+                      )}
                     />
                   )}
                 />
-                <FieldLabel
-                  htmlFor="sender-form-default"
-                  className="text-base font-medium cursor-pointer select-none"
-                >
-                  Set as Default
-                </FieldLabel>
+                <FieldError errors={[errorsParent.senderCity]} />
               </Field>
-            </FieldGroup>
-          </form>
-        </BaseModalContent>
-      </BaseModal>
-    </>
+
+              <Field>
+                <FieldLabel>
+                  Ward <span className="text-destructive">*</span>
+                </FieldLabel>
+                <Controller
+                  name="senderWard"
+                  control={controlParent}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onOptionSelect={(opt) => setSelectedWardLabel(opt.label)}
+                      options={wardOptions}
+                      placeholder="Select ward"
+                      searchPlaceholder="Search ward..."
+                      disabled={!selectedProvinceCode}
+                      allowClear
+                      maxHeight="250px"
+                      serverSearch
+                      onSearchChange={setWardSearch}
+                      loading={wardsFetching}
+                      className={cn(
+                        "bg-background/50",
+                        errorsParent.senderWard && "border-destructive",
+                      )}
+                    />
+                  )}
+                />
+                <FieldError errors={[errorsParent.senderWard]} />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="senderZipCode">
+                  Postcode/Zipcode <span className="text-destructive">*</span>
+                </FieldLabel>
+                <Input
+                  id="senderZipCode"
+                  type="text"
+                  required
+                  {...registerParent("senderZipCode")}
+                  placeholder="Enter postcode"
+                  className={cn(
+                    "w-full bg-background/50",
+                    errorsParent.senderZipCode && "border-destructive focus-visible:ring-destructive",
+                  )}
+                />
+                <FieldError errors={[errorsParent.senderZipCode]} />
+              </Field>
+            </div>
+          </div>
+
+          {/* Save Setting Checkbox */}
+          {isNewSender && (
+            <Field orientation="horizontal" className="items-center gap-2 mt-2">
+              <Checkbox
+                id="save-sender"
+                checked={saveSenderSetting}
+                onCheckedChange={(c) => setSaveSenderSetting(!!c)}
+                className={"w-4 h-4 xl:w-5 xl:h-5 2xl:w-6 2xl:h-6"}
+              />
+              <FieldLabel
+                htmlFor="save-sender"
+                className="text-base font-medium text-[#232323] cursor-pointer select-none"
+              >
+                Save your setting for repeated use
+              </FieldLabel>
+            </Field>
+          )}
+        </FieldGroup>
+      </div>
+    </div>
   );
 }
