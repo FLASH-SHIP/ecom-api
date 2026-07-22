@@ -23,6 +23,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
+import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,14 +49,12 @@ export interface PackageFormFields {
   weight: string;
 }
 
-export interface PackageInfoSectionProps<
-  TFieldValues extends FieldValues & PackageFormFields = FieldValues & PackageFormFields,
-> {
-  control: Control<TFieldValues>;
-  register: UseFormRegister<TFieldValues>;
-  errors: FieldErrors<TFieldValues>;
-  setValue: UseFormSetValue<TFieldValues>;
-  watch: UseFormWatch<TFieldValues>;
+export interface PackageInfoSectionProps {
+  control: Control<OrderFormValues>;
+  register: UseFormRegister<OrderFormValues>;
+  errors: FieldErrors<OrderFormValues>;
+  setValue: UseFormSetValue<OrderFormValues>;
+  watch: UseFormWatch<OrderFormValues>;
   savePackageSetting: boolean;
   setSavePackageSetting: (val: boolean) => void;
   selectedPackageId: number | null;
@@ -63,9 +62,7 @@ export interface PackageInfoSectionProps<
   savedPackages: SavedPackage[];
 }
 
-export function PackageInfoSection<
-  TFieldValues extends FieldValues & PackageFormFields = FieldValues & PackageFormFields,
->({
+export function PackageInfoSection({
   control,
   register,
   errors,
@@ -76,7 +73,7 @@ export function PackageInfoSection<
   selectedPackageId,
   setSelectedPackageId,
   savedPackages,
-}: PackageInfoSectionProps<TFieldValues>) {
+}: PackageInfoSectionProps) {
   const controlParent = control as unknown as Control<PackageFormFields>;
   const registerParent = register as unknown as UseFormRegister<PackageFormFields>;
   const setValueParent = setValue as unknown as UseFormSetValue<PackageFormFields>;
@@ -155,8 +152,8 @@ export function PackageInfoSection<
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-        <h3 className="text-lg 2xl:text-xl font-semibold text-[#232323] leading-6">Package Info</h3>
+      <div className="flex items-center justify-between px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
+        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">Package Info</h3>
       </div>
 
       {/* Body */}
@@ -173,9 +170,9 @@ export function PackageInfoSection<
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="new" className="py-3 cursor-pointer">
-                  <div className="flex flex-col text-left gap-1">
-                    <span className="text-base xl:text-lg 2xl:text-2xl text-[#232323]">Create New Package</span>
-                    <span className="text-sm xl:text-base text-[#7B7B7B]">
+                  <div className="flex flex-col text-left">
+                    <span className="text-base 2xl:text-2xl text-[#232323]">Create New Package</span>
+                    <span className="text-sm 2xl:text-base text-[#7B7B7B]">
                       Input details to create a new Package Details
                     </span>
                   </div>
@@ -185,10 +182,10 @@ export function PackageInfoSection<
                   return (
                     <SelectItem key={pkg.id} value={String(pkg.id)} className="py-3 cursor-pointer">
                       <div className="flex flex-col text-left">
-                        <span className="text-base xl:text-lg 2xl:text-2xl text-[#232323]">
+                        <span className="text-base 2xl:text-2xl text-[#232323]">
                           {pkg.packageName}
                         </span>
-                        <span className="text-sm xl:text-base text-[#7B7B7B] line-clamp-1 break-all">
+                        <span className="text-sm 2xl:text-base text-[#7B7B7B] line-clamp-1 break-all">
                           {type?.name} | {pkg.length ?? 0}x{pkg.width ?? 0}x
                           {pkg.height ?? 0} cm
                         </span>

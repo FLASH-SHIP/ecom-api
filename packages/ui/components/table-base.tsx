@@ -370,7 +370,7 @@ export function TableBase<T extends { id: string | number }>({
                   // biome-ignore lint/suspicious/noArrayIndexKey: column headers are static
                   key={idx}
                   className={cn(
-                    "font-medium text-[#232323] dark:text-zinc-100 h-11 xl:h-12 2xl:h-[52px] text-sm lg:text-base xl:text-lg 2xl:text-xl whitespace-nowrap align-middle border-b border-border transition-colors duration-150",
+                    "font-medium text-[#232323] dark:text-zinc-100 h-11 xl:h-12 2xl:h-[52px] text-sm lg:text-base xl:text-base 2xl:text-xl whitespace-nowrap align-middle border-b border-border transition-colors duration-150",
                     isSticky
                       ? "sticky z-20 bg-white dark:bg-zinc-900"
                       : "bg-[#CFFEF9] dark:bg-teal-950/60",
@@ -515,7 +515,7 @@ export function TableBase<T extends { id: string | number }>({
                       // biome-ignore lint/suspicious/noArrayIndexKey: row cells are stable within structured column definitions
                       key={colIdx}
                       className={cn(
-                        "p-3 text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#232323] align-middle border-b border-border",
+                        "p-3 text-sm 2xl:text-xl text-[#232323] align-middle border-b border-border",
                         isSticky &&
                           "sticky z-10 bg-background group-hover:bg-[#FAFAFC] dark:group-hover:bg-[#141416] transition-colors duration-150",
                         col.className,

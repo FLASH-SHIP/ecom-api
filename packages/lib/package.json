@@ -19,7 +19,8 @@
     "./sanitize": "./src/sanitize.ts",
     "./slugify": "./src/slugify.ts",
     "./session-cache": "./src/session-cache.ts",
-    "./codeGenerator": "./src/codeGenerator.ts"
+    "./codeGenerator": "./src/codeGenerator.ts",
+    "./addressValidator": "./src/addressValidator.ts"
   },
   "scripts": {
     "build": "tsc",

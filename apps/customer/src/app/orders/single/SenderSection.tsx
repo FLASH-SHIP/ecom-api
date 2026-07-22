@@ -23,6 +23,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
+import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -56,14 +57,12 @@ export interface SenderFormFields {
   senderCountry: string;
 }
 
-export interface SenderSectionProps<
-  TFieldValues extends FieldValues & SenderFormFields = FieldValues & SenderFormFields,
-> {
-  control: Control<TFieldValues>;
-  register: UseFormRegister<TFieldValues>;
-  errors: FieldErrors<TFieldValues>;
-  setValue: UseFormSetValue<TFieldValues>;
-  watch: UseFormWatch<TFieldValues>;
+export interface SenderSectionProps {
+  control: Control<OrderFormValues>;
+  register: UseFormRegister<OrderFormValues>;
+  errors: FieldErrors<OrderFormValues>;
+  setValue: UseFormSetValue<OrderFormValues>;
+  watch: UseFormWatch<OrderFormValues>;
   saveSenderSetting: boolean;
   setSaveSenderSetting: (val: boolean) => void;
   selectedSenderId: number | null;
@@ -71,9 +70,7 @@ export interface SenderSectionProps<
   savedSenders: SavedSender[];
 }
 
-export function SenderSection<
-  TFieldValues extends FieldValues & SenderFormFields = FieldValues & SenderFormFields,
->({
+export function SenderSection({
   control,
   register,
   errors,
@@ -84,7 +81,7 @@ export function SenderSection<
   selectedSenderId,
   setSelectedSenderId,
   savedSenders,
-}: SenderSectionProps<TFieldValues>) {
+}: SenderSectionProps) {
   const controlParent = control as unknown as Control<SenderFormFields>;
   const registerParent = register as unknown as UseFormRegister<SenderFormFields>;
   const setValueParent = setValue as unknown as UseFormSetValue<SenderFormFields>;
@@ -221,8 +218,8 @@ export function SenderSection<
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-        <h3 className="text-lg 2xl:text-xl font-semibold text-[#232323] leading-6">Sender</h3>
+      <div className="flex items-center justify-between px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
+        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">Sender</h3>
       </div>
 
       {/* Body */}
@@ -240,8 +237,8 @@ export function SenderSection<
               <SelectContent>
                 <SelectItem value="new" className="py-3 cursor-pointer">
                   <div className="flex flex-col text-left">
-                    <span className="text-base xl:text-lg 2xl:text-2xl text-[#232323]">New Sender</span>
-                    <span className="text-sm xl:text-base text-[#7B7B7B]">Input details to create a new Sender</span>
+                    <span className="text-base 2xl:text-2xl text-[#232323]">New Sender</span>
+                    <span className="text-sm 2xl:text-base text-[#7B7B7B]">Input details to create a new Sender</span>
                   </div>
                 </SelectItem>
                 {savedSenders.map((s) => {
@@ -256,10 +253,10 @@ export function SenderSection<
                   return (
                     <SelectItem key={s.id} value={String(s.id)} className="py-3 cursor-pointer">
                       <div className="flex flex-col text-left">
-                        <span className="text-base xl:text-lg 2xl:text-2xl text-[#232323]">
+                        <span className="text-base 2xl:text-2xl text-[#232323]">
                           {s.name}
                         </span>
-                        <span className="text-sm xl:text-base text-[#7B7B7B] line-clamp-1 break-all">
+                        <span className="text-sm 2xl:text-base text-[#7B7B7B] line-clamp-1 break-all">
                           {addressParts}
                         </span>
                       </div>

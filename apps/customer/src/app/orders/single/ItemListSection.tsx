@@ -12,7 +12,7 @@ import {
 } from "@ecom/ui/components/select";
 import { cn } from "@ecom/ui/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
+import type { Control, FieldErrors, FieldValues, UseFormRegister } from "react-hook-form";
 import { Controller, useFieldArray } from "react-hook-form";
 import type { OrderFormValues } from "./page";
 import {TrashIcon} from "@ecom/ui/components/icons";
@@ -23,17 +23,25 @@ export interface ItemListSectionProps {
   errors: FieldErrors<OrderFormValues>;
 }
 
-export function ItemListSection({ control, register, errors }: ItemListSectionProps) {
+export function ItemListSection({
+  control,
+  register,
+  errors,
+}: ItemListSectionProps) {
+  const controlParent = control as unknown as Control<OrderFormValues>;
+  const registerParent = register as unknown as UseFormRegister<OrderFormValues>;
+  const errorsParent = errors as unknown as FieldErrors<OrderFormValues>;
+
   const { fields, append, remove } = useFieldArray({
-    control,
+    control: controlParent,
     name: "products",
   });
 
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
-      <div className="flex items-center px-4 py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-        <h3 className="text-lg 2xl:text-xl font-semibold text-[#232323] leading-6">Item List</h3>
+      <div className="flex items-center px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
+        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">Item List</h3>
       </div>
 
       {/* Body */}
@@ -48,7 +56,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                 className="flex flex-col gap-4 pb-6 border-b border-dashed border-[#DADADA] last:border-0 last:pb-0"
               >
                 <div className="flex items-center w-full gap-2">
-                  <h4 className="text-base lg:text-lg 2xl:text-xl font-semibold text-[#232323]">Item {index + 1}</h4>
+                  <h4 className="text-base 2xl:text-xl font-semibold text-[#232323]">Item {index + 1}</h4>
                   {fields.length > 1 && (
                     <Button
                       type="button"
@@ -124,7 +132,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                     {/* HS Code */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="text-[#232323] text-sm md:text-base font-medium">
-                        HS Code <span className="text-destructive">*</span>
+                        HS Code
                       </FieldLabel>
                       <div
                         className={cn(
@@ -185,7 +193,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                 sku: "",
               })
             }
-            className="h-[52px] px-6 rounded-[10px] border border-[#E5E5E5] text-[#0A0A0A] text-base font-semibold bg-white hover:bg-muted/30 flex items-center gap-2 cursor-pointer shadow-sm w-fit"
+            className="h-[52px] px-2.5 rounded-[10px] border border-[#E5E5E5] text-[#0A0A0A] text-base font-semibold bg-white hover:bg-muted/30 flex items-center gap-2 cursor-pointer shadow-sm w-fit"
           >
             <Plus className="h-5 w-5 text-[#0A0A0A]" />
             Add Item

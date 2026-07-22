@@ -1,12 +1,19 @@
 "use client";
 
 import { trpc } from "@customer/lib/trpc";
+import {
+  validatePostalCode,
+  validateReceiverEmail,
+  validateReceiverName,
+  validateReceiverPhone,
+  validateReceiverState,
+} from "@ecom/lib/addressValidator";
+import { ShippingMethod, ShippingOrigin } from "@ecom/types";
 import { Button } from "@ecom/ui/components/button";
-import { Card, CardContent } from "@ecom/ui/components/card";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
@@ -17,97 +24,141 @@ import { ReceiverSection } from "./ReceiverSection";
 import { SenderSection } from "./SenderSection";
 import { useOrderStore } from "./useOrderStore";
 
-const orderFormSchema = z.object({
-  shippingMethod: z.enum(["EXPRESS", "EPACKET"]),
-  shippingOrigin: z.string().min(1, "Vui lòng chọn kho gửi."),
-  detailDescription: z.string().min(1, "Vui lòng nhập mô tả hàng hóa."),
-  declaredValue: z
-    .string()
-    .min(1, "Vui lòng nhập trị giá hàng hóa.")
-    .refine(
-      (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
-      "Trị giá hàng hóa phải lớn hơn 0.",
-    ),
-  sellerOrderId: z.string().optional(),
-  totalPackets: z
-    .string()
-    .min(1, "Vui lòng nhập tổng số gói.")
-    .refine(
-      (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
-      "Tổng số gói phải lớn hơn 0.",
-    ),
+const orderFormSchema = z
+  .object({
+    shippingMethod: z.nativeEnum(ShippingMethod),
+    shippingOrigin: z.nativeEnum(ShippingOrigin),
+    detailDescription: z.string().min(1, "Vui lòng nhập mô tả hàng hóa."),
+    declaredValue: z
+      .string()
+      .min(1, "Vui lòng nhập giá trị hàng hóa.")
+      .refine(
+        (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
+        "Trị giá hàng hóa phải lớn hơn 0.",
+      ),
+    sellerOrderId: z.string().optional(),
+    totalPackets: z
+      .string()
+      .min(1, "Vui lòng nhập tổng số gói.")
+      .refine(
+        (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
+        "Tổng số gói phải lớn hơn 0.",
+      ),
 
-  // Sender Info
-  senderName: z.string().min(1, "Vui lòng nhập tên người gửi."),
-  senderPhone: z.string().min(1, "Vui lòng nhập số điện thoại người gửi."),
-  senderEmail: z.string().email("Email người gửi không hợp lệ.").or(z.literal("")),
-  senderAddress: z.string().min(1, "Vui lòng nhập địa chỉ người gửi."),
-  senderCity: z.string().min(1, "Vui lòng chọn tỉnh/thành phố người gửi."),
-  senderCityName: z.string().optional(),
-  senderWard: z.string().optional(),
-  senderWardName: z.string().optional(),
-  senderZipCode: z.string().min(1, "Vui lòng nhập mã zip người gửi."),
-  senderCountry: z.string().min(1, "Vui lòng chọn quốc gia người gửi."),
+    // Sender Info
+    senderName: z.string().min(1, "Vui lòng nhập tên người gửi."),
+    senderPhone: z.string().min(1, "Vui lòng nhập số điện thoại người gửi."),
+    senderEmail: z.string().email("Email người gửi không hợp lệ.").or(z.literal("")),
+    senderAddress: z.string().min(1, "Vui lòng nhập địa chỉ người gửi."),
+    senderCity: z.string().min(1, "Vui lòng chọn tỉnh/thành phố người gửi."),
+    senderCityName: z.string().optional(),
+    senderWard: z.string().optional(),
+    senderWardName: z.string().optional(),
+    senderZipCode: z.string().min(1, "Vui lòng nhập mã zip người gửi."),
+    senderCountry: z.string().min(1, "Vui lòng chọn quốc gia người gửi."),
 
-  // Receiver Info
-  receiverName: z.string().min(1, "Vui lòng nhập tên người nhận."),
-  receiverPhone: z.string().optional(),
-  receiverEmail: z.string().email("Email người nhận không hợp lệ.").or(z.literal("")),
-  receiverAddress1: z.string().min(1, "Vui lòng nhập địa chỉ người nhận."),
-  receiverAddress2: z.string().optional(),
-  receiverCity: z.string().min(1, "Vui lòng nhập thành phố người nhận."),
-  receiverCityName: z.string().optional(),
-  receiverState: z.string().min(1, "Vui lòng nhập bang/tỉnh người nhận."),
-  receiverStateName: z.string().optional(),
-  receiverZipCode: z.string().min(1, "Vui lòng nhập mã zip người nhận."),
-  receiverCountry: z.string().min(1, "Vui lòng chọn quốc gia người nhận."),
+    // Receiver Info
+    receiverName: z
+      .string()
+      .min(1, "Vui lòng nhập tên người nhận.")
+      .max(100, "Tên người nhận không được vượt quá 100 ký tự.")
+      .refine(
+        (val) => validateReceiverName(val).valid,
+        "Tên người nhận không được chứa ký tự đặc biệt.",
+      ),
+    receiverPhone: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || validateReceiverPhone(val).valid,
+        "Số điện thoại người nhận không được vượt quá 15 ký tự.",
+      ),
+    receiverEmail: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || validateReceiverEmail(val).valid,
+        "Email người nhận không đúng định dạng chuẩn.",
+      ),
+    receiverAddress1: z
+      .string()
+      .min(1, "Vui lòng nhập địa chỉ người nhận.")
+      .max(150, "Địa chỉ 1 không được vượt quá 150 ký tự."),
+    receiverAddress2: z
+      .string()
+      .optional()
+      .refine((val) => !val || val.length <= 150, "Địa chỉ 2 không được vượt quá 150 ký tự."),
+    receiverCity: z.string().min(1, "Vui lòng nhập thành phố người nhận."),
+    receiverCityName: z.string().optional(),
+    receiverState: z.string().min(1, "Vui lòng nhập bang/tỉnh người nhận."),
+    receiverStateName: z.string().optional(),
+    receiverZipCode: z.string().min(1, "Vui lòng nhập mã zip người nhận."),
+    receiverCountry: z.string().min(1, "Vui lòng chọn quốc gia người nhận."),
 
-  // Package Info
-  packingTypeId: z.number({ message: "Vui lòng chọn loại đóng gói." }).int().positive(),
-  length: z.string().optional(),
-  width: z.string().optional(),
-  height: z.string().optional(),
-  weight: z
-    .string()
-    .min(1, "Vui lòng nhập cân nặng gói hàng.")
-    .refine(
-      (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
-      "Cân nặng gói hàng phải lớn hơn 0.",
-    ),
-  packageName: z.string().min(1, "Vui lòng nhập tên gói hàng."),
-  products: z
-    .array(
-      z.object({
-        description: z.string().min(1, "Vui lòng nhập mô tả sản phẩm."),
-        quantity: z
-          .string()
-          .min(1, "Vui lòng nhập số lượng.")
-          .refine(
-            (val) => !Number.isNaN(Number(val)) && Number.isInteger(Number(val)) && Number(val) > 0,
-            "Số lượng phải là số nguyên dương.",
-          ),
-        value: z
-          .string()
-          .min(1, "Vui lòng nhập trị giá.")
-          .refine(
-            (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
-            "Trị giá phải lớn hơn 0.",
-          ),
-        hsCodePrefix: z.string(),
-        hsCodeNumber: z.string().optional(),
-        originCountry: z.string().min(1, "Vui lòng chọn xuất xứ."),
-        weight: z
-          .string()
-          .optional()
-          .refine(
-            (val) => !val || (!Number.isNaN(Number(val)) && Number(val) > 0),
-            "Cân nặng phải lớn hơn 0.",
-          ),
-        sku: z.string().optional(),
-      }),
-    )
-    .min(1, "Vui lòng khai báo ít nhất 1 sản phẩm."),
-});
+    // Package Info
+    packingTypeId: z.number({ message: "Vui lòng chọn loại đóng gói." }).int().positive(),
+    length: z.string().optional(),
+    width: z.string().optional(),
+    height: z.string().optional(),
+    weight: z
+      .string()
+      .min(1, "Vui lòng nhập cân nặng gói hàng.")
+      .refine(
+        (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
+        "Cân nặng gói hàng phải lớn hơn 0.",
+      ),
+    packageName: z.string().min(1, "Vui lòng nhập tên gói hàng."),
+    products: z
+      .array(
+        z.object({
+          description: z.string().min(1, "Vui lòng nhập mô tả sản phẩm."),
+          quantity: z
+            .string()
+            .min(1, "Vui lòng nhập số lượng.")
+            .refine(
+              (val) =>
+                !Number.isNaN(Number(val)) && Number.isInteger(Number(val)) && Number(val) > 0,
+              "Số lượng phải là số nguyên dương.",
+            ),
+          value: z
+            .string()
+            .min(1, "Vui lòng nhập giá trị.")
+            .refine(
+              (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
+              "Trị giá phải lớn hơn 0.",
+            ),
+          hsCodePrefix: z.string(),
+          hsCodeNumber: z.string().optional(),
+          originCountry: z.string().min(1, "Vui lòng chọn xuất xứ."),
+          weight: z
+            .string()
+            .optional()
+            .refine(
+              (val) => !val || (!Number.isNaN(Number(val)) && Number(val) > 0),
+              "Cân nặng phải lớn hơn 0.",
+            ),
+          sku: z.string().optional(),
+        }),
+      )
+      .min(1, "Vui lòng khai báo ít nhất 1 sản phẩm."),
+  })
+  .superRefine((data, ctx) => {
+    const stateVal = validateReceiverState(data.receiverCountry, data.receiverState);
+    if (!stateVal.valid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["receiverState"],
+        message: stateVal.message,
+      });
+    }
+    if (!validatePostalCode(data.receiverCountry, data.receiverZipCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["receiverZipCode"],
+        message: `Mã Postcode/Zipcode không đúng định dạng cho quốc gia ${data.receiverCountry}`,
+      });
+    }
+  });
 
 export type OrderFormValues = z.infer<typeof orderFormSchema>;
 
@@ -139,12 +190,14 @@ export default function CreateSingleOrderPage() {
     reset,
     setValue,
     getValues,
+    trigger,
     formState: { errors },
   } = useForm<OrderFormValues>({
+    mode: "onChange",
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
-      shippingMethod: "EPACKET",
-      shippingOrigin: "HAN",
+      shippingMethod: ShippingMethod.EPACKET,
+      shippingOrigin: ShippingOrigin.HAN,
       detailDescription: "",
       declaredValue: "",
       sellerOrderId: "",
@@ -228,7 +281,6 @@ export default function CreateSingleOrderPage() {
 
   // No longer needed, handled by SenderSection internally or directly by props
 
-
   const trpcUtils = trpc.useUtils();
 
   // Saved senders from DB
@@ -276,8 +328,6 @@ export default function CreateSingleOrderPage() {
           const newDefaults = JSON.parse(storeValuesString);
 
           // Auto-fill from default saved sender is handled by SenderSection
-
-
 
           // Auto-fill from default saved package (DB)
           const defaultPackageDb = savedPackages.find((p) => p.isDefault);
@@ -369,6 +419,13 @@ export default function CreateSingleOrderPage() {
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: single order creation logic complexity
   const handleCreateOrder = async () => {
     setError(null);
+
+    const isValid = await trigger();
+    if (!isValid) {
+      onInvalid();
+      return;
+    }
+
     setLoading(true);
 
     const formValues = getValues();
@@ -479,9 +536,7 @@ export default function CreateSingleOrderPage() {
           );
         } else {
           console.log("Creating new sender settings");
-          promises.push(
-            createSenderMutation.mutateAsync({ ...senderPayload, isDefault: false }),
-          );
+          promises.push(createSenderMutation.mutateAsync({ ...senderPayload, isDefault: false }));
         }
       }
       // Save receiver to DB if checkbox is ticked
@@ -532,9 +587,7 @@ export default function CreateSingleOrderPage() {
           );
         } else {
           console.log("Creating new package settings");
-          promises.push(
-            createPackageMutation.mutateAsync({ ...packagePayload, isDefault: false }),
-          );
+          promises.push(createPackageMutation.mutateAsync({ ...packagePayload, isDefault: false }));
         }
       }
 
@@ -624,291 +677,271 @@ export default function CreateSingleOrderPage() {
     // Render Step 2: Review & Payment
     return (
       <div className="flex flex-col gap-6 w-full pb-10">
-        <div className="title-page-content text-2xl font-bold text-foreground">
-          Review & Payment
-        </div>
+        <div className="title-page-content text-2xl font-bold text-[#232323]">Review & Payment</div>
 
         {error && (
-          <div className="rounded-xl border border-rose-100 dark:border-rose-950 bg-rose-50 dark:bg-rose-950/20 px-4 py-3 text-sm font-semibold text-rose-600 dark:text-rose-400">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
             {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Details Column */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Details Column (Left 2/3) */}
+          <div className="xl:col-span-2 flex flex-col gap-6">
+            {/* Row 1: Recipient & Sender */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Recipient Details */}
-              <Card className="rounded-xl border border-border bg-card">
-                <CardContent className="p-6 flex flex-col gap-4">
-                  <h3 className="font-bold text-lg border-b border-border pb-2 text-foreground">
-                    Recipient
-                  </h3>
-                  <div className="grid grid-cols-3 gap-y-3 text-sm">
-                    <div className="text-muted-foreground">Recipient Name</div>
-                    <div className="col-span-2 font-medium text-foreground">{receiverName}</div>
-
-                    <div className="text-muted-foreground">City/State/Country</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {displayReceiverCity}, {displayReceiverState}, {receiverCountry}
-                    </div>
-
-                    <div className="text-muted-foreground">Address 1</div>
-                    <div className="col-span-2 font-medium text-foreground">{receiverAddress1}</div>
-
-                    {receiverAddress2 && (
-                      <>
-                        <div className="text-muted-foreground">Address 2</div>
-                        <div className="col-span-2 font-medium text-foreground">
-                          {receiverAddress2}
-                        </div>
-                      </>
-                    )}
-
-                    <div className="text-muted-foreground">Zip/Post code</div>
-                    <div className="col-span-2 font-medium text-foreground">{receiverZipCode}</div>
-
-                    <div className="text-muted-foreground">Phone Number</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {receiverPhone || "N/A"}
-                    </div>
-
-                    <div className="text-muted-foreground">Email</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {receiverEmail || "N/A"}
-                    </div>
+              <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
+                <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
+                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Recipient</h3>
+                </div>
+                <div className="p-5 flex flex-col gap-3 text-sm">
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Recipient Name</span>
+                    <span className="font-semibold text-[#0F798C]">{receiverName}</span>
                   </div>
-                </CardContent>
-              </Card>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">City/State/Country</span>
+                    <span className="font-medium text-[#232323]">
+                      {displayReceiverCity}, {displayReceiverState}, {receiverCountry}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Address 1</span>
+                    <span className="font-medium text-[#232323]">{receiverAddress1}</span>
+                  </div>
+
+                  {receiverAddress2 && (
+                    <div className="flex items-start text-sm 2xl:text-xl">
+                      <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Address 2</span>
+                      <span className="font-medium text-[#232323]">{receiverAddress2}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Zip/Post code</span>
+                    <span className="font-medium text-[#232323]">{receiverZipCode}</span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Phone Number</span>
+                    <span className="font-medium text-[#232323]">{receiverPhone || "N/A"}</span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Email</span>
+                    <span className="font-medium text-[#232323]">{receiverEmail || "N/A"}</span>
+                  </div>
+                </div>
+              </div>
 
               {/* Sender Details */}
-              <Card className="rounded-xl border border-border bg-card">
-                <CardContent className="p-6 flex flex-col gap-4">
-                  <h3 className="font-bold text-lg border-b border-border pb-2 text-foreground">
-                    Sender
-                  </h3>
-                  <div className="grid grid-cols-3 gap-y-3 text-sm">
-                    <div className="text-muted-foreground">Sender Name</div>
-                    <div className="col-span-2 font-medium text-foreground">{senderName}</div>
-
-                    <div className="text-muted-foreground">Ward/City/Country</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {displaySenderWard}
-                      {displaySenderCity ? `, ${displaySenderCity}` : ""}, {senderCountry}
-                    </div>
-
-                    <div className="text-muted-foreground">Address</div>
-                    <div className="col-span-2 font-medium text-foreground">{senderAddress}</div>
-
-                    <div className="text-muted-foreground">Zip/Post code</div>
-                    <div className="col-span-2 font-medium text-foreground">{senderZipCode}</div>
-
-                    <div className="text-muted-foreground">Phone Number</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {senderPhone || "N/A"}
-                    </div>
-
-                    <div className="text-muted-foreground">Email</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {senderEmail || "N/A"}
-                    </div>
+              <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
+                <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
+                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Sender</h3>
+                </div>
+                <div className="p-5 flex flex-col gap-3 text-sm">
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Sender Name</span>
+                    <span className="font-medium text-[#232323]">{senderName}</span>
                   </div>
-                </CardContent>
-              </Card>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">City/Ward</span>
+                    <span className="font-medium text-[#232323]">
+                      {displaySenderCity}
+                      {displaySenderWard ? `, ${displaySenderWard}` : ""}, {senderCountry}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Address</span>
+                    <span className="font-medium text-[#232323]">{senderAddress}</span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Zip/Post code</span>
+                    <span className="font-medium text-[#232323]">{senderZipCode}</span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Phone Number</span>
+                    <span className="font-medium text-[#232323]">{senderPhone || "N/A"}</span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Email</span>
+                    <span className="font-medium text-[#232323]">{senderEmail || "N/A"}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
+            {/* Row 2: Basic Info & Package */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Basic Info Details */}
-              <Card className="rounded-xl border border-border bg-card">
-                <CardContent className="p-6 flex flex-col gap-4">
-                  <h3 className="font-bold text-lg border-b border-border pb-2 text-foreground">
-                    Basic Info
-                  </h3>
-                  <div className="grid grid-cols-3 gap-y-3 text-sm">
-                    <div className="text-muted-foreground">Shipping Origin</div>
-                    <div className="col-span-2 font-medium text-foreground">{shippingOrigin}</div>
-
-                    <div className="text-muted-foreground">Order Code</div>
-                    <div className="col-span-2 font-medium text-cyan-600 dark:text-cyan-400 italic">
-                      Pending (Auto-generated)
-                    </div>
-
-                    <div className="text-muted-foreground">Shipping Method</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {shippingMethod === "EXPRESS" ? "Express" : "ePacket"}
-                    </div>
-
-                    <div className="text-muted-foreground">Order ID</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {sellerOrderId || "N/A"}
-                    </div>
-
-                    <div className="text-muted-foreground">Details Description</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {detailDescription}
-                    </div>
-
-                    <div className="text-muted-foreground">Created Time</div>
-                    <div className="col-span-2 font-medium text-foreground">
-                      {new Date().toLocaleDateString("vi-VN")}{" "}
-                      {new Date().toLocaleTimeString("vi-VN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </div>
+              <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
+                <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
+                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Basic Info</h3>
+                </div>
+                <div className="p-5 flex flex-col gap-3 text-sm">
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Shipping Origin</span>
+                    <span className="font-medium text-[#232323]">{shippingOrigin}</span>
                   </div>
-                </CardContent>
-              </Card>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Order ID</span>
+                    <span className="font-semibold text-[#0F798C]">
+                      {sellerOrderId || "Pending (Auto-generated)"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Shipping Method</span>
+                    <span className="font-medium text-[#232323]">
+                      {shippingMethod === "EXPRESS" ? "Express" : "ePacket"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Details Description</span>
+                    <span className="font-medium text-[#232323]">{detailDescription}</span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Created Time</span>
+                    <span className="font-medium text-[#232323]">
+                      {new Date().toLocaleDateString("vi-VN")}{" "}
+                      <span className="text-[#7B7B7B]">
+                        {new Date().toLocaleTimeString("vi-VN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
 
               {/* Package Details */}
-              <Card className="rounded-xl border border-border bg-card">
-                <CardContent className="p-6 flex flex-col gap-4">
-                  <h3 className="font-bold text-lg border-b border-border pb-2 text-foreground">
-                    Package
-                  </h3>
-                  <div className="grid grid-cols-2 gap-y-3 text-sm">
-                    <div className="text-muted-foreground">Value</div>
-                    <div className="font-medium text-foreground">${declaredValue}</div>
+              <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
+                <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
+                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Package</h3>
+                </div>
+                <div className="p-5 flex flex-col gap-3 text-sm">
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Value</span>
+                    <span className="font-medium text-[#232323]">${declaredValue}</span>
+                  </div>
 
-                    <div className="text-muted-foreground">Dimensions</div>
-                    <div className="font-medium text-foreground">
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Dimensions</span>
+                    <span className="font-medium text-[#232323]">
                       {length && width && height
                         ? `L ${length} × W ${width} × H ${height} cm`
                         : "N/A"}
-                    </div>
-
-                    <div className="text-muted-foreground">Weight</div>
-                    <div className="font-medium text-foreground">{weight} gr</div>
-
-                    <div className="text-muted-foreground">Volume Weight</div>
-                    <div className="font-medium text-foreground">{pricing.volumeWeight} gr</div>
-
-                    <div className="text-muted-foreground">HS Code (Primary)</div>
-                    <div className="font-medium text-foreground">
-                      {products?.[0]?.hsCodeNumber
-                        ? `${products[0].hsCodePrefix}-${products[0].hsCodeNumber}`
-                        : "N/A"}
-                    </div>
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
 
-            {/* Products Details */}
-            <Card className="rounded-xl border border-border bg-card">
-              <CardContent className="p-6 flex flex-col gap-4">
-                <h3 className="font-bold text-lg border-b border-border pb-2 text-foreground">
-                  Products ({products?.length || 0})
-                </h3>
-                <div className="flex flex-col gap-4">
-                  {products?.map((p) => (
-                    <div
-                      key={`${p.description}-${p.quantity}-${p.value}`}
-                      className="flex justify-between items-start text-sm border-b border-dashed border-border last:border-0 pb-3 last:pb-0"
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-semibold text-foreground">{p.description}</span>
-                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                          {p.hsCodeNumber && (
-                            <span>
-                              HS Code: {p.hsCodePrefix}-{p.hsCodeNumber}
-                            </span>
-                          )}
-                          <span>Origin: {p.originCountry}</span>
-                          {p.weight && <span>| Weight: {p.weight} gr</span>}
-                          {p.sku && <span>| SKU: {p.sku}</span>}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium text-foreground">
-                          ${Number(p.value || 0).toFixed(2)} × {p.quantity}
-                        </div>
-                        <div className="text-xs text-muted-foreground font-semibold">
-                          Total: ${(Number(p.value || 0) * Number(p.quantity || 0)).toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Weight</span>
+                    <span className="font-medium text-[#232323]">{weight} gr</span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Volume Weight</span>
+                    <span className="font-medium text-[#232323]">{pricing.volumeWeight} gr</span>
+                  </div>
+
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">HS Code</span>
+                    <span className="font-medium text-[#232323]">
+                      {products?.[0]?.hsCodeNumber
+                        ? `${products[0].hsCodePrefix} - ${products[0].hsCodeNumber}`
+                        : "N/A"}
+                    </span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
-          {/* Charges & Surcharges Card */}
-          <div className="flex flex-col gap-6">
-            <Card className="rounded-xl border border-[#cbeef2] bg-[#E5F7F9] dark:bg-cyan-950/20 dark:border-cyan-900/30 shadow-sm">
-              <CardContent className="p-6 flex flex-col gap-6">
-                <h3 className="font-bold text-lg text-[#0F798C] dark:text-cyan-400">
-                  Charges & Surcharges
-                </h3>
-                <div className="flex flex-col gap-3 text-sm text-[#0F798C] dark:text-cyan-300">
-                  <div className="flex justify-between">
-                    <span className="text-[#0F798C]/70 dark:text-cyan-400/70">
-                      Base Shipping Rate
-                    </span>
-                    <span className="font-semibold text-foreground">
-                      ${pricing.baseShippingRate.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#0F798C]/70 dark:text-cyan-400/70">Fuel Surcharge</span>
-                    <span className="font-semibold text-foreground">
-                      ${pricing.surchargeFee.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[#0F798C]/70 dark:text-cyan-400/70">
-                      Chargeable Weight
-                    </span>
-                    <span className="font-semibold text-foreground">
-                      {(pricing.chargeableWeight / 1000).toFixed(2)} kg
-                    </span>
-                  </div>
-                  <div className="border-t border-dashed border-[#a6e2eb] pt-3 flex justify-between text-base font-bold">
-                    <span className="text-[#0F798C]">TOTAL AMOUNT</span>
-                    <span className="text-[#0F798C] text-lg dark:text-cyan-400">
-                      ${pricing.totalAmount.toFixed(2)}
-                    </span>
-                  </div>
+          {/* Charges & Actions Column (Right Sidebar 1/3) */}
+          <div className="flex flex-col gap-5">
+            {/* Charges & Surcharges Card */}
+            <div className="flex flex-col rounded-lg border border-[#0F798C] bg-[#CFFEF9] p-5 gap-4 shadow-sm">
+              <h3 className="text-sm 2xl:text-xl font-medium text-[#232323]">Charges & Surcharges</h3>
+              <div className="flex flex-col gap-3 text-sm text-[#232323]">
+                <div className="flex justify-between items-center text-sm 2xl:text-xl">
+                  <span className="text-[#7B7B7B]">Base Shipping Rate</span>
+                  <span className="font-medium text-[#232323]">
+                    ${pricing.baseShippingRate.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm 2xl:text-xl">
+                  <span className="text-[#7B7B7B]">Fuel Surcharge</span>
+                  <span className="font-medium text-[#232323]">
+                    ${pricing.surchargeFee.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm 2xl:text-xl">
+                  <span className="text-[#7B7B7B]">Chargeable Weight</span>
+                  <span className="font-medium text-[#232323]">
+                    {(pricing.chargeableWeight / 1000).toFixed(2)} kg
+                  </span>
                 </div>
 
-                <div className="flex items-center space-x-2 border-t border-[#a6e2eb] pt-4">
-                  <Checkbox
-                    id="get-label"
-                    checked={isGetLabel}
-                    onCheckedChange={(checked) => setIsGetLabel(!!checked)}
-                  />
-                  <label
-                    htmlFor="get-label"
-                    className="text-sm font-medium leading-none text-foreground cursor-pointer flex items-baseline gap-1"
-                  >
-                    Get Label{" "}
-                    <span className="text-xs text-muted-foreground font-normal">Description</span>
-                  </label>
-                </div>
+                <div className="border-t border-dashed border-[#5BCACE] my-1" />
 
-                <div className="flex gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setStep(1)}
-                    disabled={createOrderMutation.isPending}
-                    className="w-1/2 border-[#a6e2eb] text-[#0F798C] hover:bg-[#e6f7f9] dark:hover:bg-cyan-950/40 py-2.5 rounded-lg font-semibold"
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleCreateOrder}
-                    disabled={createOrderMutation.isPending}
-                    className="w-1/2 bg-[#0F798C] hover:bg-[#0F798C]/90 text-white font-semibold py-2.5 rounded-lg flex items-center justify-center"
-                  >
-                    {createOrderMutation.isPending && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
-                    )}
-                    Create Order
-                  </Button>
+                <div className="flex justify-between items-center text-sm 2xl:text-xl">
+                  <span className="text-lg text-[#232323]">TOTAL AMOUNT</span>
+                  <span className="text-xl font-bold text-[#0042D0]">
+                    ${pricing.totalAmount.toFixed(2)}
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+
+            {/* Checkbox Get Label */}
+            <div className="flex items-center gap-4">
+              <Checkbox
+                id="get-label"
+                checked={isGetLabel}
+                onCheckedChange={(checked) => setIsGetLabel(!!checked)}
+                className="w-5 h-5 border-[#0F798C] data-[state=checked]:bg-[#0F798C]"
+              />
+              <label
+                htmlFor="get-label"
+                className="text-sm 2xl:text-xl font-medium text-[#232323] cursor-pointer flex items-baseline gap-1.5"
+              >
+                Get Label <span className="text-sm 2xl:text-base text-[#7B7B7B] font-normal">Description</span>
+              </label>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-4 mt-1">
+              <Button
+                variant="outline"
+                onClick={() => setStep(1)}
+                disabled={createOrderMutation.isPending}
+                className="h-12 border-[#DADADA] bg-[#FDFFFF] text-[#232323] hover:bg-slate-50 font-medium rounded-lg text-base"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={handleCreateOrder}
+                disabled={createOrderMutation.isPending}
+                className="h-12 bg-[#0F798C] hover:bg-[#0F798C]/90 text-white font-medium rounded-lg text-base flex items-center justify-center"
+              >
+                {createOrderMutation.isPending && (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                )}
+                Create Order
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -928,7 +961,11 @@ export default function CreateSingleOrderPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(handleGetRates, onInvalid)} className="flex flex-col gap-6">
+      <form
+        noValidate
+        onSubmit={handleSubmit(handleGetRates, onInvalid)}
+        className="flex flex-col gap-6"
+      >
         {/* Basic Info */}
         <BasicInfoSection control={control} register={register} errors={errors} />
 

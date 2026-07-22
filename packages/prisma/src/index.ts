@@ -25,6 +25,7 @@ import {
   RateCardType,
   ServiceType,
   ShippingMethod,
+  ShippingOrigin,
   UserStatus,
   VerificationCodeStatus,
 } from "./generated/prisma/client";
@@ -458,6 +459,7 @@ export {
   RateCardType,
   ServiceType,
   ShippingMethod,
+  ShippingOrigin,
   UserFactory,
   UserStatus,
   VerificationCodeStatus,

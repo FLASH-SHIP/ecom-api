@@ -1,4 +1,4 @@
-import { ShippingMethod } from "@ecom/prisma";
+import { ShippingMethod, ShippingOrigin } from "@ecom/prisma";
 import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
@@ -46,8 +46,8 @@ export class CreateOrderDto {
   shippingMethod!: ShippingMethod;
 
   @IsOptional()
-  @IsString()
-  shippingOrigin?: string;
+  @IsEnum(ShippingOrigin)
+  shippingOrigin?: ShippingOrigin;
 
   @IsOptional()
   @IsString()
