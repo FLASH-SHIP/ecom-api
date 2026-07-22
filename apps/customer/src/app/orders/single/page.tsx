@@ -693,45 +693,45 @@ export default function CreateSingleOrderPage() {
               {/* Recipient Details */}
               <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
                 <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
-                  <h3 className="text-base font-semibold text-[#232323]">Recipient</h3>
+                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Recipient</h3>
                 </div>
                 <div className="p-5 flex flex-col gap-3 text-sm">
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Recipient Name</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Recipient Name</span>
                     <span className="font-semibold text-[#0F798C]">{receiverName}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">City/State/Country</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">City/State/Country</span>
                     <span className="font-medium text-[#232323]">
                       {displayReceiverCity}, {displayReceiverState}, {receiverCountry}
                     </span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Address 1</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Address 1</span>
                     <span className="font-medium text-[#232323]">{receiverAddress1}</span>
                   </div>
 
                   {receiverAddress2 && (
-                    <div className="flex items-start">
-                      <span className="text-[#7B7B7B] w-36 flex-shrink-0">Address 2</span>
+                    <div className="flex items-start text-sm 2xl:text-xl">
+                      <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Address 2</span>
                       <span className="font-medium text-[#232323]">{receiverAddress2}</span>
                     </div>
                   )}
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Zip/Post code</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Zip/Post code</span>
                     <span className="font-medium text-[#232323]">{receiverZipCode}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Phone Number</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Phone Number</span>
                     <span className="font-medium text-[#232323]">{receiverPhone || "N/A"}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Email</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Email</span>
                     <span className="font-medium text-[#232323]">{receiverEmail || "N/A"}</span>
                   </div>
                 </div>
@@ -740,39 +740,39 @@ export default function CreateSingleOrderPage() {
               {/* Sender Details */}
               <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
                 <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
-                  <h3 className="text-base font-semibold text-[#232323]">Sender</h3>
+                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Sender</h3>
                 </div>
                 <div className="p-5 flex flex-col gap-3 text-sm">
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Sender Name</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Sender Name</span>
                     <span className="font-medium text-[#232323]">{senderName}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">City / State</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">City/Ward</span>
                     <span className="font-medium text-[#232323]">
                       {displaySenderCity}
                       {displaySenderWard ? `, ${displaySenderWard}` : ""}, {senderCountry}
                     </span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Address</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Address</span>
                     <span className="font-medium text-[#232323]">{senderAddress}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Zip/Post code</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Zip/Post code</span>
                     <span className="font-medium text-[#232323]">{senderZipCode}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Phone Number</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Phone Number</span>
                     <span className="font-medium text-[#232323]">{senderPhone || "N/A"}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Email</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Email</span>
                     <span className="font-medium text-[#232323]">{senderEmail || "N/A"}</span>
                   </div>
                 </div>
@@ -784,35 +784,35 @@ export default function CreateSingleOrderPage() {
               {/* Basic Info Details */}
               <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
                 <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
-                  <h3 className="text-base font-semibold text-[#232323]">Basic Info</h3>
+                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Basic Info</h3>
                 </div>
                 <div className="p-5 flex flex-col gap-3 text-sm">
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Shipping Origin</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Shipping Origin</span>
                     <span className="font-medium text-[#232323]">{shippingOrigin}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Order ID</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Order ID</span>
                     <span className="font-semibold text-[#0F798C]">
                       {sellerOrderId || "Pending (Auto-generated)"}
                     </span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Shipping Method</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Shipping Method</span>
                     <span className="font-medium text-[#232323]">
                       {shippingMethod === "EXPRESS" ? "Express" : "ePacket"}
                     </span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Details Description</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Details Description</span>
                     <span className="font-medium text-[#232323]">{detailDescription}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Created Time</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Created Time</span>
                     <span className="font-medium text-[#232323]">
                       {new Date().toLocaleDateString("vi-VN")}{" "}
                       <span className="text-[#7B7B7B]">
@@ -829,16 +829,16 @@ export default function CreateSingleOrderPage() {
               {/* Package Details */}
               <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
                 <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
-                  <h3 className="text-base font-semibold text-[#232323]">Package</h3>
+                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Package</h3>
                 </div>
                 <div className="p-5 flex flex-col gap-3 text-sm">
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Value</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Value</span>
                     <span className="font-medium text-[#232323]">${declaredValue}</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Dimensions</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Dimensions</span>
                     <span className="font-medium text-[#232323]">
                       {length && width && height
                         ? `L ${length} × W ${width} × H ${height} cm`
@@ -846,18 +846,18 @@ export default function CreateSingleOrderPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Weight</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Weight</span>
                     <span className="font-medium text-[#232323]">{weight} gr</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">Volume Weight</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Volume Weight</span>
                     <span className="font-medium text-[#232323]">{pricing.volumeWeight} gr</span>
                   </div>
 
-                  <div className="flex items-start">
-                    <span className="text-[#7B7B7B] w-36 flex-shrink-0">HS Code</span>
+                  <div className="flex items-start text-sm 2xl:text-xl">
+                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">HS Code</span>
                     <span className="font-medium text-[#232323]">
                       {products?.[0]?.hsCodeNumber
                         ? `${products[0].hsCodePrefix} - ${products[0].hsCodeNumber}`
@@ -873,21 +873,21 @@ export default function CreateSingleOrderPage() {
           <div className="flex flex-col gap-5">
             {/* Charges & Surcharges Card */}
             <div className="flex flex-col rounded-lg border border-[#0F798C] bg-[#CFFEF9] p-5 gap-4 shadow-sm">
-              <h3 className="text-lg font-medium text-[#232323]">Charges & Surcharges</h3>
+              <h3 className="text-sm 2xl:text-xl font-medium text-[#232323]">Charges & Surcharges</h3>
               <div className="flex flex-col gap-3 text-sm text-[#232323]">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center text-sm 2xl:text-xl">
                   <span className="text-[#7B7B7B]">Base Shipping Rate</span>
                   <span className="font-medium text-[#232323]">
                     ${pricing.baseShippingRate.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center text-sm 2xl:text-xl">
                   <span className="text-[#7B7B7B]">Fuel Surcharge</span>
                   <span className="font-medium text-[#232323]">
                     ${pricing.surchargeFee.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center text-sm 2xl:text-xl">
                   <span className="text-[#7B7B7B]">Chargeable Weight</span>
                   <span className="font-medium text-[#232323]">
                     {(pricing.chargeableWeight / 1000).toFixed(2)} kg
@@ -896,7 +896,7 @@ export default function CreateSingleOrderPage() {
 
                 <div className="border-t border-dashed border-[#5BCACE] my-1" />
 
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center text-sm 2xl:text-xl">
                   <span className="text-lg text-[#232323]">TOTAL AMOUNT</span>
                   <span className="text-xl font-bold text-[#0042D0]">
                     ${pricing.totalAmount.toFixed(2)}
@@ -915,9 +915,9 @@ export default function CreateSingleOrderPage() {
               />
               <label
                 htmlFor="get-label"
-                className="text-sm font-medium text-[#232323] cursor-pointer flex items-baseline gap-1.5"
+                className="text-sm 2xl:text-xl font-medium text-[#232323] cursor-pointer flex items-baseline gap-1.5"
               >
-                Get Label <span className="text-xs text-[#7B7B7B] font-normal">Description</span>
+                Get Label <span className="text-sm 2xl:text-base text-[#7B7B7B] font-normal">Description</span>
               </label>
             </div>
 
