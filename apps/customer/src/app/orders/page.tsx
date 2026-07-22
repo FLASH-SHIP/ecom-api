@@ -102,6 +102,8 @@ export default function CustomerOrdersPage() {
     {
       header: "Time",
       width: 120,
+      sortable: true,
+      sortKey: "createdAt",
       cell: (order: OrderType) => (
         <div className={"flex flex-col"}>
           <span>{format(new Date(order.createdAt), "dd/MM/yyyy")}</span>
@@ -112,6 +114,8 @@ export default function CustomerOrdersPage() {
     {
       header: "Reception",
       width: 320,
+      sortable: true,
+      sortKey: "receiverName",
       cell: (order: OrderType) => (
         <div className={"flex flex-col"}>
           <span>{order?.receiverName}</span>
@@ -138,6 +142,8 @@ export default function CustomerOrdersPage() {
     {
       header: "Order ID",
       width: 180,
+      sortable: true,
+      sortKey: "orderCode",
       cell: (order: OrderType) => (
         <span className="font-semibold text-[#0F798C] hover:underline cursor-pointer">
           <NextLink href={`/orders/${order.id}`}>{order.orderCode}</NextLink>
@@ -147,6 +153,8 @@ export default function CustomerOrdersPage() {
     {
       header: "Fee",
       width: 100,
+      sortable: true,
+      sortKey: "baseShippingFee",
       cell: (order: OrderType) => (
         <span className="font-semibold text-foreground">
           $
@@ -164,6 +172,8 @@ export default function CustomerOrdersPage() {
     {
       header: "Tracking number",
       width: 180,
+      sortable: true,
+      sortKey: "trackingNumber",
       cell: (order: OrderType) => <span>{order?.trackingNumber}</span>,
     },
     {

@@ -26,3 +26,4 @@ export { ChevronsLeftIcon } from "./icon-component/ChevronsLeftIcon";
 export { ChevronRightIcon } from "./icon-component/ChevronRightIcon";
 export { ChevronsRightIcon } from "./icon-component/ChevronsRightIcon";
 export { ThreeDotsVerticalIcon } from "./icon-component/ThreeDotsVerticalIcon";
+export { ArrowUpDownIcon } from "./icon-component/ArrowUpDownIcon";
