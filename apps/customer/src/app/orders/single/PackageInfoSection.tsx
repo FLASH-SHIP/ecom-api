@@ -23,6 +23,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
+import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,14 +49,12 @@ export interface PackageFormFields {
   weight: string;
 }
 
-export interface PackageInfoSectionProps<
-  TFieldValues extends FieldValues & PackageFormFields = FieldValues & PackageFormFields,
-> {
-  control: Control<TFieldValues>;
-  register: UseFormRegister<TFieldValues>;
-  errors: FieldErrors<TFieldValues>;
-  setValue: UseFormSetValue<TFieldValues>;
-  watch: UseFormWatch<TFieldValues>;
+export interface PackageInfoSectionProps {
+  control: Control<OrderFormValues>;
+  register: UseFormRegister<OrderFormValues>;
+  errors: FieldErrors<OrderFormValues>;
+  setValue: UseFormSetValue<OrderFormValues>;
+  watch: UseFormWatch<OrderFormValues>;
   savePackageSetting: boolean;
   setSavePackageSetting: (val: boolean) => void;
   selectedPackageId: number | null;
@@ -63,9 +62,7 @@ export interface PackageInfoSectionProps<
   savedPackages: SavedPackage[];
 }
 
-export function PackageInfoSection<
-  TFieldValues extends FieldValues & PackageFormFields = FieldValues & PackageFormFields,
->({
+export function PackageInfoSection({
   control,
   register,
   errors,
@@ -76,7 +73,7 @@ export function PackageInfoSection<
   selectedPackageId,
   setSelectedPackageId,
   savedPackages,
-}: PackageInfoSectionProps<TFieldValues>) {
+}: PackageInfoSectionProps) {
   const controlParent = control as unknown as Control<PackageFormFields>;
   const registerParent = register as unknown as UseFormRegister<PackageFormFields>;
   const setValueParent = setValue as unknown as UseFormSetValue<PackageFormFields>;

@@ -28,6 +28,7 @@ import {
 import { TableBase } from "@ecom/ui/components/table-base";
 import { format } from "date-fns";
 import { Download, Search } from "lucide-react";
+import { getShippingMethodLabel, getShippingOriginLabel } from "@ecom/types";
 import NextLink from "next/link";
 import { useState } from "react";
 
@@ -167,7 +168,7 @@ export default function CustomerOrdersPage() {
     {
       header: "Shipping Methods",
       width: 160,
-      cell: (order: OrderType) => <span>{order?.shippingMethod}</span>,
+      cell: (order: OrderType) => <span>{getShippingMethodLabel(order?.shippingMethod)}</span>,
     },
     {
       header: "Tracking number",
@@ -355,12 +356,12 @@ export default function CustomerOrdersPage() {
                     <div className="grid grid-cols-2 gap-y-1.5 text-sm">
                       <div className="text-muted-foreground">Shipping Method</div>
                       <div className="font-medium text-foreground">
-                        {orderDetails.shippingMethod}
+                        {getShippingMethodLabel(orderDetails.shippingMethod)}
                       </div>
 
                       <div className="text-muted-foreground">Shipping Origin</div>
                       <div className="font-medium text-foreground">
-                        {orderDetails.shippingOrigin}
+                        {getShippingOriginLabel(orderDetails.shippingOrigin)}
                       </div>
 
                       <div className="text-muted-foreground">Status</div>

@@ -83,7 +83,7 @@ export default function CustomerOrderDetailPage() {
                   <div className="text-muted-foreground">Recipient Name</div>
                   <div className="col-span-2 font-medium text-foreground">{order.receiverName}</div>
 
-                  <div className="text-muted-foreground">City/State/Country</div>
+                  <div className="text-muted-foreground break-all">City/State/Country</div>
                   <div className="col-span-2 font-medium text-foreground">
                     {order.receiverCity}, {order.receiverState}, {order.receiverCountry}
                   </div>

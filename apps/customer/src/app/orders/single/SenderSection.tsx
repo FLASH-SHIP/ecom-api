@@ -23,6 +23,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
+import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -56,14 +57,12 @@ export interface SenderFormFields {
   senderCountry: string;
 }
 
-export interface SenderSectionProps<
-  TFieldValues extends FieldValues & SenderFormFields = FieldValues & SenderFormFields,
-> {
-  control: Control<TFieldValues>;
-  register: UseFormRegister<TFieldValues>;
-  errors: FieldErrors<TFieldValues>;
-  setValue: UseFormSetValue<TFieldValues>;
-  watch: UseFormWatch<TFieldValues>;
+export interface SenderSectionProps {
+  control: Control<OrderFormValues>;
+  register: UseFormRegister<OrderFormValues>;
+  errors: FieldErrors<OrderFormValues>;
+  setValue: UseFormSetValue<OrderFormValues>;
+  watch: UseFormWatch<OrderFormValues>;
   saveSenderSetting: boolean;
   setSaveSenderSetting: (val: boolean) => void;
   selectedSenderId: number | null;
@@ -71,9 +70,7 @@ export interface SenderSectionProps<
   savedSenders: SavedSender[];
 }
 
-export function SenderSection<
-  TFieldValues extends FieldValues & SenderFormFields = FieldValues & SenderFormFields,
->({
+export function SenderSection({
   control,
   register,
   errors,
@@ -84,7 +81,7 @@ export function SenderSection<
   selectedSenderId,
   setSelectedSenderId,
   savedSenders,
-}: SenderSectionProps<TFieldValues>) {
+}: SenderSectionProps) {
   const controlParent = control as unknown as Control<SenderFormFields>;
   const registerParent = register as unknown as UseFormRegister<SenderFormFields>;
   const setValueParent = setValue as unknown as UseFormSetValue<SenderFormFields>;

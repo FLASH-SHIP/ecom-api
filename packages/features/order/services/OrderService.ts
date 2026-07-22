@@ -8,6 +8,7 @@ import {
   prisma,
   runInTransaction,
   type ShippingMethod,
+  type ShippingOrigin,
 } from "@ecom/prisma";
 import type { CreateOrderInput, OrderRepository } from "../repositories/OrderRepository";
 
@@ -31,7 +32,7 @@ export interface CalculateOrderFreightParams {
 export interface CreateOrderParams {
   customerId: string;
   shippingMethod: ShippingMethod;
-  shippingOrigin?: string;
+  shippingOrigin?: ShippingOrigin;
   sellerOrderId?: string | null;
   totalPackets?: number;
   importId?: string | null;

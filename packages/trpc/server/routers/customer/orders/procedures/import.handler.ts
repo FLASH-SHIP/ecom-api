@@ -1,16 +1,17 @@
 import { getOrderService } from "@ecom/features/di/containers/OrderService";
 import { parseDateTimezone } from "@ecom/lib";
-import { type Prisma, prisma, ShippingMethod } from "@ecom/prisma";
+import { type Prisma, prisma, ShippingMethod, ShippingOrigin } from "@ecom/prisma";
 import { authedProcedure } from "@ecom/trpc/server/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 const shippingMethodSchema = z.nativeEnum(ShippingMethod);
+const shippingOriginSchema = z.nativeEnum(ShippingOrigin);
 
 const importOrderItemSchema = z.object({
   excelRowNumbers: z.array(z.number()),
   shippingMethod: shippingMethodSchema,
-  shippingOrigin: z.string().default("HAN"),
+  shippingOrigin: shippingOriginSchema.default(ShippingOrigin.HAN),
   sellerOrderId: z.string().optional().nullable(),
 
   senderName: z.string().optional().nullable(),

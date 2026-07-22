@@ -8,12 +8,13 @@ import type {
   OrderProduct,
   OrderTrackingCheckpoint,
 } from "@ecom/prisma";
-import { ContentStatus, OrderStatus, type Prisma, ShippingMethod } from "@ecom/prisma";
+import { ContentStatus, OrderStatus, type Prisma, ShippingMethod, ShippingOrigin } from "@ecom/prisma";
 import { authedProcedure } from "@ecom/trpc/server/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 const shippingMethodSchema = z.nativeEnum(ShippingMethod);
+const shippingOriginSchema = z.nativeEnum(ShippingOrigin);
 const orderStatusSchema = z.nativeEnum(OrderStatus);
 
 export interface CachedOrder
@@ -101,7 +102,7 @@ export const create = authedProcedure
   .input(
     z.object({
       shippingMethod: shippingMethodSchema,
-      shippingOrigin: z.string().default("HAN"),
+      shippingOrigin: shippingOriginSchema.default(ShippingOrigin.HAN),
       sellerOrderId: z.string().optional().nullable(),
       totalPackets: z.number().int().positive().optional().default(1),
       importId: z.string().optional().nullable(),

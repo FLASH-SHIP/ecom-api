@@ -23,6 +23,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
+import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -82,14 +83,12 @@ export interface ReceiverFormFields {
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
-export interface ReceiverSectionProps<
-  TFieldValues extends FieldValues & ReceiverFormFields = FieldValues & ReceiverFormFields,
-> {
-  control: Control<TFieldValues>;
-  register: UseFormRegister<TFieldValues>;
-  errors: FieldErrors<TFieldValues>;
-  setValue: UseFormSetValue<TFieldValues>;
-  watch: UseFormWatch<TFieldValues>;
+export interface ReceiverSectionProps {
+  control: Control<OrderFormValues>;
+  register: UseFormRegister<OrderFormValues>;
+  errors: FieldErrors<OrderFormValues>;
+  setValue: UseFormSetValue<OrderFormValues>;
+  watch: UseFormWatch<OrderFormValues>;
   saveReceiverSetting: boolean;
   setSaveReceiverSetting: (val: boolean) => void;
   selectedReceiverId: number | null;
@@ -100,9 +99,7 @@ export interface ReceiverSectionProps<
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export function ReceiverSection<
-  TFieldValues extends FieldValues & ReceiverFormFields = FieldValues & ReceiverFormFields,
->({
+export function ReceiverSection({
   control,
   register,
   errors,
@@ -112,7 +109,7 @@ export function ReceiverSection<
   selectedReceiverId,
   setSelectedReceiverId,
   savedReceivers,
-}: ReceiverSectionProps<TFieldValues>) {
+}: ReceiverSectionProps) {
   const controlParent = control as unknown as Control<ReceiverFormFields>;
   const registerParent = register as unknown as UseFormRegister<ReceiverFormFields>;
   const setValueParent = setValue as unknown as UseFormSetValue<ReceiverFormFields>;
@@ -120,8 +117,6 @@ export function ReceiverSection<
 
   // Fetch supported countries from HS Code API
   const { data: countriesData } = trpc.public.v1.hscode.getCountries.useQuery();
-
-
 
   const handleSelectSavedReceiver = (value: string) => {
     const id = Number(value);
@@ -153,8 +148,6 @@ export function ReceiverSection<
       {/* Body */}
       <div className="p-4 flex flex-col gap-4 bg-[#FDFFFF]">
         <FieldGroup>
-
-
           {/* Form fields: ALWAYS visible */}
           <div className="flex flex-col gap-4">
             {/* Address Row */}

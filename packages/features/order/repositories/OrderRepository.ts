@@ -9,6 +9,7 @@ import type {
   PaymentStatus,
   PrismaClient,
   ShippingMethod,
+  ShippingOrigin,
 } from "@ecom/prisma";
 import { Prisma } from "@ecom/prisma";
 
@@ -22,7 +23,7 @@ export interface CreateOrderInput {
   importCustomsStatus?: CustomsStatus;
   paymentStatus?: PaymentStatus;
   shippingMethod: ShippingMethod;
-  shippingOrigin?: string;
+  shippingOrigin?: ShippingOrigin;
   sellerOrderId?: string | null;
   totalPackets?: number;
   trackingNumber?: string | null;

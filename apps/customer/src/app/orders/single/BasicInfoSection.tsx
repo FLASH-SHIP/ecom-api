@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  SHIPPING_METHOD_OPTIONS,
+  SHIPPING_ORIGIN_OPTIONS,
+  ShippingMethod,
+  ShippingOrigin,
+  getShippingMethodLabel,
+  getShippingOriginLabel,
+} from "@ecom/types";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
 import {
@@ -10,38 +18,23 @@ import {
   SelectValue,
 } from "@ecom/ui/components/select";
 import { cn } from "@ecom/ui/lib/utils";
-import {
-  type Control,
-  Controller,
-  type FieldErrors,
-  type FieldValues,
-  type UseFormRegister,
-} from "react-hook-form";
+import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
+import { Controller } from "react-hook-form";
+import type { OrderFormValues } from "./page";
 
-export interface BasicInfoFormFields {
-  shippingOrigin: string;
-  shippingMethod: string;
-  sellerOrderId?: string;
-  totalPackets?: string;
-  detailDescription?: string;
-  declaredValue?: string;
+
+
+export interface BasicInfoSectionProps {
+  control: Control<OrderFormValues>;
+  register: UseFormRegister<OrderFormValues>;
+  errors: FieldErrors<OrderFormValues>;
 }
 
-export interface BasicInfoSectionProps<TFieldValues extends FieldValues = FieldValues> {
-  control: Control<TFieldValues>;
-  register: UseFormRegister<TFieldValues>;
-  errors: FieldErrors<TFieldValues>;
-}
-
-export function BasicInfoSection<TFieldValues extends FieldValues = FieldValues>({
+export function BasicInfoSection({
   control,
   register,
   errors,
-}: BasicInfoSectionProps<TFieldValues>) {
-  const controlParent = control as unknown as Control<BasicInfoFormFields>;
-  const registerParent = register as unknown as UseFormRegister<BasicInfoFormFields>;
-  const errorsParent = errors as unknown as FieldErrors<BasicInfoFormFields>;
-
+}: BasicInfoSectionProps) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
@@ -59,25 +52,28 @@ export function BasicInfoSection<TFieldValues extends FieldValues = FieldValues>
             </FieldLabel>
             <Controller
               name="shippingOrigin"
-              control={controlParent}
+              control={control}
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger
                     className={cn(
                       "w-full bg-background/50 border-input",
-                      errorsParent.shippingOrigin && "border-destructive focus:ring-destructive",
+                      errors.shippingOrigin && "border-destructive focus:ring-destructive",
                     )}
                   >
                     <SelectValue placeholder="Select shipping origin" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HAN">HAN (Hà Nội)</SelectItem>
-                    <SelectItem value="SGN">SGN (TP. HCM)</SelectItem>
+                    {SHIPPING_ORIGIN_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            <FieldError errors={[errorsParent.shippingOrigin]} />
+            <FieldError errors={[errors.shippingOrigin]} />
           </Field>
 
           {/* Shipping Method */}
@@ -87,25 +83,28 @@ export function BasicInfoSection<TFieldValues extends FieldValues = FieldValues>
             </FieldLabel>
             <Controller
               name="shippingMethod"
-              control={controlParent}
+              control={control}
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger
                     className={cn(
                       "w-full bg-background/50 border-input",
-                      errorsParent.shippingMethod && "border-destructive focus:ring-destructive",
+                      errors.shippingMethod && "border-destructive focus:ring-destructive",
                     )}
                   >
                     <SelectValue placeholder="Select shipping method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="EPACKET">ePacket</SelectItem>
-                    <SelectItem value="EXPRESS">Express</SelectItem>
+                    {SHIPPING_METHOD_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            <FieldError errors={[errorsParent.shippingMethod]} />
+            <FieldError errors={[errors.shippingMethod]} />
           </Field>
 
           {/* Order ID */}
@@ -116,14 +115,14 @@ export function BasicInfoSection<TFieldValues extends FieldValues = FieldValues>
             <Input
               id="sellerOrderId"
               type="text"
-              {...registerParent("sellerOrderId")}
+              {...register("sellerOrderId")}
               placeholder="Enter order id"
               className={cn(
                 "w-full bg-background/50",
-                errorsParent.sellerOrderId && "border-destructive focus-visible:ring-destructive",
+                errors.sellerOrderId && "border-destructive focus-visible:ring-destructive",
               )}
             />
-            <FieldError errors={[errorsParent.sellerOrderId]} />
+            <FieldError errors={[errors.sellerOrderId]} />
           </Field>
 
           {/* Total Packets */}
@@ -136,19 +135,19 @@ export function BasicInfoSection<TFieldValues extends FieldValues = FieldValues>
               type="number"
               min={1}
               required
-              {...registerParent("totalPackets")}
+              {...register("totalPackets")}
               placeholder="Enter total packets"
               className={cn(
                 "w-full bg-background/50",
-                errorsParent.totalPackets && "border-destructive focus-visible:ring-destructive",
+                errors.totalPackets && "border-destructive focus-visible:ring-destructive",
               )}
             />
-            <FieldError errors={[errorsParent.totalPackets]} />
+            <FieldError errors={[errors.totalPackets]} />
           </Field>
 
           {/* Hidden inputs for auto-calculated values */}
-          <input type="hidden" {...registerParent("detailDescription")} />
-          <input type="hidden" {...registerParent("declaredValue")} />
+          <input type="hidden" {...register("detailDescription")} />
+          <input type="hidden" {...register("declaredValue")} />
         </FieldGroup>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { trpc } from "@customer/lib/trpc";
+import { ShippingMethod, ShippingOrigin } from "@ecom/types";
 import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent } from "@ecom/ui/components/card";
 import { Checkbox } from "@ecom/ui/components/checkbox";
@@ -18,8 +19,8 @@ import { SenderSection } from "./SenderSection";
 import { useOrderStore } from "./useOrderStore";
 
 const orderFormSchema = z.object({
-  shippingMethod: z.enum(["EXPRESS", "EPACKET"]),
-  shippingOrigin: z.string().min(1, "Vui lòng chọn kho gửi."),
+  shippingMethod: z.nativeEnum(ShippingMethod),
+  shippingOrigin: z.nativeEnum(ShippingOrigin),
   detailDescription: z.string().min(1, "Vui lòng nhập mô tả hàng hóa."),
   declaredValue: z
     .string()
@@ -143,8 +144,8 @@ export default function CreateSingleOrderPage() {
   } = useForm<OrderFormValues>({
     resolver: zodResolver(orderFormSchema),
     defaultValues: {
-      shippingMethod: "EPACKET",
-      shippingOrigin: "HAN",
+      shippingMethod: ShippingMethod.EPACKET,
+      shippingOrigin: ShippingOrigin.HAN,
       detailDescription: "",
       declaredValue: "",
       sellerOrderId: "",

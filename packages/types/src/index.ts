@@ -57,3 +57,44 @@ export const ServiceType = {
   IMPORT: "IMPORT",
   LASTMILE: "LASTMILE",
 } as const;
+
+export enum ShippingOrigin {
+  HAN = "HAN",
+  SGN = "SGN",
+}
+
+export const SHIPPING_ORIGIN_LABELS: Record<ShippingOrigin, string> = {
+  [ShippingOrigin.HAN]: "HAN (Hà Nội)",
+  [ShippingOrigin.SGN]: "SGN (TP. HCM)",
+};
+
+export function getShippingOriginLabel(origin?: ShippingOrigin | string | null): string {
+  if (!origin) return "";
+  return SHIPPING_ORIGIN_LABELS[origin as ShippingOrigin] ?? origin;
+}
+
+export const SHIPPING_ORIGIN_OPTIONS = Object.values(ShippingOrigin).map((value) => ({
+  value,
+  label: getShippingOriginLabel(value),
+}));
+
+export enum ShippingMethod {
+  EXPRESS = "EXPRESS",
+  EPACKET = "EPACKET",
+}
+
+export const SHIPPING_METHOD_LABELS: Record<ShippingMethod, string> = {
+  [ShippingMethod.EPACKET]: "ePacket",
+  [ShippingMethod.EXPRESS]: "Express",
+};
+
+export function getShippingMethodLabel(method?: ShippingMethod | string | null): string {
+  if (!method) return "";
+  return SHIPPING_METHOD_LABELS[method as ShippingMethod] ?? method;
+}
+
+export const SHIPPING_METHOD_OPTIONS = Object.values(ShippingMethod).map((value) => ({
+  value,
+  label: getShippingMethodLabel(value),
+}));
+

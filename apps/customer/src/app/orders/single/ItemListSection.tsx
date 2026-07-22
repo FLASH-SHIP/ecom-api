@@ -12,7 +12,7 @@ import {
 } from "@ecom/ui/components/select";
 import { cn } from "@ecom/ui/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
+import type { Control, FieldErrors, FieldValues, UseFormRegister } from "react-hook-form";
 import { Controller, useFieldArray } from "react-hook-form";
 import type { OrderFormValues } from "./page";
 import {TrashIcon} from "@ecom/ui/components/icons";
@@ -23,9 +23,17 @@ export interface ItemListSectionProps {
   errors: FieldErrors<OrderFormValues>;
 }
 
-export function ItemListSection({ control, register, errors }: ItemListSectionProps) {
+export function ItemListSection({
+  control,
+  register,
+  errors,
+}: ItemListSectionProps) {
+  const controlParent = control as unknown as Control<OrderFormValues>;
+  const registerParent = register as unknown as UseFormRegister<OrderFormValues>;
+  const errorsParent = errors as unknown as FieldErrors<OrderFormValues>;
+
   const { fields, append, remove } = useFieldArray({
-    control,
+    control: controlParent,
     name: "products",
   });
 
