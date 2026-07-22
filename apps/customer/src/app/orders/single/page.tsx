@@ -237,6 +237,8 @@ export default function CreateSingleOrderPage() {
 
   // Saved packages from DB
   const { data: savedPackages = [] } = trpc.customer.packages.list.useQuery();
+  const createPackageMutation = trpc.customer.packages.create.useMutation();
+  const updatePackageMutation = trpc.customer.packages.update.useMutation();
 
   const [isGetLabel, setIsGetLabel] = useState(false);
 
@@ -420,6 +422,7 @@ export default function CreateSingleOrderPage() {
       height,
       declaredValue,
       packingTypeId,
+      packageName,
       products,
     } = formValues;
 
@@ -521,6 +524,32 @@ export default function CreateSingleOrderPage() {
           console.log("Creating new receiver settings");
           promises.push(
             createReceiverMutation.mutateAsync({ ...receiverPayload, isDefault: false }),
+          );
+        }
+      }
+
+      // Save package to DB if checkbox is ticked
+      console.log("savePackageSetting state value in handleCreateOrder:", savePackageSetting);
+      if (savePackageSetting) {
+        const packagePayload = {
+          label: packageName,
+          packageName: packageName,
+          packingTypeId: Number(packingTypeId),
+          length: length ? Number(length) : null,
+          width: width ? Number(width) : null,
+          height: height ? Number(height) : null,
+          weight: Number(weight),
+        };
+        console.log("packagePayload constructed:", packagePayload);
+        if (selectedPackageId) {
+          console.log("Updating package settings for id:", selectedPackageId);
+          promises.push(
+            updatePackageMutation.mutateAsync({ id: selectedPackageId, data: packagePayload }),
+          );
+        } else {
+          console.log("Creating new package settings");
+          promises.push(
+            createPackageMutation.mutateAsync({ ...packagePayload, isDefault: false }),
           );
         }
       }
