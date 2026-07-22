@@ -1,4 +1,4 @@
-import { ShippingOrigin, type ShippingMethod } from "@ecom/prisma";
+import { ShippingOrigin, ShippingMethod } from "@ecom/types";
 
 export interface ExcelRow {
   [key: string]: unknown;
@@ -163,10 +163,10 @@ export function parseExcelRows(
       const dimensionHeight = heightVal ? parseFloat(heightVal) : null;
       const declaredValue = declaredValueVal ? parseFloat(declaredValueVal) : 10;
 
-      const shippingMethod =
-        shippingMethodVal === "EXPRESS" || shippingMethodVal === "EPACKET"
-          ? shippingMethodVal
-          : "EXPRESS";
+      const shippingMethod: ShippingMethod =
+        shippingMethodVal === "EPACKET"
+          ? ShippingMethod.EPACKET
+          : ShippingMethod.EXPRESS;
 
       ordersMap.set(sellerOrderId, {
         excelRowNumbers: [lineNum],
