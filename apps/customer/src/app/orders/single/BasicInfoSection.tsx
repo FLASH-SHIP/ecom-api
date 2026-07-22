@@ -38,8 +38,8 @@ export function BasicInfoSection({
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-        <h3 className="text-lg 2xl:text-xl font-semibold text-[#232323] leading-6">Basic Info</h3>
+      <div className="flex items-center justify-between px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
+        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">Basic Info</h3>
       </div>
 
       {/* Body */}

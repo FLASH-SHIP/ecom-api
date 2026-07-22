@@ -1,24 +1,17 @@
 "use client";
 
 import { trpc } from "@customer/lib/trpc";
-import { Checkbox } from "@ecom/ui/components/checkbox";
+import { getPostalCodeRuleInfo } from "@ecom/lib/addressValidator";
+import { ShippingMethod } from "@ecom/types";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
 import { SearchableSelect } from "@ecom/ui/components/searchable-select";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ecom/ui/components/select";
 import { cn } from "@ecom/ui/lib/utils";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   type Control,
   Controller,
   type FieldErrors,
-  type FieldValues,
   type UseFormRegister,
   type UseFormSetValue,
   type UseFormWatch,
@@ -67,6 +60,7 @@ function formatReceiverAddress(receiver: {
 // Form Fields Interface
 // ---------------------------------------------------------------------------
 export interface ReceiverFormFields {
+  shippingMethod?: ShippingMethod;
   receiverName: string;
   receiverPhone?: string;
   receiverEmail?: string;
@@ -104,6 +98,7 @@ export function ReceiverSection({
   register,
   errors,
   setValue,
+  watch,
   saveReceiverSetting,
   setSaveReceiverSetting,
   selectedReceiverId,
@@ -114,9 +109,55 @@ export function ReceiverSection({
   const registerParent = register as unknown as UseFormRegister<ReceiverFormFields>;
   const setValueParent = setValue as unknown as UseFormSetValue<ReceiverFormFields>;
   const errorsParent = errors as unknown as FieldErrors<ReceiverFormFields>;
+  const watchParent = watch as unknown as UseFormWatch<ReceiverFormFields>;
+
+  const shippingMethod = watchParent("shippingMethod");
+  const selectedCountry = watchParent("receiverCountry");
+  const selectedState = watchParent("receiverState");
+  const isEPacket = shippingMethod === ShippingMethod.EPACKET;
+
+  // Selected State ID for ePacket US City list
+  const [selectedStateId, setSelectedStateId] = useState<number | null>(null);
 
   // Fetch supported countries from HS Code API
   const { data: countriesData } = trpc.public.v1.hscode.getCountries.useQuery();
+
+  // Fetch US States for ePacket
+  const { data: usStatesList = [] } = trpc.customer.divisions.listStates.useQuery(undefined, {
+    enabled: isEPacket,
+  });
+
+  // Fetch US Cities for selected State in ePacket
+  const { data: usCitiesList = [] } = trpc.customer.divisions.listCities.useQuery(
+    { parentId: selectedStateId ?? 0 },
+    { enabled: isEPacket && !!selectedStateId },
+  );
+
+  // Automatically force Country = US when ePacket is selected
+  useEffect(() => {
+    if (isEPacket && selectedCountry !== "US") {
+      setValueParent("receiverCountry", "US");
+    }
+  }, [isEPacket, selectedCountry, setValueParent]);
+
+  // Sync selectedStateId when receiverState changes (e.g. from saved receiver auto-fill)
+  useEffect(() => {
+    if (isEPacket && selectedState && usStatesList.length > 0) {
+      const match = usStatesList.find(
+        (s) =>
+          s.code.toUpperCase() === selectedState.toUpperCase() ||
+          s.name.toUpperCase() === selectedState.toUpperCase(),
+      );
+      if (match && match.id !== selectedStateId) {
+        setSelectedStateId(match.id);
+      }
+    }
+  }, [isEPacket, selectedState, usStatesList, selectedStateId]);
+
+  const postalCodeRuleInfo = useMemo(
+    () => getPostalCodeRuleInfo(selectedCountry || ""),
+    [selectedCountry],
+  );
 
   const handleSelectSavedReceiver = (value: string) => {
     const id = Number(value);
@@ -134,15 +175,15 @@ export function ReceiverSection({
     setValueParent("receiverCity", receiver.city);
     setValueParent("receiverCityName", receiver.cityName ?? receiver.city);
     setValueParent("receiverZipCode", receiver.zipCode);
-    setValueParent("receiverCountry", receiver.country ?? "");
+    setValueParent("receiverCountry", receiver.country ?? (isEPacket ? "US" : ""));
     setSaveReceiverSetting(false);
   };
 
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-        <h3 className="text-lg 2xl:text-xl font-semibold text-[#232323] leading-6">Receiver</h3>
+      <div className="flex items-center justify-between px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
+        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">Receiver</h3>
       </div>
 
       {/* Body */}
@@ -160,6 +201,7 @@ export function ReceiverSection({
                   id="receiverAddress1"
                   type="text"
                   required
+                  maxLength={150}
                   {...registerParent("receiverAddress1")}
                   placeholder="Enter address 1"
                   className={cn(
@@ -176,6 +218,7 @@ export function ReceiverSection({
                 <Input
                   id="receiverAddress2"
                   type="text"
+                  maxLength={150}
                   {...registerParent("receiverAddress2")}
                   placeholder="Enter address 2"
                   className={cn(
@@ -200,16 +243,22 @@ export function ReceiverSection({
                   control={controlParent}
                   render={({ field }) => (
                     <SearchableSelect
-                      value={field.value}
-                      onValueChange={field.onChange}
+                      value={isEPacket ? "US" : field.value}
+                      onValueChange={(val) => {
+                        if (!isEPacket) field.onChange(val);
+                      }}
                       options={
-                        (countriesData ?? []).map((c) => ({ value: c.code, label: c.name }))
+                        isEPacket
+                          ? [{ value: "US", label: "United States" }]
+                          : (countriesData ?? []).map((c) => ({ value: c.code, label: c.name }))
                       }
-                      placeholder="Select country"
+                      placeholder={isEPacket ? "US" : "Select country"}
                       searchPlaceholder="Search country..."
-                      allowClear={true}
+                      disabled={isEPacket}
+                      allowClear={!isEPacket}
                       className={cn(
                         "bg-background/50 border-input",
+                        isEPacket && "opacity-70 cursor-not-allowed bg-muted",
                         errorsParent.receiverCountry && "border-destructive",
                       )}
                     />
@@ -223,18 +272,55 @@ export function ReceiverSection({
                 <FieldLabel htmlFor="receiverState">
                   State <span className="text-destructive">*</span>
                 </FieldLabel>
-                <Input
-                  id="receiverState"
-                  type="text"
-                  required
-                  {...registerParent("receiverState")}
-                  placeholder="Enter state"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errorsParent.receiverState &&
-                      "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
+                {isEPacket ? (
+                  <Controller
+                    name="receiverState"
+                    control={controlParent}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        value={field.value}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          const matchedState = usStatesList.find((s) => s.code === val);
+                          if (matchedState) {
+                            setSelectedStateId(matchedState.id);
+                            setValueParent("receiverStateName", matchedState.name);
+                          } else {
+                            setSelectedStateId(null);
+                          }
+                          // Reset city on state change
+                          setValueParent("receiverCity", "");
+                          setValueParent("receiverCityName", "");
+                        }}
+                        options={usStatesList.map((s) => ({
+                          value: s.code,
+                          label: `${s.code} - ${s.name}`,
+                        }))}
+                        placeholder="Select US State"
+                        searchPlaceholder="Search US State..."
+                        allowClear={true}
+                        className={cn(
+                          "bg-background/50 border-input",
+                          errorsParent.receiverState && "border-destructive",
+                        )}
+                      />
+                    )}
+                  />
+                ) : (
+                  <Input
+                    id="receiverState"
+                    type="text"
+                    required
+                    maxLength={50}
+                    {...registerParent("receiverState")}
+                    placeholder="Enter state"
+                    className={cn(
+                      "w-full bg-background/50",
+                      errorsParent.receiverState &&
+                        "border-destructive focus-visible:ring-destructive",
+                    )}
+                  />
+                )}
                 <FieldError errors={[errorsParent.receiverState]} />
               </Field>
 
@@ -243,18 +329,47 @@ export function ReceiverSection({
                 <FieldLabel htmlFor="receiverCity">
                   City <span className="text-destructive">*</span>
                 </FieldLabel>
-                <Input
-                  id="receiverCity"
-                  type="text"
-                  required
-                  {...registerParent("receiverCity")}
-                  placeholder="Enter city"
-                  className={cn(
-                    "w-full bg-background/50",
-                    errorsParent.receiverCity &&
-                      "border-destructive focus-visible:ring-destructive",
-                  )}
-                />
+                {isEPacket ? (
+                  <Controller
+                    name="receiverCity"
+                    control={controlParent}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        value={field.value}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          setValueParent("receiverCityName", val);
+                        }}
+                        options={usCitiesList.map((c) => ({
+                          value: c.name,
+                          label: c.name,
+                        }))}
+                        placeholder={selectedStateId ? "Select US City" : "Select State first"}
+                        searchPlaceholder="Search US City..."
+                        disabled={!selectedStateId}
+                        allowClear={true}
+                        className={cn(
+                          "bg-background/50 border-input",
+                          !selectedStateId && "opacity-60 cursor-not-allowed bg-muted",
+                          errorsParent.receiverCity && "border-destructive",
+                        )}
+                      />
+                    )}
+                  />
+                ) : (
+                  <Input
+                    id="receiverCity"
+                    type="text"
+                    required
+                    {...registerParent("receiverCity")}
+                    placeholder="Enter city"
+                    className={cn(
+                      "w-full bg-background/50",
+                      errorsParent.receiverCity &&
+                        "border-destructive focus-visible:ring-destructive",
+                    )}
+                  />
+                )}
                 <FieldError errors={[errorsParent.receiverCity]} />
               </Field>
 
@@ -268,7 +383,7 @@ export function ReceiverSection({
                   type="text"
                   required
                   {...registerParent("receiverZipCode")}
-                  placeholder="Enter postcode/zipcode"
+                  placeholder={"Enter postcode/zipcode"}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverZipCode &&
@@ -289,6 +404,7 @@ export function ReceiverSection({
                   id="receiverName"
                   type="text"
                   required
+                  maxLength={100}
                   {...registerParent("receiverName")}
                   placeholder="Enter receiver name"
                   className={cn(
@@ -301,12 +417,11 @@ export function ReceiverSection({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="receiverPhone">
-                  Phone number <span className="text-destructive">*</span>
-                </FieldLabel>
+                <FieldLabel htmlFor="receiverPhone">Phone number</FieldLabel>
                 <Input
                   id="receiverPhone"
                   type="text"
+                  maxLength={15}
                   {...registerParent("receiverPhone")}
                   placeholder="Enter phone number"
                   className={cn(
