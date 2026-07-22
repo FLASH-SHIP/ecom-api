@@ -117,9 +117,9 @@ export function CustomerDashboardLayout({ children }: CustomerDashboardLayoutPro
 
         {/* Right Tools (Theme, Wallet, Notification, Account Dropdown) */}
         <div className="flex items-center gap-3">
-          <div className={"hidden lg:block"}>
+          {/*<div className={"hidden lg:block"}>
             <ThemeToggle storageKey="customer-theme" />
-          </div>
+          </div>*/}
 
           {/* Wallet */}
           <div className="hidden lg:flex items-center gap-2 rounded-md bg-[#CFFEF9] dark:bg-teal-950/40 px-3 py-[7px] text-sm font-semibold text-[#0F798C] dark:text-teal-200 border border-transparent dark:border-teal-800/30 cursor-pointer">

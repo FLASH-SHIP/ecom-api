@@ -392,7 +392,7 @@ export function TableBase<T extends { id: string | number }>({
                       // biome-ignore lint/suspicious/noArrayIndexKey: row cells are stable within structured column definitions
                       key={colIdx}
                       className={cn(
-                        "py-3.5 px-4 text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#232323] align-middle border-b border-border",
+                        "p-3 text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#232323] align-middle border-b border-border",
                         isSticky &&
                           "sticky z-10 bg-background group-hover:bg-[#FAFAFC] dark:group-hover:bg-[#141416] transition-colors duration-150",
                         col.className,

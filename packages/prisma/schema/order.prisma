@@ -59,6 +59,7 @@ model Order {
   shippingMethod      ShippingMethod @map("shipping_method")
   shippingOrigin      String         @default("HAN") @map("shipping_origin")
   sellerOrderId       String?        @map("seller_order_id")
+  totalPackets        Int            @default(1) @map("total_packets")
   trackingNumber      String?        @map("tracking_number")
 
   // Sender Details

@@ -33,6 +33,7 @@ export interface CreateOrderParams {
   shippingMethod: ShippingMethod;
   shippingOrigin?: string;
   sellerOrderId?: string | null;
+  totalPackets?: number;
   importId?: string | null;
 
   // Sender info
@@ -310,6 +311,7 @@ export class OrderService {
       shippingMethod,
       shippingOrigin,
       sellerOrderId,
+      totalPackets: params.totalPackets ?? 1,
 
       senderName: params.senderName,
       senderAddress: params.senderAddress,
