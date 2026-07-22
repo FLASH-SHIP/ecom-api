@@ -103,6 +103,7 @@ export const create = authedProcedure
       shippingMethod: shippingMethodSchema,
       shippingOrigin: z.string().default("HAN"),
       sellerOrderId: z.string().optional().nullable(),
+      totalPackets: z.number().int().positive().optional().default(1),
       importId: z.string().optional().nullable(),
 
       senderName: z.string().optional().nullable(),

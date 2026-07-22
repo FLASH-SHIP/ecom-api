@@ -66,7 +66,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                     {/* Details Description */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="text-[#232323] text-sm md:text-base font-medium">
-                        Details Description <span className="text-destructive ml-0.5">*</span>
+                        Details Description <span className="text-destructive">*</span>
                       </FieldLabel>
                       <Input
                         type="text"
@@ -85,7 +85,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                     {/* Quantity */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="text-[#232323] text-sm md:text-base font-medium">
-                        Quantity <span className="text-destructive ml-0.5">*</span>
+                        Quantity <span className="text-destructive">*</span>
                       </FieldLabel>
                       <Input
                         type="number"
@@ -104,7 +104,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                     {/* Value */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="text-[#232323] text-sm md:text-base font-medium">
-                        Value <span className="text-destructive ml-0.5">*</span>
+                        Value <span className="text-destructive">*</span>
                       </FieldLabel>
                       <Input
                         type="number"
@@ -124,7 +124,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                     {/* HS Code */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="text-[#232323] text-sm md:text-base font-medium">
-                        HS Code
+                        HS Code <span className="text-destructive">*</span>
                       </FieldLabel>
                       <div
                         className={cn(

@@ -313,28 +313,6 @@ export function PackageInfoSection<
             </Field>
           </div>
 
-          {/* Package Summary (When a saved package is selected) */}
-          {!isNewPackage && (
-            <div className="flex items-center gap-3 rounded-lg border border-[#DADADA] p-4 bg-[#FEFCFA]">
-              {selectedPt?.image && (
-                // biome-ignore lint/performance/noImgElement: dynamic svg/png package image
-                <img
-                  src={selectedPt.image}
-                  alt={selectedPt.name}
-                  className="h-[60px] w-[60px] object-contain shrink-0"
-                />
-              )}
-              <div className="flex flex-col gap-1">
-                <span className="text-base font-semibold text-[#232323]">
-                  {watchedPackageName}
-                </span>
-                <span className="text-sm text-[#7B7B7B]">
-                  {selectedPt?.name || "Standard Packaging"} | {watchedLength || 0} × {watchedWidth || 0} × {watchedHeight || 0} cm - {watchedWeight || 0} Gr
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* Save Setting Checkbox */}
           {isNewPackage && (
             <Field orientation="horizontal" className="items-center gap-2 mt-2">

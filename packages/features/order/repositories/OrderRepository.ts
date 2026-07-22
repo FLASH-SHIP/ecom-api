@@ -24,6 +24,7 @@ export interface CreateOrderInput {
   shippingMethod: ShippingMethod;
   shippingOrigin?: string;
   sellerOrderId?: string | null;
+  totalPackets?: number;
   trackingNumber?: string | null;
 
   // Sender details
@@ -132,6 +133,7 @@ export class OrderRepository {
         shippingMethod: true,
         shippingOrigin: true,
         sellerOrderId: true,
+        totalPackets: true,
         trackingNumber: true,
         senderName: true,
         senderAddress: true,

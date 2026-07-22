@@ -29,6 +29,13 @@ const orderFormSchema = z.object({
       "Trị giá hàng hóa phải lớn hơn 0.",
     ),
   sellerOrderId: z.string().optional(),
+  totalPackets: z
+    .string()
+    .min(1, "Vui lòng nhập tổng số gói.")
+    .refine(
+      (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
+      "Tổng số gói phải lớn hơn 0.",
+    ),
 
   // Sender Info
   senderName: z.string().min(1, "Vui lòng nhập tên người gửi."),
@@ -141,6 +148,7 @@ export default function CreateSingleOrderPage() {
       detailDescription: "",
       declaredValue: "",
       sellerOrderId: "",
+      totalPackets: "1",
       senderName: "",
       senderPhone: "",
       senderEmail: "",
@@ -269,32 +277,7 @@ export default function CreateSingleOrderPage() {
 
           // Auto-fill from default saved sender is handled by SenderSection
 
-          // Auto-fill from default saved receiver (DB)
-          const defaultReceiverDb = savedReceivers.find((r) => r.isDefault);
-          if (defaultReceiverDb) {
-            Object.assign(newDefaults, {
-              receiverName: defaultReceiverDb.name,
-              receiverPhone: defaultReceiverDb.phone ?? "",
-              receiverEmail: defaultReceiverDb.email ?? "",
-              receiverAddress1: defaultReceiverDb.address1,
-              receiverAddress2: defaultReceiverDb.address2 ?? "",
-              receiverCity: defaultReceiverDb.city,
-              receiverState: defaultReceiverDb.state,
-              receiverZipCode: defaultReceiverDb.zipCode,
-              receiverCountry: defaultReceiverDb.country ?? "US",
-            });
-            setSelectedReceiverId(defaultReceiverDb.id);
-            setSaveReceiverSetting(true);
-          } else if (defaultReceiver) {
-            // Fallback: migrate from localStorage (one-time)
-            try {
-              const receiverObj = JSON.parse(defaultReceiver);
-              Object.assign(newDefaults, receiverObj);
-              setSaveReceiverSetting(true);
-            } catch (e) {
-              console.error("Failed to parse default receiver info", e);
-            }
-          }
+
 
           // Auto-fill from default saved package (DB)
           const defaultPackageDb = savedPackages.find((p) => p.isDefault);
@@ -423,6 +406,7 @@ export default function CreateSingleOrderPage() {
       declaredValue,
       packingTypeId,
       packageName,
+      totalPackets,
       products,
     } = formValues;
 
@@ -431,6 +415,7 @@ export default function CreateSingleOrderPage() {
         shippingMethod,
         shippingOrigin,
         sellerOrderId: sellerOrderId || null,
+        totalPackets: Number(totalPackets) || 1,
         importId: null,
 
         senderName,

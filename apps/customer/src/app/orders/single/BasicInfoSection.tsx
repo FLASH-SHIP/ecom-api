@@ -22,6 +22,7 @@ export interface BasicInfoFormFields {
   shippingOrigin: string;
   shippingMethod: string;
   sellerOrderId?: string;
+  totalPackets?: string;
   detailDescription?: string;
   declaredValue?: string;
 }
@@ -50,7 +51,7 @@ export function BasicInfoSection<TFieldValues extends FieldValues = FieldValues>
 
       {/* Body */}
       <div className="p-4 flex flex-col gap-4 bg-[#FDFFFF]">
-        <FieldGroup className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <FieldGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Shipping Origin */}
           <Field>
             <FieldLabel>
@@ -110,19 +111,39 @@ export function BasicInfoSection<TFieldValues extends FieldValues = FieldValues>
           {/* Order ID */}
           <Field>
             <FieldLabel htmlFor="sellerOrderId">
-              Order ID (Optional Reference)
+              Order ID <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
               id="sellerOrderId"
               type="text"
               {...registerParent("sellerOrderId")}
-              placeholder="Enter order id reference"
+              placeholder="Enter order id"
               className={cn(
                 "w-full bg-background/50",
                 errorsParent.sellerOrderId && "border-destructive focus-visible:ring-destructive",
               )}
             />
             <FieldError errors={[errorsParent.sellerOrderId]} />
+          </Field>
+
+          {/* Total Packets */}
+          <Field>
+            <FieldLabel htmlFor="totalPackets">
+              Total Packets <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="totalPackets"
+              type="number"
+              min={1}
+              required
+              {...registerParent("totalPackets")}
+              placeholder="Enter total packets"
+              className={cn(
+                "w-full bg-background/50",
+                errorsParent.totalPackets && "border-destructive focus-visible:ring-destructive",
+              )}
+            />
+            <FieldError errors={[errorsParent.totalPackets]} />
           </Field>
 
           {/* Hidden inputs for auto-calculated values */}
