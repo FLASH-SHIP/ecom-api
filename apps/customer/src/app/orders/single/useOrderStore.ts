@@ -89,7 +89,7 @@ const initialValues: OrderStoreState["values"] = {
   receiverState: "",
   receiverStateName: "",
   receiverZipCode: "",
-  receiverCountry: "US",
+  receiverCountry: "",
   packingTypeId: 0,
   length: "",
   width: "",

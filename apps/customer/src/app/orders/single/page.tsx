@@ -169,7 +169,7 @@ export default function CreateSingleOrderPage() {
       receiverState: "",
       receiverStateName: "",
       receiverZipCode: "",
-      receiverCountry: "US",
+      receiverCountry: "",
       packingTypeId: 0,
       length: "",
       width: "",
@@ -307,9 +307,8 @@ export default function CreateSingleOrderPage() {
         }
       }
       isRestored.current = true;
-      // Countries are locked — force them after any restore
+      // Countries are locked — force sender country after any restore
       setValue("senderCountry", "VN");
-      setValue("receiverCountry", "US");
     }
   }, [isHydrated, reset, storeValuesString, setValue, savedReceivers, savedPackages]);
 

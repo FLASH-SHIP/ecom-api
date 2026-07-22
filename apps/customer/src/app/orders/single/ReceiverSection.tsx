@@ -1,8 +1,10 @@
 "use client";
 
+import { trpc } from "@customer/lib/trpc";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
+import { SearchableSelect } from "@ecom/ui/components/searchable-select";
 import {
   Select,
   SelectContent,
@@ -116,6 +118,9 @@ export function ReceiverSection<
   const setValueParent = setValue as unknown as UseFormSetValue<ReceiverFormFields>;
   const errorsParent = errors as unknown as FieldErrors<ReceiverFormFields>;
 
+  // Fetch supported countries from HS Code API
+  const { data: countriesData } = trpc.public.v1.hscode.getCountries.useQuery();
+
 
 
   const handleSelectSavedReceiver = (value: string) => {
@@ -134,7 +139,7 @@ export function ReceiverSection<
     setValueParent("receiverCity", receiver.city);
     setValueParent("receiverCityName", receiver.cityName ?? receiver.city);
     setValueParent("receiverZipCode", receiver.zipCode);
-    setValueParent("receiverCountry", receiver.country ?? "US");
+    setValueParent("receiverCountry", receiver.country ?? "");
     setSaveReceiverSetting(false);
   };
 
@@ -201,20 +206,20 @@ export function ReceiverSection<
                   name="receiverCountry"
                   control={controlParent}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange} disabled>
-                      <SelectTrigger
-                        className={cn(
-                          "w-full bg-background/50 border-input",
-                          errorsParent.receiverCountry &&
-                            "border-destructive focus:ring-destructive",
-                        )}
-                      >
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="US">United States</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      options={
+                        (countriesData ?? []).map((c) => ({ value: c.code, label: c.name }))
+                      }
+                      placeholder="Select country"
+                      searchPlaceholder="Search country..."
+                      allowClear={true}
+                      className={cn(
+                        "bg-background/50 border-input",
+                        errorsParent.receiverCountry && "border-destructive",
+                      )}
+                    />
                   )}
                 />
                 <FieldError errors={[errorsParent.receiverCountry]} />
@@ -303,7 +308,9 @@ export function ReceiverSection<
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="receiverPhone">Phone number</FieldLabel>
+                <FieldLabel htmlFor="receiverPhone">
+                  Phone number <span className="text-destructive">*</span>
+                </FieldLabel>
                 <Input
                   id="receiverPhone"
                   type="text"
@@ -319,7 +326,9 @@ export function ReceiverSection<
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="receiverEmail">Email</FieldLabel>
+                <FieldLabel htmlFor="receiverEmail">
+                  Email <span className="text-destructive">*</span>
+                </FieldLabel>
                 <Input
                   id="receiverEmail"
                   type="email"
