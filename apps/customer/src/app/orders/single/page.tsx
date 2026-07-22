@@ -649,7 +649,7 @@ export default function CreateSingleOrderPage() {
                     <div className="text-muted-foreground">Recipient Name</div>
                     <div className="col-span-2 font-medium text-foreground">{receiverName}</div>
 
-                    <div className="text-muted-foreground">City/State/Country</div>
+                    <div className="text-muted-foreground break-all">City/State/Country</div>
                     <div className="col-span-2 font-medium text-foreground">
                       {displayReceiverCity}, {displayReceiverState}, {receiverCountry}
                     </div>
@@ -692,7 +692,7 @@ export default function CreateSingleOrderPage() {
                     <div className="text-muted-foreground">Sender Name</div>
                     <div className="col-span-2 font-medium text-foreground">{senderName}</div>
 
-                    <div className="text-muted-foreground">Ward/City/Country</div>
+                    <div className="text-muted-foreground break-all">Ward/City/Country</div>
                     <div className="col-span-2 font-medium text-foreground">
                       {displaySenderWard}
                       {displaySenderCity ? `, ${displaySenderCity}` : ""}, {senderCountry}
