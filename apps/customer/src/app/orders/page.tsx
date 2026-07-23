@@ -4,6 +4,7 @@ import { trpc } from "@customer/lib/trpc";
 import { translate } from "@ecom/i18n";
 import type { OrderStatus } from "@ecom/prisma";
 import { useI18n } from "@ecom/shared/@i18n";
+import { getShippingMethodLabel, getShippingOriginLabel } from "@ecom/types";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
 import { Card } from "@ecom/ui/components/card";
@@ -28,7 +29,6 @@ import {
 import { TableBase } from "@ecom/ui/components/table-base";
 import { format } from "date-fns";
 import { Download, Search } from "lucide-react";
-import { getShippingMethodLabel, getShippingOriginLabel } from "@ecom/types";
 import NextLink from "next/link";
 import { useState } from "react";
 

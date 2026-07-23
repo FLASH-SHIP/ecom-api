@@ -1,4 +1,4 @@
-import { ShippingOrigin, ShippingMethod } from "@ecom/types";
+import { ShippingMethod, ShippingOrigin } from "@ecom/types";
 
 export interface ExcelRow {
   [key: string]: unknown;
@@ -164,9 +164,7 @@ export function parseExcelRows(
       const declaredValue = declaredValueVal ? parseFloat(declaredValueVal) : 10;
 
       const shippingMethod: ShippingMethod =
-        shippingMethodVal === "EPACKET"
-          ? ShippingMethod.EPACKET
-          : ShippingMethod.EXPRESS;
+        shippingMethodVal === "EPACKET" ? ShippingMethod.EPACKET : ShippingMethod.EXPRESS;
 
       ordersMap.set(sellerOrderId, {
         excelRowNumbers: [lineNum],

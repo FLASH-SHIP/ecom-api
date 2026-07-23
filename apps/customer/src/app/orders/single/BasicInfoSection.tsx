@@ -1,12 +1,12 @@
 "use client";
 
 import {
+  getShippingMethodLabel,
+  getShippingOriginLabel,
   SHIPPING_METHOD_OPTIONS,
   SHIPPING_ORIGIN_OPTIONS,
   ShippingMethod,
   ShippingOrigin,
-  getShippingMethodLabel,
-  getShippingOriginLabel,
 } from "@ecom/types";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
@@ -22,19 +22,13 @@ import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import type { OrderFormValues } from "./page";
 
-
-
 export interface BasicInfoSectionProps {
   control: Control<OrderFormValues>;
   register: UseFormRegister<OrderFormValues>;
   errors: FieldErrors<OrderFormValues>;
 }
 
-export function BasicInfoSection({
-  control,
-  register,
-  errors,
-}: BasicInfoSectionProps) {
+export function BasicInfoSection({ control, register, errors }: BasicInfoSectionProps) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
