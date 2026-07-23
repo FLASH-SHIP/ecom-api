@@ -35,6 +35,7 @@
   "deleteSettingConfirm": "Delete setting \"{key}\"?",
   "overview": {
     "general": "General",
+    "notificationsGroup": "Notifications & Communications",
     "generalTitle": "General",
     "generalDesc": "View and update general settings and activate license",
     "phoneTitle": "Phone Number",
@@ -54,7 +55,13 @@
     "partnersTitle": "Carrier Partners",
     "partnersDesc": "Manage third-party shipping carriers and integrated logistics services",
     "usDivisionsTitle": "US States & Cities",
-    "usDivisionsDesc": "Manage US administrative divisions (states and cities)"
+    "usDivisionsDesc": "Manage US administrative divisions (states and cities)",
+    "emailSettingsTitle": "Email Settings",
+    "emailSettingsDesc": "Manage transactional email templates, responsive layout designs, logos, and custom CSS branding",
+    "pushSettingsTitle": "Push & In-App Settings",
+    "pushSettingsDesc": "Manage push notifications templates, in-app messaging configurations, and Quiet Hours DND rules",
+    "blacklistTitle": "Email Blacklist",
+    "blacklistDesc": "Manage blocked email addresses due to complaints, bounces, or manual flags"
   },
   "fields": {
     "siteName": "Site Name",

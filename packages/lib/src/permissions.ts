@@ -106,6 +106,13 @@ export const Permissions = {
   PARTNERS_CREATE: "settings.partners.create",
   PARTNERS_UPDATE: "settings.partners.update",
   PARTNERS_DELETE: "settings.partners.delete",
+
+  // Notifications
+  NOTIFICATIONS_BROADCAST_READ: "notifications.broadcast.read",
+  NOTIFICATIONS_BROADCAST_CREATE: "notifications.broadcast.create",
+  NOTIFICATIONS_BROADCAST_DELETE: "notifications.broadcast.delete",
+  NOTIFICATIONS_SETTINGS_READ: "notifications.settings.read",
+  NOTIFICATIONS_SETTINGS_UPDATE: "notifications.settings.update",
 } as const;
 
 export type PermissionName = (typeof Permissions)[keyof typeof Permissions];
@@ -669,5 +676,45 @@ export const ALL_PERMISSIONS: SystemPermission[] = [
     group: "tools",
     section: "tools",
     module: "tools",
+  },
+
+  // Notifications
+  {
+    name: Permissions.NOTIFICATIONS_BROADCAST_READ,
+    displayName: "View Broadcasts",
+    group: "notifications",
+    section: "system",
+    module: "notifications",
+  },
+  {
+    name: Permissions.NOTIFICATIONS_BROADCAST_CREATE,
+    displayName: "Create Broadcasts",
+    group: "notifications",
+    section: "system",
+    module: "notifications",
+    parent: Permissions.NOTIFICATIONS_BROADCAST_READ,
+  },
+  {
+    name: Permissions.NOTIFICATIONS_BROADCAST_DELETE,
+    displayName: "Delete Broadcasts",
+    group: "notifications",
+    section: "system",
+    module: "notifications",
+    parent: Permissions.NOTIFICATIONS_BROADCAST_READ,
+  },
+  {
+    name: Permissions.NOTIFICATIONS_SETTINGS_READ,
+    displayName: "View Notification Settings",
+    group: "notifications",
+    section: "settings",
+    module: "notifications",
+  },
+  {
+    name: Permissions.NOTIFICATIONS_SETTINGS_UPDATE,
+    displayName: "Update Notification Settings",
+    group: "notifications",
+    section: "settings",
+    module: "notifications",
+    parent: Permissions.NOTIFICATIONS_SETTINGS_READ,
   },
 ];

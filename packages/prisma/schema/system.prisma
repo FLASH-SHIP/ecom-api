@@ -197,21 +197,81 @@ model ContactSubmission {
 }
 
 model Notification {
-  id            Int      @id @default(autoincrement())
-  userId        String   @db.Uuid
-  user          User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-  type          String // comment, contact, system, webhook
-  title         String
-  message       String   @db.Text
-  link          String? // URL to navigate to
-  referenceId   Int? // Related entity ID
-  referenceType String? // Related entity type
-  isRead        Boolean  @default(false)
-  createdAt     DateTime @default(now())
+  id             Int       @id @default(autoincrement())
+  userId         String?   @db.Uuid @map("user_id")
+  user           User?     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  customerId     String?   @db.Uuid @map("customer_id")
+  customer       Customer? @relation("CustomerNotifications", fields: [customerId], references: [id], onDelete: Cascade)
+  type           String    // e.g. "order.status_updated"
+  
+  // Dynamic Localization Keys
+  titleKey       String    @map("title_key")
+  messageKey     String    @map("message_key")
+  variables      Json?     // Parameters for values inside templates
+  
+  link           String?
+  referenceId    String?   @map("reference_id")
+  referenceType  String?   @map("reference_type")
+  isRead         Boolean   @default(false)
+  
+  // Enterprise Security & Class separation
+  isSensitive    Boolean   @default(false) @map("is_sensitive")
+  deliveryClass  String    @default("TRANSACTIONAL") @map("delivery_class") // "TRANSACTIONAL" | "MARKETING"
+  idempotencyKey String?   @unique @map("idempotency_key") // Prevent duplicate delivery runs
+
+  // Analytics Tracking
+  sentAt         DateTime? @map("sent_at")
+  deliveredAt    DateTime? @map("delivered_at")
+  clickedAt      DateTime? @map("clicked_at")
+  createdAt      DateTime  @default(now())
 
   @@index([userId, isRead])
+  @@index([customerId, isRead])
   @@index([userId, createdAt])
+  @@index([customerId, createdAt])
   @@map("notifications")
+}
+
+model DeviceToken {
+  id          Int       @id @default(autoincrement())
+  userId      String?   @db.Uuid @map("user_id")
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId  String?   @db.Uuid @map("customer_id")
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  token       String    @unique
+  platform    String    // "ios" | "android" | "web"
+  deviceInfo  String?   @map("device_info")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([customerId])
+  @@map("device_tokens")
+}
+
+model NotificationSetting {
+  id             Int       @id @default(autoincrement())
+  userId         String?   @db.Uuid @map("user_id")
+  user           User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId     String?   @db.Uuid @map("customer_id")
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  eventType      String    @map("event_type")
+  
+  channelInApp   Boolean   @default(true) @map("channel_in_app")
+  channelPush    Boolean   @default(true) @map("channel_push")
+  channelEmail   Boolean   @default(true) @map("channel_email")
+  channelWebhook Boolean   @default(false) @map("channel_webhook")
+  
+  dndConfig      Json?     @map("dnd_config")
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, eventType])
+  @@unique([customerId, eventType])
+  @@index([userId])
+  @@index([customerId])
+  @@map("notification_settings")
 }
 
 model Redirect {
@@ -380,4 +440,51 @@ model SeoMeta {
   updatedAt DateTime @updatedAt
 
   @@map("seo_meta")
+}
+
+model NotificationTemplate {
+  id              Int                     @id @default(autoincrement())
+  type            String                  @unique // e.g. "order.placed"
+  titleTemplate        Json                    @map("title_template") // e.g. {"en": "New Order {{orderNumber}}", "vi": "Đơn hàng mới {{orderNumber}}"}
+  messageTemplate      Json                    @map("message_template") // e.g. {"en": "Placed successfully", "vi": "Đã tạo thành công"}
+  emailSubjectTemplate Json?                   @map("email_subject_template")
+  emailBodyTemplate    Json?                   @map("email_body_template")
+  variables            Json                    @default("{}") @map("variables")
+  channelInApp         Boolean                 @default(true) @map("channel_in_app")
+  channelPush          Boolean                 @default(true) @map("channel_push")
+  channelEmail         Boolean                 @default(true) @map("channel_email")
+  layoutType           String?                 @map("layout_type")
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  scheduledNotifications ScheduledNotification[]
+
+  @@map("notification_templates")
+}
+
+model ScheduledNotification {
+  id           Int                   @id @default(autoincrement())
+  targetType   String                @map("target_type") // "ALL_CUSTOMERS" | "ADMIN_USERS" | "SPECIFIC_USERS" | "SPECIFIC_CUSTOMERS"
+  targetIds    Json?                 @map("target_ids") // Array of specific target user/customer UUID strings
+  title        String
+  message      String
+  link         String?
+  scheduledAt  DateTime              @map("scheduled_at")
+  status       String                @default("PENDING") // "PENDING" | "PROCESSING" | "SENT" | "FAILED"
+  failedReason String?               @map("failed_reason")
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  templateId   Int?                  @map("template_id")
+  template     NotificationTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([status, scheduledAt])
+  @@map("scheduled_notifications")
+}
+
+model EmailBlacklist {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  reason    String   // e.g. "bounce", "complaint", "manual"
+  createdAt DateTime @default(now())
+
+  @@map("email_blacklist")
 }

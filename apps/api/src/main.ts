@@ -6,6 +6,11 @@ import { registerEventListeners } from "@ecom/features/events/listeners";
 import { JobQueue } from "@ecom/features/queue/JobQueue";
 import { queueCleanupJob, registerCleanupWorker } from "@ecom/features/queue/workers/cleanupWorker";
 import { registerEmailWorker } from "@ecom/features/queue/workers/emailWorker";
+import { registerFallbackEmailWorker } from "@ecom/features/queue/workers/fallbackEmailWorker";
+import {
+  queueScheduledNotificationsJob,
+  registerScheduledNotificationWorker,
+} from "@ecom/features/queue/workers/scheduledNotificationWorker";
 import { gracefulShutdown } from "@ecom/features/shutdown/GracefulShutdown";
 import { ClassSerializerInterceptor, VersioningType } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -138,6 +143,11 @@ async function bootstrap() {
   JobQueue.startWorker("email");
   console.log("✉️  Email queue worker started");
 
+  // Start background fallback email worker for smart routing
+  registerFallbackEmailWorker();
+  JobQueue.startWorker("fallback-email");
+  console.log("✉️  Fallback email queue worker started");
+
   // Start background database cleanup worker
   registerCleanupWorker();
   JobQueue.startWorker("cleanup");
@@ -145,6 +155,14 @@ async function bootstrap() {
     console.warn("⚠️ Failed to schedule background database cleanup job:", err);
   });
   console.log("🧹 Database cleanup worker started");
+
+  // Start background scheduled notifications worker
+  registerScheduledNotificationWorker();
+  JobQueue.startWorker("scheduled-notifications");
+  queueScheduledNotificationsJob().catch((err) => {
+    console.warn("⚠️ Failed to schedule background notifications dispatch job:", err);
+  });
+  console.log("⏰ Scheduled notifications dispatch worker started");
 
   // Start background webhook delivery worker
   const { registerWebhookWorker } = await import("@ecom/features/queue/workers/webhookWorker");

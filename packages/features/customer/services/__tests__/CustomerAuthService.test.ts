@@ -8,36 +8,7 @@ beforeAll(() => {
   process.env.CUSTOMER_APP_URL = "http://localhost:3000";
 });
 
-// Mock dependencies
-const mockQueueEmail = vi.fn();
-vi.mock("@ecom/features/queue/workers/emailWorker", () => ({
-  queueEmail: (...args: unknown[]) => mockQueueEmail(...args),
-}));
-
-const mockBuildEmailVerificationEmail = vi.fn((data) => ({
-  to: "",
-  subject: "Verify Email",
-  html: `<p>Verify: ${data.verifyUrl}</p>`,
-}));
-const mockBuildCustomerPasswordResetEmail = vi.fn((data) => ({
-  to: "",
-  subject: "Reset Password",
-  html: `<p>Reset: ${data.resetUrl}</p>`,
-}));
-const mockBuildVerificationCodeEmail = vi.fn((data) => ({
-  to: "",
-  subject: "Verification Code",
-  html: `<p>Code: ${data.code}</p>`,
-}));
-
-vi.mock("@ecom/emails", () => ({
-  buildEmailVerificationEmail: (data: Record<string, unknown>) =>
-    mockBuildEmailVerificationEmail(data),
-  buildCustomerPasswordResetEmail: (data: Record<string, unknown>) =>
-    mockBuildCustomerPasswordResetEmail(data),
-  buildVerificationCodeEmail: (data: Record<string, unknown>) =>
-    mockBuildVerificationCodeEmail(data),
-}));
+const mockNotify = vi.fn().mockResolvedValue({ id: 1 });
 
 function createMockDeps() {
   return {
@@ -60,6 +31,9 @@ function createMockDeps() {
       updatePassword: vi.fn(),
       deleteSessions: vi.fn(),
     } as unknown as CustomerRepository,
+    notificationService: {
+      notify: mockNotify,
+    } as any,
   };
 }
 
@@ -81,15 +55,13 @@ describe("CustomerAuthService", () => {
       expect.any(String),
       expect.any(Date),
     );
-    expect(mockBuildVerificationCodeEmail).toHaveBeenCalledWith(
+    expect(mockNotify).toHaveBeenCalledWith(
       expect.objectContaining({
-        code: expect.any(String),
-      }),
-    );
-    expect(mockQueueEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: "john@example.com",
-        subject: "Verification Code",
+        type: "customer.verification_code",
+        emailRecipient: "john@example.com",
+        variables: expect.objectContaining({
+          code: expect.any(String),
+        }),
       }),
     );
   });
@@ -140,16 +112,15 @@ describe("CustomerAuthService", () => {
 
     await service.forgotPassword("john@example.com");
 
-    expect(mockBuildCustomerPasswordResetEmail).toHaveBeenCalledWith(
+    expect(mockNotify).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: "John Doe",
-        resetUrl: expect.stringContaining("/auth/reset-password?token="),
-      }),
-    );
-    expect(mockQueueEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: "john@example.com",
-        subject: "Reset Password",
+        customerId: 42,
+        type: "customer.password_reset",
+        emailRecipient: "john@example.com",
+        variables: expect.objectContaining({
+          name: "John Doe",
+          resetUrl: expect.stringContaining("/auth/reset-password?token="),
+        }),
       }),
     );
   });

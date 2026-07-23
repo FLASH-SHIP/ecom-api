@@ -41,6 +41,8 @@ model User {
   requestLogs        RequestLog[]
   contactAssignments ContactSubmission[] @relation("ContactAssignee")
   notifications      Notification[]      @relation("UserNotifications")
+  deviceTokens         DeviceToken[]
+  notificationSettings NotificationSetting[]
 
   @@index([status])
   @@map("users")

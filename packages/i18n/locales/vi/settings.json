@@ -35,6 +35,7 @@
   "deleteSettingConfirm": "Xóa cài đặt \"{key}\"?",
   "overview": {
     "general": "Chung",
+    "notificationsGroup": "Thông báo & Truyền thông",
     "generalTitle": "Chung",
     "generalDesc": "Xem và cập nhật cài đặt chung và kích hoạt giấy phép",
     "phoneTitle": "Số điện thoại",
@@ -54,7 +55,13 @@
     "partnersTitle": "Đối tác liên kết",
     "partnersDesc": "Quản lý danh mục đối tác chặng và dịch vụ vận chuyển tích hợp",
     "usDivisionsTitle": "Bang & Thành phố Mỹ",
-    "usDivisionsDesc": "Quản lý đơn vị hành chính Mỹ (bang và thành phố)"
+    "usDivisionsDesc": "Quản lý đơn vị hành chính Mỹ (bang và thành phố)",
+    "emailSettingsTitle": "Cấu hình Email",
+    "emailSettingsDesc": "Quản lý mẫu email giao dịch, thiết kế layout, logo và CSS thương hiệu",
+    "pushSettingsTitle": "Thông báo Push & App",
+    "pushSettingsDesc": "Quản lý mẫu thông báo đẩy trên điện thoại, trong ứng dụng và giờ yên lặng",
+    "blacklistTitle": "Danh sách đen Email",
+    "blacklistDesc": "Quản lý các địa chỉ email bị chặn gửi thư do báo xấu hoặc lỗi hòm thư"
   },
   "fields": {
     "siteName": "Tên trang web",

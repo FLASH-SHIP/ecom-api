@@ -2,6 +2,9 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { createLogger, loggerContext } from "@ecom/lib/logger";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { readReplicas } from "@prisma/extension-read-replicas";
+import { DeviceTokenFactory } from "./factories/DeviceTokenFactory";
+import { NotificationFactory } from "./factories/NotificationFactory";
+import { NotificationSettingFactory } from "./factories/NotificationSettingFactory";
 import { PostFactory } from "./factories/PostFactory";
 import { UserFactory } from "./factories/UserFactory";
 import {
@@ -11,6 +14,7 @@ import {
   CustomerStatus,
   CustomsStatus,
   LabelStatus,
+  type NotificationTemplate,
   type Order,
   type OrderActivityLog,
   type OrderFeeItem,
@@ -437,6 +441,7 @@ export async function runInTransaction<T>(work: () => Promise<T>): Promise<T> {
 
 export type {
   Customer,
+  NotificationTemplate,
   Order,
   OrderActivityLog,
   OrderFeeItem,
@@ -449,7 +454,10 @@ export {
   ContentStatus,
   CustomerStatus,
   CustomsStatus,
+  DeviceTokenFactory,
   LabelStatus,
+  NotificationFactory,
+  NotificationSettingFactory,
   OrderStatus,
   PartnerStatus,
   PaymentStatus,

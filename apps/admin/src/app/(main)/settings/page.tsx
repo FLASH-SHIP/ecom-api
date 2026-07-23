@@ -7,13 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@ecom/ui/components/ca
 import { cn } from "@ecom/ui/lib/utils";
 import {
   BarChart3,
+  Bell,
   DollarSign,
   Globe,
   ImageIcon,
+  Mail,
   MapPin,
   Package,
   Phone,
   Settings,
+  ShieldAlert,
   Truck,
 } from "lucide-react";
 import Link from "next/link";
@@ -89,6 +92,29 @@ const SETTING_SECTIONS: { groupKey: string; items: SettingCard[] }[] = [
         descKey: "overview.partnersDesc",
         href: "/settings/partners",
         icon: Truck,
+      },
+    ],
+  },
+  {
+    groupKey: "overview.notificationsGroup",
+    items: [
+      {
+        titleKey: "overview.emailSettingsTitle",
+        descKey: "overview.emailSettingsDesc",
+        href: "/settings/email",
+        icon: Mail,
+      },
+      {
+        titleKey: "overview.pushSettingsTitle",
+        descKey: "overview.pushSettingsDesc",
+        href: "/settings/push",
+        icon: Bell,
+      },
+      {
+        titleKey: "overview.blacklistTitle",
+        descKey: "overview.blacklistDesc",
+        href: "/settings/email/blacklist",
+        icon: ShieldAlert,
       },
     ],
   },

@@ -10,6 +10,7 @@ import { ALargeSmall, Maximize, Minimize, PanelLeft, Search, Star } from "lucide
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { NotificationPopover } from "../NotificationPopover";
 import { useAdminSidebar } from "./AdminSidebarContext";
 import { getNavIcon } from "./nav-icons";
 
@@ -582,6 +583,7 @@ function AdminToolbar() {
         <AdjustFontSizeButton />
         <FullScreenToggleButton />
         <ThemeToggle />
+        <NotificationPopover />
         <SearchButton />
       </div>
     </header>

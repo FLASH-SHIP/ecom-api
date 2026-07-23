@@ -42,9 +42,12 @@ model Customer {
   sessions       CustomerSession[]
   orders         Order[]
   orderImports   OrderImport[]
-  senders        CustomerSender[]
-  receivers      CustomerReceiver[]
-  packages       CustomerPackage[]
+  notifications        Notification[]        @relation("CustomerNotifications")
+  deviceTokens         DeviceToken[]
+  notificationSettings NotificationSetting[]
+  senders              CustomerSender[]
+  receivers            CustomerReceiver[]
+  packages             CustomerPackage[]
 
   @@index([status])
   @@index([email])

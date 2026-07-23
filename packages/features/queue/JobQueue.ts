@@ -68,7 +68,11 @@ export class JobQueue {
   static async dispatch(
     queueName: string,
     payload: Record<string, unknown>,
-    options?: { delay?: number },
+    options?: {
+      delay?: number;
+      removeOnComplete?: boolean | number | { age: number; count?: number; limit?: number };
+      removeOnFail?: boolean | number | { age: number; count?: number; limit?: number };
+    },
   ): Promise<string> {
     try {
       const q = getQueue(queueName);
@@ -82,6 +86,8 @@ export class JobQueue {
           delay: 1000,
         },
         delay: options?.delay,
+        removeOnComplete: options?.removeOnComplete,
+        removeOnFail: options?.removeOnFail,
       });
       return job.id ?? `bullmq-${Date.now()}`;
     } catch (err) {
