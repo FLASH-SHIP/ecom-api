@@ -3,12 +3,12 @@
 import React from "react";
 
 const HexagonPattern = () => (
-  <div 
-    className="absolute inset-0 pointer-events-none opacity-[0.04]" 
+  <div
+    className="absolute inset-0 pointer-events-none opacity-[0.04]"
     style={{
       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='%230f798c' fill-opacity='1' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l11 6.35 11-6.35V17.9L14 11.55 3 17.9z'/%3E%3C/svg%3E")`,
-      backgroundSize: "28px 49px"
-    }} 
+      backgroundSize: "28px 49px",
+    }}
   />
 );
 
@@ -17,51 +17,51 @@ const partnerData = {
     {
       title: "Amazon",
       desc: "Amazon Global Selling Fast-track your store setup with support from dedicated Amazon account managers.",
-      image: "/partner-assets/amazon.png"
+      image: "/partner-assets/amazon.png",
     },
     {
       title: "Etsy",
       desc: "Showcase and sell your unique, handmade, and vintage goods to a global community of passionate buyers.",
-      image: "/partner-assets/etsy.png"
+      image: "/partner-assets/etsy.png",
     },
     {
       title: "Ebay",
       desc: "Tap into a massive global marketplace with dynamic auction-style and fixed-price selling options.",
-      image: "/partner-assets/ebay.png"
+      image: "/partner-assets/ebay.png",
     },
     {
       title: "Shopify",
       desc: "Build, customize, and scale your independent online brand with powerful e-commerce tools and total control.",
-      image: "/partner-assets/shopify.png"
+      image: "/partner-assets/shopify.png",
     },
     {
       title: "Tiktok",
       desc: "Turn viral moments into direct sales by showcasing products right within the entertainment feed.",
-      image: "/partner-assets/tiktok.png"
+      image: "/partner-assets/tiktok.png",
     },
     {
       title: "Walmart",
       desc: "Expand your reach by listing products on one of the world's largest and most trusted retail marketplaces.",
-      image: "/partner-assets/walmart.png"
-    }
+      image: "/partner-assets/walmart.png",
+    },
   ],
   payment: [
     {
       title: "Pingpong",
       desc: "Optimize your cross-border profits with low-cost international receiving accounts and fast supplier payouts.",
-      image: "/partner-assets/pingpong.png"
+      image: "/partner-assets/pingpong.png",
     },
     {
       title: "Payoneer",
       desc: "Streamline your global business growth with flexible multi-currency accounts and seamless marketplace payouts.",
-      image: "/partner-assets/payoneer.png"
+      image: "/partner-assets/payoneer.png",
     },
     {
       title: "Paypal",
       desc: "Boost checkout conversion rates globally by offering customers a highly trusted, secure, and familiar way to pay.",
-      image: "/partner-assets/paypal.png"
-    }
-  ]
+      image: "/partner-assets/paypal.png",
+    },
+  ],
 };
 
 export default function PartnerPage() {
@@ -71,7 +71,7 @@ export default function PartnerPage() {
     <section className="w-full bg-[#f8fafc] border-b border-[#dadada] overflow-hidden">
       <div className="custom-container relative lg:border-x lg:border-[#dadada] bg-white !pl-4 !pr-4 md:!pl-[60px] md:!pr-[60px] py-[60px] flex flex-col gap-[40px] overflow-hidden">
         <HexagonPattern />
-        
+
         {/* Title Block */}
         <div className="flex flex-col relative z-10">
           <h1 className="text-[36px] md:text-[48px] font-semibold text-[#232323] leading-tight border-b-[6px] border-[#0f798c] pb-3 w-fit tracking-tight">
@@ -142,7 +142,11 @@ export default function PartnerPage() {
                     stroke="currentColor"
                     strokeWidth={2}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M14 5l7 7m0 0l-7 7m7-7H3"
+                    />
                   </svg>
                 </button>
               </div>

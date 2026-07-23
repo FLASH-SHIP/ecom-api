@@ -11,7 +11,13 @@ export function ChevronRightIcon({ className = "", ...props }: SVGProps<SVGSVGEl
       className={className}
       {...props}
     >
-      <path d="M1 11L6 6L1 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path
+        d="M1 11L6 6L1 1"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

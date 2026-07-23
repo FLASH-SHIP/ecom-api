@@ -87,7 +87,9 @@ export const createReceiver = authedProcedure
     return getCustomerReceiverService().create(ctx.user.id, input);
   });
 
-const updateReceiverInputSchema = receiverInputSchemaObject.partial().superRefine(validateReceiverInput);
+const updateReceiverInputSchema = receiverInputSchemaObject
+  .partial()
+  .superRefine(validateReceiverInput);
 
 export const updateReceiver = authedProcedure
   .input(

@@ -97,4 +97,3 @@ export const SHIPPING_METHOD_OPTIONS = Object.values(ShippingMethod).map((value)
   value,
   label: getShippingMethodLabel(value),
 }));
-
