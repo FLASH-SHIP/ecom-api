@@ -100,7 +100,7 @@ export function SenderSection({
       handleSelectSavedSender(defaultSender.id.toString());
     }
     autoSelectedRef.current = true;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedSenders]);
 
   // Province / ward logic
@@ -238,24 +238,19 @@ export function SenderSection({
                 <SelectItem value="new" className="py-3 cursor-pointer">
                   <div className="flex flex-col text-left">
                     <span className="text-base 2xl:text-2xl text-[#232323]">New Sender</span>
-                    <span className="text-sm 2xl:text-base text-[#7B7B7B]">Input details to create a new Sender</span>
+                    <span className="text-sm 2xl:text-base text-[#7B7B7B]">
+                      Input details to create a new Sender
+                    </span>
                   </div>
                 </SelectItem>
                 {savedSenders.map((s) => {
-                  const addressParts = [
-                    s.address,
-                    s.wardName,
-                    s.cityName,
-                    s.zipCode,
-                  ]
+                  const addressParts = [s.address, s.wardName, s.cityName, s.zipCode]
                     .filter(Boolean)
                     .join(", ");
                   return (
                     <SelectItem key={s.id} value={String(s.id)} className="py-3 cursor-pointer">
                       <div className="flex flex-col text-left">
-                        <span className="text-base 2xl:text-2xl text-[#232323]">
-                          {s.name}
-                        </span>
+                        <span className="text-base 2xl:text-2xl text-[#232323]">{s.name}</span>
                         <span className="text-sm 2xl:text-base text-[#7B7B7B] line-clamp-1 break-all">
                           {addressParts}
                         </span>
@@ -290,7 +285,9 @@ export function SenderSection({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="senderPhone">Phone number <span className="text-destructive">*</span></FieldLabel>
+                <FieldLabel htmlFor="senderPhone">
+                  Phone number <span className="text-destructive">*</span>
+                </FieldLabel>
                 <Input
                   id="senderPhone"
                   type="tel"
@@ -334,7 +331,8 @@ export function SenderSection({
                   placeholder="Enter address"
                   className={cn(
                     "w-full bg-background/50",
-                    errorsParent.senderAddress && "border-destructive focus-visible:ring-destructive",
+                    errorsParent.senderAddress &&
+                      "border-destructive focus-visible:ring-destructive",
                   )}
                 />
                 <FieldError errors={[errorsParent.senderAddress]} />
@@ -424,7 +422,8 @@ export function SenderSection({
                   placeholder="Enter postcode"
                   className={cn(
                     "w-full bg-background/50",
-                    errorsParent.senderZipCode && "border-destructive focus-visible:ring-destructive",
+                    errorsParent.senderZipCode &&
+                      "border-destructive focus-visible:ring-destructive",
                   )}
                 />
                 <FieldError errors={[errorsParent.senderZipCode]} />

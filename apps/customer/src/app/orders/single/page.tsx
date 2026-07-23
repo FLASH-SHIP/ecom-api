@@ -17,6 +17,11 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useToast } from "../../../components/toast-provider";
+import { BasicInfoSummaryCard } from "../components/BasicInfoSummaryCard";
+import { ChargesSummaryCard } from "../components/ChargesSummaryCard";
+import { PackageSummaryCard } from "../components/PackageSummaryCard";
+import { RecipientSummaryCard } from "../components/RecipientSummaryCard";
+import { SenderSummaryCard } from "../components/SenderSummaryCard";
 import { BasicInfoSection } from "./BasicInfoSection";
 import { ItemListSection } from "./ItemListSection";
 import { PackageInfoSection } from "./PackageInfoSection";
@@ -690,220 +695,65 @@ export default function CreateSingleOrderPage() {
           <div className="xl:col-span-2 flex flex-col gap-6">
             {/* Row 1: Recipient & Sender */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Recipient Details */}
-              <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
-                <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
-                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Recipient</h3>
-                </div>
-                <div className="p-5 flex flex-col gap-3 text-sm">
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Recipient Name</span>
-                    <span className="font-semibold text-[#0F798C]">{receiverName}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">City/State/Country</span>
-                    <span className="font-medium text-[#232323]">
-                      {displayReceiverCity}, {displayReceiverState}, {receiverCountry}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Address 1</span>
-                    <span className="font-medium text-[#232323]">{receiverAddress1}</span>
-                  </div>
-
-                  {receiverAddress2 && (
-                    <div className="flex items-start text-sm 2xl:text-xl">
-                      <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Address 2</span>
-                      <span className="font-medium text-[#232323]">{receiverAddress2}</span>
-                    </div>
-                  )}
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Zip/Post code</span>
-                    <span className="font-medium text-[#232323]">{receiverZipCode}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Phone Number</span>
-                    <span className="font-medium text-[#232323]">{receiverPhone || "N/A"}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Email</span>
-                    <span className="font-medium text-[#232323]">{receiverEmail || "N/A"}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Sender Details */}
-              <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
-                <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
-                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Sender</h3>
-                </div>
-                <div className="p-5 flex flex-col gap-3 text-sm">
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Sender Name</span>
-                    <span className="font-medium text-[#232323]">{senderName}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">City/Ward</span>
-                    <span className="font-medium text-[#232323]">
-                      {displaySenderCity}
-                      {displaySenderWard ? `, ${displaySenderWard}` : ""}, {senderCountry}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Address</span>
-                    <span className="font-medium text-[#232323]">{senderAddress}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Zip/Post code</span>
-                    <span className="font-medium text-[#232323]">{senderZipCode}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Phone Number</span>
-                    <span className="font-medium text-[#232323]">{senderPhone || "N/A"}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Email</span>
-                    <span className="font-medium text-[#232323]">{senderEmail || "N/A"}</span>
-                  </div>
-                </div>
-              </div>
+              <RecipientSummaryCard
+                data={{
+                  receiverName,
+                  cityStateCountry: `${displayReceiverCity}, ${displayReceiverState}, ${receiverCountry}`,
+                  receiverAddress1,
+                  receiverAddress2,
+                  receiverZipCode,
+                  receiverPhone,
+                  receiverEmail,
+                }}
+              />
+              <SenderSummaryCard
+                data={{
+                  senderName,
+                  cityStateCountry: `${displaySenderCity}${displaySenderWard ? `, ${displaySenderWard}` : ""}, ${senderCountry}`,
+                  senderAddress,
+                  senderZipCode,
+                  senderPhone,
+                  senderEmail,
+                }}
+              />
             </div>
 
             {/* Row 2: Basic Info & Package */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Basic Info Details */}
-              <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
-                <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
-                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Basic Info</h3>
-                </div>
-                <div className="p-5 flex flex-col gap-3 text-sm">
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Shipping Origin</span>
-                    <span className="font-medium text-[#232323]">{shippingOrigin}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Order ID</span>
-                    <span className="font-semibold text-[#0F798C]">
-                      {sellerOrderId || "Pending (Auto-generated)"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Shipping Method</span>
-                    <span className="font-medium text-[#232323]">
-                      {shippingMethod === "EXPRESS" ? "Express" : "ePacket"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Details Description</span>
-                    <span className="font-medium text-[#232323]">{detailDescription}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Created Time</span>
-                    <span className="font-medium text-[#232323]">
-                      {new Date().toLocaleDateString("vi-VN")}{" "}
-                      <span className="text-[#7B7B7B]">
-                        {new Date().toLocaleTimeString("vi-VN", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Package Details */}
-              <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
-                <div className="px-5 py-3.5 border-b border-[#DADADA] bg-[#FEFCFA]">
-                  <h3 className="text-base 2xl:text-xl font-medium text-[#232323]">Package</h3>
-                </div>
-                <div className="p-5 flex flex-col gap-3 text-sm">
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Value</span>
-                    <span className="font-medium text-[#232323]">${declaredValue}</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Dimensions</span>
-                    <span className="font-medium text-[#232323]">
-                      {length && width && height
-                        ? `L ${length} × W ${width} × H ${height} cm`
-                        : "N/A"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Weight</span>
-                    <span className="font-medium text-[#232323]">{weight} gr</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">Volume Weight</span>
-                    <span className="font-medium text-[#232323]">{pricing.volumeWeight} gr</span>
-                  </div>
-
-                  <div className="flex items-start text-sm 2xl:text-xl">
-                    <span className="text-[#7B7B7B] w-36 2xl:w-46 flex-shrink-0">HS Code</span>
-                    <span className="font-medium text-[#232323]">
-                      {products?.[0]?.hsCodeNumber
-                        ? `${products[0].hsCodePrefix} - ${products[0].hsCodeNumber}`
-                        : "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <BasicInfoSummaryCard
+                data={{
+                  shippingOrigin,
+                  orderId: sellerOrderId || "Pending (Auto-generated)",
+                  shippingMethod: shippingMethod === "EXPRESS" ? "Express" : "ePacket",
+                  detailDescription,
+                  createdTime: `${new Date().toLocaleDateString("vi-VN")} ${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`,
+                }}
+              />
+              <PackageSummaryCard
+                data={{
+                  value: declaredValue,
+                  dimensions:
+                    length && width && height ? `L ${length} × W ${width} × H ${height} cm` : "N/A",
+                  weight,
+                  volumeWeight: pricing.volumeWeight,
+                  hsCode: products?.[0]?.hsCodeNumber
+                    ? `${products[0].hsCodePrefix} - ${products[0].hsCodeNumber}`
+                    : "N/A",
+                }}
+              />
             </div>
           </div>
 
           {/* Charges & Actions Column (Right Sidebar 1/3) */}
           <div className="flex flex-col gap-5">
-            {/* Charges & Surcharges Card */}
-            <div className="flex flex-col rounded-lg border border-[#0F798C] bg-[#CFFEF9] p-5 gap-4 shadow-sm">
-              <h3 className="text-sm 2xl:text-xl font-medium text-[#232323]">Charges & Surcharges</h3>
-              <div className="flex flex-col gap-3 text-sm text-[#232323]">
-                <div className="flex justify-between items-center text-sm 2xl:text-xl">
-                  <span className="text-[#7B7B7B]">Base Shipping Rate</span>
-                  <span className="font-medium text-[#232323]">
-                    ${pricing.baseShippingRate.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-sm 2xl:text-xl">
-                  <span className="text-[#7B7B7B]">Fuel Surcharge</span>
-                  <span className="font-medium text-[#232323]">
-                    ${pricing.surchargeFee.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-sm 2xl:text-xl">
-                  <span className="text-[#7B7B7B]">Chargeable Weight</span>
-                  <span className="font-medium text-[#232323]">
-                    {(pricing.chargeableWeight / 1000).toFixed(2)} kg
-                  </span>
-                </div>
-
-                <div className="border-t border-dashed border-[#5BCACE] my-1" />
-
-                <div className="flex justify-between items-center text-sm 2xl:text-xl">
-                  <span className="text-lg text-[#232323]">TOTAL AMOUNT</span>
-                  <span className="text-xl font-bold text-[#0042D0]">
-                    ${pricing.totalAmount.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <ChargesSummaryCard
+              data={{
+                baseShippingRate: pricing.baseShippingRate,
+                fuelSurcharge: pricing.surchargeFee,
+                chargeableWeightKg: pricing.chargeableWeight / 1000,
+                totalAmount: pricing.totalAmount,
+              }}
+            />
 
             {/* Checkbox Get Label */}
             <div className="flex items-center gap-4">
@@ -917,7 +767,10 @@ export default function CreateSingleOrderPage() {
                 htmlFor="get-label"
                 className="text-sm 2xl:text-xl font-medium text-[#232323] cursor-pointer flex items-baseline gap-1.5"
               >
-                Get Label <span className="text-sm 2xl:text-base text-[#7B7B7B] font-normal">Description</span>
+                Get Label{" "}
+                <span className="text-sm 2xl:text-base text-[#7B7B7B] font-normal">
+                  Description
+                </span>
               </label>
             </div>
 

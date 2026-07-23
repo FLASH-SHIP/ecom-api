@@ -2,6 +2,7 @@
 
 import { Button } from "@ecom/ui/components/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
+import { TrashIcon } from "@ecom/ui/components/icons";
 import { Input } from "@ecom/ui/components/input";
 import {
   Select,
@@ -15,7 +16,6 @@ import { Plus, Trash2 } from "lucide-react";
 import type { Control, FieldErrors, FieldValues, UseFormRegister } from "react-hook-form";
 import { Controller, useFieldArray } from "react-hook-form";
 import type { OrderFormValues } from "./page";
-import {TrashIcon} from "@ecom/ui/components/icons";
 
 export interface ItemListSectionProps {
   control: Control<OrderFormValues>;
@@ -23,11 +23,7 @@ export interface ItemListSectionProps {
   errors: FieldErrors<OrderFormValues>;
 }
 
-export function ItemListSection({
-  control,
-  register,
-  errors,
-}: ItemListSectionProps) {
+export function ItemListSection({ control, register, errors }: ItemListSectionProps) {
   const controlParent = control as unknown as Control<OrderFormValues>;
   const registerParent = register as unknown as UseFormRegister<OrderFormValues>;
   const errorsParent = errors as unknown as FieldErrors<OrderFormValues>;
@@ -56,7 +52,9 @@ export function ItemListSection({
                 className="flex flex-col gap-4 pb-6 border-b border-dashed border-[#DADADA] last:border-0 last:pb-0"
               >
                 <div className="flex items-center w-full gap-2">
-                  <h4 className="text-base 2xl:text-xl font-semibold text-[#232323]">Item {index + 1}</h4>
+                  <h4 className="text-base 2xl:text-xl font-semibold text-[#232323]">
+                    Item {index + 1}
+                  </h4>
                   {fields.length > 1 && (
                     <Button
                       type="button"
