@@ -5,6 +5,8 @@ import type { Seeder } from "./seeder.interface";
 function slugify(chapterCode: string, name: string): string {
   const cleanName = name
     .toLowerCase()
+    .replace(/\s*\d*see section.*$/i, "") // Remove US footnotes e.g. "1See section XI..."
+    .replace(/\(tn\d+\)/gi, "") // Remove EU footnotes e.g. "(TN701)"
     .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
     .replace(/[\s_]+/g, "-") // Replace spaces and underscores with hyphens
     .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
@@ -118,14 +120,14 @@ async function processChapter(
     const safeId = 900000 + Number(chapterCode);
 
     // Upsert chapter-level metadata row
-    const existing = await prisma.crawlHsCode.findUnique({
-      where: { no: safeId },
-      select: { no: true },
+    const existing = await prisma.crawlHsCode.findFirst({
+      where: { hsCode: chapterCode, portOfClearance: "US" },
+      select: { id: true },
     });
 
     if (existing) {
       await prisma.crawlHsCode.update({
-        where: { no: safeId },
+        where: { id: existing.id },
         data: {
           articleDescription: finalDesc,
           notes: notesBox,
@@ -165,12 +167,14 @@ export const FlexportHsCodeCrawlerSeeder: Seeder = {
       const rawChapters = await prisma.$queryRaw<
         Array<{ chapter_code: string; article_description: string }>
       >`
-        SELECT DISTINCT ON (SUBSTRING(hs_code, 1, 2))
-          SUBSTRING(hs_code, 1, 2) as chapter_code,
+        SELECT DISTINCT ON (hs_code)
+          hs_code as chapter_code,
           article_description
         FROM crawl_hscode
-        WHERE hs_code IS NOT NULL AND LENGTH(hs_code) > 2
-        ORDER BY SUBSTRING(hs_code, 1, 2), hs_code;
+        WHERE LENGTH(hs_code) = 2 
+          AND article_description IS NOT NULL 
+          AND article_description != ''
+        ORDER BY hs_code;
       `;
 
       console.log(`    Found ${rawChapters.length} distinct chapters to crawl.`);

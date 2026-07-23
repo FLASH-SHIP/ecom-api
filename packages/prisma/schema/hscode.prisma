@@ -19,7 +19,8 @@ model TransportMode {
 }
 
 model CrawlHsCode {
-  no                     Int     @id
+  id                     Int     @id @default(autoincrement())
+  no                     Int?
   portOfClearance        String? @map("port_of_clearance") @db.VarChar
   hsCode                 String? @map("hs_code") @db.VarChar
   articleDescription     String? @map("article_description") @db.Text

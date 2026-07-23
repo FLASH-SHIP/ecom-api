@@ -142,14 +142,14 @@ async function run() {
         const safeId = 900000 + Number(chapterCode);
 
         // 2. Upsert chapter-level metadata row
-        const existing = await prisma.crawlHsCode.findUnique({
-          where: { no: safeId },
-          select: { no: true },
+        const existing = await prisma.crawlHsCode.findFirst({
+          where: { hsCode: chapterCode },
+          select: { id: true },
         });
 
         if (existing) {
           await prisma.crawlHsCode.update({
-            where: { no: safeId },
+            where: { id: existing.id },
             data: {
               articleDescription: finalDesc,
               notes: notesBox,
