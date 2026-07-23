@@ -162,7 +162,7 @@ export class HsCodeRepository {
     return this.prisma.crawlHsCode.findFirst({
       where: {
         hsCode: chapterCode,
-        portOfClearance: 'US'
+        portOfClearance: "US",
       },
       select: {
         articleDescription: true,

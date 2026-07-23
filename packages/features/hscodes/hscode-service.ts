@@ -25,19 +25,35 @@ export interface TransportMode {
 }
 
 // Configurable External Backend API Base URL using Environment Variable
-const BASE_EXTERNAL_API_URL = process.env.EXTERNAL_API_URL || "https://dev-api.ecomexpress.vn/api/v1";
+const BASE_EXTERNAL_API_URL =
+  process.env.EXTERNAL_API_URL || "https://dev-api.ecomexpress.vn/api/v1";
 
 const countriesList: Country[] = [
-  { id: 1, name: "Vietnam", code: "VN", flag: `${BASE_EXTERNAL_API_URL.replace("/api/v1", "")}/public/flags/vn.svg` },
-  { id: 2, name: "China", code: "CN", flag: `${BASE_EXTERNAL_API_URL.replace("/api/v1", "")}/public/flags/cn.svg` },
-  { id: 3, name: "United States", code: "US", flag: `${BASE_EXTERNAL_API_URL.replace("/api/v1", "")}/public/flags/us.svg` }
+  {
+    id: 1,
+    name: "Vietnam",
+    code: "VN",
+    flag: `${BASE_EXTERNAL_API_URL.replace("/api/v1", "")}/public/flags/vn.svg`,
+  },
+  {
+    id: 2,
+    name: "China",
+    code: "CN",
+    flag: `${BASE_EXTERNAL_API_URL.replace("/api/v1", "")}/public/flags/cn.svg`,
+  },
+  {
+    id: 3,
+    name: "United States",
+    code: "US",
+    flag: `${BASE_EXTERNAL_API_URL.replace("/api/v1", "")}/public/flags/us.svg`,
+  },
 ];
 
 const transportModesList: TransportMode[] = [
   { id: 1, code: "ocean", name: "Ocean" },
   { id: 2, code: "air", name: "Air" },
   { id: 3, code: "rail", name: "Rail" },
-  { id: 4, code: "truck", name: "Truck" }
+  { id: 4, code: "truck", name: "Truck" },
 ];
 
 // All 97 standard HS Code chapters (names matches standard naming, code prefix matches list)
@@ -138,14 +154,16 @@ const standardChaptersMap: Record<string, string> = {
   "94": "Furniture; bedding, mattresses, cushions",
   "95": "Toys, games and sports requisites; parts thereof",
   "96": "Miscellaneous manufactured articles",
-  "97": "Works of art, collectors' pieces and antiques"
+  "97": "Works of art, collectors' pieces and antiques",
 };
 
 // Generate flat Chapter list from standard chapters map (using "01 Live animals" style)
-const chaptersTree: ChapterTree[] = Object.keys(standardChaptersMap).sort().map(code => ({
-  code,
-  description: `${code} ${standardChaptersMap[code]}`
-}));
+const chaptersTree: ChapterTree[] = Object.keys(standardChaptersMap)
+  .sort()
+  .map((code) => ({
+    code,
+    description: `${code} ${standardChaptersMap[code]}`,
+  }));
 
 // Load Chapter 02 dynamic details from local file
 let fileDetail: any = null;
@@ -188,16 +206,96 @@ interface RateDetail {
 
 const customRatesList: RateDetail[] = [
   // Chapter 01 (Live Animals)
-  { code: "0101.21.00", description: "Purebred breeding animals", chapterCode: "01", headingCode: "0101", unit: "", generalRate: "Free", specialRate: null },
-  { code: "0101.21.00.10", description: "Males", chapterCode: "01", headingCode: "0101", unit: "No.", generalRate: "", specialRate: null },
-  { code: "0101.21.00.20", description: "Females", chapterCode: "01", headingCode: "0101", unit: "No.", generalRate: "", specialRate: null },
-  { code: "0101.29.00", description: "Other", chapterCode: "01", headingCode: "0101", unit: "", generalRate: "Free", specialRate: null },
-  { code: "0101.29.00.10", description: "Imported for immediate slaughter", chapterCode: "01", headingCode: "0101", unit: "No.", generalRate: "", specialRate: null },
-  { code: "0101.29.00.90", description: "Other", chapterCode: "01", headingCode: "0101", unit: "No.", generalRate: "", specialRate: null },
-  { code: "0101.30.00.00", description: "Asses", chapterCode: "01", headingCode: "0101", unit: "No.", generalRate: "6.8%", specialRate: "Free (A+,AU,BH, CL, CO,D,E,IL, JO,KR, MA, OM,P,PA, PE,SG)" },
-  { code: "0101.90", description: "Other", chapterCode: "01", headingCode: "0101", unit: "", generalRate: "", specialRate: null },
-  { code: "0101.90.30.00", description: "Imported for immediate slaughter", chapterCode: "01", headingCode: "0101", unit: "No.", generalRate: "Free", specialRate: null },
-  { code: "0101.90.40.00", description: "Other", chapterCode: "01", headingCode: "0101", unit: "No.", generalRate: "4.5%", specialRate: "Free (A+,AU,BH, CL, CO,D,E,IL, JO,KR, MA, OM,P,PA, PE,SG)" }
+  {
+    code: "0101.21.00",
+    description: "Purebred breeding animals",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "",
+    generalRate: "Free",
+    specialRate: null,
+  },
+  {
+    code: "0101.21.00.10",
+    description: "Males",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "No.",
+    generalRate: "",
+    specialRate: null,
+  },
+  {
+    code: "0101.21.00.20",
+    description: "Females",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "No.",
+    generalRate: "",
+    specialRate: null,
+  },
+  {
+    code: "0101.29.00",
+    description: "Other",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "",
+    generalRate: "Free",
+    specialRate: null,
+  },
+  {
+    code: "0101.29.00.10",
+    description: "Imported for immediate slaughter",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "No.",
+    generalRate: "",
+    specialRate: null,
+  },
+  {
+    code: "0101.29.00.90",
+    description: "Other",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "No.",
+    generalRate: "",
+    specialRate: null,
+  },
+  {
+    code: "0101.30.00.00",
+    description: "Asses",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "No.",
+    generalRate: "6.8%",
+    specialRate: "Free (A+,AU,BH, CL, CO,D,E,IL, JO,KR, MA, OM,P,PA, PE,SG)",
+  },
+  {
+    code: "0101.90",
+    description: "Other",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "",
+    generalRate: "",
+    specialRate: null,
+  },
+  {
+    code: "0101.90.30.00",
+    description: "Imported for immediate slaughter",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "No.",
+    generalRate: "Free",
+    specialRate: null,
+  },
+  {
+    code: "0101.90.40.00",
+    description: "Other",
+    chapterCode: "01",
+    headingCode: "0101",
+    unit: "No.",
+    generalRate: "4.5%",
+    specialRate: "Free (A+,AU,BH, CL, CO,D,E,IL, JO,KR, MA, OM,P,PA, PE,SG)",
+  },
 ];
 
 // Chapter 01 Hierarchy Trees
@@ -213,9 +311,23 @@ const chapter01Hierarchy = [
         specialRate: null,
         unit: "",
         children: [
-          { code: "0101.21.00.10", description: "Males", generalRate: "", specialRate: null, unit: "No.", children: [] },
-          { code: "0101.21.00.20", description: "Females", generalRate: "", specialRate: null, unit: "No.", children: [] }
-        ]
+          {
+            code: "0101.21.00.10",
+            description: "Males",
+            generalRate: "",
+            specialRate: null,
+            unit: "No.",
+            children: [],
+          },
+          {
+            code: "0101.21.00.20",
+            description: "Females",
+            generalRate: "",
+            specialRate: null,
+            unit: "No.",
+            children: [],
+          },
+        ],
       },
       {
         code: "0101.29.00",
@@ -224,9 +336,23 @@ const chapter01Hierarchy = [
         specialRate: null,
         unit: "",
         children: [
-          { code: "0101.29.00.10", description: "Imported for immediate slaughter", generalRate: "", specialRate: null, unit: "No.", children: [] },
-          { code: "0101.29.00.90", description: "Other", generalRate: "", specialRate: null, unit: "No.", children: [] }
-        ]
+          {
+            code: "0101.29.00.10",
+            description: "Imported for immediate slaughter",
+            generalRate: "",
+            specialRate: null,
+            unit: "No.",
+            children: [],
+          },
+          {
+            code: "0101.29.00.90",
+            description: "Other",
+            generalRate: "",
+            specialRate: null,
+            unit: "No.",
+            children: [],
+          },
+        ],
       },
       {
         code: "0101.30.00.00",
@@ -234,7 +360,7 @@ const chapter01Hierarchy = [
         generalRate: "6.8%",
         specialRate: "Free (A+,AU,BH, CL, CO,D,E,IL, JO,KR, MA, OM,P,PA, PE,S,SG)",
         unit: "No.",
-        children: []
+        children: [],
       },
       {
         code: "0101.90",
@@ -243,30 +369,48 @@ const chapter01Hierarchy = [
         specialRate: null,
         unit: "",
         children: [
-          { code: "0101.90.30.00", description: "Imported for immediate slaughter", generalRate: "Free", specialRate: null, unit: "No.", children: [] },
-          { code: "0101.90.40.00", description: "Other", generalRate: "4.5%", specialRate: "Free (A+,AU,BH, CL, CO,D,E,IL, JO,KR, MA, OM,P,PA, PE,S,SG)", unit: "No.", children: [] }
-        ]
-      }
-    ]
+          {
+            code: "0101.90.30.00",
+            description: "Imported for immediate slaughter",
+            generalRate: "Free",
+            specialRate: null,
+            unit: "No.",
+            children: [],
+          },
+          {
+            code: "0101.90.40.00",
+            description: "Other",
+            generalRate: "4.5%",
+            specialRate: "Free (A+,AU,BH, CL, CO,D,E,IL, JO,KR, MA, OM,P,PA, PE,S,SG)",
+            unit: "No.",
+            children: [],
+          },
+        ],
+      },
+    ],
   },
   { code: "0102", description: "Live bovine animals", children: [] },
   { code: "0103", description: "Live swine", children: [] },
   { code: "0104", description: "Live sheep and goats", children: [] },
-  { code: "0105", description: "Live poultry of the following kinds: Chickens, ducks, geese, turkeys and guineas", children: [] },
-  { code: "0106", description: "Other live animals", children: [] }
+  {
+    code: "0105",
+    description: "Live poultry of the following kinds: Chickens, ducks, geese, turkeys and guineas",
+    children: [],
+  },
+  { code: "0106", description: "Other live animals", children: [] },
 ];
 
 export async function getTree(): Promise<ChapterTree[]> {
   try {
     const res = await fetch(`${BASE_EXTERNAL_API_URL}/hscodes/tree`);
     if (res.ok) {
-      const json = await res.json() as any;
+      const json = (await res.json()) as any;
       if (json.success && Array.isArray(json.data)) {
         return json.data.map((chap: any) => ({
           code: chap.code,
           description: chap.description.startsWith(chap.code)
             ? chap.description
-            : `${chap.code} ${chap.description}`
+            : `${chap.code} ${chap.description}`,
         }));
       }
     }
@@ -285,13 +429,15 @@ export async function getDetail(code: string) {
   try {
     const res = await fetch(`${BASE_EXTERNAL_API_URL}/hscodes/detail?code=${cleanedCode}`);
     if (res.ok) {
-      const json = await res.json() as any;
+      const json = (await res.json()) as any;
       if (json.success && json.data) {
         if (!json.data.chapter.notesHtml && cleanedCode.length > 2) {
           try {
-            const chapRes = await fetch(`${BASE_EXTERNAL_API_URL}/hscodes/detail?code=${chapterCode}`);
+            const chapRes = await fetch(
+              `${BASE_EXTERNAL_API_URL}/hscodes/detail?code=${chapterCode}`,
+            );
             if (chapRes.ok) {
-              const chapJson = await chapRes.json() as any;
+              const chapJson = (await chapRes.json()) as any;
               if (chapJson.success && chapJson.data?.chapter?.notesHtml) {
                 json.data.chapter.notesHtml = chapJson.data.chapter.notesHtml;
               }
@@ -320,7 +466,8 @@ export async function getDetail(code: string) {
     if (cleanedCode.length === 2) {
       return fileDetail;
     }
-    const headingDetail = fileDetail.rates.find((r: any) => r.code.replace(/\./g, "") === cleanedCode) || null;
+    const headingDetail =
+      fileDetail.rates.find((r: any) => r.code.replace(/\./g, "") === cleanedCode) || null;
     const findSubtree = (nodes: any[]): any[] => {
       for (const n of nodes) {
         if (n.code.replace(/\./g, "") === cleanedCode) {
@@ -336,41 +483,59 @@ export async function getDetail(code: string) {
       return [];
     };
     const nodesHasCode = (nodes: any[], target: string): boolean => {
-      return nodes.some(n => n.code.replace(/\./g, "") === target || (n.children && nodesHasCode(n.children, target)));
+      return nodes.some(
+        (n) =>
+          n.code.replace(/\./g, "") === target || (n.children && nodesHasCode(n.children, target)),
+      );
     };
     const children = findSubtree(fileDetail.children || []);
-    const rates = headingDetail 
-      ? [headingDetail] 
+    const rates = headingDetail
+      ? [headingDetail]
       : fileDetail.rates.filter((r: any) => r.code.replace(/\./g, "").startsWith(cleanedCode));
     const headingMeta = fileDetail.children.find((h: any) => h.code === headingCodePrefix);
-    
+
     return {
       chapter: {
         code: "02",
         name: fileDetail.chapter.name,
-        notesHtml: fileDetail.chapter.notesHtml
+        notesHtml: fileDetail.chapter.notesHtml,
       },
-      heading: headingCodePrefix.length === 4 ? { code: headingCodePrefix, name: headingMeta ? headingMeta.description : `Heading ${headingCodePrefix}` } : null,
+      heading:
+        headingCodePrefix.length === 4
+          ? {
+              code: headingCodePrefix,
+              name: headingMeta ? headingMeta.description : `Heading ${headingCodePrefix}`,
+            }
+          : null,
       selectedRate: headingDetail,
       rates,
-      children
+      children,
     };
   }
 
   // --- DEFAULT CHAPTER 01 ROUTE ---
   const chapterName = standardChaptersMap[chapterCode] || `Chapter ${chapterCode}`;
-  const chapterNotes = chapterCode === "01" ? chapter01NotesHtml : `<h3>Chapter ${chapterCode} Legal Notes:</h3><p>Import guidelines and legal notes for ${chapterName}.</p>`;
+  const chapterNotes =
+    chapterCode === "01"
+      ? chapter01NotesHtml
+      : `<h3>Chapter ${chapterCode} Legal Notes:</h3><p>Import guidelines and legal notes for ${chapterName}.</p>`;
 
   const chapter = {
     code: chapterCode,
     name: chapterName,
-    notesHtml: chapterNotes
+    notesHtml: chapterNotes,
   };
 
-  const headingMeta = chapter01Hierarchy.find(h => h.code === headingCodePrefix);
-  const heading = headingCodePrefix.length === 4 ? { code: headingCodePrefix, name: headingMeta ? headingMeta.description : `Heading ${headingCodePrefix}` } : null;
+  const headingMeta = chapter01Hierarchy.find((h) => h.code === headingCodePrefix);
+  const heading =
+    headingCodePrefix.length === 4
+      ? {
+          code: headingCodePrefix,
+          name: headingMeta ? headingMeta.description : `Heading ${headingCodePrefix}`,
+        }
+      : null;
 
-  let selectedRate = customRatesList.find(r => r.code.replace(/\./g, "") === cleanedCode) || null;
+  let selectedRate = customRatesList.find((r) => r.code.replace(/\./g, "") === cleanedCode) || null;
   if (!selectedRate && cleanedCode.length === 10) {
     selectedRate = {
       code: code,
@@ -379,7 +544,7 @@ export async function getDetail(code: string) {
       headingCode: headingCodePrefix,
       unit: "No.",
       generalRate: "Free",
-      specialRate: null
+      specialRate: null,
     };
   }
 
@@ -403,7 +568,11 @@ export async function getDetail(code: string) {
         return [];
       };
       const nodesHasCode = (nodes: any[], target: string): boolean => {
-        return nodes.some(n => n.code.replace(/\./g, "") === target || (n.children && nodesHasCode(n.children, target)));
+        return nodes.some(
+          (n) =>
+            n.code.replace(/\./g, "") === target ||
+            (n.children && nodesHasCode(n.children, target)),
+        );
       };
       children = findSubtree(chapter01Hierarchy);
     }
@@ -419,12 +588,20 @@ export async function getDetail(code: string) {
               code: `${chapterCode}01.10.00.00`,
               description: `Product type ${chapterCode}01.10`,
               children: [
-                { code: `${chapterCode}01.10.30.00`, description: `Special item ${chapterCode}01.10.30`, children: [] },
-                { code: `${chapterCode}01.10.60.00`, description: `Standard item ${chapterCode}01.10.60`, children: [] }
-              ]
-            }
-          ]
-        }
+                {
+                  code: `${chapterCode}01.10.30.00`,
+                  description: `Special item ${chapterCode}01.10.30`,
+                  children: [],
+                },
+                {
+                  code: `${chapterCode}01.10.60.00`,
+                  description: `Standard item ${chapterCode}01.10.60`,
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
       ];
     } else if (cleanedCode.length === 4) {
       children = [
@@ -432,15 +609,23 @@ export async function getDetail(code: string) {
           code: `${cleanedCode}.10.00.00`,
           description: `Product type ${cleanedCode}.10`,
           children: [
-            { code: `${cleanedCode}.10.30.00`, description: `Special item ${cleanedCode}.10.30`, children: [] },
-            { code: `${cleanedCode}.10.60.00`, description: `Standard item ${cleanedCode}.10.60`, children: [] }
-          ]
-        }
+            {
+              code: `${cleanedCode}.10.30.00`,
+              description: `Special item ${cleanedCode}.10.30`,
+              children: [],
+            },
+            {
+              code: `${cleanedCode}.10.60.00`,
+              description: `Standard item ${cleanedCode}.10.60`,
+              children: [],
+            },
+          ],
+        },
       ];
     }
   }
 
-  let rates = customRatesList.filter(r => r.code.replace(/\./g, "").startsWith(cleanedCode));
+  let rates = customRatesList.filter((r) => r.code.replace(/\./g, "").startsWith(cleanedCode));
   if (selectedRate) {
     rates = [selectedRate];
   } else if (rates.length === 0 && chapterCode !== "01") {
@@ -452,7 +637,7 @@ export async function getDetail(code: string) {
         headingCode: headingCodePrefix,
         unit: "No.",
         generalRate: "4.00%",
-        specialRate: null
+        specialRate: null,
       },
       {
         code: `${cleanedCode.substring(0, 4)}.10.60.00`,
@@ -461,8 +646,8 @@ export async function getDetail(code: string) {
         headingCode: headingCodePrefix,
         unit: "No.",
         generalRate: "Free",
-        specialRate: null
-      }
+        specialRate: null,
+      },
     ];
   }
 
@@ -471,7 +656,7 @@ export async function getDetail(code: string) {
     heading,
     selectedRate,
     rates,
-    children
+    children,
   };
 }
 
@@ -480,9 +665,11 @@ export async function search(query: string): Promise<HSCodeItem[]> {
   if (!lowerQuery) return [];
 
   try {
-    const res = await fetch(`${BASE_EXTERNAL_API_URL}/hscodes/search?query=${encodeURIComponent(lowerQuery)}`);
+    const res = await fetch(
+      `${BASE_EXTERNAL_API_URL}/hscodes/search?query=${encodeURIComponent(lowerQuery)}`,
+    );
     if (res.ok) {
-      const json = await res.json() as any;
+      const json = (await res.json()) as any;
       if (json.success && Array.isArray(json.data)) {
         return json.data;
       }
@@ -491,27 +678,25 @@ export async function search(query: string): Promise<HSCodeItem[]> {
     console.error(`Failed to fetch search for ${query} from dev API, using local fallback`, e);
   }
 
-  const allItems: HSCodeItem[] = customRatesList.map(r => ({
+  const allItems: HSCodeItem[] = customRatesList.map((r) => ({
     code: r.code,
     description: r.description,
-    generalRate: r.generalRate || "Free"
+    generalRate: r.generalRate || "Free",
   }));
-  
+
   // Add Chapter 02 items if fileDetail loaded
   if (fileDetail && fileDetail.rates) {
     fileDetail.rates.forEach((r: any) => {
       allItems.push({
         code: r.code,
         description: r.description,
-        generalRate: r.generalRate || "Free"
+        generalRate: r.generalRate || "Free",
       });
     });
   }
 
   return allItems.filter(
-    item =>
-      item.code.includes(lowerQuery) ||
-      item.description.toLowerCase().includes(lowerQuery)
+    (item) => item.code.includes(lowerQuery) || item.description.toLowerCase().includes(lowerQuery),
   );
 }
 
@@ -519,7 +704,7 @@ export async function getCountries(): Promise<Country[]> {
   try {
     const res = await fetch(`${BASE_EXTERNAL_API_URL}/hscodes/countries`);
     if (res.ok) {
-      const json = await res.json() as any;
+      const json = (await res.json()) as any;
       if (json.success && Array.isArray(json.data)) {
         return json.data;
       }
@@ -534,7 +719,7 @@ export async function getTransportModes(): Promise<TransportMode[]> {
   try {
     const res = await fetch(`${BASE_EXTERNAL_API_URL}/hscodes/transport-modes`);
     if (res.ok) {
-      const json = await res.json() as any;
+      const json = (await res.json()) as any;
       if (json.success && Array.isArray(json.data)) {
         return json.data;
       }
@@ -551,16 +736,16 @@ export async function calculate(
   mode: string,
   country?: string,
   entryDate?: string,
-  loadingDate?: string
+  loadingDate?: string,
 ) {
   try {
     const res = await fetch(`${BASE_EXTERNAL_API_URL}/hscodes/calculate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, value, mode, country, entryDate, loadingDate })
+      body: JSON.stringify({ code, value, mode, country, entryDate, loadingDate }),
     });
     if (res.ok) {
-      const json = await res.json() as any;
+      const json = (await res.json()) as any;
       if (json.success && json.data) {
         return json.data;
       }
@@ -570,7 +755,7 @@ export async function calculate(
   }
 
   const cleanedCode = code.replace(/\./g, "").trim();
-  
+
   // 1. Determine base duty rate based on HS Code prefix
   let baseRate = 4.0; // default rate
   if (cleanedCode.startsWith("01")) {
@@ -587,21 +772,25 @@ export async function calculate(
   } else if (cleanedCode.startsWith("09")) {
     baseRate = 12.0;
   } else if (cleanedCode.startsWith("76")) {
-    baseRate = 2.60;
+    baseRate = 2.6;
   } else if (cleanedCode.startsWith("85")) {
     baseRate = 0.0;
   } else if (cleanedCode.startsWith("94")) {
-    baseRate = 3.20;
+    baseRate = 3.2;
   }
 
   // 2. Determine trade remedy additional tariffs (Section 301 / 232)
   let extraRate = 0.0;
   const isChina = country && (country.toLowerCase() === "china" || country.toUpperCase() === "CN");
-  
+
   if (isChina) {
     if (cleanedCode.startsWith("76")) {
       extraRate = 75.0; // 25% Sec 301 + 50% Sec 232
-    } else if (cleanedCode.startsWith("85") || cleanedCode.startsWith("94") || cleanedCode.startsWith("09")) {
+    } else if (
+      cleanedCode.startsWith("85") ||
+      cleanedCode.startsWith("94") ||
+      cleanedCode.startsWith("09")
+    ) {
       extraRate = 25.0; // Sec 301
     }
   }
@@ -611,7 +800,7 @@ export async function calculate(
 
   // 3. Harbor Maintenance Fee (HMF): 0.125% of value, only for Ocean transport
   const isOcean = mode && mode.toLowerCase() === "ocean";
-  const hmf = isOcean ? Math.round((value * 0.00125) * 100) / 100 : 0;
+  const hmf = isOcean ? Math.round(value * 0.00125 * 100) / 100 : 0;
 
   // 4. Merchandise Processing Fee (MPF): 0.3464% of value, min $31.67, max $614.35 for values > 2500; else $2.22
   let mpf = 0;
@@ -633,6 +822,6 @@ export async function calculate(
     totalDuties: customDuty,
     hmf,
     mpf,
-    total
+    total,
   };
 }

@@ -13,7 +13,11 @@ export function ArrowUpDownIcon({ className = "", ...props }: SVGProps<SVGSVGEle
     >
       <path
         d="M8.66667 10.6666L11.3333 13.3333L14 10.6666M11.3333 13.3333V2.66663M7.33333 5.33329L4.66667 2.66663L2 5.33329M4.66667 2.66663V13.3333"
-        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

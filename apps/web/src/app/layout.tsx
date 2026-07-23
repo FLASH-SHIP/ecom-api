@@ -1,10 +1,10 @@
+import { TRPCProvider } from "@web/lib/trpc";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
 import { HrefLangTags } from "../components/HrefLangTags";
 import { WebLayout } from "../components/WebLayout";
 import { CustomerThemeProvider } from "../lib/CustomerThemeProvider";
-import { TRPCProvider } from "@web/lib/trpc";
 import "./globals.css";
 
 import { env } from "@web/env";

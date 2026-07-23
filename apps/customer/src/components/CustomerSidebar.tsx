@@ -117,7 +117,7 @@ function LanguageSelector({
                 ? translate("customerDashboard.sidebar.changeLanguage", currentLocale)
                 : undefined
             }
-            size={'sm'}
+            size={"sm"}
           >
             <span className="uppercase">{language?.id === "en" ? "ENG" : language?.id}</span>
             <ChevronDown

@@ -28,17 +28,17 @@ function parseCSV(content: string): string[][] {
     } else {
       if (char === '"') {
         inQuotes = true;
-      } else if (char === ',') {
+      } else if (char === ",") {
         row.push(current);
         current = "";
-      } else if (char === '\r' || char === '\n') {
+      } else if (char === "\r" || char === "\n") {
         row.push(current);
         current = "";
         if (row.length > 1 || (row.length === 1 && row[0] !== "")) {
           result.push(row);
         }
         row = [];
-        if (char === '\r' && nextChar === '\n') {
+        if (char === "\r" && nextChar === "\n") {
           i++; // skip \n
         }
       } else {
@@ -117,10 +117,12 @@ export const HsCodeCsvSeeder: Seeder = {
           data: batch,
           skipDuplicates: true,
         });
-        process.stdout.write(`      * Inserted crawl_hscode batch ${Math.min(i + BATCH_SIZE, items.length)}/${items.length}\r`);
+        process.stdout.write(
+          `      * Inserted crawl_hscode batch ${Math.min(i + BATCH_SIZE, items.length)}/${items.length}\r`,
+        );
       }
       await prisma.$executeRawUnsafe(
-        "SELECT setval('crawl_hscode_id_seq', (SELECT COALESCE(MAX(id), 1) FROM crawl_hscode));"
+        "SELECT setval('crawl_hscode_id_seq', (SELECT COALESCE(MAX(id), 1) FROM crawl_hscode));",
       );
       console.log(`\n    → Successfully seeded crawl_hscode.`);
     } else {
@@ -138,16 +140,18 @@ export const HsCodeCsvSeeder: Seeder = {
       console.log(`    → Found ${rows.length} rows to seed into hscode_flexport.`);
 
       // Convert rows to Prisma input
-      const items = rows.map((row) => {
-        return {
-          code: row[0] ?? "",
-          description: row[1] || null,
-          generalRate: row[2] || null,
-          column2Rate: row[3] || null,
-          specialRate: row[4] || null,
-          unitsofQuantity: row[5] || null,
-        };
-      }).filter((item) => item.code !== ""); // Skip rows with empty code
+      const items = rows
+        .map((row) => {
+          return {
+            code: row[0] ?? "",
+            description: row[1] || null,
+            generalRate: row[2] || null,
+            column2Rate: row[3] || null,
+            specialRate: row[4] || null,
+            unitsofQuantity: row[5] || null,
+          };
+        })
+        .filter((item) => item.code !== ""); // Skip rows with empty code
 
       // Batch insert with skipDuplicates
       for (let i = 0; i < items.length; i += BATCH_SIZE) {
@@ -156,7 +160,9 @@ export const HsCodeCsvSeeder: Seeder = {
           data: batch,
           skipDuplicates: true,
         });
-        process.stdout.write(`      * Inserted hscode_flexport batch ${Math.min(i + BATCH_SIZE, items.length)}/${items.length}\r`);
+        process.stdout.write(
+          `      * Inserted hscode_flexport batch ${Math.min(i + BATCH_SIZE, items.length)}/${items.length}\r`,
+        );
       }
       console.log(`\n    → Successfully seeded hscode_flexport.`);
     } else {

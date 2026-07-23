@@ -1,10 +1,10 @@
 "use client";
 
+import { trpc } from "@web/lib/trpc";
 import { ChevronLeft, ChevronRight, FileText, Search, X } from "lucide-react";
 import Image from "next/image";
 import NextLink from "next/link";
 import { useState } from "react";
-import { trpc } from "@web/lib/trpc";
 
 export default function BlogPage() {
   const [page, setPage] = useState(1);

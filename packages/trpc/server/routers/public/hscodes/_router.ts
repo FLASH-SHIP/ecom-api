@@ -1,23 +1,19 @@
+import * as hsCodeFeatures from "@ecom/features/hscodes/hscode-service";
 import { publicProcedure, router } from "@ecom/trpc/server/trpc";
 import { z } from "zod";
-import * as hsCodeFeatures from "@ecom/features/hscodes/hscode-service";
 
 export const publicHsCodeRouter = router({
   getTree: publicProcedure.query(async () => {
     return hsCodeFeatures.getTree();
   }),
 
-  getDetail: publicProcedure
-    .input(z.object({ code: z.string() }))
-    .query(async ({ input }) => {
-      return hsCodeFeatures.getDetail(input.code);
-    }),
+  getDetail: publicProcedure.input(z.object({ code: z.string() })).query(async ({ input }) => {
+    return hsCodeFeatures.getDetail(input.code);
+  }),
 
-  search: publicProcedure
-    .input(z.object({ query: z.string() }))
-    .query(async ({ input }) => {
-      return hsCodeFeatures.search(input.query);
-    }),
+  search: publicProcedure.input(z.object({ query: z.string() })).query(async ({ input }) => {
+    return hsCodeFeatures.search(input.query);
+  }),
 
   getCountries: publicProcedure.query(async () => {
     return hsCodeFeatures.getCountries();
@@ -36,7 +32,7 @@ export const publicHsCodeRouter = router({
         country: z.string().optional(),
         entryDate: z.string().optional(),
         loadingDate: z.string().optional(),
-      })
+      }),
     )
     .query(async ({ input }) => {
       return hsCodeFeatures.calculate(
@@ -45,7 +41,7 @@ export const publicHsCodeRouter = router({
         input.mode,
         input.country,
         input.entryDate,
-        input.loadingDate
+        input.loadingDate,
       );
     }),
 });

@@ -1,28 +1,28 @@
 "use client";
 
+import { trpc } from "@web/lib/trpc";
 import {
   ArrowRight,
-  FileText,
+  Check,
   CheckCircle2,
-  Truck,
-  Download,
   ChevronLeft,
   ChevronRight,
-  MessageSquare,
-  LineChart,
+  Download,
   FileCheck,
-  Check,
-  Globe,
-  MapPin,
   FileDown,
-  Search
+  FileText,
+  Globe,
+  LineChart,
+  MapPin,
+  MessageSquare,
+  Search,
+  Truck,
 } from "lucide-react";
 import Image from "next/image";
 import NextLink from "next/link";
 import { usePathname } from "next/navigation";
+import { useRef, useState } from "react";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../lib/i18n";
-import { trpc } from "@web/lib/trpc";
-import { useState, useRef } from "react";
 import heroPlane from "./hero-plane.png";
 
 function PostCardSkeleton() {
@@ -77,7 +77,7 @@ export default function HomePage() {
       title: "Seafood & Foodstuffs",
       desc: "ISO-certified frozen seafood, processed food, and traditional dried delicacies.",
       src: "https://images.unsplash.com/photo-1534482421-64566f976cfa?q=80&w=800",
-    }
+    },
   ];
 
   const handleCategoryScroll = (index: number) => {
@@ -89,7 +89,7 @@ export default function HomePage() {
       if (activeItem) {
         carouselRef.current.scrollTo({
           left: activeItem.offsetLeft - 0,
-          behavior: "smooth"
+          behavior: "smooth",
         });
       }
     }
@@ -113,11 +113,11 @@ export default function HomePage() {
             <h1 className="text-[#232323] font-semibold text-[48px] md:text-[64px] tracking-tight leading-none mb-10">
               Track & Trace
             </h1>
-            
+
             {/* Search Input Box */}
             <div className="flex w-full max-w-[676px] h-[56px] items-center mb-10">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Enter your tracking nummber"
                 className="flex-1 h-full px-4 border border-[#dadada] border-r-0 text-[#232323] text-[16px] outline-none placeholder:text-[#8d8d8d] bg-transparent rounded-none"
               />
@@ -139,9 +139,9 @@ export default function HomePage() {
 
           {/* Right Image */}
           <div className="w-full max-w-[547px] h-[300px] lg:h-[472px] relative rounded-none overflow-hidden shrink-0">
-            <div 
+            <div
               className="absolute left-0 right-0 w-full h-[744px] animate-plane-wing"
-              style={{ top: '-60px' }}
+              style={{ top: "-60px" }}
             >
               <Image
                 src={heroPlane}
@@ -167,7 +167,10 @@ export default function HomePage() {
 
             <div className="animate-marquee flex items-center gap-[15px]">
               {partnerLogos.map((src, i) => (
-                <div key={`set1-${i}`} className="w-[140px] h-[50px] flex items-center justify-center shrink-0">
+                <div
+                  key={`set1-${i}`}
+                  className="w-[140px] h-[50px] flex items-center justify-center shrink-0"
+                >
                   <Image
                     src={src}
                     alt={`Partner Logo ${i + 1}`}
@@ -179,7 +182,10 @@ export default function HomePage() {
                 </div>
               ))}
               {partnerLogos.map((src, i) => (
-                <div key={`set2-${i}`} className="w-[140px] h-[50px] flex items-center justify-center shrink-0">
+                <div
+                  key={`set2-${i}`}
+                  className="w-[140px] h-[50px] flex items-center justify-center shrink-0"
+                >
                   <Image
                     src={src}
                     alt={`Partner Logo Duplicate ${i + 1}`}
@@ -212,42 +218,53 @@ export default function HomePage() {
 
           <div className="text-left mb-12 relative z-10">
             <h2 className="text-[#232323] font-medium text-3xl md:text-[40px] tracking-tight leading-tight mt-2 text-center lg:text-left">
-              Global Logistics Network: From <span className="text-[#0f798c]">Vietnam</span> to <span className="text-[#0f798c]">USA</span> (Nationwide Delivery)
+              Global Logistics Network: From <span className="text-[#0f798c]">Vietnam</span> to{" "}
+              <span className="text-[#0f798c]">USA</span> (Nationwide Delivery)
             </h2>
           </div>
 
           <div className="relative w-full aspect-[1400/457] hidden lg:block z-10">
             {/* Left Locations List */}
             {/* Free pick-up cities */}
-            <div className="absolute" style={{ left: '0px', top: '0px', width: '296px' }}>
+            <div className="absolute" style={{ left: "0px", top: "0px", width: "296px" }}>
               <div className="flex items-center w-[296px] h-[42px] border border-[#232323] bg-white p-1 mb-4 rounded-[6px]">
                 <div className="w-[39px] h-[34px] bg-[#232323] flex items-center justify-center shrink-0 rounded-[6px]" />
                 <span className="ml-3 text-[#232323] font-bold text-[14px]">Free pick-up city</span>
               </div>
-              
+
               <div className="flex gap-4">
                 {/* Left Column (Dark Box) */}
                 <div className="w-[140px] bg-[#232323] rounded-[6px] p-4 flex flex-col text-white font-medium text-[13px] tracking-tight shadow-sm">
-                  <div className="pb-2 border-b border-dashed border-white/20 text-white">Ho Chi Minh</div>
-                  <div className="py-2 border-b border-dashed border-white/20 text-white">Da Nang</div>
-                  <div className="py-2 border-b border-dashed border-white/20 text-white">Binh Duong</div>
+                  <div className="pb-2 border-b border-dashed border-white/20 text-white">
+                    Ho Chi Minh
+                  </div>
+                  <div className="py-2 border-b border-dashed border-white/20 text-white">
+                    Da Nang
+                  </div>
+                  <div className="py-2 border-b border-dashed border-white/20 text-white">
+                    Binh Duong
+                  </div>
                   <div className="pt-2 text-white">Dong Nai</div>
                 </div>
                 {/* Right Column (Dark Box) */}
                 <div className="w-[140px] bg-[#232323] rounded-[6px] p-4 flex flex-col text-white font-medium text-[13px] tracking-tight h-fit shadow-sm">
-                  <div className="pb-2 border-b border-dashed border-white/20 text-white">Hanoi</div>
+                  <div className="pb-2 border-b border-dashed border-white/20 text-white">
+                    Hanoi
+                  </div>
                   <div className="pt-2 text-white">Bac Ninh</div>
                 </div>
               </div>
             </div>
 
             {/* Shipping and pick-up location */}
-            <div className="absolute" style={{ left: '0px', top: '266px', width: '296px' }}>
+            <div className="absolute" style={{ left: "0px", top: "266px", width: "296px" }}>
               <div className="flex items-center w-[296px] h-[42px] border border-[#232323] bg-white p-1 mb-4 rounded-[6px]">
                 <div className="w-[39px] h-[34px] bg-[#0f798c] flex items-center justify-center shrink-0 rounded-[6px]" />
-                <span className="ml-3 text-[#232323] font-bold text-[14px]">Shiping and pick-up location</span>
+                <span className="ml-3 text-[#232323] font-bold text-[14px]">
+                  Shiping and pick-up location
+                </span>
               </div>
-              
+
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-center w-[140px] h-[42px] bg-[#0f798c] text-white font-bold text-[14px] rounded-[6px] shadow-sm">
                   Vietnam
@@ -260,31 +277,40 @@ export default function HomePage() {
 
             {/* Map Graphics */}
             {/* Vietnam Map */}
-            <div className="absolute" style={{ left: '377px', top: '0px', width: '274.38px', height: '457.3px' }}>
-              <Image 
-                src="/map-assets/vietnam.svg" 
-                alt="Vietnam Map" 
-                fill 
-                className="object-contain pointer-events-none" 
+            <div
+              className="absolute"
+              style={{ left: "377px", top: "0px", width: "274.38px", height: "457.3px" }}
+            >
+              <Image
+                src="/map-assets/vietnam.svg"
+                alt="Vietnam Map"
+                fill
+                className="object-contain pointer-events-none"
                 unoptimized
               />
             </div>
 
             {/* USA Map */}
-            <div className="absolute" style={{ left: '751px', top: '0px', width: '649px', height: '457px' }}>
-              <Image 
-                src="/map-assets/usa.svg" 
-                alt="USA Map" 
-                fill 
-                className="object-contain pointer-events-none" 
+            <div
+              className="absolute"
+              style={{ left: "751px", top: "0px", width: "649px", height: "457px" }}
+            >
+              <Image
+                src="/map-assets/usa.svg"
+                alt="USA Map"
+                fill
+                className="object-contain pointer-events-none"
                 unoptimized
               />
             </div>
 
             {/* Dotted Curve Connecting Line with Mask Drawing Animation */}
-            <div className="absolute" style={{ left: '602px', top: '169px', width: '248px', height: '22px' }}>
-              <svg 
-                className="w-full h-full overflow-visible pointer-events-none" 
+            <div
+              className="absolute"
+              style={{ left: "602px", top: "169px", width: "248px", height: "22px" }}
+            >
+              <svg
+                className="w-full h-full overflow-visible pointer-events-none"
                 viewBox="0 0 250 22"
                 fill="none"
               >
@@ -313,23 +339,29 @@ export default function HomePage() {
             </div>
 
             {/* Vietnam Location Pin */}
-            <div className="absolute" style={{ left: '558px', top: '166px', width: '40px', height: '40px' }}>
-              <Image 
-                src="/map-assets/pin-vn.svg" 
-                alt="Vietnam Location Pin" 
-                fill 
-                className="object-contain pointer-events-none" 
+            <div
+              className="absolute"
+              style={{ left: "558px", top: "166px", width: "40px", height: "40px" }}
+            >
+              <Image
+                src="/map-assets/pin-vn.svg"
+                alt="Vietnam Location Pin"
+                fill
+                className="object-contain pointer-events-none"
                 unoptimized
               />
             </div>
 
             {/* USA Location Pin */}
-            <div className="absolute" style={{ left: '848px', top: '166px', width: '40px', height: '40px' }}>
-              <Image 
-                src="/map-assets/pin-us.svg" 
-                alt="USA Location Pin" 
-                fill 
-                className="object-contain pointer-events-none" 
+            <div
+              className="absolute"
+              style={{ left: "848px", top: "166px", width: "40px", height: "40px" }}
+            >
+              <Image
+                src="/map-assets/pin-us.svg"
+                alt="USA Location Pin"
+                fill
+                className="object-contain pointer-events-none"
                 unoptimized
               />
             </div>
@@ -345,13 +377,21 @@ export default function HomePage() {
               </div>
               <div className="flex gap-4">
                 <div className="w-[140px] bg-[#232323] rounded-[6px] p-4 flex flex-col text-white font-medium text-[13px] shadow-sm">
-                  <div className="pb-2 border-b border-dashed border-white/20 text-white">Ho Chi Minh</div>
-                  <div className="py-2 border-b border-dashed border-white/20 text-white">Da Nang</div>
-                  <div className="py-2 border-b border-dashed border-white/20 text-white">Binh Duong</div>
+                  <div className="pb-2 border-b border-dashed border-white/20 text-white">
+                    Ho Chi Minh
+                  </div>
+                  <div className="py-2 border-b border-dashed border-white/20 text-white">
+                    Da Nang
+                  </div>
+                  <div className="py-2 border-b border-dashed border-white/20 text-white">
+                    Binh Duong
+                  </div>
                   <div className="pt-2 text-white">Dong Nai</div>
                 </div>
                 <div className="w-[140px] bg-[#232323] rounded-[6px] p-4 flex flex-col text-white font-medium text-[13px] h-fit shadow-sm">
-                  <div className="pb-2 border-b border-dashed border-white/20 text-white">Hanoi</div>
+                  <div className="pb-2 border-b border-dashed border-white/20 text-white">
+                    Hanoi
+                  </div>
                   <div className="pt-2 text-white">Bac Ninh</div>
                 </div>
               </div>
@@ -361,7 +401,9 @@ export default function HomePage() {
             <div className="space-y-4">
               <div className="flex items-center w-[296px] h-[42px] border border-[#232323] bg-white p-1 rounded-[6px]">
                 <div className="w-[39px] h-[34px] bg-[#0f798c] flex items-center justify-center shrink-0 rounded-[6px]" />
-                <span className="ml-3 text-[#232323] font-bold text-[14px]">Shiping and pick-up location</span>
+                <span className="ml-3 text-[#232323] font-bold text-[14px]">
+                  Shiping and pick-up location
+                </span>
               </div>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-center w-[140px] h-[42px] bg-[#0f798c] text-white font-bold text-[14px] rounded-[6px] shadow-sm">
@@ -376,23 +418,68 @@ export default function HomePage() {
             {/* Map Visuals (scaled aspect) */}
             <div className="relative w-full aspect-[700/400] bg-transparent mt-6 overflow-hidden border border-slate-100 rounded-lg p-4">
               {/* Vietnam */}
-              <div className="absolute" style={{ left: '5%', top: '5%', width: '35%', height: '90%' }}>
-                <Image src="/map-assets/vietnam.svg" alt="Vietnam Map" fill className="object-contain" unoptimized />
+              <div
+                className="absolute"
+                style={{ left: "5%", top: "5%", width: "35%", height: "90%" }}
+              >
+                <Image
+                  src="/map-assets/vietnam.svg"
+                  alt="Vietnam Map"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
               </div>
               {/* USA */}
-              <div className="absolute" style={{ left: '48%', top: '15%', width: '48%', height: '70%' }}>
-                <Image src="/map-assets/usa.svg" alt="USA Map" fill className="object-contain" unoptimized />
+              <div
+                className="absolute"
+                style={{ left: "48%", top: "15%", width: "48%", height: "70%" }}
+              >
+                <Image
+                  src="/map-assets/usa.svg"
+                  alt="USA Map"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
               </div>
               {/* Curve */}
-              <div className="absolute" style={{ left: '28%', top: '42%', width: '22%', height: '10%' }}>
-                <Image src="/map-assets/curve.svg" alt="Curve" fill className="object-contain" unoptimized />
+              <div
+                className="absolute"
+                style={{ left: "28%", top: "42%", width: "22%", height: "10%" }}
+              >
+                <Image
+                  src="/map-assets/curve.svg"
+                  alt="Curve"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
               </div>
               {/* Pins */}
-              <div className="absolute" style={{ left: '24%', top: '40%', width: '6%', height: '10%' }}>
-                <Image src="/map-assets/pin-vn.svg" alt="Pin VN" fill className="object-contain" unoptimized />
+              <div
+                className="absolute"
+                style={{ left: "24%", top: "40%", width: "6%", height: "10%" }}
+              >
+                <Image
+                  src="/map-assets/pin-vn.svg"
+                  alt="Pin VN"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
               </div>
-              <div className="absolute" style={{ left: '46%', top: '40%', width: '6%', height: '10%' }}>
-                <Image src="/map-assets/pin-us.svg" alt="Pin US" fill className="object-contain" unoptimized />
+              <div
+                className="absolute"
+                style={{ left: "46%", top: "40%", width: "6%", height: "10%" }}
+              >
+                <Image
+                  src="/map-assets/pin-us.svg"
+                  alt="Pin US"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
               </div>
             </div>
           </div>
@@ -413,28 +500,36 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row bg-white w-full">
             {/* Card 1 */}
             <div className="flex-1 flex flex-col items-center justify-center text-center py-[40px] px-[24px] border-b md:border-b-0 border-[#dadada] last:border-b-0">
-              <span className="text-[#232323] font-medium text-3xl md:text-[40px] leading-[48px] mb-[20px]">1000+</span>
+              <span className="text-[#232323] font-medium text-3xl md:text-[40px] leading-[48px] mb-[20px]">
+                1000+
+              </span>
               <p className="text-[#7A7A7A] text-[15px] md:text-[20px] font-normal leading-[24px] tracking-[0.24px] max-w-[280px]">
                 Processed shipments every single day
               </p>
             </div>
             {/* Card 2 */}
             <div className="flex-1 flex flex-col items-center justify-center text-center py-[40px] px-[24px] border-b md:border-b-0 border-[#dadada] last:border-b-0">
-              <span className="text-[#232323] font-medium text-3xl md:text-[40px] leading-[48px] mb-[20px]">1.5M+</span>
+              <span className="text-[#232323] font-medium text-3xl md:text-[40px] leading-[48px] mb-[20px]">
+                1.5M+
+              </span>
               <p className="text-[#7A7A7A] text-[15px] md:text-[20px] font-normal leading-[24px] tracking-[0.24px] max-w-[280px]">
                 Successful deliveries completed nationwide safely
               </p>
             </div>
             {/* Card 3 */}
             <div className="flex-1 flex flex-col items-center justify-center text-center py-[40px] px-[24px] border-b md:border-b-0 border-[#dadada] last:border-b-0">
-              <span className="text-[#232323] font-medium text-3xl md:text-[40px] leading-[48px] mb-[20px]">9 Zones</span>
+              <span className="text-[#232323] font-medium text-3xl md:text-[40px] leading-[48px] mb-[20px]">
+                9 Zones
+              </span>
               <p className="text-[#7A7A7A] text-[15px] md:text-[20px] font-normal leading-[24px] tracking-[0.24px] max-w-[280px]">
                 Comprehensive coverage across the U.S.
               </p>
             </div>
             {/* Card 4 */}
             <div className="flex-1 flex flex-col items-center justify-center text-center py-[40px] px-[24px]">
-              <span className="text-[#232323] font-medium text-3xl md:text-[40px] leading-[48px] mb-[20px]">750+</span>
+              <span className="text-[#232323] font-medium text-3xl md:text-[40px] leading-[48px] mb-[20px]">
+                750+
+              </span>
               <p className="text-[#7A7A7A] text-[15px] md:text-[20px] font-normal leading-[24px] tracking-[0.24px] max-w-[280px]">
                 Trusted partners choose our services
               </p>
@@ -446,7 +541,6 @@ export default function HomePage() {
       {/* Grid of 3 Cards (Figma 119:1018) */}
       <section className="w-full bg-[#FAFDFE] flex flex-col border-b border-[#dadada]">
         <div className="custom-container border-x border-solid border-[#dadada] !px-[16px] md:!px-[82px] py-[60px] flex flex-col lg:flex-row justify-between bg-[#FAFDFE] w-full gap-10 lg:gap-0">
-          
           {/* Column 1: 24/7 Dedicated Support */}
           <div className="max-w-[412px] w-full flex flex-col gap-[40px]">
             {/* Widget: Chat Box */}
@@ -471,7 +565,8 @@ export default function HomePage() {
                   EE
                 </div>
                 <div className="bg-white text-[#232323] text-[13px] md:text-[14px] leading-relaxed p-3 rounded-2xl rounded-tl-none max-w-[80%] font-normal border border-[#dadada] shadow-sm">
-                  Sure! We handle all export docs and tax filings, with 24/7 support. Shall we go into the details?
+                  Sure! We handle all export docs and tax filings, with 24/7 support. Shall we go
+                  into the details?
                 </div>
               </div>
             </div>
@@ -482,7 +577,8 @@ export default function HomePage() {
                 24/7 Dedicated Support
               </h3>
               <button className="bg-[#eeeeee] border border-[#dadada] text-[#232323] font-bold text-[16px] h-[56px] w-full md:w-[186px] transition-all duration-300 hover:bg-[#e0e0e0] flex items-center justify-center gap-2 shrink-0 group rounded-none">
-                Contact us now <ArrowRight className="h-5 w-5 text-[#232323] group-hover:translate-x-1 transition-transform duration-300" />
+                Contact us now{" "}
+                <ArrowRight className="h-5 w-5 text-[#232323] group-hover:translate-x-1 transition-transform duration-300" />
               </button>
             </div>
           </div>
@@ -494,12 +590,18 @@ export default function HomePage() {
               {/* Main Card (Track & Trace) */}
               <div className="absolute left-0 top-0 w-[90%] md:w-[350px] bg-white border border-[#dadada] rounded-[12px] p-4 shadow-sm z-10 flex flex-col gap-3">
                 <div className="flex justify-between items-center border-b border-[#dadada] pb-2">
-                  <span className="font-semibold text-[11px] text-[#232323] uppercase tracking-wider">Track & Trace</span>
-                  <span className="text-[10px] text-[#0f798c] font-semibold hover:underline cursor-pointer">View all</span>
+                  <span className="font-semibold text-[11px] text-[#232323] uppercase tracking-wider">
+                    Track & Trace
+                  </span>
+                  <span className="text-[10px] text-[#0f798c] font-semibold hover:underline cursor-pointer">
+                    View all
+                  </span>
                 </div>
                 {/* Simulated Input */}
                 <div className="flex items-center gap-2 border border-[#dadada] rounded-lg px-2.5 py-1.5 bg-[#fcfcfc]">
-                  <span className="text-[10px] text-[#7A7A7A] flex-1 truncate">Enter Tracking ID / AWB</span>
+                  <span className="text-[10px] text-[#7A7A7A] flex-1 truncate">
+                    Enter Tracking ID / AWB
+                  </span>
                   <Search className="h-3.5 w-3.5 text-[#232323]" />
                 </div>
                 {/* List item */}
@@ -518,8 +620,12 @@ export default function HomePage() {
               {/* Floating Overlapping Card (Performance) */}
               <div className="absolute right-0 bottom-0 w-[70%] md:w-[250px] bg-white border border-[#dadada] rounded-[12px] p-3 shadow-md z-20 flex flex-col gap-2 transition-all duration-300 group-hover/track:translate-x-1 group-hover/track:-translate-y-1">
                 <div className="flex justify-between items-center border-b border-[#dadada] pb-1.5">
-                  <span className="font-semibold text-[9px] text-[#232323] uppercase tracking-wider">Performance</span>
-                  <span className="text-[9px] text-[#0f798c] font-semibold hover:underline cursor-pointer">View all</span>
+                  <span className="font-semibold text-[9px] text-[#232323] uppercase tracking-wider">
+                    Performance
+                  </span>
+                  <span className="text-[9px] text-[#0f798c] font-semibold hover:underline cursor-pointer">
+                    View all
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-[9px]">
                   <div className="flex flex-col bg-[#FAFDFE] p-1.5 border border-[#dadada] rounded">
@@ -548,7 +654,8 @@ export default function HomePage() {
                 Fast & Reliable Shipping
               </h3>
               <button className="bg-[#eeeeee] border border-[#dadada] text-[#232323] font-bold text-[16px] h-[56px] w-full md:w-[188px] transition-all duration-300 hover:bg-[#e0e0e0] flex items-center justify-center gap-2 shrink-0 group rounded-none">
-                Track and Trace <ArrowRight className="h-5 w-5 text-[#232323] group-hover:translate-x-1 transition-transform duration-300" />
+                Track and Trace{" "}
+                <ArrowRight className="h-5 w-5 text-[#232323] group-hover:translate-x-1 transition-transform duration-300" />
               </button>
             </div>
           </div>
@@ -569,9 +676,12 @@ export default function HomePage() {
                   "Commercial Documentation Package",
                   "Bill of Lading",
                   "Invoice",
-                  "Packing List"
+                  "Packing List",
                 ].map((doc, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-[#fcfcfc] border border-[#dadada] p-2 rounded hover:bg-[#FAFDFE] transition-colors group/item">
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between bg-[#fcfcfc] border border-[#dadada] p-2 rounded hover:bg-[#FAFDFE] transition-colors group/item"
+                  >
                     <div className="flex items-center gap-2 truncate max-w-[85%]">
                       <FileCheck className="h-3.5 w-3.5 text-red-500 shrink-0" />
                       <span className="text-[#232323] truncate font-medium">{doc}</span>
@@ -588,31 +698,30 @@ export default function HomePage() {
                 Compliant Export Process
               </h3>
               <button className="bg-[#eeeeee] border border-[#dadada] text-[#232323] font-bold text-[16px] h-[56px] w-full md:w-[195px] transition-all duration-300 hover:bg-[#e0e0e0] flex items-center justify-center gap-2 shrink-0 group rounded-none">
-                Visit us Resource <ArrowRight className="h-5 w-5 text-[#232323] group-hover:translate-x-1 transition-transform duration-300" />
+                Visit us Resource{" "}
+                <ArrowRight className="h-5 w-5 text-[#232323] group-hover:translate-x-1 transition-transform duration-300" />
               </button>
             </div>
           </div>
-
         </div>
       </section>
 
       {/* Solutions by Category (Figma 129:253) */}
       <section className="w-full bg-white flex flex-col border-b border-[#dadada]">
         <div className="custom-container border-x border-solid border-[#dadada] !px-[16px] md:!px-[82px] py-[60px] flex flex-col gap-10 bg-white w-full">
-          
           {/* Header Row */}
           <div className="flex justify-between items-end w-full">
             <h2 className="text-[#232323] font-medium text-2xl md:text-[32px] md:leading-[40px] tracking-tight">
               Solutions by Category
             </h2>
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={() => handleCategoryScroll(activeCategory - 1)}
                 className="h-14 w-14 border border-[#dadada] bg-white flex items-center justify-center hover:bg-slate-50 text-[#232323] transition-colors rounded-none"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
-              <button 
+              <button
                 onClick={() => handleCategoryScroll(activeCategory + 1)}
                 className="h-14 w-14 border border-[#dadada] bg-white flex items-center justify-center hover:bg-slate-50 text-[#232323] transition-colors rounded-none"
               >
@@ -621,7 +730,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div 
+          <div
             ref={carouselRef}
             className="flex gap-6 overflow-x-auto scrollbar-none w-full h-[460px] select-none scroll-smooth"
           >
@@ -632,8 +741,8 @@ export default function HomePage() {
                 alt={cat.title}
                 onClick={() => handleCategoryScroll(idx)}
                 className={`h-[460px] w-auto rounded-[12px] border border-[#dadada] shadow-sm cursor-pointer transition-all duration-500 shrink-0 ${
-                  activeCategory === idx 
-                    ? "opacity-100 scale-[1.01]" 
+                  activeCategory === idx
+                    ? "opacity-100 scale-[1.01]"
                     : "opacity-60 hover:opacity-90"
                 }`}
               />
@@ -651,10 +760,10 @@ export default function HomePage() {
               </p>
             </div>
             <button className="bg-[#eeeeee] border border-[#dadada] text-[#232323] font-bold text-[16px] h-[56px] w-full md:w-[138px] transition-all duration-300 hover:bg-[#e0e0e0] flex items-center justify-center gap-2 shrink-0 group rounded-none">
-              More Info <ArrowRight className="h-5 w-5 text-[#232323] group-hover:translate-x-1 transition-transform duration-300" />
+              More Info{" "}
+              <ArrowRight className="h-5 w-5 text-[#232323] group-hover:translate-x-1 transition-transform duration-300" />
             </button>
           </div>
-
         </div>
       </section>
     </>

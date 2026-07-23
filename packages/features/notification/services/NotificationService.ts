@@ -317,7 +317,7 @@ export class NotificationService {
     const preference = preferences.find((p) => p.eventType === eventType);
     const inAppAllowed = preference?.channels.inApp.value ?? true;
     let pushAllowed = preference?.channels.push.value ?? true;
-    let emailAllowed = preference?.channels.email.value ?? true;
+    const emailAllowed = preference?.channels.email.value ?? true;
     const webhookAllowed = preference?.channels.webhook.value ?? false;
 
     // Check Quiet Hours DND configuration

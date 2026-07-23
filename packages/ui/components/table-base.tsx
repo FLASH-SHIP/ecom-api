@@ -165,7 +165,10 @@ export function TableBase<T extends { id: string | number }>({
     };
   }, [handleScroll]);
 
-  const selectableData = React.useMemo(() => processedData.filter((item) => item.id !== undefined), [processedData]);
+  const selectableData = React.useMemo(
+    () => processedData.filter((item) => item.id !== undefined),
+    [processedData],
+  );
 
   const isAllSelected = React.useMemo(() => {
     if (selectableData.length === 0) return false;
