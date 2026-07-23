@@ -1,5 +1,12 @@
 import { getOrderRepository, getOrderService } from "@ecom/features/di/containers/OrderService";
 import { getPackingService } from "@ecom/features/di/containers/PackingService";
+import {
+  validatePostalCode,
+  validateReceiverEmail,
+  validateReceiverName,
+  validateReceiverPhone,
+  validateReceiverState,
+} from "@ecom/lib";
 import { RedisCache } from "@ecom/lib/redis";
 import type {
   Customer,
@@ -8,12 +15,19 @@ import type {
   OrderProduct,
   OrderTrackingCheckpoint,
 } from "@ecom/prisma";
-import { ContentStatus, OrderStatus, type Prisma, ShippingMethod } from "@ecom/prisma";
+import {
+  ContentStatus,
+  OrderStatus,
+  type Prisma,
+  ShippingMethod,
+  ShippingOrigin,
+} from "@ecom/prisma";
 import { authedProcedure } from "@ecom/trpc/server/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 const shippingMethodSchema = z.nativeEnum(ShippingMethod);
+const shippingOriginSchema = z.nativeEnum(ShippingOrigin);
 const orderStatusSchema = z.nativeEnum(OrderStatus);
 
 export interface CachedOrder
@@ -99,59 +113,127 @@ export const calculateFreight = authedProcedure
 // 2. Create order
 export const create = authedProcedure
   .input(
-    z.object({
-      shippingMethod: shippingMethodSchema,
-      shippingOrigin: z.string().default("HAN"),
-      sellerOrderId: z.string().optional().nullable(),
-      importId: z.string().optional().nullable(),
+    z
+      .object({
+        shippingMethod: shippingMethodSchema,
+        shippingOrigin: shippingOriginSchema.default(ShippingOrigin.HAN),
+        sellerOrderId: z.string().optional().nullable(),
+        totalPackets: z.number().int().positive().optional().default(1),
+        importId: z.string().optional().nullable(),
 
-      senderName: z.string().optional().nullable(),
-      senderAddress: z.string().optional().nullable(),
-      senderPhone: z.string().optional().nullable(),
-      senderEmail: z.string().optional().nullable(),
-      senderCountry: z.string().optional().nullable(),
-      senderState: z.string().optional().nullable(),
-      senderCity: z.string().optional().nullable(),
-      senderZipCode: z.string().optional().nullable(),
+        senderName: z.string().optional().nullable(),
+        senderAddress: z.string().optional().nullable(),
+        senderPhone: z.string().optional().nullable(),
+        senderEmail: z.string().optional().nullable(),
+        senderCountry: z.string().optional().nullable(),
+        senderState: z.string().optional().nullable(),
+        senderCity: z.string().optional().nullable(),
+        senderWard: z.string().optional().nullable(),
+        senderZipCode: z.string().optional().nullable(),
 
-      receiverName: z.string().min(1),
-      receiverPhone: z.string().optional().nullable(),
-      receiverEmail: z.string().optional().nullable(),
-      receiverCity: z.string().min(1),
-      receiverState: z.string().min(1),
-      receiverAddress1: z.string().min(1),
-      receiverAddress2: z.string().optional().nullable(),
-      receiverCountry: z.string().min(2).max(10),
-      receiverZipCode: z.string().min(1),
+        receiverName: z.string().min(1).max(100),
+        receiverPhone: z.string().optional().nullable(),
+        receiverEmail: z.string().optional().nullable(),
+        receiverCity: z.string().min(1),
+        receiverState: z.string().min(1),
+        receiverAddress1: z.string().min(1).max(150),
+        receiverAddress2: z.string().optional().nullable(),
+        receiverCountry: z.string().min(2).max(10),
+        receiverZipCode: z.string().min(1),
 
-      detailDescription: z.string().min(1),
-      declaredWeight: z.number().positive(),
-      dimensionLength: z.number().positive().optional().nullable(),
-      dimensionWidth: z.number().positive().optional().nullable(),
-      dimensionHeight: z.number().positive().optional().nullable(),
-      declaredValue: z.number().positive(),
-      packagingCode: z.string().optional().nullable(),
-      isGetLabel: z.number().int().optional(),
-      products: z
-        .array(
-          z.object({
-            description: z.string().min(1),
-            quantity: z.number().int().positive(),
-            value: z.number().positive(),
-            hsCode: z.string().optional().nullable(),
-            originCountry: z.string().optional().nullable(),
-            weight: z.number().int().positive().optional().nullable(),
-            sku: z.string().optional().nullable(),
-          }),
-        )
-        .optional(),
-    }),
+        detailDescription: z.string().min(1),
+        declaredWeight: z.number().positive(),
+        dimensionLength: z.number().positive().optional().nullable(),
+        dimensionWidth: z.number().positive().optional().nullable(),
+        dimensionHeight: z.number().positive().optional().nullable(),
+        declaredValue: z.number().positive(),
+        packingTypeId: z.number().int().positive().optional().nullable(),
+        isGetLabel: z.number().int().optional(),
+        products: z
+          .array(
+            z.object({
+              description: z.string().min(1),
+              quantity: z.number().int().positive(),
+              value: z.number().positive(),
+              hsCode: z.string().optional().nullable(),
+              originCountry: z.string().optional().nullable(),
+              weight: z.number().int().positive().optional().nullable(),
+              sku: z.string().optional().nullable(),
+            }),
+          )
+          .optional(),
+      })
+      .superRefine((data, ctx) => {
+        const nameVal = validateReceiverName(data.receiverName);
+        if (!nameVal.valid) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["receiverName"],
+            message: nameVal.message,
+          });
+        }
+        const phoneVal = validateReceiverPhone(data.receiverPhone);
+        if (!phoneVal.valid) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["receiverPhone"],
+            message: phoneVal.message,
+          });
+        }
+        const emailVal = validateReceiverEmail(data.receiverEmail);
+        if (!emailVal.valid) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["receiverEmail"],
+            message: emailVal.message,
+          });
+        }
+        if (data.receiverAddress1.length > 150) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["receiverAddress1"],
+            message: "Địa chỉ 1 không được vượt quá 150 ký tự",
+          });
+        }
+        if (data.receiverAddress2 && data.receiverAddress2.length > 150) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["receiverAddress2"],
+            message: "Địa chỉ 2 không được vượt quá 150 ký tự",
+          });
+        }
+        const stateVal = validateReceiverState(data.receiverCountry, data.receiverState);
+        if (!stateVal.valid) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["receiverState"],
+            message: stateVal.message,
+          });
+        }
+        if (!validatePostalCode(data.receiverCountry, data.receiverZipCode)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["receiverZipCode"],
+            message: `Mã Postcode/Zipcode không đúng định dạng cho quốc gia ${data.receiverCountry}`,
+          });
+        }
+      }),
   )
   .mutation(async ({ input, ctx }) => {
     const service = getOrderService();
+
+    // Snapshot packing type name if packingTypeId is provided
+    let packagingCode: string | null = null;
+    if (input.packingTypeId) {
+      const packingService = getPackingService();
+      const pt = await packingService.getPackingType(input.packingTypeId);
+      packagingCode = pt.name;
+    }
+
     return await service.createOrder({
       ...input,
       customerId: ctx.user.id,
+      packagingCode,
     });
   });
 

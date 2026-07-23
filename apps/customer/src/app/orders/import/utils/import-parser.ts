@@ -1,3 +1,5 @@
+import { ShippingMethod, ShippingOrigin } from "@ecom/types";
+
 export interface ExcelRow {
   [key: string]: unknown;
 }
@@ -21,8 +23,8 @@ export interface ParsedProduct {
 
 export interface ParsedOrder {
   excelRowNumbers: number[];
-  shippingMethod: "EXPRESS" | "EPACKET";
-  shippingOrigin: string;
+  shippingMethod: ShippingMethod;
+  shippingOrigin: ShippingOrigin;
   sellerOrderId: string;
   packagingCode: string;
   senderName: string | null;
@@ -143,7 +145,9 @@ export function parseExcelRows(
       const senderCountry = getVal("Quốc gia gửi", "senderCountry");
 
       const shippingMethodVal = getVal("Dịch vụ", "shippingMethod").toUpperCase();
-      const shippingOrigin = getVal("Kho gửi", "shippingOrigin") || "HAN";
+      const shippingOriginVal = getVal("Kho gửi", "shippingOrigin").toUpperCase();
+      const shippingOrigin: ShippingOrigin =
+        shippingOriginVal === "SGN" ? ShippingOrigin.SGN : ShippingOrigin.HAN;
       const packagingCode = getVal("Loại đóng gói", "packagingCode") || "cardboard_box";
       const detailDescription =
         getVal("Mô tả hàng hóa", "detailDescription") || "Ecom Shipping Box";
@@ -159,10 +163,8 @@ export function parseExcelRows(
       const dimensionHeight = heightVal ? parseFloat(heightVal) : null;
       const declaredValue = declaredValueVal ? parseFloat(declaredValueVal) : 10;
 
-      const shippingMethod =
-        shippingMethodVal === "EXPRESS" || shippingMethodVal === "EPACKET"
-          ? shippingMethodVal
-          : "EXPRESS";
+      const shippingMethod: ShippingMethod =
+        shippingMethodVal === "EPACKET" ? ShippingMethod.EPACKET : ShippingMethod.EXPRESS;
 
       ordersMap.set(sellerOrderId, {
         excelRowNumbers: [lineNum],

@@ -32,10 +32,18 @@ CREATE TABLE IF NOT EXISTS "countries" (
     "name" VARCHAR NOT NULL,
     "code" VARCHAR NOT NULL,
     "flag" VARCHAR,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "countries_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
 CREATE UNIQUE INDEX IF NOT EXISTS "countries_code_key" ON "countries"("code");
+
+-- Rename column if it exists as camelCase
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='countries' AND column_name='createdAt') THEN
+        ALTER TABLE "countries" RENAME COLUMN "createdAt" TO "created_at";
+    END IF;
+END $$;

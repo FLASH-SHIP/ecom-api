@@ -8,6 +8,7 @@ import {
   prisma,
   runInTransaction,
   type ShippingMethod,
+  type ShippingOrigin,
 } from "@ecom/prisma";
 import type { CreateOrderInput, OrderRepository } from "../repositories/OrderRepository";
 
@@ -31,8 +32,9 @@ export interface CalculateOrderFreightParams {
 export interface CreateOrderParams {
   customerId: string;
   shippingMethod: ShippingMethod;
-  shippingOrigin?: string;
+  shippingOrigin?: ShippingOrigin;
   sellerOrderId?: string | null;
+  totalPackets?: number;
   importId?: string | null;
 
   // Sender info
@@ -43,6 +45,7 @@ export interface CreateOrderParams {
   senderCountry?: string | null;
   senderState?: string | null;
   senderCity?: string | null;
+  senderWard?: string | null;
   senderZipCode?: string | null;
 
   // Receiver info
@@ -63,6 +66,7 @@ export interface CreateOrderParams {
   dimensionWidth?: number | null;
   dimensionHeight?: number | null;
   declaredValue: number;
+  packingTypeId?: number | null;
   packagingCode?: string | null;
   isGetLabel?: number;
   products?: {
@@ -308,6 +312,7 @@ export class OrderService {
       shippingMethod,
       shippingOrigin,
       sellerOrderId,
+      totalPackets: params.totalPackets ?? 1,
 
       senderName: params.senderName,
       senderAddress: params.senderAddress,
@@ -316,6 +321,7 @@ export class OrderService {
       senderCountry: params.senderCountry,
       senderState: params.senderState,
       senderCity: params.senderCity,
+      senderWard: params.senderWard,
       senderZipCode: params.senderZipCode,
 
       receiverName: params.receiverName,
@@ -335,6 +341,7 @@ export class OrderService {
       dimensionWidth: dimensionWidth ?? null,
       dimensionHeight: dimensionHeight ?? null,
       declaredValue,
+      packingTypeId: params.packingTypeId ?? null,
       packagingCode: params.packagingCode,
 
       volumeWeight: pricing.volumeWeight,

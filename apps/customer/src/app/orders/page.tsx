@@ -4,9 +4,11 @@ import { trpc } from "@customer/lib/trpc";
 import { translate } from "@ecom/i18n";
 import type { OrderStatus } from "@ecom/prisma";
 import { useI18n } from "@ecom/shared/@i18n";
+import { getShippingMethodLabel, getShippingOriginLabel } from "@ecom/types";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
-import { Card, CardContent } from "@ecom/ui/components/card";
+import { Card } from "@ecom/ui/components/card";
+import { DateRangePicker } from "@ecom/ui/components/date-range-picker";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@ecom/ui/components/dialog";
+import { ThreeDotsVerticalIcon } from "@ecom/ui/components/icons";
 import { Input } from "@ecom/ui/components/input";
+import { PaginationBase } from "@ecom/ui/components/pagination-base";
 import {
   Select,
   SelectContent,
@@ -22,16 +26,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@ecom/ui/components/table";
+import { TableBase } from "@ecom/ui/components/table-base";
 import { format } from "date-fns";
-import { Eye, PackageOpen, RefreshCcw, Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import NextLink from "next/link";
 import { useState } from "react";
 
@@ -43,17 +40,17 @@ export default function CustomerOrdersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [page, setPage] = useState(1);
-  const perPage = 10;
+  const [perPage, setPerPage] = useState(10);
+  const [dateFrom, setDateFrom] = useState<string | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<string | undefined>(undefined);
+  const [shippingMethodFilter, setShippingMethodFilter] = useState<string>("ALL");
 
   // Selected Order Detail Modal
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedRowIds, setSelectedRowIds] = useState<(string | number)[]>([]);
 
   // Fetch orders list
-  const {
-    data: listData,
-    isLoading,
-    refetch,
-  } = trpc.customer.orders.list.useQuery({
+  const { data: listData, isLoading } = trpc.customer.orders.list.useQuery({
     search: search.trim() || undefined,
     status: statusFilter !== "ALL" ? (statusFilter as OrderStatus) : undefined,
     page,
@@ -101,177 +98,233 @@ export default function CustomerOrdersPage() {
     setPage(newPage);
   };
 
-  const totalPages = listData ? Math.ceil(listData.meta.total / perPage) : 1;
+  type OrderType = NonNullable<typeof listData>["data"][number];
+  const columns = [
+    {
+      header: "Time",
+      width: 120,
+      sortable: true,
+      sortKey: "createdAt",
+      cell: (order: OrderType) => (
+        <div className={"flex flex-col"}>
+          <span>{format(new Date(order.createdAt), "dd/MM/yyyy")}</span>
+          <span className={"text-[#7B7B7B]"}>{format(new Date(order.createdAt), "HH:mm")}</span>
+        </div>
+      ),
+    },
+    {
+      header: "Reception",
+      width: 320,
+      sortable: true,
+      sortKey: "receiverName",
+      cell: (order: OrderType) => (
+        <div className={"flex flex-col"}>
+          <span>{order?.receiverName}</span>
+          <span className={"text-[#7B7B7B]"}>{order?.receiverPhone}</span>
+          <span className={"text-[#7B7B7B]"}>
+            {order?.receiverAddress1 +
+              ", " +
+              order?.receiverCity +
+              ", " +
+              order?.receiverState +
+              ", " +
+              order?.receiverZipCode +
+              ", " +
+              order?.receiverCountry}
+          </span>
+        </div>
+      ),
+    },
+    {
+      header: "Status",
+      width: 100,
+      cell: () => <span></span>,
+    },
+    {
+      header: "Order ID",
+      width: 180,
+      sortable: true,
+      sortKey: "orderCode",
+      cell: (order: OrderType) => (
+        <span className="font-semibold text-[#0F798C] hover:underline cursor-pointer">
+          <NextLink href={`/orders/${order.id}`}>{order.orderCode}</NextLink>
+        </span>
+      ),
+    },
+    {
+      header: "Fee",
+      width: 100,
+      sortable: true,
+      sortKey: "baseShippingFee",
+      cell: (order: OrderType) => (
+        <span className="font-semibold text-foreground">
+          $
+          {order.baseShippingFee
+            ? (Number(order.baseShippingFee) + Number(order.surchargeFee || 0)).toFixed(2)
+            : "0.00"}
+        </span>
+      ),
+    },
+    {
+      header: "Shipping Methods",
+      width: 160,
+      cell: (order: OrderType) => <span>{getShippingMethodLabel(order?.shippingMethod)}</span>,
+    },
+    {
+      header: "Tracking number",
+      width: 180,
+      sortable: true,
+      sortKey: "trackingNumber",
+      cell: (order: OrderType) => <span>{order?.trackingNumber}</span>,
+    },
+    {
+      header: "Action",
+      width: 80,
+      fixed: "right" as const,
+      headerClassName: "text-center",
+      className: "text-center",
+      cell: (order: OrderType) => (
+        <NextLink href={`/orders/${order.id}`}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-accent text-primary h-8 w-8 rounded-lg cursor-pointer"
+            title="View tracking and details"
+          >
+            <ThreeDotsVerticalIcon />
+          </Button>
+        </NextLink>
+      ),
+    },
+  ];
 
   return (
-    <div className="flex flex-col gap-6 w-full pb-10">
+    <div className="flex flex-col gap-4 w-full pb-10">
       <div className="flex justify-between items-center">
         <h1 className="title-page-content text-2xl font-bold text-foreground">
           {translate("orders.orderList", currentLocale)}
         </h1>
-        <NextLink href="/orders/single">
-          <Button className="bg-[#0F798C] hover:bg-[#0F798C]/90 text-white font-semibold">
-            + {translate("orders.createSingleOrder", currentLocale)}
-          </Button>
-        </NextLink>
       </div>
 
-      {/* Filters Card */}
-      <Card className="rounded-xl border border-border bg-card">
-        <CardContent className="p-4 md:p-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+      {/* Filters Section */}
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-start w-full">
+        {/* Left Filters */}
+        <div className="flex flex-col md:flex-row flex-wrap items-stretch md:items-center gap-4 flex-1">
+          {/* Search Input */}
+          <div className="relative w-full lg:w-[415px]">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7B7B7B]" />
             <Input
-              placeholder="Search by order code, recipient name, or id..."
+              type="text"
+              placeholder="Search by Reception/Order ID/Tracking Number"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="pl-9 bg-background/50"
+              className="h-[52px] pl-11 pr-4 border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs focus-visible:ring-1 focus-visible:ring-[#0F798C] placeholder:text-[#7B7B7B] placeholder:text-sm lg:placeholder:text-[15px]"
             />
           </div>
 
-          <div className="flex w-full md:w-auto items-center gap-3">
-            <Select
-              value={statusFilter}
-              onValueChange={(val) => {
-                setStatusFilter(val);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full md:w-48 bg-background/50 border-input">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Statuses</SelectItem>
-                <SelectItem value="DRAFT">Draft</SelectItem>
-                <SelectItem value="LABEL_NOT_CREATED">Label Not Created</SelectItem>
-                <SelectItem value="WAITING_FOR_PICKUP">Label Created</SelectItem>
-                <SelectItem value="PICKED_UP">Picked Up</SelectItem>
-                <SelectItem value="DELIVERED">Delivered</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                <SelectItem value="EXCEPTION">Exception</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Date Picker */}
+          <DateRangePicker
+            valueFrom={dateFrom}
+            valueTo={dateTo}
+            onChange={(from, to) => {
+              setDateFrom(from);
+              setDateTo(to);
+              setPage(1);
+            }}
+            onClear={() => {
+              setDateFrom(undefined);
+              setDateTo(undefined);
+              setPage(1);
+            }}
+            placeholder="01/06/2024 - 30/06/2024"
+            className="h-[52px] border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs text-[#232323] px-4 py-3 gap-2 w-full md:w-auto"
+          />
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => refetch()}
-              className="border-border hover:bg-accent cursor-pointer"
-            >
-              <RefreshCcw className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          {/* Status Dropdown */}
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => {
+              setStatusFilter(val);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-[52px] min-w-[120px] md:w-auto border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Status</SelectItem>
+              <SelectItem value="DRAFT">Draft</SelectItem>
+              <SelectItem value="LABEL_NOT_CREATED">Label Not Created</SelectItem>
+              <SelectItem value="WAITING_FOR_PICKUP">Label Created</SelectItem>
+              <SelectItem value="PICKED_UP">Picked Up</SelectItem>
+              <SelectItem value="DELIVERED">Delivered</SelectItem>
+              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              <SelectItem value="EXCEPTION">Exception</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Shipping Methods Dropdown */}
+          <Select
+            value={shippingMethodFilter}
+            onValueChange={(val) => {
+              setShippingMethodFilter(val);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-[52px] min-w-[180px] md:w-auto border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
+              <SelectValue placeholder="Shipping Methods" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Shipping Methods</SelectItem>
+              <SelectItem value="EPACKET">ePacket</SelectItem>
+              <SelectItem value="USPS">USPS</SelectItem>
+              <SelectItem value="FEDEX">FedEx</SelectItem>
+              <SelectItem value="DHL">DHL</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Right Actions */}
+        <div className="flex items-center justify-end">
+          <Button
+            variant="outline"
+            className="h-[52px] px-6 gap-2 border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs text-[#232323] font-normal cursor-pointer hover:bg-zinc-50"
+          >
+            <Download className="h-5 w-5 text-[#232323]" />
+            Export
+          </Button>
+        </div>
+      </div>
 
       {/* Orders Table */}
       <Card className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-muted/40">
-              <TableRow>
-                <TableHead className="font-bold text-foreground">Order Code</TableHead>
-                <TableHead className="font-bold text-foreground">Created Date</TableHead>
-                <TableHead className="font-bold text-foreground">Seller Ref</TableHead>
-                <TableHead className="font-bold text-foreground">Destination</TableHead>
-                <TableHead className="font-bold text-foreground">Weight (gr)</TableHead>
-                <TableHead className="font-bold text-foreground">Total Fee</TableHead>
-                <TableHead className="font-bold text-foreground">Status</TableHead>
-                <TableHead className="text-right font-bold text-foreground">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#0F798C] border-t-transparent inline-block mr-2" />
-                    Loading orders...
-                  </TableCell>
-                </TableRow>
-              ) : !listData || listData.data.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <PackageOpen className="h-10 w-10 text-muted-foreground" />
-                      <span className="font-medium text-muted-foreground">
-                        No orders found. Create your first single order above!
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                listData.data.map((order) => (
-                  <TableRow key={order.id} className="hover:bg-muted/20">
-                    <TableCell className="font-semibold text-[#0F798C] hover:underline cursor-pointer">
-                      <NextLink href={`/orders/${order.id}`}>{order.orderCode}</NextLink>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")}
-                    </TableCell>
-                    <TableCell className="text-foreground">{order.sellerOrderId || "-"}</TableCell>
-                    <TableCell className="text-foreground">
-                      {order.receiverCity}, {order.receiverCountry}
-                    </TableCell>
-                    <TableCell className="text-foreground">{order.declaredWeight}</TableCell>
-                    <TableCell className="font-semibold text-foreground">
-                      $
-                      {order.baseShippingFee
-                        ? (Number(order.baseShippingFee) + Number(order.surchargeFee || 0)).toFixed(
-                            2,
-                          )
-                        : "0.00"}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <NextLink href={`/orders/${order.id}`}>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="hover:bg-accent text-primary h-8 w-8 rounded-lg cursor-pointer"
-                          title="View tracking and details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </NextLink>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <TableBase
+          data={listData?.data || []}
+          columns={columns}
+          isLoading={isLoading}
+          emptyMessage="No orders found. Create your first single order above!"
+          enableRowSelection={true}
+          selectedRowIds={selectedRowIds}
+          onSelectedRowIdsChange={setSelectedRowIds}
+          minWidth={1200}
+        />
 
         {/* Pagination Controls */}
         {listData && listData.meta.total > 0 && (
-          <div className="border-t border-border px-6 py-4 flex items-center justify-between bg-muted/20">
-            <span className="text-sm text-muted-foreground">
-              Showing {(page - 1) * perPage + 1} to {Math.min(page * perPage, listData.meta.total)}{" "}
-              of {listData.meta.total} orders
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => handlePageChange(page - 1)}
-                className="border-border text-foreground hover:bg-accent cursor-pointer"
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => handlePageChange(page + 1)}
-                className="border-border text-foreground hover:bg-accent cursor-pointer"
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <PaginationBase
+            currentPage={page}
+            totalItems={listData.meta.total}
+            perPage={perPage}
+            onPageChange={handlePageChange}
+            onPerPageChange={(val) => {
+              setPerPage(val);
+              setPage(1);
+            }}
+            itemType="orders"
+          />
         )}
       </Card>
 
@@ -303,12 +356,12 @@ export default function CustomerOrdersPage() {
                     <div className="grid grid-cols-2 gap-y-1.5 text-sm">
                       <div className="text-muted-foreground">Shipping Method</div>
                       <div className="font-medium text-foreground">
-                        {orderDetails.shippingMethod}
+                        {getShippingMethodLabel(orderDetails.shippingMethod)}
                       </div>
 
                       <div className="text-muted-foreground">Shipping Origin</div>
                       <div className="font-medium text-foreground">
-                        {orderDetails.shippingOrigin}
+                        {getShippingOriginLabel(orderDetails.shippingOrigin)}
                       </div>
 
                       <div className="text-muted-foreground">Status</div>

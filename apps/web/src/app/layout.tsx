@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { HrefLangTags } from "../components/HrefLangTags";
 import { WebLayout } from "../components/WebLayout";
 import { CustomerThemeProvider } from "../lib/CustomerThemeProvider";
-import { TRPCProvider } from "../lib/trpc";
+import { TRPCProvider } from "@web/lib/trpc";
 import "./globals.css";
 
 import { env } from "@web/env";

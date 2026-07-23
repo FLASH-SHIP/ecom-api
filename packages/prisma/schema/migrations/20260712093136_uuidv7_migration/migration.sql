@@ -97,7 +97,7 @@ ALTER TABLE "customer_activity_logs" DROP CONSTRAINT "customer_activity_logs_cus
 ALTER TABLE "customer_sessions" DROP CONSTRAINT "customer_sessions_customerId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "customer_social_accounts" DROP CONSTRAINT "customer_social_accounts_customerId_fkey";
+ALTER TABLE "customer_social_accounts" DROP CONSTRAINT "customer_social_accounts_customer_id_fkey";
 
 -- DropForeignKey
 ALTER TABLE "notifications" DROP CONSTRAINT "notifications_userId_fkey";
@@ -121,16 +121,19 @@ ALTER TABLE "order_tracking_checkpoints" DROP CONSTRAINT "order_tracking_checkpo
 ALTER TABLE "orders" DROP CONSTRAINT "orders_seller_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "pages" DROP CONSTRAINT "pages_authorId_fkey";
+ALTER TABLE "pages" DROP CONSTRAINT IF EXISTS "pages_authorId_fkey";
+ALTER TABLE "pages" DROP CONSTRAINT IF EXISTS "pages_author_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "posts" DROP CONSTRAINT "posts_authorId_fkey";
+ALTER TABLE "posts" DROP CONSTRAINT IF EXISTS "posts_authorId_fkey";
+ALTER TABLE "posts" DROP CONSTRAINT IF EXISTS "posts_author_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "request_logs" DROP CONSTRAINT "request_logs_userId_fkey";
+ALTER TABLE "request_logs" DROP CONSTRAINT IF EXISTS "request_logs_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE "revisions" DROP CONSTRAINT "revisions_authorId_fkey";
+ALTER TABLE "revisions" DROP CONSTRAINT IF EXISTS "revisions_authorId_fkey";
+ALTER TABLE "revisions" DROP CONSTRAINT IF EXISTS "revisions_author_id_fkey";
 
 -- DropForeignKey
 ALTER TABLE "role_permissions" DROP CONSTRAINT "role_permissions_permissionId_fkey";
@@ -202,8 +205,8 @@ ADD COLUMN     "customerId" UUID NOT NULL,
 ADD CONSTRAINT "customer_sessions_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "customer_social_accounts" DROP COLUMN "customerId",
-ADD COLUMN     "customerId" UUID NOT NULL;
+ALTER TABLE "customer_social_accounts" DROP COLUMN "customer_id",
+ADD COLUMN     "customer_id" UUID NOT NULL;
 
 -- AlterTable
 ALTER TABLE "customers" DROP CONSTRAINT "customers_pkey",
@@ -270,8 +273,8 @@ ADD COLUMN     "id" SERIAL NOT NULL,
 ADD CONSTRAINT "outbox_events_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "pages" DROP COLUMN "authorId",
-ADD COLUMN     "authorId" UUID NOT NULL;
+ALTER TABLE "pages" DROP COLUMN "author_id",
+ADD COLUMN     "author_id" UUID NOT NULL;
 
 -- AlterTable
 ALTER TABLE "partner_services" DROP CONSTRAINT "partner_services_pkey",
@@ -286,8 +289,8 @@ ADD COLUMN     "id" SERIAL NOT NULL,
 ADD CONSTRAINT "permissions_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "posts" DROP COLUMN "authorId",
-ADD COLUMN     "authorId" UUID NOT NULL;
+ALTER TABLE "posts" DROP COLUMN "author_id",
+ADD COLUMN     "author_id" UUID NOT NULL;
 
 -- AlterTable
 ALTER TABLE "request_logs" DROP COLUMN "userId",
@@ -360,7 +363,7 @@ CREATE INDEX "customer_activity_logs_customerId_idx" ON "customer_activity_logs"
 CREATE INDEX "customer_sessions_customerId_idx" ON "customer_sessions"("customerId");
 
 -- CreateIndex
-CREATE INDEX "customer_social_accounts_customerId_idx" ON "customer_social_accounts"("customerId");
+CREATE INDEX "customer_social_accounts_customer_id_idx" ON "customer_social_accounts"("customer_id");
 
 -- CreateIndex
 CREATE INDEX "notifications_userId_isRead_idx" ON "notifications"("userId", "isRead");
@@ -399,10 +402,10 @@ CREATE INDEX "orders_seller_id_idx" ON "orders"("seller_id");
 CREATE UNIQUE INDEX "orders_seller_id_seller_order_id_key" ON "orders"("seller_id", "seller_order_id");
 
 -- CreateIndex
-CREATE INDEX "pages_authorId_idx" ON "pages"("authorId");
+CREATE INDEX "pages_author_id_idx" ON "pages"("author_id");
 
 -- CreateIndex
-CREATE INDEX "posts_authorId_idx" ON "posts"("authorId");
+CREATE INDEX "posts_author_id_idx" ON "posts"("author_id");
 
 -- CreateIndex
 CREATE INDEX "request_logs_userId_idx" ON "request_logs"("userId");
@@ -423,7 +426,7 @@ CREATE UNIQUE INDEX "user_meta_userId_key_key" ON "user_meta"("userId", "key");
 CREATE UNIQUE INDEX "user_passwords_userId_key" ON "user_passwords"("userId");
 
 -- AddForeignKey
-ALTER TABLE "posts" ADD CONSTRAINT "posts_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "posts" ADD CONSTRAINT "posts_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "comments" ADD CONSTRAINT "comments_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -432,7 +435,7 @@ ALTER TABLE "comments" ADD CONSTRAINT "comments_customerId_fkey" FOREIGN KEY ("c
 ALTER TABLE "customer_sessions" ADD CONSTRAINT "customer_sessions_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "customer_social_accounts" ADD CONSTRAINT "customer_social_accounts_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "customer_social_accounts" ADD CONSTRAINT "customer_social_accounts_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "customer_activity_logs" ADD CONSTRAINT "customer_activity_logs_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -456,7 +459,7 @@ ALTER TABLE "order_tracking_checkpoints" ADD CONSTRAINT "order_tracking_checkpoi
 ALTER TABLE "order_fee_items" ADD CONSTRAINT "order_fee_items_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "pages" ADD CONSTRAINT "pages_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "pages" ADD CONSTRAINT "pages_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;

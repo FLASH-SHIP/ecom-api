@@ -33,7 +33,10 @@ interface SidebarNavItemProps {
 }
 
 function SidebarNavItem({ item, pathname, isCollapsed }: SidebarNavItemProps) {
-  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const isActive =
+    item.href === "/orders"
+      ? pathname === "/orders"
+      : pathname === item.href || pathname.startsWith(`${item.href}/`);
   const Icon = item.icon;
 
   return (
@@ -114,6 +117,7 @@ function LanguageSelector({
                 ? translate("customerDashboard.sidebar.changeLanguage", currentLocale)
                 : undefined
             }
+            size={'sm'}
           >
             <span className="uppercase">{language?.id === "en" ? "ENG" : language?.id}</span>
             <ChevronDown

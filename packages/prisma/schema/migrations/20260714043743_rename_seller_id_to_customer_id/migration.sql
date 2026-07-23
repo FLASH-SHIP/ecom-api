@@ -40,7 +40,7 @@ ADD COLUMN     "id" UUID NOT NULL,
 ADD CONSTRAINT "api_keys_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "categories" ALTER COLUMN "authorId" SET DATA TYPE TEXT;
+ALTER TABLE "categories" ALTER COLUMN "author_id" SET DATA TYPE TEXT;
 
 -- AlterTable
 ALTER TABLE "content_templates" ALTER COLUMN "createdBy" SET DATA TYPE TEXT;
@@ -63,7 +63,7 @@ ADD COLUMN     "id" UUID NOT NULL,
 ADD CONSTRAINT "sessions_pkey" PRIMARY KEY ("id");
 
 -- AlterTable
-ALTER TABLE "tags" ALTER COLUMN "authorId" SET DATA TYPE TEXT;
+ALTER TABLE "tags" ALTER COLUMN "author_id" SET DATA TYPE TEXT;
 
 -- CreateTable
 CREATE TABLE "order_products" (

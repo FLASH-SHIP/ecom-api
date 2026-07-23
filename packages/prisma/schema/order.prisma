@@ -43,6 +43,11 @@ enum PaymentStatus {
   DEBT
 }
 
+enum ShippingOrigin {
+  HAN
+  SGN
+}
+
 model Order {
   id         String       @id @default(uuid(7)) @db.Uuid
   orderCode  String       @unique @map("order_code")
@@ -57,8 +62,9 @@ model Order {
   importCustomsStatus CustomsStatus  @default(PENDING) @map("import_customs_status")
   paymentStatus       PaymentStatus  @default(INIT) @map("payment_status")
   shippingMethod      ShippingMethod @map("shipping_method")
-  shippingOrigin      String         @default("HAN") @map("shipping_origin")
+  shippingOrigin      ShippingOrigin @default(HAN) @map("shipping_origin")
   sellerOrderId       String?        @map("seller_order_id")
+  totalPackets        Int            @default(1) @map("total_packets")
   trackingNumber      String?        @map("tracking_number")
 
   // Sender Details
@@ -69,6 +75,7 @@ model Order {
   senderCountry String? @map("sender_country")
   senderState   String? @map("sender_state")
   senderCity    String? @map("sender_city")
+  senderWard           String?        @map("sender_ward")
   senderZipCode String? @map("sender_zip_code")
 
   // Recipient Details
@@ -90,6 +97,8 @@ model Order {
   dimensionWidth    Decimal? @map("dimension_width") @db.Decimal(10, 2)
   dimensionHeight   Decimal? @map("dimension_height") @db.Decimal(10, 2)
   declaredValue     Decimal  @map("declared_value") @db.Decimal(12, 2)
+  packingTypeId        Int?           @map("packing_type_id")
+  packingType          PackingType?   @relation(fields: [packingTypeId], references: [id], onDelete: SetNull)
   packagingCode     String?  @map("packaging_code")
 
   // Warehouse Measurements (populated during fulfillment)

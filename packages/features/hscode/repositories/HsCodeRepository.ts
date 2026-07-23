@@ -40,12 +40,12 @@ export class HsCodeRepository {
         notes: string | null;
       }>
     >`
-      SELECT 
-        hs_code as code, 
-        article_description as description, 
-        notes 
-      FROM crawl_hscode 
-      WHERE hs_code IS NOT NULL AND LENGTH(hs_code) = 2 
+      SELECT
+        hs_code as code,
+        article_description as description,
+        notes
+      FROM crawl_hscode
+      WHERE hs_code IS NOT NULL AND LENGTH(hs_code) = 2 AND port_of_clearance = 'US'
       ORDER BY hs_code;
     `;
   }
@@ -162,6 +162,7 @@ export class HsCodeRepository {
     return this.prisma.crawlHsCode.findFirst({
       where: {
         hsCode: chapterCode,
+        portOfClearance: 'US'
       },
       select: {
         articleDescription: true,
