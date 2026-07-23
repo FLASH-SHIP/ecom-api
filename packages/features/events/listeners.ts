@@ -132,6 +132,7 @@ export function registerEventListeners() {
       variables: {
         orderId: payload.orderId,
         description: payload.checkpoint,
+        code: payload.orderCode,
       },
       link: `/orders/${payload.orderId}`,
       referenceId: String(payload.orderId),
@@ -149,22 +150,39 @@ export function registerEventListeners() {
       );
       const { prisma } = await import("@ecom/prisma");
 
-      const user = await prisma.user.findUnique({
-        where: { id: payload.ownerId },
-        select: { email: true },
-      });
+      const isCustomer = payload.ownerType === "Customer";
+      let email: string | null = null;
+
+      if (isCustomer) {
+        const customer = await prisma.customer.findUnique({
+          where: { id: payload.ownerId },
+          select: { email: true },
+        });
+        email = customer?.email ?? null;
+      } else {
+        const user = await prisma.user.findUnique({
+          where: { id: payload.ownerId },
+          select: { email: true },
+        });
+        email = user?.email ?? null;
+      }
 
       const notificationService = getNotificationService();
       await notificationService.notify({
-        userId: payload.ownerId,
+        userId: isCustomer ? undefined : payload.ownerId,
+        customerId: isCustomer ? payload.ownerId : undefined,
         type: "webhook.deactivated",
         titleKey: "Webhook Auto-Deactivated",
         messageKey: `Webhook "${payload.name}" to ${payload.url} has been auto-deactivated due to 50 consecutive delivery failures.`,
+        variables: {
+          name: payload.name,
+          url: payload.url,
+        },
         referenceId: String(payload.webhookId),
         referenceType: "Webhook",
         deliveryClass: "TRANSACTIONAL",
         idempotencyKey: `webhook_deactivated_${payload.webhookId}`,
-        emailRecipient: user?.email,
+        emailRecipient: email,
       });
     }
   });

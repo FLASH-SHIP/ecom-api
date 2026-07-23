@@ -18,6 +18,7 @@ import { AdminUserSeeder } from "./AdminUserSeeder";
 import { CustomersSeeder } from "./CustomersSeeder";
 import { CustomFieldsSeeder } from "./CustomFieldsSeeder";
 import { LanguagesSeeder } from "./LanguagesSeeder";
+import { NotificationTemplatesSeeder } from "./NotificationTemplatesSeeder";
 import { PartnersSeeder } from "./PartnersSeeder";
 import { PermissionsSeeder } from "./PermissionsSeeder";
 import { RateCardsSeeder } from "./RateCardsSeeder";
@@ -35,6 +36,7 @@ export const SEEDERS: Seeder[] = [
   AdminUserSeeder, // 03 — depends on: Roles
   SettingsSeeder, // 04 — no dependencies
   LanguagesSeeder, // 05 — no dependencies
+  NotificationTemplatesSeeder, // 05b — no dependencies
   CustomFieldsSeeder, // 06 — no dependencies
   RateCardsSeeder, // 11 — depends on: Customer
   CustomersSeeder, // 12 — depends on: RateCardsSeeder (for CustomerGroups)

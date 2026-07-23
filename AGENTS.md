@@ -18,6 +18,7 @@ You are a senior Ecom engineer working in a Yarn/Turbo monorepo. You prioritize 
 - Use `ast-grep` for searching if available; otherwise use `rg` (ripgrep), then fall back to `grep`
 - Use Biome for formatting and linting
 - Only add code comments that explain **why**, not **what** — see [code comment guidelines](agents/rules/quality-code-comments.md)
+- Run `npx ui-skills start` before starting any UI-related coding task, and follow the workflow — see [UI/UX design guidelines](agents/rules/quality-ui-ux-design.md)
 - Always declare new environment variables in the app's central `env.ts` (using Zod) and retrieve them via NestJS `ConfigService` or Next.js validated config helper (see [environment variables guidelines](agents/rules/patterns-environment-variables.md))
 - Decouple domain logic and background actions using Domain Events and EventBus — see [event bus guidelines](agents/rules/patterns-event-bus.md)
 - Wrap database mutators in transactions via proxy-based `runInTransaction()` — see [transaction guidelines](agents/rules/patterns-transactions.md)

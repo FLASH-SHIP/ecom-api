@@ -441,3 +441,50 @@ model SeoMeta {
 
   @@map("seo_meta")
 }
+
+model NotificationTemplate {
+  id              Int                     @id @default(autoincrement())
+  type            String                  @unique // e.g. "order.placed"
+  titleTemplate        Json                    @map("title_template") // e.g. {"en": "New Order {{orderNumber}}", "vi": "Đơn hàng mới {{orderNumber}}"}
+  messageTemplate      Json                    @map("message_template") // e.g. {"en": "Placed successfully", "vi": "Đã tạo thành công"}
+  emailSubjectTemplate Json?                   @map("email_subject_template")
+  emailBodyTemplate    Json?                   @map("email_body_template")
+  variables            Json                    @default("{}") @map("variables")
+  channelInApp         Boolean                 @default(true) @map("channel_in_app")
+  channelPush          Boolean                 @default(true) @map("channel_push")
+  channelEmail         Boolean                 @default(true) @map("channel_email")
+  layoutType           String?                 @map("layout_type")
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  scheduledNotifications ScheduledNotification[]
+
+  @@map("notification_templates")
+}
+
+model ScheduledNotification {
+  id           Int                   @id @default(autoincrement())
+  targetType   String                @map("target_type") // "ALL_CUSTOMERS" | "ADMIN_USERS" | "SPECIFIC_USERS" | "SPECIFIC_CUSTOMERS"
+  targetIds    Json?                 @map("target_ids") // Array of specific target user/customer UUID strings
+  title        String
+  message      String
+  link         String?
+  scheduledAt  DateTime              @map("scheduled_at")
+  status       String                @default("PENDING") // "PENDING" | "PROCESSING" | "SENT" | "FAILED"
+  failedReason String?               @map("failed_reason")
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  templateId   Int?                  @map("template_id")
+  template     NotificationTemplate? @relation(fields: [templateId], references: [id])
+
+  @@index([status, scheduledAt])
+  @@map("scheduled_notifications")
+}
+
+model EmailBlacklist {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  reason    String   // e.g. "bounce", "complaint", "manual"
+  createdAt DateTime @default(now())
+
+  @@map("email_blacklist")
+}

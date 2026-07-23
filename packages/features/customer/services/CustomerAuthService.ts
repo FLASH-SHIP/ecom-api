@@ -1,10 +1,5 @@
-import {
-  buildCustomerPasswordResetEmail,
-  buildEmailVerificationEmail,
-  buildVerificationCodeEmail,
-} from "@ecom/emails";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
-import { queueEmail } from "@ecom/features/queue/workers/emailWorker";
+import type { NotificationService } from "@ecom/features/notification/services/NotificationService";
 import { hashPassword, verifyPassword } from "@ecom/lib/crypto";
 import { ErrorCode } from "@ecom/lib/errorCodes";
 import { ErrorWithCode } from "@ecom/lib/errors";
@@ -19,6 +14,7 @@ const CUSTOMER_APP_URL = process.env.CUSTOMER_APP_URL ?? "http://localhost:3001"
 
 export interface ICustomerAuthServiceDeps {
   customerRepo: CustomerRepository;
+  notificationService: NotificationService;
 }
 
 export class CustomerAuthService {
@@ -62,11 +58,15 @@ export class CustomerAuthService {
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
     await this.deps.customerRepo.createVerificationCode(email, code, expiresAt);
 
-    const payload = buildVerificationCodeEmail({ code });
-    payload.to = email;
-
     log.info("Sending registration verification code email", { email });
-    await queueEmail(payload);
+    await this.deps.notificationService.notify({
+      type: "customer.verification_code",
+      titleKey: "Mã xác minh đăng ký",
+      messageKey: `Mã xác minh của bạn để đăng ký tài khoản là: ${code}`,
+      variables: { code },
+      deliveryClass: "TRANSACTIONAL",
+      emailRecipient: email,
+    });
   }
 
   async register(data: { email: string; password: string; code: string }) {
@@ -233,12 +233,15 @@ export class CustomerAuthService {
     const displayName = customer.name ?? customer.email;
 
     log.info("Verification email prepared", { customerId, email: customer.email, verifyUrl });
-    const payload = buildEmailVerificationEmail({
-      name: displayName,
-      verifyUrl,
+    await this.deps.notificationService.notify({
+      customerId,
+      type: "customer.email_verification",
+      titleKey: "Xác minh email",
+      messageKey: `Vui lòng xác minh địa chỉ email của bạn bằng cách nhấn vào nút bên dưới.`,
+      variables: { name: displayName, verifyUrl },
+      deliveryClass: "TRANSACTIONAL",
+      emailRecipient: customer.email,
     });
-    payload.to = customer.email;
-    await queueEmail(payload);
   }
 
   async verifyEmailByToken(token: string) {
@@ -280,13 +283,16 @@ export class CustomerAuthService {
 
     log.info("Password reset URL prepared", { customerId: customer.id, email, resetUrl });
     const displayName = customer.name ?? customer.email;
-    const payload = buildCustomerPasswordResetEmail({
-      name: displayName,
-      resetUrl,
-    });
-    payload.to = email;
     try {
-      await queueEmail(payload);
+      await this.deps.notificationService.notify({
+        customerId: customer.id,
+        type: "customer.password_reset",
+        titleKey: "Đặt lại mật khẩu tài khoản",
+        messageKey: `Bạn đã yêu cầu đặt lại mật khẩu tài khoản khách hàng.`,
+        variables: { name: displayName, resetUrl },
+        deliveryClass: "TRANSACTIONAL",
+        emailRecipient: email,
+      });
     } catch (error) {
       log.error("Failed to queue password reset email", {
         customerId: customer.id,

@@ -21,6 +21,9 @@ export const SettingsSeeder: Seeder = {
       { key: "blog.excerptLength", value: "200" },
       { key: "media.maxUploadSize", value: "10485760" },
       { key: "media.allowedTypes", value: "image/*,application/pdf,video/*" },
+      { key: "notification.quiet_hours.enabled", value: "true" },
+      { key: "notification.quiet_hours.start", value: "22:00" },
+      { key: "notification.quiet_hours.end", value: "07:00" },
     ];
 
     // Batch: fetch all existing keys in 1 query instead of N findUnique calls

@@ -789,9 +789,11 @@ __metadata:
     "@ecom/tsconfig": "workspace:*"
     "@ecom/types": "workspace:*"
     "@types/bcryptjs": "npm:^2.4.6"
+    "@types/jsonwebtoken": "npm:^9.0.0"
     bcryptjs: "npm:^3.0.0"
     bullmq: "npm:^5.79.1"
     firebase-admin: "npm:^12.1.0"
+    jsonwebtoken: "npm:^9.0.0"
     typescript: "npm:^5.8.0"
     vitest: "npm:^3.2.0"
   languageName: unknown

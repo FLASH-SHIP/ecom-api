@@ -26,6 +26,7 @@
 - [quality-pr-creation](rules/quality-pr-creation.md) - PR best practices
 - [quality-code-comments](rules/quality-code-comments.md) - Comment guidelines
 - [quality-code-review](rules/quality-code-review.md) - Code review focus
+- [quality-ui-ux-design](rules/quality-ui-ux-design.md) - UI/UX and motion standards
 
 ### Data Layer
 

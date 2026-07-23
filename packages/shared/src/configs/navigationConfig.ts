@@ -148,6 +148,15 @@ const navigationConfig: NavItemType[] = [
         url: "/contacts",
         auth: [Permissions.CONTACTS_READ],
       },
+      {
+        id: "notifications-broadcast",
+        title: "Chiến dịch gửi tin",
+        translate: "nav.notificationsBroadcast",
+        type: "item",
+        icon: "lucide:megaphone",
+        url: "/broadcasts",
+        auth: [Permissions.NOTIFICATIONS_BROADCAST_READ],
+      },
     ],
   },
 

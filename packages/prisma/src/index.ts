@@ -14,6 +14,7 @@ import {
   CustomerStatus,
   CustomsStatus,
   LabelStatus,
+  type NotificationTemplate,
   type Order,
   type OrderActivityLog,
   type OrderFeeItem,
@@ -439,6 +440,7 @@ export async function runInTransaction<T>(work: () => Promise<T>): Promise<T> {
 
 export type {
   Customer,
+  NotificationTemplate,
   Order,
   OrderActivityLog,
   OrderFeeItem,

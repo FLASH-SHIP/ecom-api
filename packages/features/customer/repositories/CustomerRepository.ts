@@ -439,4 +439,14 @@ export class CustomerRepository {
     }
     return where;
   }
+
+  async getAllIdsAndEmails() {
+    return this.prisma.customer.findMany({
+      where: { deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+  }
 }

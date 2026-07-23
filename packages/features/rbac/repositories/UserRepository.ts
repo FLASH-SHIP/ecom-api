@@ -169,4 +169,13 @@ export class UserRepository {
   async delete(id: string) {
     return this.prisma.user.delete({ where: { id } });
   }
+
+  async getAllIdsAndEmails() {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+  }
 }

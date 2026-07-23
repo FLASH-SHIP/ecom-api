@@ -448,9 +448,7 @@ export const RichTextEditor = forwardRef<Editor | null, RichTextEditorProps>(
         <>
           <div id={id} />
           {createPortal(
-            <div className="fixed inset-0 z-fullscreen flex flex-col bg-background">
-              {editorContent}
-            </div>,
+            <div className="fixed inset-0 z-[61] flex flex-col bg-background">{editorContent}</div>,
             document.body,
           )}
         </>

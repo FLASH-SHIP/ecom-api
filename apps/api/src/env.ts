@@ -97,6 +97,7 @@ export const apiEnvSchema = z.object({
   NOTIFICATION_DND_DEFAULT_END: z.string().default("06:00"),
   NOTIFICATION_TIMEZONE: z.string().default("Asia/Ho_Chi_Minh"),
   NOTIFICATION_MAX_TOKENS_PER_OWNER: z.coerce.number().int().positive().default(10),
+  NOTIFICATION_WEBHOOK_SECRET: z.string().default("whsec_devsecret"),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

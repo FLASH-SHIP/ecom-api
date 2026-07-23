@@ -11,6 +11,8 @@ export interface EmailPayload {
   text?: string;
 }
 
+import crypto from "node:crypto";
+
 // ─── SMTP Transport ──────────────────────────────────────────
 
 let _transporter: Transporter | null = null;
@@ -33,11 +35,7 @@ function getTransporter(): Transporter {
   return _transporter;
 }
 
-/**
- * Send an email via SMTP.
- * Logs errors but does not throw — email failures should not block business logic.
- */
-export async function sendEmail(payload: EmailPayload): Promise<boolean> {
+async function sendSmtpEmail(payload: EmailPayload): Promise<boolean> {
   try {
     const from = process.env.MAIL_FROM ?? "noreply@ecom.com";
     await getTransporter().sendMail({
@@ -49,9 +47,182 @@ export async function sendEmail(payload: EmailPayload): Promise<boolean> {
     });
     return true;
   } catch (err) {
-    console.error("[EmailService] Failed to send email:", err);
+    console.error("[EmailService] Failed to send email via SMTP:", err);
     return false;
   }
+}
+
+// ─── AWS SES Transport ────────────────────────────────────────
+
+function calculateSesSmtpPassword(secretAccessKey: string): string {
+  const date = "SendRawEmail";
+  const signature = crypto.createHmac("sha256", secretAccessKey).update(date).digest();
+
+  const version = Buffer.from([0x02]);
+  const passwordBuffer = Buffer.concat([version, signature]);
+  return passwordBuffer.toString("base64");
+}
+
+let _sesTransporter: Transporter | null = null;
+
+function getSesTransporter(): Transporter {
+  if (!_sesTransporter) {
+    const accessKeyId = process.env.AWS_SES_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.AWS_SES_SECRET_ACCESS_KEY;
+    const region = process.env.AWS_SES_REGION ?? "ap-southeast-1";
+
+    if (!accessKeyId || !secretAccessKey) {
+      throw new Error(
+        "AWS SES credentials (AWS_SES_ACCESS_KEY_ID, AWS_SES_SECRET_ACCESS_KEY) are required",
+      );
+    }
+
+    const smtpPassword = calculateSesSmtpPassword(secretAccessKey);
+
+    _sesTransporter = nodemailer.createTransport({
+      host: `email-smtp.${region}.amazonaws.com`,
+      port: 465,
+      secure: true,
+      auth: {
+        user: accessKeyId,
+        pass: smtpPassword,
+      },
+    });
+  }
+  return _sesTransporter;
+}
+
+async function sendSesEmail(payload: EmailPayload): Promise<boolean> {
+  try {
+    const from = process.env.MAIL_FROM ?? "noreply@ecom.com";
+    await getSesTransporter().sendMail({
+      from,
+      to: payload.to,
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text,
+    });
+    return true;
+  } catch (err) {
+    console.error("[EmailService] Failed to send email via AWS SES:", err);
+    return false;
+  }
+}
+
+// ─── Resend REST Transport ────────────────────────────────────
+
+async function sendResendEmail(payload: EmailPayload): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("[EmailService] Resend API Key (RESEND_API_KEY) is missing");
+    return false;
+  }
+  try {
+    const from = process.env.MAIL_FROM ?? "noreply@ecom.com";
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: payload.to,
+        subject: payload.subject,
+        html: payload.html,
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[EmailService] Resend API responded with error: ${res.status} ${errText}`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[EmailService] Failed to send email via Resend:", err);
+    return false;
+  }
+}
+
+// ─── Circuit Breaker & Stateful Failover ──────────────────────
+
+interface ProviderState {
+  consecutiveFailures: number;
+  lastFailureTime: number;
+}
+
+const providerStates: Record<string, ProviderState> = {
+  smtp: { consecutiveFailures: 0, lastFailureTime: 0 },
+  resend: { consecutiveFailures: 0, lastFailureTime: 0 },
+  ses: { consecutiveFailures: 0, lastFailureTime: 0 },
+};
+
+const FAILURE_THRESHOLD = 5;
+const COOLDOWN_MS = 300000; // 5 minutes
+
+function getActiveProvider(): "smtp" | "resend" | "ses" {
+  const primary = (process.env.EMAIL_PROVIDER_PRIMARY as "smtp" | "resend" | "ses") || "smtp";
+  const secondary = (process.env.EMAIL_PROVIDER_SECONDARY as "smtp" | "resend" | "ses") || "resend";
+
+  const primaryState = providerStates[primary];
+  if (primaryState && primaryState.consecutiveFailures >= FAILURE_THRESHOLD) {
+    const now = Date.now();
+    if (now - primaryState.lastFailureTime > COOLDOWN_MS) {
+      primaryState.consecutiveFailures = 0;
+      return primary;
+    }
+    return secondary;
+  }
+  return primary;
+}
+
+async function dispatchWithProvider(
+  provider: "smtp" | "resend" | "ses",
+  payload: EmailPayload,
+): Promise<boolean> {
+  if (provider === "resend") return sendResendEmail(payload);
+  if (provider === "ses") return sendSesEmail(payload);
+  return sendSmtpEmail(payload);
+}
+
+/**
+ * Send an email using primary/secondary config with circuit breaker and failover.
+ */
+export async function sendEmail(payload: EmailPayload): Promise<boolean> {
+  const activeProvider = getActiveProvider();
+  let success = await dispatchWithProvider(activeProvider, payload);
+
+  if (success) {
+    const state = providerStates[activeProvider];
+    if (state) state.consecutiveFailures = 0;
+    return true;
+  }
+
+  // Record failure for active provider
+  const state = providerStates[activeProvider];
+  if (state) {
+    state.consecutiveFailures++;
+    state.lastFailureTime = Date.now();
+  }
+
+  // Trigger immediate failover
+  const primary = (process.env.EMAIL_PROVIDER_PRIMARY as "smtp" | "resend" | "ses") || "smtp";
+  const secondary = (process.env.EMAIL_PROVIDER_SECONDARY as "smtp" | "resend" | "ses") || "resend";
+  const failoverProvider = activeProvider === primary ? secondary : primary;
+
+  console.warn(
+    `[EmailService] Active provider ${activeProvider} failed. Triggering failover via ${failoverProvider}`,
+  );
+  success = await dispatchWithProvider(failoverProvider, payload);
+
+  if (success) {
+    const fState = providerStates[failoverProvider];
+    if (fState) fState.consecutiveFailures = 0;
+    return true;
+  }
+
+  console.error(`[EmailService] Failover email delivery via ${failoverProvider} also failed.`);
+  return false;
 }
 
 // ─── Email Template Data Types ───────────────────────────────
@@ -99,18 +270,52 @@ export interface CustomerWelcomeEmailData {
   loginUrl: string;
 }
 
-// ─── Email Template Builders ─────────────────────────────────
+// ─── Email Template Layout & Security Helpers ─────────────────
 
-const BRAND = "Ecom";
-const FOOTER = `<p style="color:#94a3b8;font-size:12px;margin-top:32px;">— ${BRAND}</p>`;
-
-function wrap(body: string): string {
+export function wrapEmailLayout(bodyHtml: string): string {
+  const BRAND = "Ecom";
+  const FOOTER = `<p style="color:#94a3b8;font-size:12px;margin-top:32px;">— ${BRAND}</p>`;
   return `
     <div style="font-family:'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:32px;color:#1e293b;">
-      ${body}
+      ${bodyHtml}
       ${FOOTER}
     </div>
   `;
+}
+
+export function formatEmailBody(body: string): string {
+  if (body.includes("<") && body.includes(">")) {
+    return body;
+  }
+  return body
+    .split("\n\n")
+    .map(
+      (p) => `<p style="margin-bottom: 12px; line-height: 1.5;">${p.replace(/\n/g, "<br/>")}</p>`,
+    )
+    .join("");
+}
+
+export function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+export function stripHtml(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const BRAND = "Ecom";
+
+function wrap(body: string): string {
+  return wrapEmailLayout(body);
 }
 
 export function buildPasswordResetEmail(data: PasswordResetEmailData): EmailPayload {

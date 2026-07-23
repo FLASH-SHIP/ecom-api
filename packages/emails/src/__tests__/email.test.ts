@@ -69,6 +69,7 @@ describe("EmailService", () => {
   });
 
   it("should send email via SMTP transport", async () => {
+    process.env.EMAIL_PROVIDER_PRIMARY = "smtp";
     const { sendEmail } = await import("@ecom/emails");
     const result = await sendEmail({
       to: "user@example.com",
@@ -76,5 +77,58 @@ describe("EmailService", () => {
       html: "<p>Hello</p>",
     });
     expect(result).toBe(true);
+  });
+
+  it("should support Resend API via fetch", async () => {
+    process.env.EMAIL_PROVIDER_PRIMARY = "resend";
+    process.env.RESEND_API_KEY = "test_key";
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      text: async () => "ok",
+    } as unknown as Response);
+
+    const { sendEmail } = await import("@ecom/emails");
+    const result = await sendEmail({
+      to: "resend@example.com",
+      subject: "Resend Test",
+      html: "<p>Hello</p>",
+    });
+
+    expect(result).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.resend.com/emails",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer test_key",
+        }),
+      }),
+    );
+    fetchMock.mockRestore();
+  });
+
+  it("should trigger failover to secondary provider when primary fails", async () => {
+    process.env.EMAIL_PROVIDER_PRIMARY = "resend";
+    process.env.EMAIL_PROVIDER_SECONDARY = "smtp";
+    process.env.RESEND_API_KEY = "test_key";
+
+    // Resend fails
+    const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => "Internal Error",
+    } as unknown as Response);
+
+    const { sendEmail } = await import("@ecom/emails");
+    const result = await sendEmail({
+      to: "failover@example.com",
+      subject: "Failover Test",
+      html: "<p>Hello</p>",
+    });
+
+    // Should return true because SMTP (mocked) succeeds
+    expect(result).toBe(true);
+    expect(fetchMock).toHaveBeenCalled();
+    fetchMock.mockRestore();
   });
 });
