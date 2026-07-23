@@ -107,6 +107,9 @@ export const HsCodeCsvSeeder: Seeder = {
         })
         .filter((item) => item.hsCode !== null); // Skip invalid rows
 
+      // Clear existing records so data gets fresh insert with 'no' values
+      await prisma.crawlHsCode.deleteMany();
+
       // Batch insert with skipDuplicates
       for (let i = 0; i < items.length; i += BATCH_SIZE) {
         const batch = items.slice(i, i + BATCH_SIZE);

@@ -16,6 +16,18 @@ function parseDutyRate(rateStr: string | null | undefined): number {
   return 0;
 }
 
+function formatHeadingDescription(rawDesc: string | null | undefined): string {
+  if (!rawDesc) return "";
+  // Split at colon to remove footnote markers like :(TN701)
+  // Tách tại dấu : để loại bỏ mã ghi chú như :(TN701)
+  const firstPart = rawDesc.split(/[：:]+/)[0]?.trim() || rawDesc.trim();
+  // Remove leading dashes or bullet symbols
+  // Xóa gạch đầu dòng hoặc ký tự vô nghĩa
+  const cleaned = firstPart.replace(/^[-\s·]+/, "").trim();
+  if (!cleaned) return rawDesc.trim();
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
 // Countries subject to Section 301 tariffs
 const SECTION_301_COUNTRIES = ["CN", "CHINA"];
 
@@ -82,15 +94,12 @@ export class HsCodeService {
       dbChapterName = dbChapterName.charAt(0).toUpperCase() + dbChapterName.slice(1);
     }
 
-    // Only return notesHtml for Level 1 Parent Chapter (length === 2)
+    // Only return notesHtml for Level 1 Parent Chapter (cleanCode.length === 2)
     const notesHtml = isChapter ? chapterData?.notes || null : null;
 
     // 2. Resolve Heading names from database
     const articleDescription = await this.deps.hsCodeRepo.getHeadingDescription(headingCode);
-    const descParts = articleDescription
-      ? articleDescription.split(/[：:]+/).map((s) => s.trim())
-      : [];
-    const headingName = descParts[1] || descParts[0] || `Heading ${headingCode}`;
+    const headingName = formatHeadingDescription(articleDescription) || `Heading ${headingCode}`;
 
     // 3. Build children tree array depending on code level
     let children: any[] = [];
@@ -98,9 +107,7 @@ export class HsCodeService {
       const headings = await this.deps.hsCodeRepo.getHeadingsByChapter(chapterCode);
       children = await Promise.all(
         headings.map(async (h) => {
-          const parts = h.description.split(/[：:]+/).map((s) => s.trim());
-          let desc = parts[1] || parts[0] || h.description;
-          desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+          const desc = formatHeadingDescription(h.description);
           // Recursively fetch children tree for each heading
           const headingChildren = await this.getHeadingTree(h.code);
           return {
