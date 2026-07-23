@@ -48,7 +48,6 @@ test-results/
 blob-report/
 
 # Documentation
-docs/features/
-docs/plans/
+docs/
 logs/
 specs/

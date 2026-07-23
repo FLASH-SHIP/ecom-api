@@ -14,7 +14,8 @@ const CUSTOMER_APP_URL = process.env.CUSTOMER_APP_URL ?? "http://localhost:3001"
 
 export interface ICustomerAuthServiceDeps {
   customerRepo: CustomerRepository;
-  notificationService: NotificationService;
+  notificationService?: NotificationService;
+  getNotificationService?: () => NotificationService;
 }
 
 export class CustomerAuthService {
@@ -28,6 +29,14 @@ export class CustomerAuthService {
       throw new Error("JWT_SECRET environment variable is required");
     }
     this.jwtSecret = secret;
+  }
+
+  private get notificationService(): NotificationService {
+    const service = this.deps.notificationService ?? this.deps.getNotificationService?.();
+    if (!service) {
+      throw new Error("NotificationService is required but was not provided");
+    }
+    return service;
   }
 
   async sendVerificationCode(email: string) {
@@ -59,7 +68,7 @@ export class CustomerAuthService {
     await this.deps.customerRepo.createVerificationCode(email, code, expiresAt);
 
     log.info("Sending registration verification code email", { email });
-    await this.deps.notificationService.notify({
+    await this.notificationService.notify({
       type: "customer.verification_code",
       titleKey: "Mã xác minh đăng ký",
       messageKey: `Mã xác minh của bạn để đăng ký tài khoản là: ${code}`,
@@ -233,7 +242,7 @@ export class CustomerAuthService {
     const displayName = customer.name ?? customer.email;
 
     log.info("Verification email prepared", { customerId, email: customer.email, verifyUrl });
-    await this.deps.notificationService.notify({
+    await this.notificationService.notify({
       customerId,
       type: "customer.email_verification",
       titleKey: "Xác minh email",
@@ -284,7 +293,7 @@ export class CustomerAuthService {
     log.info("Password reset URL prepared", { customerId: customer.id, email, resetUrl });
     const displayName = customer.name ?? customer.email;
     try {
-      await this.deps.notificationService.notify({
+      await this.notificationService.notify({
         customerId: customer.id,
         type: "customer.password_reset",
         titleKey: "Đặt lại mật khẩu tài khoản",
