@@ -87,21 +87,25 @@ export const HsCodeCsvSeeder: Seeder = {
       console.log(`    → Found ${rows.length} rows to seed into crawl_hscode.`);
 
       // Convert rows to Prisma input
-      const items = rows.map((row) => {
-        const no = parseInt(row[0] ?? "", 10);
-        return {
-          no: isNaN(no) ? 0 : no,
-          portOfClearance: row[1] || null,
-          hsCode: row[2] || null,
-          articleDescription: row[3] || null,
-          generalRateOfDuty: row[4] || null,
-          section301TariffsRate: row[5] || null,
-          additionalTariffsRate: row[6] || null,
-          antidumpingDutyRate: row[7] || null,
-          countervailingDutyRate: row[8] || null,
-          notes: row[9] || null,
-        };
-      }).filter((item) => item.no !== 0); // Skip invalid rows
+      const items = rows
+        .map((row) => {
+          const id = parseInt(row[0] ?? "", 10);
+          const no = parseInt(row[1] ?? "", 10);
+          return {
+            ...(isNaN(id) ? {} : { id }),
+            no: isNaN(no) ? null : no,
+            portOfClearance: row[2] || null,
+            hsCode: row[3] || null,
+            articleDescription: row[4] || null,
+            generalRateOfDuty: row[5] || null,
+            section301TariffsRate: row[6] || null,
+            additionalTariffsRate: row[7] || null,
+            antidumpingDutyRate: row[8] || null,
+            countervailingDutyRate: row[9] || null,
+            notes: row[10] || null,
+          };
+        })
+        .filter((item) => item.hsCode !== null); // Skip invalid rows
 
       // Batch insert with skipDuplicates
       for (let i = 0; i < items.length; i += BATCH_SIZE) {
@@ -112,6 +116,9 @@ export const HsCodeCsvSeeder: Seeder = {
         });
         process.stdout.write(`      * Inserted crawl_hscode batch ${Math.min(i + BATCH_SIZE, items.length)}/${items.length}\r`);
       }
+      await prisma.$executeRawUnsafe(
+        "SELECT setval('crawl_hscode_id_seq', (SELECT COALESCE(MAX(id), 1) FROM crawl_hscode));"
+      );
       console.log(`\n    → Successfully seeded crawl_hscode.`);
     } else {
       console.warn(`    ⚠️ File not found: ${crawlCsvPath}`);
