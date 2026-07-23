@@ -9,30 +9,35 @@
   src: local('SVN-Gilroy Light'), local('SVN Gilroy Light'), url('/fonts/SVN-Gilroy Light.otf') format('opentype');
   font-display: swap;
 }
+
 @font-face {
   font-family: 'SVN-Gilroy';
   font-weight: 400;
   src: local('SVN-Gilroy Regular'), local('SVN Gilroy Regular'), local('SVN-Gilroy'), local('SVN Gilroy'), url('/fonts/SVN-Gilroy Regular.otf') format('opentype');
   font-display: swap;
 }
+
 @font-face {
   font-family: 'SVN-Gilroy';
   font-weight: 500;
   src: local('SVN-Gilroy Medium'), local('SVN Gilroy Medium'), url('/fonts/SVN-Gilroy Medium.otf') format('opentype');
   font-display: swap;
 }
+
 @font-face {
   font-family: 'SVN-Gilroy';
   font-weight: 600;
   src: local('SVN-Gilroy SemiBold'), local('SVN Gilroy SemiBold'), url('/fonts/SVN-Gilroy SemiBold.otf') format('opentype');
   font-display: swap;
 }
+
 @font-face {
   font-family: 'SVN-Gilroy';
   font-weight: 700;
   src: local('SVN-Gilroy Bold'), local('SVN Gilroy Bold'), url('/fonts/SVN-Gilroy Bold.otf') format('opentype');
   font-display: swap;
 }
+
 @font-face {
   font-family: 'SVN-Gilroy';
   font-weight: 800;
@@ -149,6 +154,7 @@
    * Respect OS-level "Reduce Motion" for accessibility.
    */
   @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {
@@ -185,6 +191,7 @@
   0% {
     transform: translateY(64px);
   }
+
   100% {
     transform: translateY(98px);
   }
@@ -204,6 +211,7 @@
   0% {
     transform: translateX(0%);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -219,17 +227,21 @@
     stroke-dashoffset: 200;
     opacity: 0;
   }
+
   10% {
     opacity: 1;
   }
+
   75% {
     stroke-dashoffset: 0;
     opacity: 1;
   }
+
   90% {
     stroke-dashoffset: 0;
     opacity: 0;
   }
+
   100% {
     stroke-dashoffset: 0;
     opacity: 0;
@@ -246,21 +258,26 @@
     stroke-dashoffset: 250;
     opacity: 0;
   }
+
   5% {
     opacity: 1;
   }
+
   60% {
     stroke-dashoffset: 0;
     opacity: 1;
   }
+
   75% {
     stroke-dashoffset: 0;
     opacity: 1;
   }
+
   90% {
     stroke-dashoffset: 0;
     opacity: 0;
   }
+
   100% {
     stroke-dashoffset: 250;
     opacity: 0;
@@ -271,6 +288,24 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
+}
+
+.note_header,
+.prose .note_header,
+div.note_header {
+  font-weight: 600 !important;
+  text-decoration: underline !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+}
+
+.paragraph,
+.prose .paragraph,
+div.paragraph {
+  margin-bottom: 0.5rem !important;
+  display: block !important;
 }

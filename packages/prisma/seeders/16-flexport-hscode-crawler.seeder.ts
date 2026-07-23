@@ -35,7 +35,7 @@ function findNotesHeaderIdx(html: string): number {
   return -1;
 }
 
-// Extract notes container outer HTML
+// Extract notes container outer HTML (filtering out chapter_header, chapter_header_desc, and number divs)
 function extractNotesBox(html: string): string | null {
   const headerIdx = findNotesHeaderIdx(html);
   if (headerIdx === -1) {
@@ -52,7 +52,16 @@ function extractNotesBox(html: string): string | null {
     return null;
   }
 
-  return html.substring(sectionStartIdx, sectionEndIdx + "</section>".length).trim();
+  let rawSection = html.substring(sectionStartIdx, sectionEndIdx + "</section>".length).trim();
+
+  // Clean out chapter_header, chapter_header_desc, and number divs
+  rawSection = rawSection
+    .replace(/<div\s+class="chapter_header">[\s\S]*?<\/div>/gi, "")
+    .replace(/<div\s+class="chapter_header_desc">[\s\S]*?<\/div>/gi, "")
+    .replace(/<div\s+class="number">[\s\S]*?<\/div>/gi, "")
+    .trim();
+
+  return rawSection;
 }
 
 // Extract chapter name description from HTML
@@ -70,15 +79,30 @@ function extractChapterDesc(html: string): string | null {
 }
 
 const FALLBACK_SLUGS: Record<string, string> = {
+  "12": "12-oil-seeds-and-oleaginous-fruits-miscellaneous-grains-seeds-and-fruits-industrial-or-medicinal-plants-straw-and-fodder",
+  "15": "15-animal-or-vegetable-fats-and-oils-and-their-cleavage-products-prepared-edible-fats-animal-or-vegetable-waxes",
+  "16": "16-preparations-of-meat-of-fish-or-of-crustaceans-molluscs-or-other-aquatic-invertebrates",
+  "19": "19-preparations-of-cereals-flour-starch-or-milk-bakers-wares",
+  "23": "23-residues-and-waste-from-the-food-industries-prepared-animal-feed",
+  "24": "24-tobacco-and-manufactured-tobacco-substitutes",
+  "25": "25-salt-sulfur-earths-and-stone-plastering-materials-lime-and-cement",
   "28": "28-inorganic-chemicals-organic-or-inorgani-c-compounds-of-precious-metals-of-rareearth-metalsof-radioactive-elements-or-of-isotopes",
+  "31": "31-fertilizers",
+  "32": "32-tanning-or-dyeing-extracts-dyes-pigments-paints-varnishes-putty-and-mastics",
   "34": "34-soap-organic-surfaceactive-agents-washing-preparations-lubricating-preparations-artificial-waxes-prepared-waxes-polishing-or-scouring-preparations-can",
+  "47": "47-pulp-of-wood-or-of-other-fibrous-cellulosic-material-waste-and-scrap-of-paper-or-paperboard",
+  "53": "53-other-vegetable-textile-fibers-paper-yarn-and-woven-fabric-of-paper-yarn",
   "54": "54-manmade-filaments",
   "55": "55-manmade-staple-fibers",
   "66": "66-umbrellas-sun-umbrellas-walking-sticks-seatsticks-whips-ridingcrops-and-parts-thereof",
   "71": "71-natural-or-cultured-pearls-precious-or-semiprecious-stonesprecious-metals-metals-clad-with-precious-metal-and-articles-thereof-imitation-jewelry-coin",
+  "76": "76-aluminum-and-articles-thereof",
+  "77": "77-reserved-for-possible-future-use",
   "85": "85-electrical-machinery-and-equipment-and-parts-thereof-sound-recorders-and-reproducers-television-image-and-sound-recorders-and-reproducers-and-parts-an",
   "86": "86-railway-or-tramway-locomotives-rollingstock-and-parts-thereof-railway-or-tramway-track-fixtures-and-fittings-and-parts-thereof-mechanical-including-el",
   "94": "94-furniture-bedding-mattresses-mattress-supports-cushions-and-similar-stuffed-furnishings-lamps-and-lighting-fittings-not-elsewhere-specified-or-include",
+  "98": "98-special-classification-provisions",
+  "99": "99-temporary-legislation-temporary-modifications-proclaimed-pursuant-to-trade-agreements-legislation-additional-import-restrictions-proclaimed-pursuant-t",
 };
 
 async function processChapter(
@@ -115,7 +139,8 @@ async function processChapter(
     const html = await res.text();
     const notesBox = extractNotesBox(html);
     const htmlDesc = extractChapterDesc(html);
-    const finalDesc = htmlDesc || chapterName;
+    const rawDesc = htmlDesc || chapterName;
+    const finalDesc = (rawDesc || "").replace(/\s*\d*[\/]*\s*See\s+.*$/i, "").trim();
 
     const safeId = 900000 + Number(chapterCode);
 
@@ -171,8 +196,8 @@ export const FlexportHsCodeCrawlerSeeder: Seeder = {
           hs_code as chapter_code,
           article_description
         FROM crawl_hscode
-        WHERE LENGTH(hs_code) = 2 
-          AND article_description IS NOT NULL 
+        WHERE LENGTH(hs_code) = 2
+          AND article_description IS NOT NULL
           AND article_description != ''
         ORDER BY hs_code;
       `;
