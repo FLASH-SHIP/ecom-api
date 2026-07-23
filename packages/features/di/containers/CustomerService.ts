@@ -49,10 +49,12 @@ export function getCustomerService(): CustomerService {
 
 export function getCustomerAuthService(): CustomerAuthService {
   if (!_customerAuthService) {
-    const { getNotificationService } = require("./NotificationService");
     _customerAuthService = new CustomerAuthService({
       customerRepo: getCustomerRepository(),
-      notificationService: getNotificationService(),
+      getNotificationService: () => {
+        const { getNotificationService } = require("./NotificationService");
+        return getNotificationService();
+      },
     });
   }
   return _customerAuthService;
