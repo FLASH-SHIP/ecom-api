@@ -1,17 +1,18 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { Search, X, Calculator, Calendar, ArrowRight, Send, Check, Info } from "lucide-react";
-import NextLink from "next/link";
 import { trpc } from "@web/lib/trpc";
+import { ArrowRight, Calculator, Calendar, Check, Info, Search, Send, X } from "lucide-react";
+import NextLink from "next/link";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 
 const HexagonPattern = () => (
-  <div 
-    className="absolute inset-0 pointer-events-none opacity-[0.04]" 
+  <div
+    className="absolute inset-0 pointer-events-none opacity-[0.04]"
     style={{
       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cpath fill='%230f798c' fill-opacity='1' d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l11 6.35 11-6.35V17.9L14 11.55 3 17.9z'/%3E%3C/svg%3E")`,
-      backgroundSize: "28px 49px"
-    }} 
+      backgroundSize: "28px 49px",
+    }}
   />
 );
 
@@ -34,21 +35,21 @@ export default function TariffSimulatorPage() {
   const formSearchRef = useRef<HTMLDivElement>(null);
 
   // tRPC query to get supported countries list
-  const { data: countriesData } = trpc.public.v1.hscode.getCountries.useQuery();
+  const { data: countriesData } = trpc.public.hscode.getCountries.useQuery();
 
   // tRPC query to get supported transport modes
-  const { data: transportModesData } = trpc.public.v1.hscode.getTransportModes.useQuery();
+  const { data: transportModesData } = trpc.public.hscode.getTransportModes.useQuery();
 
   // tRPC query for top search auto-complete
-  const { data: topSearchResults } = trpc.public.v1.hscode.search.useQuery(
+  const { data: topSearchResults } = trpc.public.hscode.search.useQuery(
     { query: searchQuery },
-    { enabled: searchQuery.trim().length > 0 }
+    { enabled: searchQuery.trim().length > 0 },
   );
 
   // tRPC query for form search auto-complete
-  const { data: formSearchResults } = trpc.public.v1.hscode.search.useQuery(
+  const { data: formSearchResults } = trpc.public.hscode.search.useQuery(
     { query: htsCode },
-    { enabled: htsCode.trim().length > 0 && !formDropdownOpen } // search suggestions as they type HTS code
+    { enabled: htsCode.trim().length > 0 && !formDropdownOpen }, // search suggestions as they type HTS code
   );
 
   // Parse numerical shipment value
@@ -56,7 +57,7 @@ export default function TariffSimulatorPage() {
   const isCalculable = htsCode.trim().length > 0 && valueNum > 0 && !!modeOfTransport;
 
   // tRPC query for live tariff calculation
-  const { data: calcResult, isLoading: isCalculating } = trpc.public.v1.hscode.calculate.useQuery(
+  const { data: calcResult, isLoading: isCalculating } = trpc.public.hscode.calculate.useQuery(
     {
       code: htsCode,
       value: valueNum,
@@ -68,7 +69,7 @@ export default function TariffSimulatorPage() {
     {
       enabled: isCalculable,
       retry: false,
-    }
+    },
   );
 
   // Reset all fields to initial defaults
@@ -92,15 +93,15 @@ export default function TariffSimulatorPage() {
   // Sync default form values when metadata is loaded
   useEffect(() => {
     if (countriesData && countriesData.length > 0) {
-      const hasVN = countriesData.find(c => c.name.toLowerCase() === "vietnam");
-      setCountryOfOrigin(hasVN ? hasVN.name : (countriesData[0]?.name || "Vietnam"));
+      const hasVN = countriesData.find((c) => c.name.toLowerCase() === "vietnam");
+      setCountryOfOrigin(hasVN ? hasVN.name : countriesData[0]?.name || "Vietnam");
     }
   }, [countriesData]);
 
   useEffect(() => {
     if (transportModesData && transportModesData.length > 0) {
-      const hasOcean = transportModesData.find(m => m.name.toLowerCase() === "ocean");
-      setModeOfTransport(hasOcean ? hasOcean.name : (transportModesData[0]?.name || "Ocean"));
+      const hasOcean = transportModesData.find((m) => m.name.toLowerCase() === "ocean");
+      setModeOfTransport(hasOcean ? hasOcean.name : transportModesData[0]?.name || "Ocean");
     }
   }, [transportModesData]);
 
@@ -135,7 +136,7 @@ export default function TariffSimulatorPage() {
       <section className="w-full bg-white relative z-20">
         <div className="custom-container relative lg:border-x lg:border-[#dadada] bg-white !pl-4 !pr-4 md:!pl-[60px] md:!pr-[60px] pt-[60px] pb-10 flex flex-col gap-[36px] overflow-hidden">
           <HexagonPattern />
-          
+
           {/* Title Block */}
           <div className="flex flex-col relative z-10">
             <h1 className="text-[36px] md:text-[48px] font-semibold text-[#232323] leading-tight border-b-[6px] border-[#0f798c] pb-3 w-fit tracking-tight">
@@ -147,13 +148,13 @@ export default function TariffSimulatorPage() {
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-8 relative z-10 w-full">
             {/* Description Text */}
             <p className="text-[#232323] text-[15px] md:text-[16px] leading-relaxed max-w-[638px]">
-              Get instant insights on how tariffs affect your imports.
-              Search by product name or upload HTS codes to see real-time duty calculations
+              Get instant insights on how tariffs affect your imports. Search by product name or
+              upload HTS codes to see real-time duty calculations
             </p>
 
             {/* Search Input Box */}
             <div ref={topSearchRef} className="w-full lg:w-[716px] h-[56px] relative shrink-0">
-              <div 
+              <div
                 className="w-full h-full flex items-center border border-[#dadada] bg-white px-4 justify-between cursor-text"
                 onClick={() => setTopDropdownOpen(true)}
               >
@@ -171,7 +172,7 @@ export default function TariffSimulatorPage() {
                   />
                 </div>
                 {searchQuery && (
-                  <button 
+                  <button
                     onClick={() => {
                       setSearchQuery("");
                       setTopDropdownOpen(false);
@@ -187,17 +188,23 @@ export default function TariffSimulatorPage() {
               {topDropdownOpen && searchQuery.trim().length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#dadada] shadow-lg z-50 max-h-[300px] overflow-y-auto">
                   {topSearchResults && topSearchResults.length > 0 ? (
-                    topSearchResults.map(item => (
+                    topSearchResults.map((item) => (
                       <div
                         key={item.code}
                         onClick={() => handleSelectTopItem(item)}
                         className="px-4 py-3 hover:bg-[#C9FFF9] cursor-pointer transition-colors border-b border-slate-50 last:border-none flex flex-col gap-0.5"
                       >
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold text-[#0F798C] text-[14px]">{item.code}</span>
-                          <span className="text-[12px] bg-slate-100 px-2 py-0.5 text-[#7A7A7A]">Commodity</span>
+                          <span className="font-semibold text-[#0F798C] text-[14px]">
+                            {item.code}
+                          </span>
+                          <span className="text-[12px] bg-slate-100 px-2 py-0.5 text-[#7A7A7A]">
+                            Commodity
+                          </span>
                         </div>
-                        <span className="text-[#232323] text-[14px] truncate">{item.description}</span>
+                        <span className="text-[#232323] text-[14px] truncate">
+                          {item.description}
+                        </span>
                       </div>
                     ))
                   ) : (
@@ -216,7 +223,6 @@ export default function TariffSimulatorPage() {
       <section className="w-full bg-white">
         <div className="custom-container relative lg:border-x lg:border-[#dadada] bg-white !pl-4 !pr-4 md:!pl-[60px] md:!pr-[60px] pt-10 pb-[60px] flex flex-col border-b border-[#dadada]">
           <div className="w-full bg-[#EBFAEF] border border-[#c5e6ce] p-6 md:p-8 flex flex-col gap-6">
-            
             {/* Header Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3 flex-wrap">
@@ -227,7 +233,7 @@ export default function TariffSimulatorPage() {
                   LAST UPDATE: JUN 3, 2026
                 </span>
               </div>
-              <NextLink 
+              <NextLink
                 href="/resources/tariff-simulator/updates"
                 className="text-[#0f798c] font-bold text-[14px] underline hover:text-[#0c6271] self-start sm:self-auto"
               >
@@ -240,9 +246,10 @@ export default function TariffSimulatorPage() {
               {/* Item 1 */}
               <div className="py-4 first:pt-2 flex flex-col gap-1 border-b border-[#c5e6ce]/60 last:border-none last:pb-2">
                 <p className="text-slate-800">
-                  Jun 3: Applied further adjustments to Section 232 tariffs on Aluminum, Copper, and Steel as per the{" "}
-                  <NextLink 
-                    href="#" 
+                  Jun 3: Applied further adjustments to Section 232 tariffs on Aluminum, Copper, and
+                  Steel as per the{" "}
+                  <NextLink
+                    href="#"
                     className="text-[#0f798c] font-bold underline hover:text-[#0c6271]"
                   >
                     Presidential Proclamation published on June 1
@@ -256,9 +263,10 @@ export default function TariffSimulatorPage() {
               {/* Item 2 */}
               <div className="py-4 flex flex-col gap-1 border-b border-[#c5e6ce]/60 last:border-none last:pb-2">
                 <p className="text-slate-800">
-                  May 28: Implemented tariff changes from the newly announced US-Taiwan Trade and Security Agreement as outlined in{" "}
-                  <NextLink 
-                    href="#" 
+                  May 28: Implemented tariff changes from the newly announced US-Taiwan Trade and
+                  Security Agreement as outlined in{" "}
+                  <NextLink
+                    href="#"
                     className="text-[#0f798c] font-bold underline hover:text-[#0c6271]"
                   >
                     Federal Register notice 2026-10571
@@ -272,7 +280,9 @@ export default function TariffSimulatorPage() {
               {/* Item 3 */}
               <div className="py-4 flex flex-col gap-1 border-b border-[#c5e6ce]/60 last:border-none last:pb-2">
                 <p className="text-slate-800">
-                  Apr 27: Applied technical corrections to Section 232 tariffs as <em>noted in Federal Register notice 2026-08297</em>, scheduled for publication on April 29
+                  Apr 27: Applied technical corrections to Section 232 tariffs as{" "}
+                  <em>noted in Federal Register notice 2026-08297</em>, scheduled for publication on
+                  April 29
                 </p>
                 <span className="text-[13px] text-slate-500 font-medium">
                   Effective: retroactively from Apr 6, 2026
@@ -286,12 +296,11 @@ export default function TariffSimulatorPage() {
       {/* Third Block - Two bordered cards (Figma 170:298) */}
       <section className="w-full bg-white">
         <div className="custom-container relative lg:border-x lg:border-[#dadada] bg-white !pl-4 !pr-4 md:!pl-[60px] md:!pr-[60px] pt-10 pb-16 flex flex-col lg:flex-row gap-8 lg:gap-[56px]">
-          
           {/* Left Card - Calculator Inputs */}
           <div className="w-full lg:w-[544px] shrink-0 border border-[#dadada] bg-white p-6 md:p-8 flex flex-col gap-6">
             <div className="flex items-center justify-between pb-2">
               <h2 className="text-[22px] font-semibold text-[#232323]">Calculator</h2>
-              <button 
+              <button
                 onClick={handleResetAll}
                 className="text-[#0f798c] hover:text-[#0c6271] font-bold text-[14px] flex items-center gap-1.5 border-none bg-transparent cursor-pointer"
               >
@@ -302,7 +311,6 @@ export default function TariffSimulatorPage() {
 
             {/* Inputs Form */}
             <div className="flex flex-col gap-5 text-[15px]">
-              
               {/* Product or HTS Code */}
               <div className="flex flex-col gap-1.5 w-full">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
@@ -320,7 +328,7 @@ export default function TariffSimulatorPage() {
                       className="w-full h-full border border-[#dadada] bg-white px-4 text-[#232323] outline-none text-[15px]"
                     />
                     {htsCode && (
-                      <button 
+                      <button
                         onClick={() => {
                           setHtsCode("");
                           setFormDropdownOpen(false);
@@ -335,14 +343,18 @@ export default function TariffSimulatorPage() {
                     {formDropdownOpen && htsCode.trim().length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#dadada] shadow-lg z-50 max-h-[220px] overflow-y-auto w-full">
                         {formSearchResults && formSearchResults.length > 0 ? (
-                          formSearchResults.map(item => (
+                          formSearchResults.map((item) => (
                             <div
                               key={item.code}
                               onClick={() => handleSelectFormItem(item)}
                               className="px-4 py-3 hover:bg-[#C9FFF9] cursor-pointer transition-colors border-b border-slate-50 last:border-none flex flex-col gap-0.5"
                             >
-                              <span className="font-semibold text-[#0F798C] text-[13px]">{item.code}</span>
-                              <span className="text-[#232323] text-[12px] truncate">{item.description}</span>
+                              <span className="font-semibold text-[#0F798C] text-[13px]">
+                                {item.code}
+                              </span>
+                              <span className="text-[#232323] text-[12px] truncate">
+                                {item.description}
+                              </span>
                             </div>
                           ))
                         ) : (
@@ -355,7 +367,7 @@ export default function TariffSimulatorPage() {
                   </div>
                 </div>
                 <div className="flex justify-end mt-1">
-                  <NextLink 
+                  <NextLink
                     href="/resources/hs-code"
                     className="text-[#0f798c] font-bold text-[13px] flex items-center gap-1 hover:underline"
                   >
@@ -377,7 +389,7 @@ export default function TariffSimulatorPage() {
                     className="w-full h-full border border-[#dadada] bg-white px-4 text-[#232323] outline-none text-[15px]"
                   />
                   {shipmentValue && (
-                    <button 
+                    <button
                       onClick={() => setShipmentValue("")}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-transparent border-none p-0 cursor-pointer"
                     >
@@ -452,7 +464,6 @@ export default function TariffSimulatorPage() {
                   <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 pointer-events-none" />
                 </div>
               </div>
-
             </div>
           </div>
 
@@ -461,7 +472,7 @@ export default function TariffSimulatorPage() {
             <div className="flex items-center justify-between pb-2">
               <h2 className="text-[22px] font-semibold text-[#232323]">Results</h2>
               {isCalculable && calcResult && (
-                <button 
+                <button
                   onClick={handleSendResults}
                   className="border border-[#dadada] bg-white hover:bg-slate-50 px-5 py-2 flex items-center gap-2 text-[15px] font-bold text-[#232323] transition-colors cursor-pointer"
                 >
@@ -487,11 +498,12 @@ export default function TariffSimulatorPage() {
               </div>
             ) : isCalculable && calcResult ? (
               <div className="flex flex-col xl:flex-row gap-6 w-full mt-2">
-                
                 {/* Left Turquoise Panel */}
                 <div className="flex-1 bg-[#C9FFF9] p-6 flex flex-col justify-between min-h-[220px]">
                   <div>
-                    <span className="text-[22px] font-semibold text-[#232323] block mb-2">Duty rate</span>
+                    <span className="text-[22px] font-semibold text-[#232323] block mb-2">
+                      Duty rate
+                    </span>
                     <span className="text-[64px] font-bold text-[#0f798c] leading-none tracking-tight block">
                       {calcResult.dutyRate}
                     </span>
@@ -499,7 +511,11 @@ export default function TariffSimulatorPage() {
                   <div className="border-t border-[#0f798c]/30 pt-4 flex justify-between items-center w-full mt-4">
                     <span className="text-[15px] text-[#232323] font-medium">Total Duties</span>
                     <span className="text-[20px] font-bold text-[#0f798c]">
-                      ${calcResult.totalDuties.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      $
+                      {calcResult.totalDuties.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </span>
                   </div>
                 </div>
@@ -507,34 +523,63 @@ export default function TariffSimulatorPage() {
                 {/* Right Breakdown Panel */}
                 <div className="flex-1 border border-[#dadada] p-6 flex flex-col justify-between min-h-[220px] bg-white">
                   <div>
-                    <span className="text-[15px] font-bold text-[#232323] block mb-4 tracking-wider uppercase">COST BREAKDOWN</span>
+                    <span className="text-[15px] font-bold text-[#232323] block mb-4 tracking-wider uppercase">
+                      COST BREAKDOWN
+                    </span>
                     <div className="flex flex-col gap-3 text-[14px]">
                       <div className="flex justify-between text-[#232323]">
                         <span className="text-[#555555]">Base Cost</span>
-                        <span className="font-semibold">${calcResult.baseCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-semibold">
+                          $
+                          {calcResult.baseCost.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
                       </div>
                       <div className="flex justify-between text-[#232323]">
                         <span className="text-[#555555]">Total Duties</span>
-                        <span className="font-semibold">${calcResult.totalDuties.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-semibold">
+                          $
+                          {calcResult.totalDuties.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
                       </div>
                       <div className="flex justify-between text-[#232323]">
                         <span className="text-[#555555]">Harbor Maintenance Fee (HMF)</span>
-                        <span className="font-semibold">${calcResult.hmf.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-semibold">
+                          $
+                          {calcResult.hmf.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
                       </div>
                       <div className="flex justify-between text-[#232323]">
                         <span className="text-[#555555]">Merchandise Processing Fee (MPF)</span>
-                        <span className="font-semibold">${calcResult.mpf.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-semibold">
+                          $
+                          {calcResult.mpf.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
                       </div>
                     </div>
                   </div>
                   <div className="border-t border-[#dadada] pt-4 flex justify-between items-center w-full mt-4">
                     <span className="text-[15px] font-bold text-[#232323]">Total Cost</span>
                     <span className="text-[20px] font-bold text-[#0F798C]">
-                      ${calcResult.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      $
+                      {calcResult.total.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </span>
                   </div>
                 </div>
-
               </div>
             ) : (
               <div className="flex-grow flex flex-col items-center justify-center p-12 text-[#7A7A7A] text-center">
@@ -543,7 +588,6 @@ export default function TariffSimulatorPage() {
               </div>
             )}
           </div>
-
         </div>
       </section>
     </div>
