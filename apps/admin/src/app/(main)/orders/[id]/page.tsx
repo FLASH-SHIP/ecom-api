@@ -56,30 +56,32 @@ export default function AdminOrderDetailPage() {
 
   const trpcContext = trpc.useUtils();
 
-  const getStatusBadge = (status: OrderStatus) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case "DRAFT":
+      case "LABEL_CREATED":
         return <Badge variant="secondary">{t(`status.${status}`)}</Badge>;
-      case "LABEL_NOT_CREATED":
+      case "PENDING_LABEL":
         return <Badge variant="warning">{t(`status.${status}`)}</Badge>;
-      case "WAITING_FOR_PICKUP":
+      case "PACKAGE_RECEIVED":
         return (
           <Badge variant="default" className="bg-[#0F798C] text-white border-none">
             {t(`status.${status}`)}
           </Badge>
         );
-      case "PICKED_UP":
+      case "ON_THE_WAY":
         return (
           <Badge variant="default" className="bg-blue-500 text-white border-none">
             {t(`status.${status}`)}
           </Badge>
         );
-      case "DELIVERED":
+      case "PICK_UP":
+        return (
+          <Badge variant="default" className="bg-amber-500 text-white border-none">
+            {t(`status.${status}`)}
+          </Badge>
+        );
+      case "DELIVERY":
         return <Badge variant="success">{t(`status.${status}`)}</Badge>;
-      case "CANCELLED":
-        return <Badge variant="destructive">{t(`status.${status}`)}</Badge>;
-      case "EXCEPTION":
-        return <Badge variant="destructive">{t(`status.${status}`)}</Badge>;
       default:
         return <Badge variant="default">{t(`status.${status}`)}</Badge>;
     }
@@ -519,29 +521,12 @@ export default function AdminOrderDetailPage() {
                       <SelectValue placeholder={t("selectStatusPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="DRAFT">{t("status.DRAFT")}</SelectItem>
-                      <SelectItem value="LABEL_NOT_CREATED">
-                        {t("status.LABEL_NOT_CREATED")}
-                      </SelectItem>
-                      <SelectItem value="WAITING_FOR_PICKUP">
-                        {t("status.WAITING_FOR_PICKUP")}
-                      </SelectItem>
-                      <SelectItem value="PICKED_UP">{t("status.PICKED_UP")}</SelectItem>
-                      <SelectItem value="RECEIVED_AT_ORIGIN_WAREHOUSE">
-                        {t("status.RECEIVED_AT_ORIGIN_WAREHOUSE")}
-                      </SelectItem>
-                      <SelectItem value="EXPORT_CUSTOMS_CLEARANCE">
-                        {t("status.EXPORT_CUSTOMS_CLEARANCE")}
-                      </SelectItem>
-                      <SelectItem value="INTERNATIONAL_TRANSIT">
-                        {t("status.INTERNATIONAL_TRANSIT")}
-                      </SelectItem>
-                      <SelectItem value="IMPORT_CUSTOMS_CLEARANCE">
-                        {t("status.IMPORT_CUSTOMS_CLEARANCE")}
-                      </SelectItem>
-                      <SelectItem value="DELIVERED">{t("status.DELIVERED")}</SelectItem>
-                      <SelectItem value="CANCELLED">{t("status.CANCELLED")}</SelectItem>
-                      <SelectItem value="EXCEPTION">{t("status.EXCEPTION")}</SelectItem>
+                      <SelectItem value="LABEL_CREATED">{t("status.LABEL_CREATED")}</SelectItem>
+                      <SelectItem value="PENDING_LABEL">{t("status.PENDING_LABEL")}</SelectItem>
+                      <SelectItem value="PACKAGE_RECEIVED">{t("status.PACKAGE_RECEIVED")}</SelectItem>
+                      <SelectItem value="ON_THE_WAY">{t("status.ON_THE_WAY")}</SelectItem>
+                      <SelectItem value="PICK_UP">{t("status.PICK_UP")}</SelectItem>
+                      <SelectItem value="DELIVERY">{t("status.DELIVERY")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
