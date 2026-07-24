@@ -22,7 +22,7 @@ function formatHeadingDescription(rawDesc: string | null | undefined): string {
   let firstPart = rawDesc.split(/[：:]+/)[0]?.trim() || rawDesc.trim();
 
   // Remove footnote markers like "1See section XI, statistical note 5." or "See statistical note..."
-  firstPart = firstPart.replace(/\s*\d*[\/]*\s*See\s+.*$/i, "").trim();
+  firstPart = firstPart.replace(/\s*\d*[/]*\s*See\s+.*$/i, "").trim();
 
   // Remove trailing semicolons, commas, or punctuation left over
   firstPart = firstPart.replace(/[;,\s]+$/, "").trim();

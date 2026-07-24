@@ -41,6 +41,7 @@ export const listStates = authedProcedure
     z
       .object({
         search: z.string().optional(),
+        limit: z.number().int().positive().optional(),
       })
       .optional(),
   )
@@ -49,7 +50,7 @@ export const listStates = authedProcedure
       countryCode: "US",
       level: 1,
       search: input?.search,
-      limit: 100,
+      limit: input?.limit ?? 100,
       orderBy: "asc",
     });
     return result.items;
@@ -60,6 +61,7 @@ export const listCities = authedProcedure
     z.object({
       parentId: z.number().int().positive(),
       search: z.string().optional(),
+      limit: z.number().int().positive().optional(),
     }),
   )
   .query(async ({ input }) => {
@@ -68,7 +70,7 @@ export const listCities = authedProcedure
       level: 2,
       parentId: input.parentId,
       search: input.search,
-      limit: 100,
+      limit: input.limit ?? 100,
       orderBy: "asc",
     });
     return result.items;
