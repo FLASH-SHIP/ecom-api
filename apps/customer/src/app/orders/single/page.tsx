@@ -42,13 +42,6 @@ const orderFormSchema = z
         "Trị giá hàng hóa phải lớn hơn 0.",
       ),
     sellerOrderId: z.string().optional(),
-    totalPackets: z
-      .string()
-      .min(1, "Vui lòng nhập tổng số gói.")
-      .refine(
-        (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
-        "Tổng số gói phải lớn hơn 0.",
-      ),
 
     // Sender Info
     senderName: z.string().min(1, "Vui lòng nhập tên người gửi."),
@@ -206,7 +199,6 @@ export default function CreateSingleOrderPage() {
       detailDescription: "",
       declaredValue: "",
       sellerOrderId: "",
-      totalPackets: "1",
       senderName: "",
       senderPhone: "",
       senderEmail: "",
@@ -467,7 +459,6 @@ export default function CreateSingleOrderPage() {
       declaredValue,
       packingTypeId,
       packageName,
-      totalPackets,
       products,
     } = formValues;
 
@@ -476,7 +467,6 @@ export default function CreateSingleOrderPage() {
         shippingMethod,
         shippingOrigin,
         sellerOrderId: sellerOrderId || null,
-        totalPackets: Number(totalPackets) || 1,
         importId: null,
 
         senderName,
@@ -493,7 +483,7 @@ export default function CreateSingleOrderPage() {
         receiverPhone: receiverPhone || null,
         receiverEmail,
         receiverCity: receiverCityName || receiverCity,
-        receiverState: receiverStateName || receiverState,
+        receiverState,
         receiverAddress1,
         receiverAddress2: receiverAddress2 || null,
         receiverCountry,
@@ -675,7 +665,7 @@ export default function CreateSingleOrderPage() {
     } = storeValues;
 
     const displayReceiverCity = receiverCityName || receiverCity;
-    const displayReceiverState = receiverStateName || receiverState;
+    const displayReceiverState = receiverState || receiverStateName;
     const displaySenderCity = senderCityName || senderCity;
     const displaySenderWard = senderWardName || senderWard;
 

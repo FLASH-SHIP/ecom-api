@@ -119,7 +119,8 @@ export function BasicInfoSection({ control, register, errors }: BasicInfoSection
             <FieldError errors={[errors.sellerOrderId]} />
           </Field>
 
-          {/* Total Packets */}
+
+          {/* Total Packets (display only) */}
           <Field>
             <FieldLabel htmlFor="totalPackets">
               Total Packets <span className="text-destructive">*</span>
@@ -128,15 +129,14 @@ export function BasicInfoSection({ control, register, errors }: BasicInfoSection
               id="totalPackets"
               type="number"
               min={1}
-              required
-              {...register("totalPackets")}
+              value={1}
+              disabled={true}
+              readOnly
               placeholder="Enter total packets"
               className={cn(
                 "w-full bg-background/50",
-                errors.totalPackets && "border-destructive focus-visible:ring-destructive",
               )}
             />
-            <FieldError errors={[errors.totalPackets]} />
           </Field>
 
           {/* Hidden inputs for auto-calculated values */}

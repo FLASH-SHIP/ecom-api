@@ -118,6 +118,7 @@ export function ReceiverSection({
 
   // Selected State ID for ePacket US City list
   const [selectedStateId, setSelectedStateId] = useState<number | null>(null);
+  const [citySearch, setCitySearch] = useState("");
 
   // Fetch supported countries from HS Code API
   const { data: countriesData } = trpc.public.v1.hscode.getCountries.useQuery();
@@ -128,10 +129,11 @@ export function ReceiverSection({
   });
 
   // Fetch US Cities for selected State in ePacket
-  const { data: usCitiesList = [] } = trpc.customer.divisions.listCities.useQuery(
-    { parentId: selectedStateId ?? 0 },
-    { enabled: isEPacket && !!selectedStateId },
-  );
+  const { data: usCitiesList = [], isFetching: isCitiesFetching } =
+    trpc.customer.divisions.listCities.useQuery(
+      { parentId: selectedStateId ?? 0, search: citySearch || undefined, limit: 100 },
+      { enabled: isEPacket && !!selectedStateId },
+    );
 
   // Automatically force Country = US when ePacket is selected
   useEffect(() => {
@@ -291,6 +293,7 @@ export function ReceiverSection({
                           // Reset city on state change
                           setValueParent("receiverCity", "");
                           setValueParent("receiverCityName", "");
+                          setCitySearch("");
                         }}
                         options={usStatesList.map((s) => ({
                           value: s.code,
@@ -348,6 +351,10 @@ export function ReceiverSection({
                         searchPlaceholder="Search US City..."
                         disabled={!selectedStateId}
                         allowClear={true}
+                        serverSearch={true}
+                        onSearchChange={setCitySearch}
+                        searchDebounceMs={500}
+                        loading={isCitiesFetching}
                         className={cn(
                           "bg-background/50 border-input",
                           !selectedStateId && "opacity-60 cursor-not-allowed bg-muted",

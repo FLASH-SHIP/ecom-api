@@ -140,7 +140,7 @@ async function processChapter(
     const notesBox = extractNotesBox(html);
     const htmlDesc = extractChapterDesc(html);
     const rawDesc = htmlDesc || chapterName;
-    const finalDesc = (rawDesc || "").replace(/\s*\d*[\/]*\s*See\s+.*$/i, "").trim();
+    const finalDesc = (rawDesc || "").replace(/\s*\d*[/]*\s*See\s+.*$/i, "").trim();
 
     const safeId = 900000 + Number(chapterCode);
 

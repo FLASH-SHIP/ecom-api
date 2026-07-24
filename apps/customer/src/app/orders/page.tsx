@@ -8,7 +8,6 @@ import { getShippingMethodLabel, getShippingOriginLabel } from "@ecom/types";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
 import { Card } from "@ecom/ui/components/card";
-import { DateRangePicker } from "@ecom/ui/components/date-range-picker";
 import {
   Dialog,
   DialogContent,
@@ -17,20 +16,12 @@ import {
   DialogTitle,
 } from "@ecom/ui/components/dialog";
 import { ThreeDotsVerticalIcon } from "@ecom/ui/components/icons";
-import { Input } from "@ecom/ui/components/input";
 import { PaginationBase } from "@ecom/ui/components/pagination-base";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ecom/ui/components/select";
 import { TableBase } from "@ecom/ui/components/table-base";
 import { format } from "date-fns";
-import { Download, Search } from "lucide-react";
 import NextLink from "next/link";
 import { useState } from "react";
+import { OrderFilterBar } from "./components/OrderFilterBar";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: customer orders list and detail modal
 export default function CustomerOrdersPage() {
@@ -67,28 +58,30 @@ export default function CustomerOrdersPage() {
 
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
-      case "DRAFT":
-        return <Badge variant="secondary">Draft</Badge>;
-      case "LABEL_NOT_CREATED":
-        return <Badge variant="warning">Label Not Created</Badge>;
-      case "WAITING_FOR_PICKUP":
+      case "LABEL_CREATED":
         return (
           <Badge variant="default" className="bg-[#0F798C] text-white">
             Label Created
           </Badge>
         );
-      case "PICKED_UP":
+      case "PENDING_LABEL":
+        return <Badge variant="warning">Pending Label</Badge>;
+      case "PACKAGE_RECEIVED":
+        return <Badge variant="secondary">Package Received</Badge>;
+      case "ON_THE_WAY":
         return (
-          <Badge variant="default" className="bg-blue-500 text-white">
-            Picked Up
+          <Badge variant="default" className="bg-[#0F798C] text-white">
+            On the Way
           </Badge>
         );
-      case "DELIVERED":
-        return <Badge variant="success">Delivered</Badge>;
-      case "CANCELLED":
-        return <Badge variant="destructive">Cancelled</Badge>;
-      case "EXCEPTION":
-        return <Badge variant="destructive">Exception</Badge>;
+      case "PICK_UP":
+        return (
+          <Badge variant="default" className="bg-blue-500 text-white">
+            Pick Up
+          </Badge>
+        );
+      case "DELIVERY":
+        return <Badge variant="success">Delivery</Badge>;
       default:
         return <Badge variant="default">{status}</Badge>;
     }
@@ -207,97 +200,30 @@ export default function CustomerOrdersPage() {
       </div>
 
       {/* Filters Section */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-start w-full">
-        {/* Left Filters */}
-        <div className="flex flex-col md:flex-row flex-wrap items-stretch md:items-center gap-4 flex-1">
-          {/* Search Input */}
-          <div className="relative w-full lg:w-[415px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7B7B7B]" />
-            <Input
-              type="text"
-              placeholder="Search by Reception/Order ID/Tracking Number"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="h-[52px] pl-11 pr-4 border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs focus-visible:ring-1 focus-visible:ring-[#0F798C] placeholder:text-[#7B7B7B] placeholder:text-sm lg:placeholder:text-[15px]"
-            />
-          </div>
-
-          {/* Date Picker */}
-          <DateRangePicker
-            valueFrom={dateFrom}
-            valueTo={dateTo}
-            onChange={(from, to) => {
-              setDateFrom(from);
-              setDateTo(to);
-              setPage(1);
-            }}
-            onClear={() => {
-              setDateFrom(undefined);
-              setDateTo(undefined);
-              setPage(1);
-            }}
-            placeholder="01/06/2024 - 30/06/2024"
-            className="h-[52px] border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs text-[#232323] px-4 py-3 gap-2 w-full md:w-auto"
-          />
-
-          {/* Status Dropdown */}
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => {
-              setStatusFilter(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="h-[52px] min-w-[120px] md:w-auto border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Status</SelectItem>
-              <SelectItem value="DRAFT">Draft</SelectItem>
-              <SelectItem value="LABEL_NOT_CREATED">Label Not Created</SelectItem>
-              <SelectItem value="WAITING_FOR_PICKUP">Label Created</SelectItem>
-              <SelectItem value="PICKED_UP">Picked Up</SelectItem>
-              <SelectItem value="DELIVERED">Delivered</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              <SelectItem value="EXCEPTION">Exception</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Shipping Methods Dropdown */}
-          <Select
-            value={shippingMethodFilter}
-            onValueChange={(val) => {
-              setShippingMethodFilter(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="h-[52px] min-w-[180px] md:w-auto border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
-              <SelectValue placeholder="Shipping Methods" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Shipping Methods</SelectItem>
-              <SelectItem value="EPACKET">ePacket</SelectItem>
-              <SelectItem value="USPS">USPS</SelectItem>
-              <SelectItem value="FEDEX">FedEx</SelectItem>
-              <SelectItem value="DHL">DHL</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Right Actions */}
-        <div className="flex items-center justify-end">
-          <Button
-            variant="outline"
-            className="h-[52px] px-6 gap-2 border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs text-[#232323] font-normal cursor-pointer hover:bg-zinc-50"
-          >
-            <Download className="h-5 w-5 text-[#232323]" />
-            Export
-          </Button>
-        </div>
-      </div>
+      <OrderFilterBar
+        search={search}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setPage(1);
+        }}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateChange={(from, to) => {
+          setDateFrom(from);
+          setDateTo(to);
+          setPage(1);
+        }}
+        statusFilter={statusFilter}
+        onStatusFilterChange={(val) => {
+          setStatusFilter(val);
+          setPage(1);
+        }}
+        shippingMethodFilter={shippingMethodFilter}
+        onShippingMethodFilterChange={(val) => {
+          setShippingMethodFilter(val);
+          setPage(1);
+        }}
+      />
 
       {/* Orders Table */}
       <Card className="rounded-xl border border-border bg-card overflow-hidden">
