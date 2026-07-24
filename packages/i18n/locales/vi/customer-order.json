@@ -52,7 +52,8 @@
     "trackingNumber": "Mã vận đơn",
     "orderId": "Mã đơn hàng",
     "fee": "Phí",
-    "action": "Thao tác"
+    "action": "Thao tác",
+    "noOrdersFound": "Không tìm thấy đơn hàng nào. Hãy tạo đơn hàng lẻ đầu tiên của bạn ở trên!"
   },
   "single": {
     "title": "Tạo đơn lẻ",

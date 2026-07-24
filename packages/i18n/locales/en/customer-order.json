@@ -52,7 +52,8 @@
     "trackingNumber": "Tracking number",
     "orderId": "Order ID",
     "fee": "Fee",
-    "action": "Action"
+    "action": "Action",
+    "noOrdersFound": "No orders found. Create your first single order above!"
   },
   "single": {
     "title": "Create Single Order",
