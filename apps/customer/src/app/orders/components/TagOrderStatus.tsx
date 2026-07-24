@@ -1,4 +1,4 @@
-import type { OrderStatus } from "@ecom/prisma";
+import { OrderStatus } from "@customer/app/orders/constants/enums";
 import {
   GetOrderStatusBackground,
   GetOrderStatusColor,

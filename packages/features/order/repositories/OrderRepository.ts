@@ -103,6 +103,9 @@ export interface UpdateOrderInput {
 export interface OrderQueryOptions {
   customerId?: string;
   status?: OrderStatus;
+  shippingMethod?: ShippingMethod;
+  fromDate?: string;
+  toDate?: string;
   search?: string;
   page?: number;
   perPage?: number;
@@ -254,7 +257,16 @@ export class OrderRepository {
   }
 
   async findMany(options: OrderQueryOptions) {
-    const { customerId, status, search, sortBy = "createdAt", sortOrder = "desc" } = options;
+    const {
+      customerId,
+      status,
+      shippingMethod,
+      fromDate,
+      toDate,
+      search,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = options;
     const { page, perPage, skip } = normalizePagination(options);
 
     const conditions: Prisma.OrderWhereInput[] = [];
@@ -265,6 +277,21 @@ export class OrderRepository {
 
     if (status) {
       conditions.push({ status });
+    }
+
+    if (shippingMethod) {
+      conditions.push({ shippingMethod });
+    }
+
+    if (fromDate || toDate) {
+      const createdAtCondition: Prisma.DateTimeFilter = {};
+      if (fromDate) {
+        createdAtCondition.gte = new Date(`${fromDate}T00:00:00.000Z`);
+      }
+      if (toDate) {
+        createdAtCondition.lte = new Date(`${toDate}T23:59:59.999Z`);
+      }
+      conditions.push({ createdAt: createdAtCondition });
     }
 
     if (search?.trim()) {
