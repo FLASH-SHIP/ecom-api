@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import NextLink from "next/link";
 import { useState } from "react";
 import { OrderFilterBar } from "./components/OrderFilterBar";
+import TagOrderStatus from "@customer/app/orders/components/TagOrderStatus";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: customer orders list and detail modal
 export default function CustomerOrdersPage() {
@@ -130,8 +131,8 @@ export default function CustomerOrdersPage() {
     },
     {
       header: "Status",
-      width: 100,
-      cell: () => <span></span>,
+      width: 135,
+      cell: (order: OrderType) => <TagOrderStatus status={order.status} />,
     },
     {
       header: "Order ID",
