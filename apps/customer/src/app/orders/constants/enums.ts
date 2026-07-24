@@ -9,7 +9,9 @@ export const OrderStatus = {
 
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
-export enum ShippingMethod {
-  EPACKET = "EPACKET",
-  EXPRESS = "EXPRESS",
-}
+export const ShippingMethod = {
+  EPACKET: "EPACKET",
+  EXPRESS: "EXPRESS",
+} as const;
+
+export type ShippingMethod = (typeof ShippingMethod)[keyof typeof ShippingMethod];

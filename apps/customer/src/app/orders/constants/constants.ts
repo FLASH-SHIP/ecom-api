@@ -79,3 +79,15 @@ export const getOrderStatusOptions = (): OrderStatusOption[] => {
     label: GetOrderStatusTxt(status),
   }));
 };
+
+export interface ShippingMethodOption {
+  value: ShippingMethod;
+  label: string;
+}
+
+export const getShippingMethodOptions = (): ShippingMethodOption[] => {
+  return Object.values(ShippingMethod).map((method) => ({
+    value: method,
+    label: GetShippingMethodTxt(method),
+  }));
+};

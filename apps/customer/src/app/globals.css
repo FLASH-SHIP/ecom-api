@@ -186,8 +186,8 @@
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -220,11 +220,11 @@
   background: transparent !important;
 }
 .thin-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1 !important;
+  background: #a1a1aa !important;
   border-radius: 9999px !important;
 }
 .dark .thin-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155 !important;
+  background: #52525b !important;
 }
 .title-page-content {
   color: #22252A;

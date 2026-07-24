@@ -20,9 +20,16 @@ import { PaginationBase } from "@ecom/ui/components/pagination-base";
 import { TableBase } from "@ecom/ui/components/table-base";
 import { format, subDays } from "date-fns";
 import NextLink from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@ecom/ui/components/dropdown-menu";
 import { useState } from "react";
 import { OrderFilterBar } from "./components/OrderFilterBar";
 import TagOrderStatus from "@customer/app/orders/components/TagOrderStatus";
+import { downloadBase64File } from "./utils/export-excel";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: customer orders list and detail modal
 export default function CustomerOrdersPage() {
@@ -39,7 +46,7 @@ export default function CustomerOrdersPage() {
   const [dateTo, setDateTo] = useState<string | undefined>(() =>
     format(new Date(), "yyyy-MM-dd"),
   );
-  const [shippingMethodFilter, setShippingMethodFilter] = useState<string>("ALL");
+  const [shippingMethodFilter, setShippingMethodFilter] = useState<string>("");
 
   // Selected Order Detail Modal
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -52,7 +59,7 @@ export default function CustomerOrdersPage() {
     fromDate: dateFrom,
     toDate: dateTo,
     shippingMethod:
-      shippingMethodFilter !== "ALL"
+      shippingMethodFilter && shippingMethodFilter !== "ALL"
         ? (shippingMethodFilter as "EPACKET" | "EXPRESS")
         : undefined,
     page,
@@ -60,6 +67,32 @@ export default function CustomerOrdersPage() {
     sortBy: "createdAt",
     sortOrder: "desc",
   });
+
+  // Export Excel Backend Mutation
+  const exportExcelMutation = trpc.customer.orders.exportExcel.useMutation({
+    onSuccess: (res) => {
+      if (res?.fileData && res?.filename) {
+        downloadBase64File(res.filename, res.fileData);
+      }
+    },
+  });
+
+  const handleExport = () => {
+    exportExcelMutation.mutate({
+      search: search.trim() || undefined,
+      status: statusFilter && statusFilter !== "ALL" ? (statusFilter as OrderStatus) : undefined,
+      fromDate: dateFrom,
+      toDate: dateTo,
+      shippingMethod:
+        shippingMethodFilter && shippingMethodFilter !== "ALL"
+          ? (shippingMethodFilter as "EPACKET" | "EXPRESS")
+          : undefined,
+      page,
+      perPage,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
+  };
 
   // Fetch selected order detail securely
   const { data: orderDetails, isLoading: isLoadingDetails } = trpc.customer.orders.get.useQuery(
@@ -105,7 +138,7 @@ export default function CustomerOrdersPage() {
   type OrderType = NonNullable<typeof listData>["data"][number];
   const columns = [
     {
-      header: "Time",
+      header: translate("customerOrder.table.time", currentLocale),
       width: 120,
       sortable: true,
       sortKey: "createdAt",
@@ -117,7 +150,7 @@ export default function CustomerOrdersPage() {
       ),
     },
     {
-      header: "Reception",
+      header: translate("customerOrder.table.reception", currentLocale),
       width: 320,
       sortable: true,
       sortKey: "receiverName",
@@ -140,28 +173,28 @@ export default function CustomerOrdersPage() {
       ),
     },
     {
-      header: "Status",
+      header: translate("customerOrder.placeholder.status", currentLocale),
       width: 135,
       cell: (order: OrderType) => <TagOrderStatus status={order.status} />,
     },
     {
-      header: "Order ID",
+      header: translate("customerOrder.table.orderId", currentLocale),
       width: 180,
       sortable: true,
       sortKey: "orderCode",
       cell: (order: OrderType) => (
-        <span className="font-semibold text-[#0F798C] hover:underline cursor-pointer">
+        <span className="font-medium text-[#0F798C] hover:underline cursor-pointer">
           <NextLink href={`/orders/${order.id}`}>{order.orderCode}</NextLink>
         </span>
       ),
     },
     {
-      header: "Fee",
+      header: translate("customerOrder.table.fee", currentLocale),
       width: 100,
       sortable: true,
       sortKey: "baseShippingFee",
       cell: (order: OrderType) => (
-        <span className="font-semibold text-foreground">
+        <span className="font-medium text-foreground">
           $
           {order.baseShippingFee
             ? (Number(order.baseShippingFee) + Number(order.surchargeFee || 0)).toFixed(2)
@@ -170,34 +203,61 @@ export default function CustomerOrdersPage() {
       ),
     },
     {
-      header: "Shipping Methods",
+      header: translate("customerOrder.placeholder.shippingMethod", currentLocale),
       width: 160,
-      cell: (order: OrderType) => <span>{getShippingMethodLabel(order?.shippingMethod)}</span>,
+      cell: (order: OrderType) => <span className={'font-medium text-foreground'}>{getShippingMethodLabel(order?.shippingMethod)}</span>,
     },
     {
-      header: "Tracking number",
+      header: translate("customerOrder.table.trackingNumber", currentLocale),
       width: 180,
       sortable: true,
       sortKey: "trackingNumber",
-      cell: (order: OrderType) => <span>{order?.trackingNumber}</span>,
+      cell: (order: OrderType) => <span className={'font-medium text-foreground'}>{order?.trackingNumber}</span>,
     },
     {
-      header: "Action",
+      header: translate("customerOrder.table.action", currentLocale),
       width: 80,
       fixed: "right" as const,
       headerClassName: "text-center",
       className: "text-center",
       cell: (order: OrderType) => (
-        <NextLink href={`/orders/${order.id}`}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hover:bg-accent text-primary h-8 w-8 rounded-lg cursor-pointer"
-            title="View tracking and details"
-          >
-            <ThreeDotsVerticalIcon />
-          </Button>
-        </NextLink>
+        <div onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-accent text-primary h-8 w-8 rounded-lg cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:ring-0 data-[state=open]:outline-none"
+                title="Actions"
+              >
+                <ThreeDotsVerticalIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36 bg-white dark:bg-zinc-900 border border-border shadow-md rounded-lg p-1 z-30">
+              {order?.status === OrderStatus.PENDING_LABEL && (
+                <DropdownMenuItem
+                  disabled={true}
+                  className="px-3 py-2 text-sm text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Handle Get Label action
+                  }}
+                >
+                  {translate("customerOrder.getLabels", currentLocale)}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                disabled={true}
+                className="px-3 py-2 text-sm text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                {translate("customerOrder.edit", currentLocale)}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
   ];
@@ -206,7 +266,7 @@ export default function CustomerOrdersPage() {
     <div className="flex flex-col gap-4 w-full pb-10">
       <div className="flex justify-between items-center">
         <h1 className="title-page-content text-2xl font-bold text-foreground">
-          {translate("orders.orderList", currentLocale)}
+          {translate("customerOrder.orderList", currentLocale)}
         </h1>
       </div>
 
@@ -234,6 +294,18 @@ export default function CustomerOrdersPage() {
           setShippingMethodFilter(val);
           setPage(1);
         }}
+        selectedCount={selectedRowIds.length}
+        onClearAll={() => {
+          const today = new Date();
+          setSearch("");
+          setStatusFilter("");
+          setShippingMethodFilter("");
+          setDateFrom(format(subDays(today, 6), "yyyy-MM-dd"));
+          setDateTo(format(today, "yyyy-MM-dd"));
+          setPage(1);
+        }}
+        isExporting={exportExcelMutation.isPending}
+        onExport={handleExport}
       />
 
       {/* Orders Table */}

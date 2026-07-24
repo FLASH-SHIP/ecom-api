@@ -22,6 +22,9 @@ import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import type { OrderFormValues } from "./page";
 
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
+
 export interface BasicInfoSectionProps {
   control: Control<OrderFormValues>;
   register: UseFormRegister<OrderFormValues>;
@@ -29,11 +32,15 @@ export interface BasicInfoSectionProps {
 }
 
 export function BasicInfoSection({ control, register, errors }: BasicInfoSectionProps) {
+  const { languageId: currentLocale } = useI18n();
+
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">Basic Info</h3>
+        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">
+          {translate("customerOrder.single.basicInfo", currentLocale)}
+        </h3>
       </div>
 
       {/* Body */}
@@ -42,7 +49,8 @@ export function BasicInfoSection({ control, register, errors }: BasicInfoSection
           {/* Shipping Origin */}
           <Field>
             <FieldLabel>
-              Shipping Origin <span className="text-destructive">*</span>
+              {translate("customerOrder.single.shippingOrigin", currentLocale)}{" "}
+              <span className="text-destructive">*</span>
             </FieldLabel>
             <Controller
               name="shippingOrigin"
@@ -55,7 +63,12 @@ export function BasicInfoSection({ control, register, errors }: BasicInfoSection
                       errors.shippingOrigin && "border-destructive focus:ring-destructive",
                     )}
                   >
-                    <SelectValue placeholder="Select shipping origin" />
+                    <SelectValue
+                      placeholder={translate(
+                        "customerOrder.placeholder.selectShippingOrigin",
+                        currentLocale,
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {SHIPPING_ORIGIN_OPTIONS.map((opt) => (
@@ -73,7 +86,8 @@ export function BasicInfoSection({ control, register, errors }: BasicInfoSection
           {/* Shipping Method */}
           <Field>
             <FieldLabel>
-              Shipping Method <span className="text-destructive">*</span>
+              {translate("customerOrder.single.shippingMethod", currentLocale)}{" "}
+              <span className="text-destructive">*</span>
             </FieldLabel>
             <Controller
               name="shippingMethod"
@@ -86,7 +100,12 @@ export function BasicInfoSection({ control, register, errors }: BasicInfoSection
                       errors.shippingMethod && "border-destructive focus:ring-destructive",
                     )}
                   >
-                    <SelectValue placeholder="Select shipping method" />
+                    <SelectValue
+                      placeholder={translate(
+                        "customerOrder.placeholder.selectShippingMethod",
+                        currentLocale,
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {SHIPPING_METHOD_OPTIONS.map((opt) => (
@@ -104,13 +123,14 @@ export function BasicInfoSection({ control, register, errors }: BasicInfoSection
           {/* Order ID */}
           <Field>
             <FieldLabel htmlFor="sellerOrderId">
-              Order ID <span className="text-destructive">*</span>
+              {translate("customerOrder.single.orderId", currentLocale)}{" "}
+              <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
               id="sellerOrderId"
               type="text"
               {...register("sellerOrderId")}
-              placeholder="Enter order id"
+              placeholder={translate("customerOrder.placeholder.enterOrderId", currentLocale)}
               className={cn(
                 "w-full bg-background/50",
                 errors.sellerOrderId && "border-destructive focus-visible:ring-destructive",
@@ -119,11 +139,11 @@ export function BasicInfoSection({ control, register, errors }: BasicInfoSection
             <FieldError errors={[errors.sellerOrderId]} />
           </Field>
 
-
           {/* Total Packets (display only) */}
           <Field>
             <FieldLabel htmlFor="totalPackets">
-              Total Packets <span className="text-destructive">*</span>
+              {translate("customerOrder.single.totalPackets", currentLocale)}{" "}
+              <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
               id="totalPackets"
@@ -132,10 +152,8 @@ export function BasicInfoSection({ control, register, errors }: BasicInfoSection
               value={1}
               disabled={true}
               readOnly
-              placeholder="Enter total packets"
-              className={cn(
-                "w-full bg-background/50",
-              )}
+              placeholder={translate("customerOrder.placeholder.enterTotalPackets", currentLocale)}
+              className={cn("w-full bg-background/50")}
             />
           </Field>
 
