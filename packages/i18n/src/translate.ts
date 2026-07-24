@@ -12,6 +12,7 @@ import enOrders from "../locales/en/orders.json";
 import enRoles from "../locales/en/roles.json";
 import enSettings from "../locales/en/settings.json";
 import enUsers from "../locales/en/users.json";
+import enCustomerOrder from "../locales/en/customer-order.json";
 
 import viAuth from "../locales/vi/auth.json";
 import viCommon from "../locales/vi/common.json";
@@ -27,6 +28,7 @@ import viOrders from "../locales/vi/orders.json";
 import viRoles from "../locales/vi/roles.json";
 import viSettings from "../locales/vi/settings.json";
 import viUsers from "../locales/vi/users.json";
+import viCustomerOrder from "../locales/vi/customer-order.json";
 
 const messages = {
   en: {
@@ -44,6 +46,7 @@ const messages = {
     languages: enLanguages,
     customFields: enCustomFields,
     developer: enDeveloper,
+    customerOrder: enCustomerOrder
   },
   vi: {
     ...viCommon,
@@ -60,6 +63,7 @@ const messages = {
     languages: viLanguages,
     customFields: viCustomFields,
     developer: viDeveloper,
+    customerOrder: viCustomerOrder
   },
 } as const;
 

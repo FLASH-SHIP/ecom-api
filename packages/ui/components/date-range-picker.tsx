@@ -157,7 +157,7 @@ function DateRangePicker({
           )}
         >
           <CalendarIcon className="mr-2 size-4 shrink-0" />
-          <span className="truncate flex-1">{displayText}</span>
+          <span className="truncate flex-1 text-sm 2xl:text-lg font-normal">{displayText}</span>
           {committedRange?.from && !disabled && (
             <span
               role="button"
