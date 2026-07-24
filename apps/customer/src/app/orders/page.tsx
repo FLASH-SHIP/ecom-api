@@ -2,7 +2,7 @@
 
 import { trpc } from "@customer/lib/trpc";
 import { translate } from "@ecom/i18n";
-import type { OrderStatus } from "@ecom/prisma";
+import { OrderStatus } from "@customer/app/orders/constants/enums";
 import { useI18n } from "@ecom/shared/@i18n";
 import { getShippingMethodLabel, getShippingOriginLabel } from "@ecom/types";
 import { Badge } from "@ecom/ui/components/badge";
@@ -18,7 +18,7 @@ import {
 import { ThreeDotsVerticalIcon } from "@ecom/ui/components/icons";
 import { PaginationBase } from "@ecom/ui/components/pagination-base";
 import { TableBase } from "@ecom/ui/components/table-base";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import NextLink from "next/link";
 import { useState } from "react";
 import { OrderFilterBar } from "./components/OrderFilterBar";
@@ -30,11 +30,15 @@ export default function CustomerOrdersPage() {
 
   // Filters & Pagination State
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
-  const [dateFrom, setDateFrom] = useState<string | undefined>(undefined);
-  const [dateTo, setDateTo] = useState<string | undefined>(undefined);
+  const [dateFrom, setDateFrom] = useState<string | undefined>(() =>
+    format(subDays(new Date(), 6), "yyyy-MM-dd"),
+  );
+  const [dateTo, setDateTo] = useState<string | undefined>(() =>
+    format(new Date(), "yyyy-MM-dd"),
+  );
   const [shippingMethodFilter, setShippingMethodFilter] = useState<string>("ALL");
 
   // Selected Order Detail Modal
@@ -44,7 +48,13 @@ export default function CustomerOrdersPage() {
   // Fetch orders list
   const { data: listData, isLoading } = trpc.customer.orders.list.useQuery({
     search: search.trim() || undefined,
-    status: statusFilter !== "ALL" ? (statusFilter as OrderStatus) : undefined,
+    status: statusFilter && statusFilter !== "ALL" ? (statusFilter as OrderStatus) : undefined,
+    fromDate: dateFrom,
+    toDate: dateTo,
+    shippingMethod:
+      shippingMethodFilter !== "ALL"
+        ? (shippingMethodFilter as "EPACKET" | "EXPRESS")
+        : undefined,
     page,
     perPage,
     sortBy: "createdAt",

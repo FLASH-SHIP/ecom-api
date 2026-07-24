@@ -243,6 +243,9 @@ export const list = authedProcedure
       .object({
         search: z.string().optional(),
         status: orderStatusSchema.optional(),
+        fromDate: z.string().optional(),
+        toDate: z.string().optional(),
+        shippingMethod: z.enum(["EPACKET", "EXPRESS"]).optional(),
         page: z.number().int().positive().default(1),
         perPage: z.number().int().positive().max(100).default(20),
         sortBy: z.enum(["id", "createdAt", "orderCode", "status"]).default("createdAt"),
