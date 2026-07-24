@@ -314,7 +314,7 @@ export default function CustomerOrdersPage() {
           data={listData?.data || []}
           columns={columns}
           isLoading={isLoading}
-          emptyMessage="No orders found. Create your first single order above!"
+          emptyMessage={translate("customerOrder.table.noOrdersFound", currentLocale)}
           enableRowSelection={true}
           selectedRowIds={selectedRowIds}
           onSelectedRowIdsChange={setSelectedRowIds}
@@ -332,7 +332,14 @@ export default function CustomerOrdersPage() {
               setPerPage(val);
               setPage(1);
             }}
-            itemType="orders"
+            renderRangeText={(from, to, total) => (
+              <>
+                {translate("pagination.showing", currentLocale)} {from}-{to}{" "}
+                {translate("pagination.of", currentLocale)}{" "}
+                <span className="text-[#4277DB] font-semibold">{total}</span>{" "}
+                {translate("pagination.orders", currentLocale)}
+              </>
+            )}
           />
         )}
       </Card>

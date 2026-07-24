@@ -69,6 +69,12 @@
     "addFromUrlPlaceholder": "https://example.com/image.jpg",
     "addFromUrlAdd": "Thêm"
   },
+  "pagination": {
+    "showing": "Hiển thị",
+    "of": "trên tổng số",
+    "orders": "đơn hàng",
+    "items": "bản ghi"
+  },
   "auth": {
     "login": "Đăng nhập",
     "logout": "Đăng xuất",
