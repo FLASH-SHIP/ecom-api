@@ -20,6 +20,7 @@ import viCommon from "../locales/vi/common.json";
 import viCustomFields from "../locales/vi/custom-fields.json";
 import viCustomerAuth from "../locales/vi/customer-auth.json";
 import viCustomerDashboard from "../locales/vi/customer-dashboard.json";
+import viCustomerOrder from "../locales/vi/customer-order.json";
 import viCustomerProfile from "../locales/vi/customer-profile.json";
 import viCustomers from "../locales/vi/customers.json";
 import viDeveloper from "../locales/vi/developer.json";
@@ -29,7 +30,6 @@ import viOrders from "../locales/vi/orders.json";
 import viRoles from "../locales/vi/roles.json";
 import viSettings from "../locales/vi/settings.json";
 import viUsers from "../locales/vi/users.json";
-import viCustomerOrder from "../locales/vi/customer-order.json";
 import viCustomerWallet from "../locales/vi/customer-wallet.json";
 
 const messages = {

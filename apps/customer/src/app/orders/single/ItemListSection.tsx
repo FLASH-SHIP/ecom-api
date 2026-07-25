@@ -1,5 +1,7 @@
 "use client";
 
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { TrashIcon } from "@ecom/ui/components/icons";
@@ -16,9 +18,6 @@ import { Plus, Trash2 } from "lucide-react";
 import type { Control, FieldErrors, FieldValues, UseFormRegister } from "react-hook-form";
 import { Controller, useFieldArray } from "react-hook-form";
 import type { OrderFormValues } from "./page";
-
-import { translate } from "@ecom/i18n";
-import { useI18n } from "@ecom/shared/@i18n";
 
 export interface ItemListSectionProps {
   control: Control<OrderFormValues>;
@@ -84,7 +83,10 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                       <Input
                         type="text"
                         required
-                        placeholder={translate("customerOrder.placeholder.itemDescription", currentLocale)}
+                        placeholder={translate(
+                          "customerOrder.placeholder.itemDescription",
+                          currentLocale,
+                        )}
                         {...register(`products.${index}.description` as const)}
                         className={cn(
                           "w-full bg-background/50 h-[52px]",
@@ -104,7 +106,10 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                       <Input
                         type="number"
                         required
-                        placeholder={translate("customerOrder.placeholder.itemQuantity", currentLocale)}
+                        placeholder={translate(
+                          "customerOrder.placeholder.itemQuantity",
+                          currentLocale,
+                        )}
                         {...register(`products.${index}.quantity` as const)}
                         className={cn(
                           "w-full bg-background/50 h-[52px]",
@@ -125,7 +130,10 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                         type="number"
                         step="0.01"
                         required
-                        placeholder={translate("customerOrder.placeholder.itemValue", currentLocale)}
+                        placeholder={translate(
+                          "customerOrder.placeholder.itemValue",
+                          currentLocale,
+                        )}
                         {...register(`products.${index}.value` as const)}
                         className={cn(
                           "w-full bg-background/50 h-[52px]",
@@ -165,7 +173,10 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                         <div className="w-px h-8 bg-[#D9D9D9] shrink-0" />
                         <Input
                           type="text"
-                          placeholder={translate("customerOrder.placeholder.itemHsCode", currentLocale)}
+                          placeholder={translate(
+                            "customerOrder.placeholder.itemHsCode",
+                            currentLocale,
+                          )}
                           {...register(numberId)}
                           className="flex-1 border-0 bg-transparent focus-visible:ring-0 shadow-none focus-visible:ring-offset-0 h-full placeholder:text-muted-foreground"
                         />

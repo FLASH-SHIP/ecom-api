@@ -1,6 +1,7 @@
 "use client";
 
 import { trpc } from "@customer/lib/trpc";
+import { translate } from "@ecom/i18n";
 import {
   validatePostalCode,
   validateReceiverEmail,
@@ -8,6 +9,7 @@ import {
   validateReceiverPhone,
   validateReceiverState,
 } from "@ecom/lib/addressValidator";
+import { useI18n } from "@ecom/shared/@i18n";
 import { ShippingMethod, ShippingOrigin } from "@ecom/types";
 import { Button } from "@ecom/ui/components/button";
 import { Checkbox } from "@ecom/ui/components/checkbox";
@@ -27,8 +29,6 @@ import { ItemListSection } from "./ItemListSection";
 import { PackageInfoSection } from "./PackageInfoSection";
 import { ReceiverSection } from "./ReceiverSection";
 import { SenderSection } from "./SenderSection";
-import { translate } from "@ecom/i18n";
-import { useI18n } from "@ecom/shared/@i18n";
 import { useOrderStore } from "./useOrderStore";
 
 const orderFormSchema = z

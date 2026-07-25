@@ -30,6 +30,9 @@ export const apiEnvSchema = z.object({
     .optional(),
   JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_TOKEN_EXPIRES_IN: z.string().default("30d"),
+  JWT_ACTIVE_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(780),
+  SWAGGER_ADMIN_USER: z.string().default("admin"),
+  SWAGGER_ADMIN_PASSWORD: z.string().default("admin123"),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("debug"),
   LOG_REQUESTS: z
     .preprocess(

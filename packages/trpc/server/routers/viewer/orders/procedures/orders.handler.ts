@@ -1,4 +1,8 @@
 import { getOrderRepository, getOrderService } from "@ecom/features/di/containers/OrderService";
+import {
+  mapToAdminOrderDetailResponse,
+  mapToAdminOrderSummaryResponse,
+} from "@ecom/features/order/mappers/AdminOrderMapper";
 import { Permissions } from "@ecom/lib/permissions";
 import { RedisCache } from "@ecom/lib/redis";
 import type {
@@ -85,7 +89,11 @@ export const list = authedProcedure
   )
   .query(async ({ input }) => {
     const repo = getOrderRepository();
-    return await repo.findMany(input ?? {});
+    const result = await repo.findMany(input ?? {});
+    return {
+      ...result,
+      data: result.data.map(mapToAdminOrderSummaryResponse),
+    };
   });
 
 // 2. Get single order details including logs & checkpoints
@@ -114,14 +122,14 @@ export const get = authedProcedure
       repo.findTrackingCheckpoints(order.id),
     ]);
 
-    const result = {
+    const result = mapToAdminOrderDetailResponse({
       ...order,
       activityLogs,
       trackingCheckpoints,
-    };
+    });
 
     // Cache the result
-    await orderCache.set(input.id, result);
+    await orderCache.set(input.id, result as any);
 
     return result;
   });
