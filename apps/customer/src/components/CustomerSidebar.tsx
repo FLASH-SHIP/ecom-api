@@ -220,6 +220,16 @@ export function CustomerSidebar({
         },
       ],
     },
+    {
+      title: translate("customerDashboard.sidebar.payment", currentLocale),
+      items: [
+        {
+          label: translate("customerDashboard.sidebar.wallet", currentLocale),
+          href: "/wallet",
+          icon: NotepadTextIcon,
+        },
+      ],
+    },
   ];
 
   if (isDrawer) {
