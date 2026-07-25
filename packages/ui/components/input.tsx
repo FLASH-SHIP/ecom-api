@@ -25,7 +25,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             type={showPassword ? "text" : "password"}
             className={cn(
-              "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 lg:h-10 xl:h-11 2xl:h-[52px] w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:focus-visible:ring-destructive transition-colors duration-200",
+              "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 lg:h-10 xl:h-11 2xl:h-[52px] w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm 2xl:text-xl placeholder:text-sm 2xl:placeholder:text-xl text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:focus-visible:ring-destructive transition-colors duration-200",
               className,
             )}
             ref={ref}
@@ -66,7 +66,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 lg:h-10 xl:h-11 2xl:h-[52px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:focus-visible:ring-destructive transition-colors duration-200",
+          "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 lg:h-10 xl:h-11 2xl:h-[52px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm 2xl:text-xl placeholder:text-sm 2xl:placeholder:text-xl text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:focus-visible:ring-destructive transition-colors duration-200",
           className,
         )}
         ref={ref}

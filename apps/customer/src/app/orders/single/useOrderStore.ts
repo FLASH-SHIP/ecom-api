@@ -17,7 +17,6 @@ interface OrderStoreState {
     detailDescription: string;
     declaredValue: string;
     sellerOrderId: string;
-    totalPackets: string;
     senderName: string;
     senderPhone: string;
     senderEmail: string;
@@ -68,7 +67,6 @@ const initialValues: OrderStoreState["values"] = {
   detailDescription: "",
   declaredValue: "",
   sellerOrderId: "",
-  totalPackets: "1",
   senderName: "",
   senderPhone: "",
   senderEmail: "",

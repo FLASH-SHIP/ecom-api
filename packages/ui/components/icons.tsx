@@ -8,6 +8,7 @@ export { ChevronsLeftIcon } from "./icon-component/ChevronsLeftIcon";
 export { ChevronsRightIcon } from "./icon-component/ChevronsRightIcon";
 export { CirclePlusIcon } from "./icon-component/CirclePlusIcon";
 export { CloseIcon } from "./icon-component/CloseIcon";
+export { ExportFileIcon } from "./icon-component/ExportFileIcon";
 export { FacebookIcon } from "./icon-component/FacebookIcon";
 export { FileInputIcon } from "./icon-component/FileInputIcon";
 export { GoogleIcon } from "./icon-component/GoogleIcon";

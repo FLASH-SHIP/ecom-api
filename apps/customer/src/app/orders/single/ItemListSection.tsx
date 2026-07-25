@@ -17,6 +17,9 @@ import type { Control, FieldErrors, FieldValues, UseFormRegister } from "react-h
 import { Controller, useFieldArray } from "react-hook-form";
 import type { OrderFormValues } from "./page";
 
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
+
 export interface ItemListSectionProps {
   control: Control<OrderFormValues>;
   register: UseFormRegister<OrderFormValues>;
@@ -24,6 +27,7 @@ export interface ItemListSectionProps {
 }
 
 export function ItemListSection({ control, register, errors }: ItemListSectionProps) {
+  const { languageId: currentLocale } = useI18n();
   const controlParent = control as unknown as Control<OrderFormValues>;
   const registerParent = register as unknown as UseFormRegister<OrderFormValues>;
   const errorsParent = errors as unknown as FieldErrors<OrderFormValues>;
@@ -37,7 +41,9 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
       <div className="flex items-center px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">Item List</h3>
+        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">
+          {translate("customerOrder.single.itemList", currentLocale)}
+        </h3>
       </div>
 
       {/* Body */}
@@ -53,7 +59,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
               >
                 <div className="flex items-center w-full gap-2">
                   <h4 className="text-base 2xl:text-xl font-semibold text-[#232323]">
-                    Item {index + 1}
+                    {translate("customerOrder.single.item", currentLocale)} {index + 1}
                   </h4>
                   {fields.length > 1 && (
                     <Button
@@ -72,12 +78,13 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                     {/* Details Description */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="text-[#232323] text-sm md:text-base font-medium">
-                        Details Description <span className="text-destructive">*</span>
+                        {translate("customerOrder.single.detailsDescription", currentLocale)}{" "}
+                        <span className="text-destructive">*</span>
                       </FieldLabel>
                       <Input
                         type="text"
                         required
-                        placeholder="Enter details description"
+                        placeholder={translate("customerOrder.placeholder.itemDescription", currentLocale)}
                         {...register(`products.${index}.description` as const)}
                         className={cn(
                           "w-full bg-background/50 h-[52px]",
@@ -91,12 +98,13 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                     {/* Quantity */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="text-[#232323] text-sm md:text-base font-medium">
-                        Quantity <span className="text-destructive">*</span>
+                        {translate("customerOrder.single.quantity", currentLocale)}{" "}
+                        <span className="text-destructive">*</span>
                       </FieldLabel>
                       <Input
                         type="number"
                         required
-                        placeholder="Enter quantity"
+                        placeholder={translate("customerOrder.placeholder.itemQuantity", currentLocale)}
                         {...register(`products.${index}.quantity` as const)}
                         className={cn(
                           "w-full bg-background/50 h-[52px]",
@@ -110,13 +118,14 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                     {/* Value */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="text-[#232323] text-sm md:text-base font-medium">
-                        Value <span className="text-destructive">*</span>
+                        {translate("customerOrder.single.declaredValueUsd", currentLocale)}{" "}
+                        <span className="text-destructive">*</span>
                       </FieldLabel>
                       <Input
                         type="number"
                         step="0.01"
                         required
-                        placeholder="Enter value"
+                        placeholder={translate("customerOrder.placeholder.itemValue", currentLocale)}
                         {...register(`products.${index}.value` as const)}
                         className={cn(
                           "w-full bg-background/50 h-[52px]",
@@ -130,7 +139,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                     {/* HS Code */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="text-[#232323] text-sm md:text-base font-medium">
-                        HS Code
+                        {translate("customerOrder.single.hsCode", currentLocale)}
                       </FieldLabel>
                       <div
                         className={cn(
@@ -156,7 +165,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                         <div className="w-px h-8 bg-[#D9D9D9] shrink-0" />
                         <Input
                           type="text"
-                          placeholder="Enter HS code number"
+                          placeholder={translate("customerOrder.placeholder.itemHsCode", currentLocale)}
                           {...register(numberId)}
                           className="flex-1 border-0 bg-transparent focus-visible:ring-0 shadow-none focus-visible:ring-offset-0 h-full placeholder:text-muted-foreground"
                         />
@@ -194,7 +203,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
             className="h-[52px] px-2.5 rounded-[10px] border border-[#E5E5E5] text-[#0A0A0A] text-base font-semibold bg-white hover:bg-muted/30 flex items-center gap-2 cursor-pointer shadow-sm w-fit"
           >
             <Plus className="h-5 w-5 text-[#0A0A0A]" />
-            Add Item
+            {translate("customerOrder.single.addItem", currentLocale)}
           </Button>
         </div>
       </div>

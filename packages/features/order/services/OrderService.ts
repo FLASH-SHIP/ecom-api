@@ -4,7 +4,8 @@ import { ErrorCode } from "@ecom/lib/errorCodes";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import {
   type ActorType,
-  type OrderStatus,
+  LabelStatus,
+  OrderStatus,
   prisma,
   runInTransaction,
   type ShippingMethod,
@@ -38,7 +39,6 @@ export interface CreateOrderParams {
   shippingMethod: ShippingMethod;
   shippingOrigin?: ShippingOrigin;
   sellerOrderId?: string | null;
-  totalPackets?: number;
   importId?: string | null;
 
   // Sender info
@@ -299,6 +299,14 @@ export class OrderService {
     }
 
     // 4. Construct create input
+    const isGetLabelChecked = params.isGetLabel === 1;
+    const initialOrderStatus: OrderStatus = isGetLabelChecked
+      ? OrderStatus.LABEL_CREATED
+      : OrderStatus.PENDING_LABEL;
+    const initialLabelStatus: LabelStatus = isGetLabelChecked
+      ? LabelStatus.SUCCESS
+      : LabelStatus.PENDING_LABEL;
+
     const dimensionText =
       dimensionLength && dimensionWidth && dimensionHeight
         ? `${dimensionLength}x${dimensionWidth}x${dimensionHeight}`
@@ -308,15 +316,14 @@ export class OrderService {
       orderCode,
       customerId,
       importId: params.importId,
-      status: "DRAFT",
-      labelStatus: "PENDING_LABEL",
+      status: initialOrderStatus,
+      labelStatus: initialLabelStatus,
       exportCustomsStatus: "PENDING",
       importCustomsStatus: "PENDING",
       paymentStatus: "INIT",
       shippingMethod,
       shippingOrigin,
       sellerOrderId,
-      totalPackets: params.totalPackets ?? 1,
 
       senderName: params.senderName,
       senderAddress: params.senderAddress,
@@ -396,8 +403,10 @@ export class OrderService {
         orderId: createdOrder.id,
         action: "STATUS_CHANGE",
         statusFrom: null,
-        statusTo: "DRAFT",
-        description: "Đơn hàng nháp được tạo thành công",
+        statusTo: initialOrderStatus,
+        description: isGetLabelChecked
+          ? "Đơn hàng được tạo thành công và đã tạo nhãn (Label Created)"
+          : "Đơn hàng được tạo thành công (Pending Label)",
         actorType: "CUSTOMER",
         actorId: actorInfo.actorId,
         actorName: actorInfo.actorName,

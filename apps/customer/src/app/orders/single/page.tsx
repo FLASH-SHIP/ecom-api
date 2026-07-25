@@ -27,6 +27,8 @@ import { ItemListSection } from "./ItemListSection";
 import { PackageInfoSection } from "./PackageInfoSection";
 import { ReceiverSection } from "./ReceiverSection";
 import { SenderSection } from "./SenderSection";
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import { useOrderStore } from "./useOrderStore";
 
 const orderFormSchema = z
@@ -42,13 +44,6 @@ const orderFormSchema = z
         "Trị giá hàng hóa phải lớn hơn 0.",
       ),
     sellerOrderId: z.string().optional(),
-    totalPackets: z
-      .string()
-      .min(1, "Vui lòng nhập tổng số gói.")
-      .refine(
-        (val) => !Number.isNaN(Number(val)) && Number(val) > 0,
-        "Tổng số gói phải lớn hơn 0.",
-      ),
 
     // Sender Info
     senderName: z.string().min(1, "Vui lòng nhập tên người gửi."),
@@ -169,6 +164,7 @@ export type OrderFormValues = z.infer<typeof orderFormSchema>;
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: single order creation form complexity
 export default function CreateSingleOrderPage() {
+  const { languageId: currentLocale } = useI18n();
   const router = useRouter();
   const trpcContext = trpc.useUtils();
   const { toast } = useToast();
@@ -206,7 +202,6 @@ export default function CreateSingleOrderPage() {
       detailDescription: "",
       declaredValue: "",
       sellerOrderId: "",
-      totalPackets: "1",
       senderName: "",
       senderPhone: "",
       senderEmail: "",
@@ -467,7 +462,6 @@ export default function CreateSingleOrderPage() {
       declaredValue,
       packingTypeId,
       packageName,
-      totalPackets,
       products,
     } = formValues;
 
@@ -476,7 +470,6 @@ export default function CreateSingleOrderPage() {
         shippingMethod,
         shippingOrigin,
         sellerOrderId: sellerOrderId || null,
-        totalPackets: Number(totalPackets) || 1,
         importId: null,
 
         senderName,
@@ -493,7 +486,7 @@ export default function CreateSingleOrderPage() {
         receiverPhone: receiverPhone || null,
         receiverEmail,
         receiverCity: receiverCityName || receiverCity,
-        receiverState: receiverStateName || receiverState,
+        receiverState,
         receiverAddress1,
         receiverAddress2: receiverAddress2 || null,
         receiverCountry,
@@ -675,14 +668,16 @@ export default function CreateSingleOrderPage() {
     } = storeValues;
 
     const displayReceiverCity = receiverCityName || receiverCity;
-    const displayReceiverState = receiverStateName || receiverState;
+    const displayReceiverState = receiverState || receiverStateName;
     const displaySenderCity = senderCityName || senderCity;
     const displaySenderWard = senderWardName || senderWard;
 
     // Render Step 2: Review & Payment
     return (
       <div className="flex flex-col gap-6 w-full pb-10">
-        <div className="title-page-content text-2xl font-bold text-[#232323]">Review & Payment</div>
+        <div className="title-page-content text-2xl font-bold text-[#232323]">
+          {translate("customerOrder.single.reviewPaymentTitle", currentLocale)}
+        </div>
 
         {error && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
@@ -767,9 +762,9 @@ export default function CreateSingleOrderPage() {
                 htmlFor="get-label"
                 className="text-sm 2xl:text-xl font-medium text-[#232323] cursor-pointer flex items-baseline gap-1.5"
               >
-                Get Label{" "}
+                {translate("customerOrder.single.getLabel", currentLocale)}{" "}
                 <span className="text-sm 2xl:text-base text-[#7B7B7B] font-normal">
-                  Description
+                  {translate("customerOrder.single.descriptionLabel", currentLocale)}
                 </span>
               </label>
             </div>
@@ -782,7 +777,7 @@ export default function CreateSingleOrderPage() {
                 disabled={createOrderMutation.isPending}
                 className="h-12 border-[#DADADA] bg-[#FDFFFF] text-[#232323] hover:bg-slate-50 font-medium rounded-lg text-base"
               >
-                Back
+                {translate("customerOrder.single.back", currentLocale)}
               </Button>
               <Button
                 onClick={handleCreateOrder}
@@ -792,7 +787,7 @@ export default function CreateSingleOrderPage() {
                 {createOrderMutation.isPending && (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
                 )}
-                Create Order
+                {translate("customerOrder.single.createOrder", currentLocale)}
               </Button>
             </div>
           </div>
@@ -805,7 +800,7 @@ export default function CreateSingleOrderPage() {
   return (
     <div className="flex flex-col gap-6 w-full pb-10">
       <div className="title-page-content text-2xl font-bold text-foreground">
-        Create a Single Order
+        {translate("customerOrder.single.title", currentLocale)}
       </div>
 
       {error && (
@@ -876,7 +871,7 @@ export default function CreateSingleOrderPage() {
             {loading && (
               <span className="animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
             )}
-            Get Rates
+            {translate("customerOrder.single.getRates", currentLocale)}
           </Button>
         </div>
       </form>

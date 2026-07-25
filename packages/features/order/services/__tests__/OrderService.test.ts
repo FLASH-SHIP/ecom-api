@@ -1,10 +1,13 @@
 import type { RateCardService } from "@ecom/features/rate-card/services/RateCardService";
+import { LabelStatus, OrderStatus } from "@ecom/prisma";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { OrderRepository } from "../../repositories/OrderRepository";
 import { OrderService } from "../OrderService";
 
-vi.mock("@ecom/prisma", () => {
+vi.mock("@ecom/prisma", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@ecom/prisma")>();
   return {
+    ...actual,
     prisma: {
       customer: {
         findUnique: vi.fn(),
@@ -24,7 +27,7 @@ vi.mock("@ecom/prisma", () => {
         create: vi.fn(),
       },
     },
-    runInTransaction: (work: () => any) => work(),
+    runInTransaction: (work: () => unknown) => work(),
   };
 });
 
@@ -95,7 +98,7 @@ describe("OrderService", () => {
     it("should throw error if declared weight is 0 or negative", async () => {
       await expect(
         service.calculateOrderFreight({
-          customerId: 1,
+          customerId: "cust_1",
           shippingMethod: "EPACKET",
           country: "US",
           declaredWeight: 0,
@@ -110,7 +113,7 @@ describe("OrderService", () => {
       });
 
       const res = await service.calculateOrderFreight({
-        customerId: 1,
+        customerId: "cust_1",
         shippingMethod: "EPACKET",
         country: "US",
         declaredWeight: 1500, // 1.5kg
@@ -120,7 +123,7 @@ describe("OrderService", () => {
       });
 
       expect(rateCardServiceMock.calculateFreight).toHaveBeenCalledWith({
-        customerId: 1,
+        customerId: "cust_1",
         shippingMethod: "EPACKET",
         country: "US",
         weight: 1.5,
@@ -148,7 +151,7 @@ describe("OrderService", () => {
 
       await expect(
         service.createOrder({
-          customerId: 1,
+          customerId: "cust_1",
           shippingMethod: "EPACKET",
           receiverName: "John Doe",
           receiverCity: "LA",
@@ -183,7 +186,7 @@ describe("OrderService", () => {
       });
 
       const res = await service.createOrder({
-        customerId: 1,
+        customerId: "cust_1",
         shippingMethod: "EPACKET",
         receiverName: "John Doe",
         receiverCity: "LA",
@@ -197,17 +200,71 @@ describe("OrderService", () => {
         sellerOrderId: "SHOP1002",
       });
 
-      expect(orderRepoMock.create).toHaveBeenCalled();
+      expect(orderRepoMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: OrderStatus.PENDING_LABEL,
+          labelStatus: LabelStatus.PENDING_LABEL,
+        }),
+      );
       expect(orderRepoMock.createActivityLog).toHaveBeenCalledWith(
         expect.objectContaining({
           orderId: "new_order_id",
           action: "STATUS_CHANGE",
-          statusTo: "DRAFT",
-          description: "Đơn hàng nháp được tạo thành công",
+          statusTo: OrderStatus.PENDING_LABEL,
+          description: "Đơn hàng được tạo thành công (Pending Label)",
         }),
       );
       expect(res.id).toBe("new_order_id");
       expect(res.totalFee).toBe(25.0);
+    });
+
+    it("should set status to LABEL_CREATED if isGetLabel is 1", async () => {
+      rateCardServiceMock.calculateFreight.mockResolvedValue({
+        freightCost: 25.0,
+        appliedRateCardId: 5,
+      });
+
+      orderRepoMock.findByCode.mockResolvedValue(null);
+      orderRepoMock.findBySellerOrderId.mockResolvedValue(null);
+      orderRepoMock.create.mockResolvedValue({
+        id: "new_order_id_2",
+        orderCode: "TEST260711ABCDEFGH2",
+        status: OrderStatus.LABEL_CREATED,
+        totalFee: 25.0,
+        createdAt: new Date(),
+      });
+
+      const res = await service.createOrder({
+        customerId: "cust_1",
+        shippingMethod: "EPACKET",
+        receiverName: "John Doe",
+        receiverCity: "LA",
+        receiverState: "CA",
+        receiverAddress1: "123 St",
+        receiverCountry: "US",
+        receiverZipCode: "90001",
+        detailDescription: "Shoes",
+        declaredWeight: 1000,
+        declaredValue: 50,
+        sellerOrderId: "SHOP1003",
+        isGetLabel: 1,
+      });
+
+      expect(orderRepoMock.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: OrderStatus.LABEL_CREATED,
+          labelStatus: LabelStatus.SUCCESS,
+        }),
+      );
+      expect(orderRepoMock.createActivityLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderId: "new_order_id_2",
+          action: "STATUS_CHANGE",
+          statusTo: OrderStatus.LABEL_CREATED,
+          description: "Đơn hàng được tạo thành công và đã tạo nhãn (Label Created)",
+        }),
+      );
+      expect(res.id).toBe("new_order_id_2");
     });
   });
 
@@ -215,25 +272,29 @@ describe("OrderService", () => {
     it("should transition status and write activity log", async () => {
       orderRepoMock.findById.mockResolvedValue({
         id: "order_123",
-        status: "DRAFT",
+        status: OrderStatus.PENDING_LABEL,
       });
 
       orderRepoMock.update.mockResolvedValue({
         id: "order_123",
-        status: "WAITING_FOR_PICKUP",
+        status: OrderStatus.LABEL_CREATED,
       });
 
-      const res = await service.updateOrderStatus("order_123", "WAITING_FOR_PICKUP", "operator_1");
+      const res = await service.updateOrderStatus(
+        "order_123",
+        OrderStatus.LABEL_CREATED,
+        "operator_1",
+      );
 
       expect(orderRepoMock.update).toHaveBeenCalledWith("order_123", {
-        status: "WAITING_FOR_PICKUP",
+        status: OrderStatus.LABEL_CREATED,
       });
       expect(orderRepoMock.createActivityLog).toHaveBeenCalledWith({
         orderId: "order_123",
         action: "STATUS_CHANGE",
-        statusFrom: "DRAFT",
-        statusTo: "WAITING_FOR_PICKUP",
-        description: "Trạng thái đơn hàng chuyển đổi từ DRAFT sang WAITING_FOR_PICKUP",
+        statusFrom: OrderStatus.PENDING_LABEL,
+        statusTo: OrderStatus.LABEL_CREATED,
+        description: `Trạng thái đơn hàng chuyển đổi từ ${OrderStatus.PENDING_LABEL} sang ${OrderStatus.LABEL_CREATED}`,
         metadata: null,
         actorType: "OPERATOR",
         actorId: "operator_1",
@@ -242,35 +303,35 @@ describe("OrderService", () => {
         actorEmail: null,
       });
 
-      expect(res.status).toBe("WAITING_FOR_PICKUP");
+      expect(res.status).toBe(OrderStatus.LABEL_CREATED);
     });
 
     it("should pass expectedVersion to repository update", async () => {
       orderRepoMock.findById.mockResolvedValue({
         id: "order_123",
-        status: "DRAFT",
+        status: OrderStatus.PENDING_LABEL,
         version: 2,
       });
 
       orderRepoMock.update.mockResolvedValue({
         id: "order_123",
-        status: "WAITING_FOR_PICKUP",
+        status: OrderStatus.LABEL_CREATED,
         version: 3,
       });
 
       const res = await service.updateOrderStatus(
         "order_123",
-        "WAITING_FOR_PICKUP",
+        OrderStatus.LABEL_CREATED,
         "operator_1",
         null,
         2,
       );
 
       expect(orderRepoMock.update).toHaveBeenCalledWith("order_123", {
-        status: "WAITING_FOR_PICKUP",
+        status: OrderStatus.LABEL_CREATED,
         expectedVersion: 2,
       });
-      expect(res.status).toBe("WAITING_FOR_PICKUP");
+      expect(res.status).toBe(OrderStatus.LABEL_CREATED);
     });
   });
 

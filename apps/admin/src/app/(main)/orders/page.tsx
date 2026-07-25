@@ -47,30 +47,32 @@ interface OrderRow extends Record<string, unknown> {
   } | null;
 }
 
-const getStatusBadge = (status: OrderStatus, t: (key: string) => string) => {
+const getStatusBadge = (status: string, t: (key: string) => string) => {
   switch (status) {
-    case "DRAFT":
+    case "LABEL_CREATED":
       return <Badge variant="secondary">{t(`status.${status}`)}</Badge>;
-    case "LABEL_NOT_CREATED":
+    case "PENDING_LABEL":
       return <Badge variant="warning">{t(`status.${status}`)}</Badge>;
-    case "WAITING_FOR_PICKUP":
+    case "PACKAGE_RECEIVED":
       return (
         <Badge variant="default" className="bg-[#0F798C] text-white border-none">
           {t(`status.${status}`)}
         </Badge>
       );
-    case "PICKED_UP":
+    case "ON_THE_WAY":
       return (
         <Badge variant="default" className="bg-blue-500 text-white border-none">
           {t(`status.${status}`)}
         </Badge>
       );
-    case "DELIVERED":
+    case "PICK_UP":
+      return (
+        <Badge variant="default" className="bg-amber-500 text-white border-none">
+          {t(`status.${status}`)}
+        </Badge>
+      );
+    case "DELIVERY":
       return <Badge variant="success">{t(`status.${status}`)}</Badge>;
-    case "CANCELLED":
-      return <Badge variant="destructive">{t(`status.${status}`)}</Badge>;
-    case "EXCEPTION":
-      return <Badge variant="destructive">{t(`status.${status}`)}</Badge>;
     default:
       return <Badge variant="default">{t(`status.${status}`)}</Badge>;
   }
@@ -195,17 +197,12 @@ export default function AdminOrdersPage() {
         type: "select",
         operators: [{ value: "equals", label: "equals" }],
         options: [
-          { value: "DRAFT", label: t("status.DRAFT") },
-          { value: "LABEL_NOT_CREATED", label: t("status.LABEL_NOT_CREATED") },
-          { value: "WAITING_FOR_PICKUP", label: t("status.WAITING_FOR_PICKUP") },
-          { value: "PICKED_UP", label: t("status.PICKED_UP") },
-          {
-            value: "RECEIVED_AT_ORIGIN_WAREHOUSE",
-            label: t("status.RECEIVED_AT_ORIGIN_WAREHOUSE"),
-          },
-          { value: "DELIVERED", label: t("status.DELIVERED") },
-          { value: "CANCELLED", label: t("status.CANCELLED") },
-          { value: "EXCEPTION", label: t("status.EXCEPTION") },
+          { value: "LABEL_CREATED", label: t("status.LABEL_CREATED") },
+          { value: "PENDING_LABEL", label: t("status.PENDING_LABEL") },
+          { value: "PACKAGE_RECEIVED", label: t("status.PACKAGE_RECEIVED") },
+          { value: "ON_THE_WAY", label: t("status.ON_THE_WAY") },
+          { value: "PICK_UP", label: t("status.PICK_UP") },
+          { value: "DELIVERY", label: t("status.DELIVERY") },
         ],
       },
       {

@@ -1,14 +1,14 @@
 "use client";
 
+import TagOrderStatus from "@customer/app/orders/components/TagOrderStatus";
+import { OrderStatus } from "@customer/app/orders/constants/enums";
 import { trpc } from "@customer/lib/trpc";
 import { translate } from "@ecom/i18n";
-import type { OrderStatus } from "@ecom/prisma";
 import { useI18n } from "@ecom/shared/@i18n";
 import { getShippingMethodLabel, getShippingOriginLabel } from "@ecom/types";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
 import { Card } from "@ecom/ui/components/card";
-import { DateRangePicker } from "@ecom/ui/components/date-range-picker";
 import {
   Dialog,
   DialogContent,
@@ -16,21 +16,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@ecom/ui/components/dialog";
-import { ThreeDotsVerticalIcon } from "@ecom/ui/components/icons";
-import { Input } from "@ecom/ui/components/input";
-import { PaginationBase } from "@ecom/ui/components/pagination-base";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ecom/ui/components/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@ecom/ui/components/dropdown-menu";
+import { ThreeDotsVerticalIcon } from "@ecom/ui/components/icons";
+import { PaginationBase } from "@ecom/ui/components/pagination-base";
 import { TableBase } from "@ecom/ui/components/table-base";
-import { format } from "date-fns";
-import { Download, Search } from "lucide-react";
+import { format, subDays } from "date-fns";
 import NextLink from "next/link";
 import { useState } from "react";
+import { OrderFilterBar } from "./components/OrderFilterBar";
+import { downloadBase64File } from "./utils/export-excel";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: customer orders list and detail modal
 export default function CustomerOrdersPage() {
@@ -38,12 +37,14 @@ export default function CustomerOrdersPage() {
 
   // Filters & Pagination State
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
-  const [dateFrom, setDateFrom] = useState<string | undefined>(undefined);
-  const [dateTo, setDateTo] = useState<string | undefined>(undefined);
-  const [shippingMethodFilter, setShippingMethodFilter] = useState<string>("ALL");
+  const [dateFrom, setDateFrom] = useState<string | undefined>(() =>
+    format(subDays(new Date(), 6), "yyyy-MM-dd"),
+  );
+  const [dateTo, setDateTo] = useState<string | undefined>(() => format(new Date(), "yyyy-MM-dd"));
+  const [shippingMethodFilter, setShippingMethodFilter] = useState<string>("");
 
   // Selected Order Detail Modal
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -52,12 +53,44 @@ export default function CustomerOrdersPage() {
   // Fetch orders list
   const { data: listData, isLoading } = trpc.customer.orders.list.useQuery({
     search: search.trim() || undefined,
-    status: statusFilter !== "ALL" ? (statusFilter as OrderStatus) : undefined,
+    status: statusFilter && statusFilter !== "ALL" ? (statusFilter as OrderStatus) : undefined,
+    fromDate: dateFrom,
+    toDate: dateTo,
+    shippingMethod:
+      shippingMethodFilter && shippingMethodFilter !== "ALL"
+        ? (shippingMethodFilter as "EPACKET" | "EXPRESS")
+        : undefined,
     page,
     perPage,
     sortBy: "createdAt",
     sortOrder: "desc",
   });
+
+  // Export Excel Backend Mutation
+  const exportExcelMutation = trpc.customer.orders.exportExcel.useMutation({
+    onSuccess: (res) => {
+      if (res?.fileData && res?.filename) {
+        downloadBase64File(res.filename, res.fileData);
+      }
+    },
+  });
+
+  const handleExport = () => {
+    exportExcelMutation.mutate({
+      search: search.trim() || undefined,
+      status: statusFilter && statusFilter !== "ALL" ? (statusFilter as OrderStatus) : undefined,
+      fromDate: dateFrom,
+      toDate: dateTo,
+      shippingMethod:
+        shippingMethodFilter && shippingMethodFilter !== "ALL"
+          ? (shippingMethodFilter as "EPACKET" | "EXPRESS")
+          : undefined,
+      page,
+      perPage,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
+  };
 
   // Fetch selected order detail securely
   const { data: orderDetails, isLoading: isLoadingDetails } = trpc.customer.orders.get.useQuery(
@@ -67,28 +100,30 @@ export default function CustomerOrdersPage() {
 
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
-      case "DRAFT":
-        return <Badge variant="secondary">Draft</Badge>;
-      case "LABEL_NOT_CREATED":
-        return <Badge variant="warning">Label Not Created</Badge>;
-      case "WAITING_FOR_PICKUP":
+      case "LABEL_CREATED":
         return (
           <Badge variant="default" className="bg-[#0F798C] text-white">
             Label Created
           </Badge>
         );
-      case "PICKED_UP":
+      case "PENDING_LABEL":
+        return <Badge variant="warning">Pending Label</Badge>;
+      case "PACKAGE_RECEIVED":
+        return <Badge variant="secondary">Package Received</Badge>;
+      case "ON_THE_WAY":
         return (
-          <Badge variant="default" className="bg-blue-500 text-white">
-            Picked Up
+          <Badge variant="default" className="bg-[#0F798C] text-white">
+            On the Way
           </Badge>
         );
-      case "DELIVERED":
-        return <Badge variant="success">Delivered</Badge>;
-      case "CANCELLED":
-        return <Badge variant="destructive">Cancelled</Badge>;
-      case "EXCEPTION":
-        return <Badge variant="destructive">Exception</Badge>;
+      case "PICK_UP":
+        return (
+          <Badge variant="default" className="bg-blue-500 text-white">
+            Pick Up
+          </Badge>
+        );
+      case "DELIVERY":
+        return <Badge variant="success">Delivery</Badge>;
       default:
         return <Badge variant="default">{status}</Badge>;
     }
@@ -101,7 +136,7 @@ export default function CustomerOrdersPage() {
   type OrderType = NonNullable<typeof listData>["data"][number];
   const columns = [
     {
-      header: "Time",
+      header: translate("customerOrder.table.time", currentLocale),
       width: 120,
       sortable: true,
       sortKey: "createdAt",
@@ -113,7 +148,7 @@ export default function CustomerOrdersPage() {
       ),
     },
     {
-      header: "Reception",
+      header: translate("customerOrder.table.reception", currentLocale),
       width: 320,
       sortable: true,
       sortKey: "receiverName",
@@ -136,28 +171,28 @@ export default function CustomerOrdersPage() {
       ),
     },
     {
-      header: "Status",
-      width: 100,
-      cell: () => <span></span>,
+      header: translate("customerOrder.placeholder.status", currentLocale),
+      width: 135,
+      cell: (order: OrderType) => <TagOrderStatus status={order.status} />,
     },
     {
-      header: "Order ID",
+      header: translate("customerOrder.table.orderId", currentLocale),
       width: 180,
       sortable: true,
       sortKey: "orderCode",
       cell: (order: OrderType) => (
-        <span className="font-semibold text-[#0F798C] hover:underline cursor-pointer">
+        <span className="font-medium text-[#0F798C] hover:underline cursor-pointer">
           <NextLink href={`/orders/${order.id}`}>{order.orderCode}</NextLink>
         </span>
       ),
     },
     {
-      header: "Fee",
+      header: translate("customerOrder.table.fee", currentLocale),
       width: 100,
       sortable: true,
       sortKey: "baseShippingFee",
       cell: (order: OrderType) => (
-        <span className="font-semibold text-foreground">
+        <span className="font-medium text-foreground">
           $
           {order.baseShippingFee
             ? (Number(order.baseShippingFee) + Number(order.surchargeFee || 0)).toFixed(2)
@@ -166,34 +201,70 @@ export default function CustomerOrdersPage() {
       ),
     },
     {
-      header: "Shipping Methods",
+      header: translate("customerOrder.placeholder.shippingMethod", currentLocale),
       width: 160,
-      cell: (order: OrderType) => <span>{getShippingMethodLabel(order?.shippingMethod)}</span>,
+      cell: (order: OrderType) => (
+        <span className={"font-medium text-foreground"}>
+          {getShippingMethodLabel(order?.shippingMethod)}
+        </span>
+      ),
     },
     {
-      header: "Tracking number",
+      header: translate("customerOrder.table.trackingNumber", currentLocale),
       width: 180,
       sortable: true,
       sortKey: "ecomTrackingNumber",
-      cell: (order: OrderType) => <span>{order?.ecomTrackingNumber}</span>,
+      cell: (order: OrderType) => (
+        <span className={"font-medium text-foreground"}>{order?.ecomTrackingNumber}</span>
+      ),
     },
     {
-      header: "Action",
+      header: translate("customerOrder.table.action", currentLocale),
       width: 80,
       fixed: "right" as const,
       headerClassName: "text-center",
       className: "text-center",
       cell: (order: OrderType) => (
-        <NextLink href={`/orders/${order.id}`}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hover:bg-accent text-primary h-8 w-8 rounded-lg cursor-pointer"
-            title="View tracking and details"
-          >
-            <ThreeDotsVerticalIcon />
-          </Button>
-        </NextLink>
+        <div onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-accent text-primary h-8 w-8 rounded-lg cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=open]:ring-0 data-[state=open]:outline-none"
+                title="Actions"
+              >
+                <ThreeDotsVerticalIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-36 bg-white dark:bg-zinc-900 border border-border shadow-md rounded-lg p-1 z-30"
+            >
+              {order?.status === OrderStatus.PENDING_LABEL && (
+                <DropdownMenuItem
+                  disabled={true}
+                  className="px-3 py-2 text-sm text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Handle Get Label action
+                  }}
+                >
+                  {translate("customerOrder.getLabels", currentLocale)}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                disabled={true}
+                className="px-3 py-2 text-sm text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                {translate("customerOrder.edit", currentLocale)}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       ),
     },
   ];
@@ -202,102 +273,47 @@ export default function CustomerOrdersPage() {
     <div className="flex flex-col gap-4 w-full pb-10">
       <div className="flex justify-between items-center">
         <h1 className="title-page-content text-2xl font-bold text-foreground">
-          {translate("orders.orderList", currentLocale)}
+          {translate("customerOrder.orderList", currentLocale)}
         </h1>
       </div>
 
       {/* Filters Section */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-start w-full">
-        {/* Left Filters */}
-        <div className="flex flex-col md:flex-row flex-wrap items-stretch md:items-center gap-4 flex-1">
-          {/* Search Input */}
-          <div className="relative w-full lg:w-[415px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7B7B7B]" />
-            <Input
-              type="text"
-              placeholder="Search by Reception/Order ID/Tracking Number"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="h-[52px] pl-11 pr-4 border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs focus-visible:ring-1 focus-visible:ring-[#0F798C] placeholder:text-[#7B7B7B] placeholder:text-sm lg:placeholder:text-[15px]"
-            />
-          </div>
-
-          {/* Date Picker */}
-          <DateRangePicker
-            valueFrom={dateFrom}
-            valueTo={dateTo}
-            onChange={(from, to) => {
-              setDateFrom(from);
-              setDateTo(to);
-              setPage(1);
-            }}
-            onClear={() => {
-              setDateFrom(undefined);
-              setDateTo(undefined);
-              setPage(1);
-            }}
-            placeholder="01/06/2024 - 30/06/2024"
-            className="h-[52px] border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs text-[#232323] px-4 py-3 gap-2 w-full md:w-auto"
-          />
-
-          {/* Status Dropdown */}
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => {
-              setStatusFilter(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="h-[52px] min-w-[120px] md:w-auto border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Status</SelectItem>
-              <SelectItem value="DRAFT">Draft</SelectItem>
-              <SelectItem value="LABEL_NOT_CREATED">Label Not Created</SelectItem>
-              <SelectItem value="WAITING_FOR_PICKUP">Label Created</SelectItem>
-              <SelectItem value="PICKED_UP">Picked Up</SelectItem>
-              <SelectItem value="DELIVERED">Delivered</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              <SelectItem value="EXCEPTION">Exception</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Shipping Methods Dropdown */}
-          <Select
-            value={shippingMethodFilter}
-            onValueChange={(val) => {
-              setShippingMethodFilter(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="h-[52px] min-w-[180px] md:w-auto border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
-              <SelectValue placeholder="Shipping Methods" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">Shipping Methods</SelectItem>
-              <SelectItem value="EPACKET">ePacket</SelectItem>
-              <SelectItem value="USPS">USPS</SelectItem>
-              <SelectItem value="FEDEX">FedEx</SelectItem>
-              <SelectItem value="DHL">DHL</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Right Actions */}
-        <div className="flex items-center justify-end">
-          <Button
-            variant="outline"
-            className="h-[52px] px-6 gap-2 border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs text-[#232323] font-normal cursor-pointer hover:bg-zinc-50"
-          >
-            <Download className="h-5 w-5 text-[#232323]" />
-            Export
-          </Button>
-        </div>
-      </div>
+      <OrderFilterBar
+        search={search}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setPage(1);
+        }}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateChange={(from, to) => {
+          setDateFrom(from);
+          setDateTo(to);
+          setPage(1);
+        }}
+        statusFilter={statusFilter}
+        onStatusFilterChange={(val) => {
+          setStatusFilter(val);
+          setPage(1);
+        }}
+        shippingMethodFilter={shippingMethodFilter}
+        onShippingMethodFilterChange={(val) => {
+          setShippingMethodFilter(val);
+          setPage(1);
+        }}
+        selectedCount={selectedRowIds.length}
+        onClearAll={() => {
+          const today = new Date();
+          setSearch("");
+          setStatusFilter("");
+          setShippingMethodFilter("");
+          setDateFrom(format(subDays(today, 6), "yyyy-MM-dd"));
+          setDateTo(format(today, "yyyy-MM-dd"));
+          setPage(1);
+        }}
+        isExporting={exportExcelMutation.isPending}
+        onExport={handleExport}
+      />
 
       {/* Orders Table */}
       <Card className="rounded-xl border border-border bg-card overflow-hidden">
@@ -305,7 +321,7 @@ export default function CustomerOrdersPage() {
           data={listData?.data || []}
           columns={columns}
           isLoading={isLoading}
-          emptyMessage="No orders found. Create your first single order above!"
+          emptyMessage={translate("customerOrder.table.noOrdersFound", currentLocale)}
           enableRowSelection={true}
           selectedRowIds={selectedRowIds}
           onSelectedRowIdsChange={setSelectedRowIds}
@@ -323,7 +339,14 @@ export default function CustomerOrdersPage() {
               setPerPage(val);
               setPage(1);
             }}
-            itemType="orders"
+            renderRangeText={(from, to, total) => (
+              <>
+                {translate("pagination.showing", currentLocale)} {from}-{to}{" "}
+                {translate("pagination.of", currentLocale)}{" "}
+                <span className="text-[#4277DB] font-semibold">{total}</span>{" "}
+                {translate("pagination.orders", currentLocale)}
+              </>
+            )}
           />
         )}
       </Card>

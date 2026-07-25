@@ -1,21 +1,12 @@
 // Ecom — Order Schema
 
 enum OrderStatus {
-  DRAFT
-  LABEL_NOT_CREATED
-  WAITING_FOR_PICKUP
-  PICKED_UP
-  RECEIVED_AT_ORIGIN_WAREHOUSE
-  EXPORT_CUSTOMS_CLEARANCE
-  DEPARTED_ORIGIN_COUNTRY
-  INTERNATIONAL_TRANSIT
-  ARRIVED_AT_DESTINATION_COUNTRY
-  IMPORT_CUSTOMS_CLEARANCE
-  RECEIVED_BY_LAST_MILE_CARRIER
-  OUT_FOR_DELIVERY
-  DELIVERED
-  CANCELLED
-  EXCEPTION
+  LABEL_CREATED
+  PENDING_LABEL
+  PACKAGE_RECEIVED
+  ON_THE_WAY
+  PICK_UP
+  DELIVERY
 }
 
 enum LabelStatus {
@@ -56,7 +47,7 @@ model Order {
   importId   String?      @map("import_id")
   import     OrderImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
 
-  status              OrderStatus    @default(DRAFT) @map("order_status")
+  status              OrderStatus    @default(PENDING_LABEL) @map("order_status")
   labelStatus         LabelStatus    @default(PENDING_LABEL) @map("label_status")
   exportCustomsStatus CustomsStatus  @default(PENDING) @map("export_customs_status")
   importCustomsStatus CustomsStatus  @default(PENDING) @map("import_customs_status")
@@ -64,7 +55,6 @@ model Order {
   shippingMethod      ShippingMethod @map("shipping_method")
   shippingOrigin      ShippingOrigin @default(HAN) @map("shipping_origin")
   sellerOrderId       String?        @map("seller_order_id")
-  totalPackets        Int            @default(1) @map("total_packets")
   trackingNumber      String?        @map("tracking_number")
 
   // Sender Details
@@ -75,7 +65,7 @@ model Order {
   senderCountry String? @map("sender_country")
   senderState   String? @map("sender_state")
   senderCity    String? @map("sender_city")
-  senderWard           String?        @map("sender_ward")
+  senderWard    String? @map("sender_ward")
   senderZipCode String? @map("sender_zip_code")
 
   // Recipient Details
@@ -90,16 +80,16 @@ model Order {
   receiverZipCode  String  @map("receiver_zip_code")
 
   // Cargo Details
-  detailDescription String   @map("detail_description") @db.Text
-  declaredWeight    Int      @map("declared_weight") // Declared weight in grams
-  dimensionText     String?  @map("dimension_text") // e.g. "60,5x60x1,5"
-  dimensionLength   Decimal? @map("dimension_length") @db.Decimal(10, 2)
-  dimensionWidth    Decimal? @map("dimension_width") @db.Decimal(10, 2)
-  dimensionHeight   Decimal? @map("dimension_height") @db.Decimal(10, 2)
-  declaredValue     Decimal  @map("declared_value") @db.Decimal(12, 2)
-  packingTypeId        Int?           @map("packing_type_id")
-  packingType          PackingType?   @relation(fields: [packingTypeId], references: [id], onDelete: SetNull)
-  packagingCode     String?  @map("packaging_code")
+  detailDescription String       @map("detail_description") @db.Text
+  declaredWeight    Int          @map("declared_weight") // Declared weight in grams
+  dimensionText     String?      @map("dimension_text") // e.g. "60,5x60x1,5"
+  dimensionLength   Decimal?     @map("dimension_length") @db.Decimal(10, 2)
+  dimensionWidth    Decimal?     @map("dimension_width") @db.Decimal(10, 2)
+  dimensionHeight   Decimal?     @map("dimension_height") @db.Decimal(10, 2)
+  declaredValue     Decimal      @map("declared_value") @db.Decimal(12, 2)
+  packingTypeId     Int?         @map("packing_type_id")
+  packingType       PackingType? @relation(fields: [packingTypeId], references: [id], onDelete: SetNull)
+  packagingCode     String?      @map("packaging_code")
 
   // Warehouse Measurements (populated during fulfillment)
   actualWeight       Decimal? @map("actual_weight") @db.Decimal(10, 3)

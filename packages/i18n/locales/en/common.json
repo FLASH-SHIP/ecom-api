@@ -69,6 +69,12 @@
     "addFromUrlPlaceholder": "https://example.com/image.jpg",
     "addFromUrlAdd": "Add"
   },
+  "pagination": {
+    "showing": "Showing",
+    "of": "of",
+    "orders": "orders",
+    "items": "items"
+  },
   "auth": {
     "login": "Sign in",
     "logout": "Sign out",

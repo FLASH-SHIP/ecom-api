@@ -14,6 +14,12 @@ export interface PaginationBaseProps {
   perPageOptions?: number[];
   itemType?: string;
   className?: string;
+  renderRangeText?: (
+    fromItem: number,
+    toItem: number,
+    totalItems: number,
+    itemType?: string,
+  ) => React.ReactNode;
 }
 
 export function PaginationBase({
@@ -25,6 +31,7 @@ export function PaginationBase({
   perPageOptions = [5, 10, 20, 50],
   itemType = "items",
   className,
+  renderRangeText,
 }: PaginationBaseProps) {
   const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
 
@@ -81,8 +88,14 @@ export function PaginationBase({
         )}
 
         <span className="text-sm">
-          Showing {fromItem}-{toItem} of{" "}
-          <span className="text-[#0F798C] font-semibold">{totalItems}</span> {itemType}
+          {renderRangeText ? (
+            renderRangeText(fromItem, toItem, totalItems, itemType)
+          ) : (
+            <>
+              Showing {fromItem}-{toItem} of{" "}
+              <span className="text-[#4277DB] font-semibold">{totalItems}</span> {itemType}
+            </>
+          )}
         </span>
       </div>
 

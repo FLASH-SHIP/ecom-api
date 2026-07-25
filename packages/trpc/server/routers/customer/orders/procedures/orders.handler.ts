@@ -118,7 +118,6 @@ export const create = authedProcedure
         shippingMethod: shippingMethodSchema,
         shippingOrigin: shippingOriginSchema.default(ShippingOrigin.HAN),
         sellerOrderId: z.string().optional().nullable(),
-        totalPackets: z.number().int().positive().optional().default(1),
         importId: z.string().optional().nullable(),
 
         senderName: z.string().optional().nullable(),
@@ -244,6 +243,9 @@ export const list = authedProcedure
       .object({
         search: z.string().optional(),
         status: orderStatusSchema.optional(),
+        fromDate: z.string().optional(),
+        toDate: z.string().optional(),
+        shippingMethod: z.enum(["EPACKET", "EXPRESS"]).optional(),
         page: z.number().int().positive().default(1),
         perPage: z.number().int().positive().max(100).default(20),
         sortBy: z.enum(["id", "createdAt", "orderCode", "status"]).default("createdAt"),
@@ -295,6 +297,35 @@ export const get = authedProcedure
     return result;
   });
 
+import { format } from "date-fns";
+import ExcelJS from "exceljs";
+
+function getOrderStatusTxt(status: OrderStatus): string {
+  switch (status) {
+    case OrderStatus.LABEL_CREATED:
+      return "Label Created";
+    case OrderStatus.PENDING_LABEL:
+      return "Pending Label";
+    case OrderStatus.PACKAGE_RECEIVED:
+      return "Package Received";
+    case OrderStatus.ON_THE_WAY:
+      return "On the Way";
+    case OrderStatus.PICK_UP:
+      return "Pick Up";
+    case OrderStatus.DELIVERY:
+      return "Delivery";
+    default:
+      return String(status);
+  }
+}
+
+function getShippingMethodTxt(method?: string | null): string {
+  if (!method) return "";
+  if (method === "EPACKET") return "ePacket";
+  if (method === "EXPRESS") return "Express";
+  return method;
+}
+
 export const listPackingTypes = authedProcedure
   .input(
     z
@@ -310,4 +341,120 @@ export const listPackingTypes = authedProcedure
       ...input,
       status: ContentStatus.PUBLISHED,
     });
+  });
+
+export const exportExcel = authedProcedure
+  .input(
+    z
+      .object({
+        search: z.string().optional(),
+        status: orderStatusSchema.optional(),
+        fromDate: z.string().optional(),
+        toDate: z.string().optional(),
+        shippingMethod: z.enum(["EPACKET", "EXPRESS"]).optional(),
+        page: z.number().int().positive().default(1),
+        perPage: z.number().int().positive().max(100).default(20),
+        sortBy: z.enum(["id", "createdAt", "orderCode", "status"]).default("createdAt"),
+        sortOrder: z.enum(["asc", "desc"]).default("desc"),
+      })
+      .optional(),
+  )
+  .mutation(async ({ input, ctx }) => {
+    const repo = getOrderRepository();
+    // Security check: Query records belonging ONLY to the authenticated customer
+    const result = await repo.findMany({
+      ...(input ?? {}),
+      customerId: ctx.user.id,
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Orders");
+
+    worksheet.columns = [
+      { header: "Time", key: "time", width: 18 },
+      { header: "Reception", key: "reception", width: 55 },
+      { header: "Status", key: "status", width: 18 },
+      { header: "Order ID", key: "orderId", width: 22 },
+      { header: "Fee", key: "fee", width: 14 },
+      { header: "Shipping Methods", key: "shippingMethod", width: 22 },
+      { header: "Tracking number", key: "trackingNumber", width: 24 },
+    ];
+
+    const thinBorder: Partial<ExcelJS.Borders> = {
+      top: { style: "thin", color: { argb: "FFD3D3D3" } },
+      left: { style: "thin", color: { argb: "FFD3D3D3" } },
+      bottom: { style: "thin", color: { argb: "FFD3D3D3" } },
+      right: { style: "thin", color: { argb: "FFD3D3D3" } },
+    };
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.height = 22;
+
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "CFFEF9" },
+      };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "left",
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: "FF232323" },
+        size: 12,
+        name: "Calibri",
+      };
+      cell.border = thinBorder;
+    });
+
+    result.data.forEach((order) => {
+      const timeFormatted = order.createdAt
+        ? format(new Date(order.createdAt), "dd/MM/yyyy HH:mm")
+        : "";
+
+      const line1 = order.receiverName || "";
+      const line2 = order.receiverPhone || "";
+      const line3 = [
+        order.receiverAddress1,
+        order.receiverCity,
+        order.receiverState,
+        order.receiverZipCode,
+        order.receiverCountry,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      const receptionStr = [line1, line2, line3].filter(Boolean).join("\n");
+
+      const totalFeeNum =
+        Number(order.baseShippingFee || 0) + Number(order.surchargeFee || 0);
+      const feeStr = `$${totalFeeNum.toFixed(2)}`;
+
+      const row = worksheet.addRow({
+        time: timeFormatted,
+        reception: receptionStr,
+        status: getOrderStatusTxt(order.status),
+        orderId: order.orderCode || "",
+        fee: feeStr,
+        shippingMethod: getShippingMethodTxt(order.shippingMethod),
+        trackingNumber: order.trackingNumber || "",
+      });
+
+      row.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      row.font = { size: 12, name: "Calibri" };
+      row.eachCell((cell) => {
+        cell.border = thinBorder;
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
+    const fileName = `Orders_Export_${format(new Date(), "yyyyMMdd_HHmmss")}.xlsx`;
+
+    return {
+      filename: fileName,
+      fileData: base64,
+    };
   });

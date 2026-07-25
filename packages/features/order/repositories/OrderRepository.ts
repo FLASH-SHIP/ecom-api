@@ -25,7 +25,6 @@ export interface CreateOrderInput {
   shippingMethod: ShippingMethod;
   shippingOrigin?: ShippingOrigin;
   sellerOrderId?: string | null;
-  totalPackets?: number;
   trackingNumber?: string | null;
 
   // Sender details
@@ -106,8 +105,9 @@ export interface OrderQueryOptions {
   status?: OrderStatus;
   orderCode?: string;
   sellerOrderId?: string;
-  fromDate?: Date;
-  toDate?: Date;
+  shippingMethod?: ShippingMethod;
+  fromDate?: Date | string;
+  toDate?: Date | string;
   search?: string;
   page?: number;
   perPage?: number;
@@ -138,7 +138,6 @@ export class OrderRepository {
         shippingMethod: true,
         shippingOrigin: true,
         sellerOrderId: true,
-        totalPackets: true,
         trackingNumber: true,
         senderName: true,
         senderAddress: true,
@@ -265,6 +264,7 @@ export class OrderRepository {
       status,
       orderCode,
       sellerOrderId,
+      shippingMethod,
       fromDate,
       toDate,
       search,
@@ -291,12 +291,21 @@ export class OrderRepository {
       conditions.push({ sellerOrderId: { contains: sellerOrderId.trim(), mode: "insensitive" } });
     }
 
-    if (fromDate) {
-      conditions.push({ createdAt: { gte: fromDate } });
+    if (shippingMethod) {
+      conditions.push({ shippingMethod });
     }
 
-    if (toDate) {
-      conditions.push({ createdAt: { lte: toDate } });
+    if (fromDate || toDate) {
+      const createdAtCondition: Prisma.DateTimeFilter = {};
+      if (fromDate) {
+        createdAtCondition.gte =
+          typeof fromDate === "string" ? new Date(`${fromDate}T00:00:00.000Z`) : fromDate;
+      }
+      if (toDate) {
+        createdAtCondition.lte =
+          typeof toDate === "string" ? new Date(`${toDate}T23:59:59.999Z`) : toDate;
+      }
+      conditions.push({ createdAt: createdAtCondition });
     }
 
     if (search?.trim()) {

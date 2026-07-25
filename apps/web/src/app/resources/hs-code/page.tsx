@@ -566,14 +566,14 @@ export default function HSCodePage() {
                       onClick={handleBack}
                       className="flex items-center gap-1.5 text-[14px] font-bold text-[#0F798C] hover:text-[#0b5a68] border-none bg-transparent cursor-pointer rounded-none"
                     >
-                      <ArrowLeft className="w-4 h-4" />
+                      <ArrowLeft className="w-4 h-4"/>
                       Back
                     </button>
                   </div>
                 )}
 
-                {/* Chapter Notes Section (Turquoise box sits flush inside the panel card) */}
-                {headingDetailData.chapter.notesHtml && (
+                {/* Chapter Notes Section (Only display for level 1 parent chapters, e.g. 01, 02) */}
+                {selectedSubChapter.replace(/\./g, "").trim().length === 2 && (
                   <div className="bg-[#C9FFF9] p-6 md:p-8 border-b border-[#dadada] flex flex-col gap-4">
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[12px] font-bold text-[#0F798C] uppercase tracking-wider">
@@ -602,40 +602,42 @@ export default function HSCodePage() {
                   <div className="w-full overflow-x-auto border-t border-[#dadada]">
                     <table className="w-full border-collapse text-left text-[14px]">
                       <thead>
-                        <tr className="border-b border-[#dadada] font-semibold text-[#232323] h-12">
-                          <th className="pl-4 md:pl-5 pr-4 py-2 font-bold w-[160px]">
-                            Heading / Subheading
-                          </th>
-                          <th className="px-4 py-2 font-bold">Article Description</th>
-                          <th className="px-4 py-2 font-bold w-[140px]">Unit of Quantity</th>
-                          <th className="px-4 py-2 font-bold w-[100px]">General</th>
-                          <th className="pl-4 pr-4 md:pr-5 py-2 font-bold w-[180px]">Special</th>
-                        </tr>
+                      <tr className="border-b border-[#dadada] font-semibold text-[#232323] h-12">
+                        <th className="pl-4 md:pl-5 pr-4 py-2 font-bold w-[160px]">
+                          Heading / Subheading
+                        </th>
+                        <th className="px-4 py-2 font-bold">Article Description</th>
+                        <th className="px-4 py-2 font-bold w-[140px]">Unit of Quantity</th>
+                        <th className="px-4 py-2 font-bold w-[100px]">General</th>
+                        <th className="pl-4 pr-4 md:pr-5 py-2 font-bold w-[180px]">Special</th>
+                      </tr>
                       </thead>
                       <tbody>
-                        {tariffRows.map((tariff: TariffRow, index: number) => (
-                          <tr
-                            key={index}
-                            onClick={() => navigateToCode(tariff.heading)}
-                            className="border-b border-[#dadada]/60 last:border-b-0 hover:bg-[#C9FFF9]/10 transition-colors h-[50px] cursor-pointer"
-                          >
-                            <td className="pl-4 md:pl-5 pr-4 py-2.5 text-[#232323] font-normal whitespace-nowrap align-middle">
-                              {tariff.heading}
-                            </td>
-                            <td className="px-4 py-2.5 text-[#232323] align-middle">
-                              <span className="inline-block">{tariff.description}</span>
-                            </td>
-                            <td className="px-4 py-2.5 text-[#232323] align-middle">
-                              {tariff.unit}
-                            </td>
-                            <td className="px-4 py-2.5 text-[#232323] font-normal align-middle">
-                              {tariff.general}
-                            </td>
-                            <td className="pl-4 pr-4 md:pr-5 py-2.5 text-[13px] text-slate-700 leading-normal max-w-[200px] break-words align-middle">
-                              {tariff.special}
-                            </td>
-                          </tr>
-                        ))}
+                      {tariffRows.map((tariff: TariffRow, index: number) => (
+                        <tr
+                          key={index}
+                          onClick={() => navigateToCode(tariff.heading)}
+                          className="border-b border-[#dadada]/60 last:border-b-0 hover:bg-[#C9FFF9]/10 transition-colors h-[50px] cursor-pointer"
+                        >
+                          <td
+                            className="pl-4 md:pl-5 pr-4 py-2.5 text-[#232323] font-normal whitespace-nowrap align-middle">
+                            {tariff.heading}
+                          </td>
+                          <td className="px-4 py-2.5 text-[#232323] align-middle">
+                            <span className="inline-block">{tariff.description}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-[#232323] align-middle">
+                            {tariff.unit}
+                          </td>
+                          <td className="px-4 py-2.5 text-[#232323] font-normal align-middle">
+                            {tariff.general}
+                          </td>
+                          <td
+                            className="pl-4 pr-4 md:pr-5 py-2.5 text-[13px] text-slate-700 leading-normal max-w-[200px] break-words align-middle">
+                            {tariff.special}
+                          </td>
+                        </tr>
+                      ))}
                       </tbody>
                     </table>
                   </div>
@@ -643,7 +645,7 @@ export default function HSCodePage() {
               </div>
             ) : (
               <div className="flex-grow flex flex-col items-center justify-center p-12 text-center text-[#7A7A7A]">
-                <Info className="w-8 h-8 text-[#0F798C] mb-2" />
+                <Info className="w-8 h-8 text-[#0F798C] mb-2"/>
                 Select a chapter on the left to inspect detailed HS Code tariff rates.
               </div>
             )}

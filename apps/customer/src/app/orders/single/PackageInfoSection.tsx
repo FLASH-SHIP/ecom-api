@@ -23,6 +23,8 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
@@ -74,6 +76,7 @@ export function PackageInfoSection({
   setSelectedPackageId,
   savedPackages,
 }: PackageInfoSectionProps) {
+  const { languageId: currentLocale } = useI18n();
   const controlParent = control as unknown as Control<PackageFormFields>;
   const registerParent = register as unknown as UseFormRegister<PackageFormFields>;
   const setValueParent = setValue as unknown as UseFormSetValue<PackageFormFields>;
@@ -154,7 +157,7 @@ export function PackageInfoSection({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
         <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">
-          Package Info
+          {translate("customerOrder.single.packageInfo", currentLocale)}
         </h3>
       </div>
 
@@ -168,16 +171,18 @@ export function PackageInfoSection({
               onValueChange={handleSelectSavedPackage}
             >
               <SelectTrigger className="w-full h-auto min-h-[68px] bg-background/50 border-input items-center">
-                <SelectValue placeholder="Select Package" />
+                <SelectValue
+                  placeholder={translate("customerOrder.placeholder.selectPackage", currentLocale)}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="new" className="py-3 cursor-pointer">
                   <div className="flex flex-col text-left">
                     <span className="text-base 2xl:text-2xl text-[#232323]">
-                      Create New Package
+                      {translate("customerOrder.single.newPackage", currentLocale)}
                     </span>
                     <span className="text-sm 2xl:text-base text-[#7B7B7B]">
-                      Input details to create a new Package Details
+                      {translate("customerOrder.single.newPackageDesc", currentLocale)}
                     </span>
                   </div>
                 </SelectItem>
@@ -205,7 +210,8 @@ export function PackageInfoSection({
             {/* Packaging Type */}
             <Field className="mt-2">
               <FieldLabel>
-                Type of Packaging <span className="text-destructive">*</span>
+                {translate("customerOrder.single.typeOfPackaging", currentLocale)}{" "}
+                <span className="text-destructive">*</span>
               </FieldLabel>
               <Controller
                 name="packingTypeId"
@@ -221,8 +227,8 @@ export function PackageInfoSection({
                         image: pt.image,
                       })) ?? []
                     }
-                    placeholder="Select type of packaging"
-                    searchPlaceholder="Search packaging type..."
+                    placeholder={translate("customerOrder.placeholder.selectPackaging", currentLocale)}
+                    searchPlaceholder={translate("customerOrder.placeholder.selectPackaging", currentLocale)}
                     allowClear={false}
                     className={cn(
                       "bg-background/50 border-input",
@@ -237,26 +243,27 @@ export function PackageInfoSection({
             {/* Dimensions */}
             <Field>
               <FieldLabel>
-                Package Dimensions (cm) <span className="text-destructive ml-0.5">*</span>
+                {translate("customerOrder.single.packageDimensionsCm", currentLocale)}{" "}
+                <span className="text-destructive ml-0.5">*</span>
               </FieldLabel>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
-                  placeholder="Length"
+                  placeholder={translate("customerOrder.placeholder.length", currentLocale)}
                   {...registerParent("length")}
                   className={cn(errorsParent.length && "border-destructive")}
                 />
                 <span className="text-muted-foreground">×</span>
                 <Input
                   type="number"
-                  placeholder="Width"
+                  placeholder={translate("customerOrder.placeholder.width", currentLocale)}
                   {...registerParent("width")}
                   className={cn(errorsParent.width && "border-destructive")}
                 />
                 <span className="text-muted-foreground">×</span>
                 <Input
                   type="number"
-                  placeholder="Height"
+                  placeholder={translate("customerOrder.placeholder.height", currentLocale)}
                   {...registerParent("height")}
                   className={cn(errorsParent.height && "border-destructive")}
                 />
@@ -266,7 +273,8 @@ export function PackageInfoSection({
             {/* Weight */}
             <Field>
               <FieldLabel htmlFor="package-weight">
-                Package Weight (gr) <span className="text-destructive ml-0.5">*</span>
+                {translate("customerOrder.single.packageWeightGr", currentLocale)}{" "}
+                <span className="text-destructive ml-0.5">*</span>
               </FieldLabel>
               <div className="flex gap-2">
                 <Input
@@ -299,13 +307,14 @@ export function PackageInfoSection({
             {/* Package Name */}
             <Field>
               <FieldLabel htmlFor="packageName">
-                Package Name <span className="text-destructive">*</span>
+                {translate("customerOrder.single.packageName", currentLocale)}{" "}
+                <span className="text-destructive">*</span>
               </FieldLabel>
               <Input
                 id="packageName"
                 type="text"
                 required
-                placeholder="Enter package name"
+                placeholder={translate("customerOrder.placeholder.enterPackageName", currentLocale)}
                 {...registerParent("packageName")}
                 className={cn(errorsParent.packageName && "border-destructive")}
               />
@@ -326,7 +335,7 @@ export function PackageInfoSection({
                 htmlFor="save-package"
                 className="text-base font-medium text-[#232323] cursor-pointer select-none"
               >
-                Save your setting for repeated use
+                {translate("customerOrder.single.saveSetting", currentLocale)}
               </FieldLabel>
             </Field>
           )}

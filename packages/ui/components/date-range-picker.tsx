@@ -19,6 +19,8 @@ interface DateRangePickerProps {
   onClear?: () => void;
   placeholder?: string;
   disabled?: boolean;
+  disableFuture?: boolean;
+  maxDays?: number;
   className?: string;
 }
 
@@ -41,6 +43,8 @@ function DateRangePicker({
   onClear,
   placeholder = "dd/mm/yyyy — dd/mm/yyyy",
   disabled,
+  disableFuture,
+  maxDays,
   className,
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -86,6 +90,10 @@ function DateRangePicker({
 
   const handleDayClick = React.useCallback(
     (day: Date) => {
+      if (disableFuture && day > new Date()) {
+        return;
+      }
+
       if (step === "awaiting-from") {
         // First click: set from, clear to
         setLocalRange({ from: day, to: undefined });
@@ -105,13 +113,25 @@ function DateRangePicker({
           finalTo = day;
         }
 
+        if (maxDays) {
+          const diffDays = Math.round(
+            (finalTo.getTime() - finalFrom.getTime()) / (1000 * 60 * 60 * 24),
+          );
+          if (diffDays > maxDays) {
+            finalTo = new Date(finalFrom.getTime() + maxDays * 24 * 60 * 60 * 1000);
+            if (disableFuture && finalTo > new Date()) {
+              finalTo = new Date();
+            }
+          }
+        }
+
         setLocalRange({ from: finalFrom, to: finalTo });
         onChange?.(format(finalFrom, "yyyy-MM-dd"), format(finalTo, "yyyy-MM-dd"));
         setStep("awaiting-from");
         setOpen(false);
       }
     },
-    [step, localRange, onChange],
+    [step, localRange, onChange, disableFuture, maxDays],
   );
 
   // Prevent Radix auto-close events while mid-selection
@@ -137,7 +157,7 @@ function DateRangePicker({
           )}
         >
           <CalendarIcon className="mr-2 size-4 shrink-0" />
-          <span className="truncate flex-1">{displayText}</span>
+          <span className="truncate flex-1 text-sm 2xl:text-lg font-normal">{displayText}</span>
           {committedRange?.from && !disabled && (
             <span
               role="button"
@@ -173,6 +193,7 @@ function DateRangePicker({
           captionLayout="dropdown"
           selected={localRange}
           onDayClick={handleDayClick}
+          disabled={disableFuture ? { after: new Date() } : undefined}
           numberOfMonths={2}
           autoFocus
         />

@@ -1,6 +1,8 @@
 "use client";
 
 import { trpc } from "@customer/lib/trpc";
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
 import { Card, CardContent } from "@ecom/ui/components/card";
 import { format } from "date-fns";
@@ -15,6 +17,7 @@ import { SenderSummaryCard } from "../components/SenderSummaryCard";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: dynamic rendering cards for order details
 export default function CustomerOrderDetailPage() {
+  const { languageId: currentLocale } = useI18n();
   const params = useParams();
   const id = params?.id as string;
 
@@ -29,7 +32,9 @@ export default function CustomerOrderDetailPage() {
     return (
       <div className="py-12 flex flex-col justify-center items-center gap-2">
         <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#0F798C] border-t-transparent" />
-        <span className="text-sm text-muted-foreground">Loading details...</span>
+        <span className="text-sm text-muted-foreground">
+          {translate("customerOrder.detail.loadingDetails", currentLocale)}
+        </span>
       </div>
     );
   }
@@ -37,12 +42,16 @@ export default function CustomerOrderDetailPage() {
   if (!order) {
     return (
       <div className="py-12 text-center flex flex-col gap-4 items-center">
-        <h2 className="text-xl font-bold">Order Not Found</h2>
+        <h2 className="text-xl font-bold">
+          {translate("customerOrder.detail.notFound", currentLocale)}
+        </h2>
         <p className="text-muted-foreground">
-          The requested order does not exist or you do not have permission to view it.
+          {translate("customerOrder.detail.notFoundDesc", currentLocale)}
         </p>
         <Link href="/orders">
-          <Button className="bg-[#0F798C] text-white">Back to List</Button>
+          <Button className="bg-[#0F798C] text-white">
+            {translate("customerOrder.detail.backToList", currentLocale)}
+          </Button>
         </Link>
       </div>
     );
@@ -57,7 +66,9 @@ export default function CustomerOrderDetailPage() {
     <div className="flex flex-col gap-6 w-full pb-10">
       {/* Title */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Order Detail - {order.orderCode}</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {translate("customerOrder.detail.title", currentLocale)} - {order.orderCode}
+        </h1>
       </div>
 
       {/* Main 3-Column Grid */}
@@ -128,7 +139,7 @@ export default function CustomerOrderDetailPage() {
             <Card className="rounded-xl border border-border bg-card shadow-sm">
               <CardContent className="p-6 flex flex-col gap-4">
                 <h3 className="font-bold text-base border-b border-border pb-3 text-foreground">
-                  Track & Trace Checkpoints
+                  {translate("customerOrder.detail.trackingCheckpoints", currentLocale)}
                 </h3>
                 <div className="relative border-l border-[#0F798C]/40 ml-2.5 flex flex-col gap-6 py-2">
                   {order.trackingCheckpoints?.map((cp) => (
@@ -145,7 +156,7 @@ export default function CustomerOrderDetailPage() {
                         </span>
                         {cp.location && (
                           <span className="text-xs text-muted-foreground font-medium italic">
-                            Location: {cp.location}
+                            {translate("customerOrder.detail.location", currentLocale)}: {cp.location}
                           </span>
                         )}
                       </div>

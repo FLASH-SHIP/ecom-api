@@ -19,13 +19,19 @@ function parseDutyRate(rateStr: string | null | undefined): number {
 function formatHeadingDescription(rawDesc: string | null | undefined): string {
   if (!rawDesc) return "";
   // Split at colon to remove footnote markers like :(TN701)
-  // Tách tại dấu : để loại bỏ mã ghi chú như :(TN701)
-  const firstPart = rawDesc.split(/[：:]+/)[0]?.trim() || rawDesc.trim();
+  let firstPart = rawDesc.split(/[：:]+/)[0]?.trim() || rawDesc.trim();
+
+  // Remove footnote markers like "1See section XI, statistical note 5." or "See statistical note..."
+  firstPart = firstPart.replace(/\s*\d*[/]*\s*See\s+.*$/i, "").trim();
+
+  // Remove trailing semicolons, commas, or punctuation left over
+  firstPart = firstPart.replace(/[;,\s]+$/, "").trim();
+
   // Remove leading dashes or bullet symbols
-  // Xóa gạch đầu dòng hoặc ký tự vô nghĩa
   const cleaned = firstPart.replace(/^[-\s·]+/, "").trim();
   if (!cleaned) return rawDesc.trim();
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  const lower = cleaned.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
 // Countries subject to Section 301 tariffs
@@ -58,11 +64,10 @@ export class HsCodeService {
   async getTree() {
     const chapters = await this.deps.hsCodeRepo.getChapters();
     return chapters.map((ch) => {
-      const desc = ch.description || "";
-      const capitalizedDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
+      const desc = formatHeadingDescription(ch.description) || "";
       return {
         code: ch.code,
-        description: capitalizedDesc,
+        description: desc,
       };
     });
   }
@@ -89,10 +94,8 @@ export class HsCodeService {
 
     // 1. Fetch chapter level notes HTML container from database
     const chapterData = await this.deps.hsCodeRepo.getChapterData(chapterCode);
-    let dbChapterName = chapterData?.articleDescription || `Chapter ${chapterCode}`;
-    if (dbChapterName) {
-      dbChapterName = dbChapterName.charAt(0).toUpperCase() + dbChapterName.slice(1);
-    }
+    const dbChapterName =
+      formatHeadingDescription(chapterData?.articleDescription) || `Chapter ${chapterCode}`;
 
     // Only return notesHtml for Level 1 Parent Chapter (cleanCode.length === 2)
     const notesHtml = isChapter ? chapterData?.notes || null : null;

@@ -23,6 +23,8 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
@@ -82,6 +84,7 @@ export function SenderSection({
   setSelectedSenderId,
   savedSenders,
 }: SenderSectionProps) {
+  const { languageId: currentLocale } = useI18n();
   const controlParent = control as unknown as Control<SenderFormFields>;
   const registerParent = register as unknown as UseFormRegister<SenderFormFields>;
   const setValueParent = setValue as unknown as UseFormSetValue<SenderFormFields>;
@@ -219,7 +222,9 @@ export function SenderSection({
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">Sender</h3>
+        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">
+          {translate("customerOrder.single.senderInfo", currentLocale)}
+        </h3>
       </div>
 
       {/* Body */}
@@ -232,14 +237,18 @@ export function SenderSection({
               onValueChange={handleSelectSavedSender}
             >
               <SelectTrigger className="w-full h-auto min-h-[68px] py-3 bg-background/50 border-input items-center">
-                <SelectValue placeholder="Select Sender" />
+                <SelectValue
+                  placeholder={translate("customerOrder.placeholder.selectSender", currentLocale)}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="new" className="py-3 cursor-pointer">
                   <div className="flex flex-col text-left">
-                    <span className="text-base 2xl:text-2xl text-[#232323]">New Sender</span>
+                    <span className="text-base 2xl:text-2xl text-[#232323]">
+                      {translate("customerOrder.single.newSender", currentLocale)}
+                    </span>
                     <span className="text-sm 2xl:text-base text-[#7B7B7B]">
-                      Input details to create a new Sender
+                      {translate("customerOrder.single.newSenderDesc", currentLocale)}
                     </span>
                   </div>
                 </SelectItem>
@@ -268,14 +277,15 @@ export function SenderSection({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
               <Field>
                 <FieldLabel htmlFor="senderName">
-                  Sender Name <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.senderName", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id="senderName"
                   type="text"
                   required
                   {...registerParent("senderName")}
-                  placeholder="Enter sender name"
+                  placeholder={translate("customerOrder.placeholder.enterSenderName", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.senderName && "border-destructive focus-visible:ring-destructive",
@@ -286,13 +296,14 @@ export function SenderSection({
 
               <Field>
                 <FieldLabel htmlFor="senderPhone">
-                  Phone number <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.phoneNumber", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id="senderPhone"
                   type="tel"
                   {...registerParent("senderPhone")}
-                  placeholder="Enter phone number"
+                  placeholder={translate("customerOrder.placeholder.enterPhoneNumber", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.senderPhone && "border-destructive focus-visible:ring-destructive",
@@ -305,12 +316,14 @@ export function SenderSection({
             {/* Row 2: Email + Address */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Field>
-                <FieldLabel htmlFor="senderEmail">Email</FieldLabel>
+                <FieldLabel htmlFor="senderEmail">
+                  {translate("customerOrder.single.email", currentLocale)}
+                </FieldLabel>
                 <Input
                   id="senderEmail"
                   type="email"
                   {...registerParent("senderEmail")}
-                  placeholder="Enter email"
+                  placeholder={translate("customerOrder.placeholder.enterEmail", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.senderEmail && "border-destructive focus-visible:ring-destructive",
@@ -321,14 +334,15 @@ export function SenderSection({
 
               <Field>
                 <FieldLabel htmlFor="senderAddress">
-                  Address <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.address", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id="senderAddress"
                   type="text"
                   required
                   {...registerParent("senderAddress")}
-                  placeholder="Enter address"
+                  placeholder={translate("customerOrder.placeholder.enterAddress", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.senderAddress &&
@@ -343,7 +357,8 @@ export function SenderSection({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Field>
                 <FieldLabel>
-                  Country <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.country", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input value="Vietnam" disabled className="bg-muted/50 w-full" />
                 <input type="hidden" {...registerParent("senderCountry")} value="VN" />
@@ -351,7 +366,8 @@ export function SenderSection({
 
               <Field>
                 <FieldLabel>
-                  City <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.city", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Controller
                   name="senderCity"
@@ -362,8 +378,8 @@ export function SenderSection({
                       onValueChange={field.onChange}
                       onOptionSelect={(opt) => setSelectedCityLabel(opt.label)}
                       options={provinceOptions}
-                      placeholder="Select city"
-                      searchPlaceholder="Search province..."
+                      placeholder={translate("customerOrder.placeholder.selectCity", currentLocale)}
+                      searchPlaceholder={translate("customerOrder.placeholder.searchProvince", currentLocale)}
                       allowClear
                       maxHeight="250px"
                       serverSearch
@@ -381,7 +397,8 @@ export function SenderSection({
 
               <Field>
                 <FieldLabel>
-                  Ward <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.ward", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Controller
                   name="senderWard"
@@ -392,8 +409,8 @@ export function SenderSection({
                       onValueChange={field.onChange}
                       onOptionSelect={(opt) => setSelectedWardLabel(opt.label)}
                       options={wardOptions}
-                      placeholder="Select ward"
-                      searchPlaceholder="Search ward..."
+                      placeholder={translate("customerOrder.placeholder.selectWard", currentLocale)}
+                      searchPlaceholder={translate("customerOrder.placeholder.searchWard", currentLocale)}
                       disabled={!selectedProvinceCode}
                       allowClear
                       maxHeight="250px"
@@ -412,14 +429,15 @@ export function SenderSection({
 
               <Field>
                 <FieldLabel htmlFor="senderZipCode">
-                  Postcode/Zipcode <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.postcodeZipcode", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id="senderZipCode"
                   type="text"
                   required
                   {...registerParent("senderZipCode")}
-                  placeholder="Enter postcode"
+                  placeholder={translate("customerOrder.placeholder.enterPostcode", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.senderZipCode &&
@@ -444,7 +462,7 @@ export function SenderSection({
                 htmlFor="save-sender"
                 className="text-base font-medium text-[#232323] cursor-pointer select-none"
               >
-                Save your setting for repeated use
+                {translate("customerOrder.single.saveSetting", currentLocale)}
               </FieldLabel>
             </Field>
           )}

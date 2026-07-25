@@ -16,6 +16,8 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
@@ -105,6 +107,7 @@ export function ReceiverSection({
   setSelectedReceiverId,
   savedReceivers,
 }: ReceiverSectionProps) {
+  const { languageId: currentLocale } = useI18n();
   const controlParent = control as unknown as Control<ReceiverFormFields>;
   const registerParent = register as unknown as UseFormRegister<ReceiverFormFields>;
   const setValueParent = setValue as unknown as UseFormSetValue<ReceiverFormFields>;
@@ -118,6 +121,7 @@ export function ReceiverSection({
 
   // Selected State ID for ePacket US City list
   const [selectedStateId, setSelectedStateId] = useState<number | null>(null);
+  const [citySearch, setCitySearch] = useState("");
 
   // Fetch supported countries from HS Code API
   const { data: countriesData } = trpc.public.v1.hscode.getCountries.useQuery();
@@ -128,10 +132,11 @@ export function ReceiverSection({
   });
 
   // Fetch US Cities for selected State in ePacket
-  const { data: usCitiesList = [] } = trpc.customer.divisions.listCities.useQuery(
-    { parentId: selectedStateId ?? 0 },
-    { enabled: isEPacket && !!selectedStateId },
-  );
+  const { data: usCitiesList = [], isFetching: isCitiesFetching } =
+    trpc.customer.divisions.listCities.useQuery(
+      { parentId: selectedStateId ?? 0, search: citySearch || undefined, limit: 100 },
+      { enabled: isEPacket && !!selectedStateId },
+    );
 
   // Automatically force Country = US when ePacket is selected
   useEffect(() => {
@@ -183,7 +188,9 @@ export function ReceiverSection({
     <div className="flex flex-col overflow-hidden rounded-lg border border-[#DADADA] bg-[#FDFFFF]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 2xl:py-4 border-b border-[#DADADA] bg-[#FEFCFA]">
-        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">Receiver</h3>
+        <h3 className="text-base 2xl:text-xl font-semibold text-[#232323] leading-6">
+          {translate("customerOrder.single.receiverInfo", currentLocale)}
+        </h3>
       </div>
 
       {/* Body */}
@@ -195,7 +202,8 @@ export function ReceiverSection({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
               <Field>
                 <FieldLabel htmlFor="receiverAddress1">
-                  Address 1 <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.address1", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id="receiverAddress1"
@@ -203,7 +211,7 @@ export function ReceiverSection({
                   required
                   maxLength={150}
                   {...registerParent("receiverAddress1")}
-                  placeholder="Enter address 1"
+                  placeholder={translate("customerOrder.placeholder.enterAddress1", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverAddress1 &&
@@ -214,13 +222,15 @@ export function ReceiverSection({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="receiverAddress2">Address 2</FieldLabel>
+                <FieldLabel htmlFor="receiverAddress2">
+                  {translate("customerOrder.single.address2", currentLocale)}
+                </FieldLabel>
                 <Input
                   id="receiverAddress2"
                   type="text"
                   maxLength={150}
                   {...registerParent("receiverAddress2")}
-                  placeholder="Enter address 2"
+                  placeholder={translate("customerOrder.placeholder.enterAddress2", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverAddress2 &&
@@ -236,7 +246,8 @@ export function ReceiverSection({
               {/* Country */}
               <Field>
                 <FieldLabel>
-                  Country <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.country", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Controller
                   name="receiverCountry"
@@ -253,7 +264,7 @@ export function ReceiverSection({
                           : (countriesData ?? []).map((c) => ({ value: c.code, label: c.name }))
                       }
                       placeholder={isEPacket ? "US" : "Select country"}
-                      searchPlaceholder="Search country..."
+                      searchPlaceholder={translate("customerOrder.placeholder.searchCountry", currentLocale)}
                       disabled={isEPacket}
                       allowClear={!isEPacket}
                       className={cn(
@@ -270,7 +281,8 @@ export function ReceiverSection({
               {/* State */}
               <Field>
                 <FieldLabel htmlFor="receiverState">
-                  State <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.state", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 {isEPacket ? (
                   <Controller
@@ -291,13 +303,14 @@ export function ReceiverSection({
                           // Reset city on state change
                           setValueParent("receiverCity", "");
                           setValueParent("receiverCityName", "");
+                          setCitySearch("");
                         }}
                         options={usStatesList.map((s) => ({
                           value: s.code,
                           label: `${s.code} - ${s.name}`,
                         }))}
-                        placeholder="Select US State"
-                        searchPlaceholder="Search US State..."
+                        placeholder={translate("customerOrder.placeholder.selectUsState", currentLocale)}
+                        searchPlaceholder={translate("customerOrder.placeholder.searchState", currentLocale)}
                         allowClear={true}
                         className={cn(
                           "bg-background/50 border-input",
@@ -313,7 +326,7 @@ export function ReceiverSection({
                     required
                     maxLength={50}
                     {...registerParent("receiverState")}
-                    placeholder="Enter state"
+                    placeholder={translate("customerOrder.placeholder.receiverState", currentLocale)}
                     className={cn(
                       "w-full bg-background/50",
                       errorsParent.receiverState &&
@@ -327,7 +340,8 @@ export function ReceiverSection({
               {/* City */}
               <Field>
                 <FieldLabel htmlFor="receiverCity">
-                  City <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.city", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 {isEPacket ? (
                   <Controller
@@ -344,10 +358,14 @@ export function ReceiverSection({
                           value: c.name,
                           label: c.name,
                         }))}
-                        placeholder={selectedStateId ? "Select US City" : "Select State first"}
-                        searchPlaceholder="Search US City..."
+                        placeholder={selectedStateId ? translate("customerOrder.placeholder.selectCity", currentLocale) : translate("customerOrder.placeholder.selectStateFirst", currentLocale)}
+                        searchPlaceholder={translate("customerOrder.placeholder.searchCity", currentLocale)}
                         disabled={!selectedStateId}
                         allowClear={true}
+                        serverSearch={true}
+                        onSearchChange={setCitySearch}
+                        searchDebounceMs={500}
+                        loading={isCitiesFetching}
                         className={cn(
                           "bg-background/50 border-input",
                           !selectedStateId && "opacity-60 cursor-not-allowed bg-muted",
@@ -362,7 +380,7 @@ export function ReceiverSection({
                     type="text"
                     required
                     {...registerParent("receiverCity")}
-                    placeholder="Enter city"
+                    placeholder={translate("customerOrder.placeholder.receiverCity", currentLocale)}
                     className={cn(
                       "w-full bg-background/50",
                       errorsParent.receiverCity &&
@@ -376,14 +394,15 @@ export function ReceiverSection({
               {/* Zipcode */}
               <Field>
                 <FieldLabel htmlFor="receiverZipCode">
-                  Postcode/Zipcode <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.postcodeZipcode", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id="receiverZipCode"
                   type="text"
                   required
                   {...registerParent("receiverZipCode")}
-                  placeholder={"Enter postcode/zipcode"}
+                  placeholder={translate("customerOrder.placeholder.enterPostcodeZipcode", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverZipCode &&
@@ -398,7 +417,8 @@ export function ReceiverSection({
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Field className="md:col-span-2">
                 <FieldLabel htmlFor="receiverName">
-                  Receiver Name <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.receiverName", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id="receiverName"
@@ -406,7 +426,7 @@ export function ReceiverSection({
                   required
                   maxLength={100}
                   {...registerParent("receiverName")}
-                  placeholder="Enter receiver name"
+                  placeholder={translate("customerOrder.placeholder.enterReceiverName", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverName &&
@@ -417,13 +437,15 @@ export function ReceiverSection({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="receiverPhone">Phone number</FieldLabel>
+                <FieldLabel htmlFor="receiverPhone">
+                  {translate("customerOrder.single.phoneNumber", currentLocale)}
+                </FieldLabel>
                 <Input
                   id="receiverPhone"
                   type="text"
                   maxLength={15}
                   {...registerParent("receiverPhone")}
-                  placeholder="Enter phone number"
+                  placeholder={translate("customerOrder.placeholder.enterPhoneNumber", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverPhone &&
@@ -435,13 +457,14 @@ export function ReceiverSection({
 
               <Field>
                 <FieldLabel htmlFor="receiverEmail">
-                  Email <span className="text-destructive">*</span>
+                  {translate("customerOrder.single.email", currentLocale)}{" "}
+                  <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id="receiverEmail"
                   type="email"
                   {...registerParent("receiverEmail")}
-                  placeholder="Enter email"
+                  placeholder={translate("customerOrder.placeholder.enterEmail", currentLocale)}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverEmail &&
