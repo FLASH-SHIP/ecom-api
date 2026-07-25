@@ -211,7 +211,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                 sku: "",
               })
             }
-            className="h-[52px] px-2.5 rounded-[10px] border border-[#E5E5E5] text-[#0A0A0A] text-base font-semibold bg-white hover:bg-muted/30 flex items-center gap-2 cursor-pointer shadow-sm w-fit"
+            className="px-2.5 rounded-[10px] border border-[#E5E5E5] text-[#0A0A0A] text-base font-semibold bg-white hover:bg-muted/30 flex items-center gap-2 cursor-pointer shadow-sm w-fit"
           >
             <Plus className="h-5 w-5 text-[#0A0A0A]" />
             {translate("customerOrder.single.addItem", currentLocale)}

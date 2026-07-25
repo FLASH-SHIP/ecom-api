@@ -29,6 +29,18 @@
     "clearAll": "Xóa tất cả",
     "export": "Xuất dữ liệu"
   },
+  "table": {
+    "submissionId": "Mã nạp tiền",
+    "submissionDate": "Ngày tạo yêu cầu",
+    "wireDate": "Ngày chuyển tiền",
+    "paymentMethod": "Phương thức thanh toán",
+    "confirmation": "Mã xác nhận",
+    "status": "Trạng thái",
+    "wireAmount": "Số tiền nạp",
+    "approvedAmount": "Số tiền đã duyệt",
+    "noRecordsFound": "Không tìm thấy lịch sử nạp tiền nào.",
+    "action": "Thao tác"
+  },
   "quickTopupTitle": "Nạp tiền vào ví",
   "quickTopupDesc": "Chọn mệnh giá hoặc nhập số tiền tùy chỉnh để nạp tiền nhanh chóng.",
   "selectAmount": "Chọn số tiền",
@@ -43,6 +55,9 @@
   "status": {
     "completed": "Hoàn thành",
     "pending": "Chờ xác nhận",
-    "failed": "Thất bại"
+    "failed": "Thất bại",
+    "waiting": "Chờ xác nhận",
+    "confirm": "Đã xác nhận",
+    "reject": "Từ chối"
   }
 }

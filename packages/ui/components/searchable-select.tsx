@@ -26,6 +26,10 @@ interface SearchableSelectProps {
   allowClear?: boolean;
   /** Max height of the dropdown list. Use "none" to show all items. Default: "200px" */
   maxHeight?: string;
+  serverSearch?: boolean;
+  onSearchChange?: (search: string) => void;
+  searchDebounceMs?: number;
+  loading?: boolean;
 }
 function SearchableSelect({
   value,

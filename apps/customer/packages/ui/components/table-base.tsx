@@ -3,9 +3,9 @@
 import { cn } from "@ecom/ui/lib/utils";
 import { PackageOpen } from "lucide-react";
 import * as React from "react";
-import { Checkbox } from "./checkbox";
-import { ArrowUpDownIcon } from "./icon-component/ArrowUpDownIcon";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
+import { Checkbox } from "@ecom/ui/components/checkbox";
+import { ArrowUpDownIcon } from "@ecom/ui/components/icon-component/ArrowUpDownIcon";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ecom/ui/components/table";
 
 export interface Column<T> {
   header: React.ReactNode;
@@ -472,7 +472,7 @@ export function TableBase<T extends { id: string | number }>({
                       ...(isCheckboxFixed ? { left: 0 } : undefined),
                       ...checkboxShadowStyle,
                     }}
-                    onClick={(e) => e.stopPropagation()} // Prevent row click details modal
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()} // Prevent row click details modal
                   >
                     <div className="flex items-center justify-center">
                       <Checkbox

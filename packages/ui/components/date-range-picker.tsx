@@ -19,6 +19,8 @@ interface DateRangePickerProps {
   onClear?: () => void;
   placeholder?: string;
   disabled?: boolean;
+  disableFuture?: boolean;
+  maxDays?: number;
   className?: string;
 }
 

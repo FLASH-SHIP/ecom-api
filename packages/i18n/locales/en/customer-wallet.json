@@ -29,6 +29,18 @@
     "clearAll": "Clear All",
     "export": "Export"
   },
+  "table": {
+    "submissionId": "Submission ID",
+    "submissionDate": "Submission Date",
+    "wireDate": "Wire Date",
+    "paymentMethod": "Payment Method",
+    "confirmation": "Confirmation No.",
+    "status": "Status",
+    "wireAmount": "Wire Amount",
+    "approvedAmount": "Approved Amount",
+    "noRecordsFound": "No top-up records found.",
+    "action": "Action"
+  },
   "quickTopupTitle": "Top up your wallet",
   "quickTopupDesc": "Choose an amount or enter a custom amount to top up instantly.",
   "selectAmount": "Select Amount",
@@ -43,6 +55,9 @@
   "status": {
     "completed": "Completed",
     "pending": "Pending Confirmation",
-    "failed": "Failed"
+    "failed": "Failed",
+    "waiting": "Waiting",
+    "confirm": "Confirmed",
+    "reject": "Rejected"
   }
 }

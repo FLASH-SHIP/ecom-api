@@ -8,7 +8,6 @@ import { OrderStatus } from "@customer/app/orders/constants/enums";
 import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
-import { DateRangePicker } from "@ecom/ui/components/date-range-picker";
 import { ExportFileIcon } from "@ecom/ui/components/icons";
 import { Input } from "@ecom/ui/components/input";
 import {
@@ -22,6 +21,7 @@ import { format, subDays } from "date-fns";
 import debounce from "lodash/debounce";
 import { Download, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { DateRangePicker } from "../../../../packages/ui/components/date-range-picker";
 
 export interface OrderFilterBarProps {
   search: string;
@@ -173,7 +173,7 @@ export function OrderFilterBar({
               setLocalSearch(val);
               debouncedOnSearchChange(val);
             }}
-            className="h-[52px] pl-11 pr-4 border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs focus-visible:ring-1 focus-visible:ring-[#0F798C] placeholder:text-[#7B7B7B]"
+            className="pl-11 pr-4 border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs focus-visible:ring-1 focus-visible:ring-[#0F798C] placeholder:text-[#7B7B7B]"
           />
         </div>
 
@@ -181,7 +181,7 @@ export function OrderFilterBar({
         <DateRangePicker
           valueFrom={dateFrom}
           valueTo={dateTo}
-          onChange={(from, to) => {
+          onChange={(from: string | undefined, to: string | undefined) => {
             debouncedOnDateChange(from, to);
           }}
           onClear={() => {
@@ -190,7 +190,7 @@ export function OrderFilterBar({
           disableFuture={true}
           maxDays={60}
           placeholder="Select date"
-          className="h-[52px] border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs text-[#232323] px-4 py-3 gap-2 w-full md:w-auto"
+          className="border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs text-[#232323] px-4 py-3 gap-2 w-full md:w-auto"
         />
 
         {/* Status Dropdown */}
@@ -202,7 +202,7 @@ export function OrderFilterBar({
               debouncedOnStatusFilterChange(val);
             }}
           >
-            <SelectTrigger className="h-[52px] min-w-[140px] md:w-[195px] border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
+            <SelectTrigger className="min-w-[140px] md:w-[195px] border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
               <SelectValue
                 placeholder={translate("customerOrder.placeholder.status", currentLocale)}
               />
@@ -241,7 +241,7 @@ export function OrderFilterBar({
               debouncedOnShippingMethodFilterChange(val);
             }}
           >
-            <SelectTrigger className="h-[52px] min-w-[180px] md:w-auto border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
+            <SelectTrigger className="min-w-[180px] md:w-auto border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
               <SelectValue
                 placeholder={translate("customerOrder.placeholder.shippingMethod", currentLocale)}
               />
@@ -277,7 +277,7 @@ export function OrderFilterBar({
             type="button"
             variant="outline"
             onClick={handleClearAll}
-            className="h-[52px] px-3 gap-2 border-[#F5222D] rounded-lg bg-white dark:bg-zinc-900 shadow-xs !text-[#F5222D] font-medium hover:bg-rose-50/60 dark:hover:bg-rose-950/30 cursor-pointer"
+            className="px-3 gap-2 border-[#F5222D] rounded-lg bg-white dark:bg-zinc-900 shadow-xs !text-[#F5222D] font-medium hover:bg-rose-50/60 dark:hover:bg-rose-950/30 cursor-pointer"
           >
             <X className="h-4 w-4 text-[#F5222D]" />
             <span>{translate("customerOrder.clearAll", currentLocale)}</span>
@@ -291,7 +291,7 @@ export function OrderFilterBar({
           <Button
             variant="outline"
             onClick={onGetLabels || onExport}
-            className="h-[52px] !bg-[#0F798C] !text-white px-6 gap-2 rounded-[10px] shadow-xs font-medium cursor-pointer"
+            className="!bg-[#0F798C] !text-white px-6 gap-2 rounded-[10px] shadow-xs font-medium cursor-pointer"
           >
             {translate("customerOrder.getLabels", currentLocale)}
           </Button>
@@ -301,7 +301,7 @@ export function OrderFilterBar({
           variant="outline"
           onClick={onExport}
           disabled={isExporting}
-          className="h-[52px] px-6 gap-2 border-[#DADADA] hover:border-[#22843A] rounded-[10px] bg-white hover:bg-[#EBFAEF] hover:text-[#22843A] shadow-xs text-[#232323] font-medium cursor-pointer transition-all duration-200 disabled:opacity-50"
+          className="px-6 gap-2 border-[#DADADA] hover:border-[#22843A] rounded-[10px] bg-white hover:bg-[#EBFAEF] hover:text-[#22843A] shadow-xs text-[#232323] font-medium cursor-pointer transition-all duration-200 disabled:opacity-50"
         >
           {isExporting ? (
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#0F798C] border-t-transparent" />

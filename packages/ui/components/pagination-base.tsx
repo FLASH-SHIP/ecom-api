@@ -2,8 +2,8 @@
 
 import { cn } from "@ecom/ui/lib/utils";
 import * as React from "react";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon } from "./icons";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
+import { ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon } from "@ecom/ui/components/icons";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ecom/ui/components/select";
 
 export interface PaginationBaseProps {
   currentPage: number;
