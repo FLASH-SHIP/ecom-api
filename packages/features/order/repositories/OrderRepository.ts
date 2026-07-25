@@ -258,6 +258,7 @@ export class OrderRepository {
     });
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: paginated query builder with multiple filter conditions
   async findMany(options: OrderQueryOptions) {
     const {
       customerId,

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import type { HsCodeRepository } from "../../repositories/HsCodeRepository";
 import { HsCodeService } from "../HsCodeService";
-import type { HsCodeRepository } from "../repositories/HsCodeRepository";
 
 function createMockRepo() {
   return {
