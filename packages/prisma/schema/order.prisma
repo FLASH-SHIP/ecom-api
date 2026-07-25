@@ -120,7 +120,9 @@ model Order {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([customerId, sellerOrderId]) // Chống trùng đơn hàng gốc của Seller
-  @@index([customerId, status, createdAt]) // Composite index tối ưu hóa phân trang lọc đơn
+  @@index([customerId, createdAt(sort: Desc)]) // Tối ưu hóa phân trang danh sách đơn mới nhất của khách
+  @@index([customerId, status, createdAt(sort: Desc)]) // Tối ưu hóa lọc đơn theo trạng thái và thời gian
+  @@index([customerId, ecomTrackingNumber]) // Tối ưu tìm kiếm đơn theo ecom tracking number
   @@index([customerId])
   @@index([status])
   @@index([createdAt])

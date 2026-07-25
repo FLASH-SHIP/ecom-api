@@ -209,6 +209,31 @@ export class ApiAuthService {
       throw ErrorWithCode.Factory.Unauthorized("Token has been revoked");
     }
 
+    const payloadUserId = payload.sub || payload.userId;
+    const isCustomerToken = payload.role === "customer" || !payload.userId;
+
+    if (isCustomerToken && payloadUserId) {
+      const customer = await this.deps.customerRepo.findById(payloadUserId);
+      if (!customer) {
+        throw ErrorWithCode.Factory.Unauthorized("Customer not found");
+      }
+      if (customer.status !== "ACTIVE") {
+        throw ErrorWithCode.Factory.Forbidden("Customer account is not active");
+      }
+      return {
+        id: customer.id,
+        email: customer.email,
+        name: customer.name,
+        authMethod: "jwt",
+        permissions: ["customer"],
+        ownerType: "Customer",
+      };
+    }
+
+    if (!payload.userId) {
+      throw ErrorWithCode.Factory.Unauthorized("User not found");
+    }
+
     const user = await this.deps.userRepo.findById(payload.userId);
     if (!user) {
       throw ErrorWithCode.Factory.Unauthorized("User not found");

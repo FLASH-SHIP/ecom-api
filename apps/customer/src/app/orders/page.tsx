@@ -1,8 +1,9 @@
 "use client";
 
+import TagOrderStatus from "@customer/app/orders/components/TagOrderStatus";
+import { OrderStatus } from "@customer/app/orders/constants/enums";
 import { trpc } from "@customer/lib/trpc";
 import { translate } from "@ecom/i18n";
-import { OrderStatus } from "@customer/app/orders/constants/enums";
 import { useI18n } from "@ecom/shared/@i18n";
 import { getShippingMethodLabel, getShippingOriginLabel } from "@ecom/types";
 import { Badge } from "@ecom/ui/components/badge";
@@ -15,20 +16,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@ecom/ui/components/dialog";
-import { ThreeDotsVerticalIcon } from "@ecom/ui/components/icons";
-import { PaginationBase } from "@ecom/ui/components/pagination-base";
-import { TableBase } from "@ecom/ui/components/table-base";
-import { format, subDays } from "date-fns";
-import NextLink from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@ecom/ui/components/dropdown-menu";
+import { ThreeDotsVerticalIcon } from "@ecom/ui/components/icons";
+import { PaginationBase } from "@ecom/ui/components/pagination-base";
+import { TableBase } from "@ecom/ui/components/table-base";
+import { format, subDays } from "date-fns";
+import NextLink from "next/link";
 import { useState } from "react";
 import { OrderFilterBar } from "./components/OrderFilterBar";
-import TagOrderStatus from "@customer/app/orders/components/TagOrderStatus";
 import { downloadBase64File } from "./utils/export-excel";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: customer orders list and detail modal
@@ -43,9 +43,7 @@ export default function CustomerOrdersPage() {
   const [dateFrom, setDateFrom] = useState<string | undefined>(() =>
     format(subDays(new Date(), 6), "yyyy-MM-dd"),
   );
-  const [dateTo, setDateTo] = useState<string | undefined>(() =>
-    format(new Date(), "yyyy-MM-dd"),
-  );
+  const [dateTo, setDateTo] = useState<string | undefined>(() => format(new Date(), "yyyy-MM-dd"));
   const [shippingMethodFilter, setShippingMethodFilter] = useState<string>("");
 
   // Selected Order Detail Modal
@@ -205,14 +203,20 @@ export default function CustomerOrdersPage() {
     {
       header: translate("customerOrder.placeholder.shippingMethod", currentLocale),
       width: 160,
-      cell: (order: OrderType) => <span className={'font-medium text-foreground'}>{getShippingMethodLabel(order?.shippingMethod)}</span>,
+      cell: (order: OrderType) => (
+        <span className={"font-medium text-foreground"}>
+          {getShippingMethodLabel(order?.shippingMethod)}
+        </span>
+      ),
     },
     {
       header: translate("customerOrder.table.trackingNumber", currentLocale),
       width: 180,
       sortable: true,
-      sortKey: "trackingNumber",
-      cell: (order: OrderType) => <span className={'font-medium text-foreground'}>{order?.trackingNumber}</span>,
+      sortKey: "ecomTrackingNumber",
+      cell: (order: OrderType) => (
+        <span className={"font-medium text-foreground"}>{order?.ecomTrackingNumber}</span>
+      ),
     },
     {
       header: translate("customerOrder.table.action", currentLocale),
@@ -221,6 +225,7 @@ export default function CustomerOrdersPage() {
       headerClassName: "text-center",
       className: "text-center",
       cell: (order: OrderType) => (
+        // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: wrapper div to stop row click propagation
         <div onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -233,7 +238,10 @@ export default function CustomerOrdersPage() {
                 <ThreeDotsVerticalIcon />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36 bg-white dark:bg-zinc-900 border border-border shadow-md rounded-lg p-1 z-30">
+            <DropdownMenuContent
+              align="end"
+              className="w-36 bg-white dark:bg-zinc-900 border border-border shadow-md rounded-lg p-1 z-30"
+            >
               {order?.status === OrderStatus.PENDING_LABEL && (
                 <DropdownMenuItem
                   disabled={true}

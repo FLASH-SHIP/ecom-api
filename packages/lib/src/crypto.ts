@@ -2,6 +2,7 @@ import {
   createCipheriv,
   createDecipheriv,
   createHash,
+  createHmac,
   randomBytes,
   timingSafeEqual,
 } from "node:crypto";
@@ -124,4 +125,37 @@ export function decryptSymmetrically(encryptedText: string): string {
   let decrypted = decipher.update(ciphertext, "hex", "utf8");
   decrypted += decipher.final("utf8");
   return decrypted;
+}
+
+// ── Webhook HMAC SHA-256 Signature ───────────────────────────────────────────
+
+/**
+ * Generate HMAC SHA-256 signature for outgoing webhook payload.
+ */
+export function generateHmacSignature(payload: string | object, secret: string): string {
+  const data = typeof payload === "string" ? payload : JSON.stringify(payload);
+  return createHmac("sha256", secret).update(data, "utf-8").digest("hex");
+}
+
+/**
+ * Verify HMAC SHA-256 signature from incoming webhook request.
+ */
+export function verifyHmacSignature(
+  payload: string | object,
+  secret: string,
+  expectedSignature: string,
+): boolean {
+  try {
+    const actualSignature = generateHmacSignature(payload, secret);
+    const expectedBuf = Buffer.from(expectedSignature.replace(/^sha256=/, ""), "hex");
+    const actualBuf = Buffer.from(actualSignature, "hex");
+
+    if (expectedBuf.length !== actualBuf.length) {
+      return false;
+    }
+
+    return timingSafeEqual(expectedBuf, actualBuf);
+  } catch {
+    return false;
+  }
 }

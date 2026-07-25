@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
 import type { NotificationService } from "@ecom/features/notification/services/NotificationService";
 import { hashPassword, verifyPassword } from "@ecom/lib/crypto";
 import { ErrorCode } from "@ecom/lib/errorCodes";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { createLogger } from "@ecom/lib/logger";
+import { getRedisClient, RedisCache, RedisRateLimiter } from "@ecom/lib/redis";
 import { runInTransaction } from "@ecom/prisma";
 import jwt from "jsonwebtoken";
 import { CustomerTokenService } from "./CustomerTokenService";
@@ -11,6 +13,28 @@ import { CustomerTokenService } from "./CustomerTokenService";
 const log = createLogger("CustomerAuthService");
 
 const CUSTOMER_APP_URL = process.env.CUSTOMER_APP_URL ?? "http://localhost:3001";
+
+export interface ActiveCustomerTokenResponse {
+  customer: {
+    id: string;
+    email: string;
+    username: string;
+    name: string | null;
+    avatarUrl: string | null;
+  };
+  accessToken: string;
+  refreshToken: string;
+}
+
+const activeTokenCacheTtl = process.env.JWT_ACTIVE_CACHE_TTL_SECONDS
+  ? Number.parseInt(process.env.JWT_ACTIVE_CACHE_TTL_SECONDS, 10)
+  : 780;
+
+const activeTokenCache = new RedisCache<ActiveCustomerTokenResponse>(
+  "customer-active-token",
+  activeTokenCacheTtl,
+);
+const failedLoginLimiter = new RedisRateLimiter("customer-login-fails", 5, 900); // 5 fails per 15m
 
 export interface ICustomerAuthServiceDeps {
   customerRepo: CustomerRepository;
@@ -163,6 +187,17 @@ export class CustomerAuthService {
   }
 
   async login(identifier: string, password: string) {
+    const normalizedId = identifier.toLowerCase().trim();
+    const { allowed, resetIn } = await failedLoginLimiter.check(normalizedId);
+    if (!allowed) {
+      log.warn("Login blocked due to excessive failed attempts", { identifier: normalizedId });
+      throw new ErrorWithCode(
+        ErrorCode.VerificationCodeRateLimited,
+        `Nhiều lần đăng nhập không thành công. Vui lòng thử lại sau ${resetIn} giây.`,
+        429,
+      );
+    }
+
     const customer = await this.deps.customerRepo.findByEmailOrUsername(identifier);
     if (!customer?.hashedPassword) {
       log.warn("Login failed: customer not found or no password", { identifier });
@@ -180,8 +215,8 @@ export class CustomerAuthService {
       throw ErrorWithCode.Factory.Unauthorized("Invalid credentials");
     }
 
+    await failedLoginLimiter.reset(normalizedId);
     log.info("Customer logged in", { customerId: customer.id, identifier });
-
     await this.deps.customerRepo.updateLastLogin(customer.id);
 
     return {
@@ -191,6 +226,81 @@ export class CustomerAuthService {
       name: customer.name,
       avatarUrl: customer.avatarUrl,
     };
+  }
+
+  async loginWithActiveTokenCache(
+    identifier: string,
+    password: string,
+    userAgent = "default",
+    tokenService: CustomerTokenService,
+  ): Promise<ActiveCustomerTokenResponse> {
+    const normalizedId = identifier.toLowerCase().trim();
+    const { allowed, resetIn } = await failedLoginLimiter.check(normalizedId);
+    if (!allowed) {
+      log.warn("Login blocked due to excessive failed attempts", { identifier: normalizedId });
+      throw new ErrorWithCode(
+        ErrorCode.VerificationCodeRateLimited,
+        `Nhiều lần đăng nhập không thành công. Vui lòng thử lại sau ${resetIn} giây.`,
+        429,
+      );
+    }
+
+    const customer = await this.deps.customerRepo.findByEmailOrUsername(identifier);
+    if (!customer?.hashedPassword) {
+      log.warn("Login failed: customer not found or no password", { identifier });
+      throw ErrorWithCode.Factory.Unauthorized("Invalid credentials");
+    }
+
+    if (customer.status !== "ACTIVE") {
+      log.warn("Login failed: account not active", { identifier, status: customer.status });
+      throw ErrorWithCode.Factory.Forbidden("Account is not active");
+    }
+
+    const deviceHash = createHash("md5").update(userAgent || "default").digest("hex").slice(0, 8);
+    const cacheKey = `${customer.id}:${deviceHash}`;
+
+    // 1. Check Redis Active Token Cache (0-bcrypt CPU hit)
+    const cachedResponse = await activeTokenCache.get(cacheKey);
+    if (cachedResponse) {
+      log.info("Returned active customer token from Redis cache (0-bcrypt CPU)", {
+        customerId: customer.id,
+      });
+      return cachedResponse;
+    }
+
+    // 2. Perform bcrypt password check
+    const isValid = await verifyPassword(password, customer.hashedPassword);
+    if (!isValid) {
+      log.warn("Login failed: invalid password", { identifier });
+      throw ErrorWithCode.Factory.Unauthorized("Invalid credentials");
+    }
+
+    await failedLoginLimiter.reset(normalizedId);
+    log.info("Customer logged in successfully", { customerId: customer.id, identifier });
+    await this.deps.customerRepo.updateLastLogin(customer.id);
+
+    const customerData = {
+      id: customer.id,
+      email: customer.email,
+      username: customer.username,
+      name: customer.name,
+      avatarUrl: customer.avatarUrl,
+    };
+
+    const tokens = tokenService.generateTokens(customerData);
+    const response: ActiveCustomerTokenResponse = {
+      customer: customerData,
+      ...tokens,
+    };
+
+    // 3. Cache response in Redis for activeTokenCacheTtl
+    await activeTokenCache.set(cacheKey, response, activeTokenCacheTtl);
+
+    return response;
+  }
+
+  async invalidateActiveTokens(customerId: string): Promise<void> {
+    await activeTokenCache.invalidatePrefix(customerId);
   }
 
   async changePassword(
@@ -217,6 +327,7 @@ export class CustomerAuthService {
 
     // Revoke all existing customer tokens and NextAuth sessions on password change
     await new CustomerTokenService().revokeAllTokens(customerId);
+    await this.invalidateActiveTokens(customerId);
     await this.deps.customerRepo.deleteSessions(customerId, currentSessionToken);
   }
 

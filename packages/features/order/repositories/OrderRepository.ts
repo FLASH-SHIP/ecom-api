@@ -103,9 +103,11 @@ export interface UpdateOrderInput {
 export interface OrderQueryOptions {
   customerId?: string;
   status?: OrderStatus;
+  orderCode?: string;
+  sellerOrderId?: string;
   shippingMethod?: ShippingMethod;
-  fromDate?: string;
-  toDate?: string;
+  fromDate?: Date | string;
+  toDate?: Date | string;
   search?: string;
   page?: number;
   perPage?: number;
@@ -256,10 +258,13 @@ export class OrderRepository {
     });
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: paginated query builder with multiple filter conditions
   async findMany(options: OrderQueryOptions) {
     const {
       customerId,
       status,
+      orderCode,
+      sellerOrderId,
       shippingMethod,
       fromDate,
       toDate,
@@ -279,6 +284,14 @@ export class OrderRepository {
       conditions.push({ status });
     }
 
+    if (orderCode?.trim()) {
+      conditions.push({ orderCode: { contains: orderCode.trim(), mode: "insensitive" } });
+    }
+
+    if (sellerOrderId?.trim()) {
+      conditions.push({ sellerOrderId: { contains: sellerOrderId.trim(), mode: "insensitive" } });
+    }
+
     if (shippingMethod) {
       conditions.push({ shippingMethod });
     }
@@ -286,10 +299,12 @@ export class OrderRepository {
     if (fromDate || toDate) {
       const createdAtCondition: Prisma.DateTimeFilter = {};
       if (fromDate) {
-        createdAtCondition.gte = new Date(`${fromDate}T00:00:00.000Z`);
+        createdAtCondition.gte =
+          typeof fromDate === "string" ? new Date(`${fromDate}T00:00:00.000Z`) : fromDate;
       }
       if (toDate) {
-        createdAtCondition.lte = new Date(`${toDate}T23:59:59.999Z`);
+        createdAtCondition.lte =
+          typeof toDate === "string" ? new Date(`${toDate}T23:59:59.999Z`) : toDate;
       }
       conditions.push({ createdAt: createdAtCondition });
     }
@@ -321,7 +336,7 @@ export class OrderRepository {
           shippingMethod: true,
           shippingOrigin: true,
           sellerOrderId: true,
-          trackingNumber: true,
+          ecomTrackingNumber: true,
           receiverName: true,
           receiverPhone: true,
           receiverCity: true,
@@ -521,6 +536,95 @@ export class OrderRepository {
         createdAt: true,
       },
       orderBy: { checkpointDate: "desc" },
+    });
+  }
+
+  async findByIdOrCodeForCustomer(customerId: string, identifier: string) {
+    return this.prisma.order.findFirst({
+      where: {
+        customerId,
+        OR: [{ id: identifier }, { orderCode: identifier }, { sellerOrderId: identifier }],
+      },
+      select: {
+        id: true,
+        orderCode: true,
+        status: true,
+        labelStatus: true,
+        exportCustomsStatus: true,
+        importCustomsStatus: true,
+        paymentStatus: true,
+        shippingMethod: true,
+        shippingOrigin: true,
+        sellerOrderId: true,
+        senderName: true,
+        senderAddress: true,
+        senderPhone: true,
+        senderEmail: true,
+        senderCountry: true,
+        senderState: true,
+        senderCity: true,
+        senderWard: true,
+        senderZipCode: true,
+        receiverName: true,
+        receiverPhone: true,
+        receiverEmail: true,
+        receiverCity: true,
+        receiverState: true,
+        receiverAddress1: true,
+        receiverAddress2: true,
+        receiverCountry: true,
+        receiverZipCode: true,
+        detailDescription: true,
+        declaredWeight: true,
+        dimensionText: true,
+        dimensionLength: true,
+        dimensionWidth: true,
+        dimensionHeight: true,
+        declaredValue: true,
+        packagingCode: true,
+        actualWeight: true,
+        volumeWeight: true,
+        chargeableWeight: true,
+        ecomTrackingNumber: true,
+        baseShippingFee: true,
+        surchargeFee: true,
+        totalFee: true,
+        createdAt: true,
+        updatedAt: true,
+
+        feeItems: {
+          select: {
+            id: true,
+            feeType: true,
+            name: true,
+            amount: true,
+            currency: true,
+            createdAt: true,
+          },
+        },
+        products: {
+          select: {
+            id: true,
+            description: true,
+            quantity: true,
+            value: true,
+            hsCode: true,
+            originCountry: true,
+            weight: true,
+            sku: true,
+          },
+        },
+        trackingCheckpoints: {
+          select: {
+            id: true,
+            checkpointDate: true,
+            location: true,
+            description: true,
+            carrierCode: true,
+          },
+          orderBy: { checkpointDate: "desc" },
+        },
+      },
     });
   }
 }

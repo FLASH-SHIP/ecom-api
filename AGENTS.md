@@ -29,11 +29,15 @@ You are a senior Ecom engineer working in a Yarn/Turbo monorepo. You prioritize 
 - Secure concurrent updates on critical resources using Distributed Redis Locks — see [distributed locks guidelines](agents/rules/patterns-distributed-locks.md)
 - Capture all database write events automatically via Prisma client extensions — see [auditing guidelines](agents/rules/patterns-auditing.md)
 - Map API search/filter parameters to type-safe Prisma criteria using Query Builders — see [query builder guidelines](agents/rules/patterns-query-builder.md)
+- Always use dedicated Response Mappers/Transformers (`mapToCustomerXResponse`, `mapToAdminXResponse`) to isolate Customer Public API payloads from internal Admin & Database models — see [response serialization guidelines](agents/rules/patterns-response-serialization.md)
+- Convert all Prisma `Decimal` instances to JavaScript numbers (`Number(val)`) in Response Mappers to prevent raw `{s, e, d}` object serialization
 
 ## Don't
 
 - Never use `as any` - use proper type-safe solutions instead
 - Never expose `password`, `hashedKey`, `tokenHash`, or `refreshTokenHash` fields in API responses or queries
+- Never expose internal operational or logistics fields (`trackingNumber`, `mawb`, `flightNumber`, `rateCardId`, `costPrice`, `boxId`, `port`, `importId`, `version`, `OrderPartner`, `OrderActivityLog`) in Customer API responses
+- Never duplicate customer identity objects (`customer`, `customerId`) in Customer API order array responses
 - Never commit secrets or API keys
 - Never put business logic in repositories - that belongs in Services
 - Never use barrel imports from index.ts files
