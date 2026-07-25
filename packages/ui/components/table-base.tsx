@@ -290,7 +290,10 @@ export function TableBase<T extends { id: string | number }>({
   const colSpanCount = enableRowSelection ? columns.length + 1 : columns.length;
 
   return (
-    <div ref={containerRef} className={cn("overflow-x-auto w-full relative thin-scrollbar", className)}>
+    <div
+      ref={containerRef}
+      className={cn("overflow-x-auto w-full relative thin-scrollbar", className)}
+    >
       <Table
         className="border-separate border-spacing-0"
         style={

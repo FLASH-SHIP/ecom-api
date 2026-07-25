@@ -428,8 +428,7 @@ export const exportExcel = authedProcedure
 
       const receptionStr = [line1, line2, line3].filter(Boolean).join("\n");
 
-      const totalFeeNum =
-        Number(order.baseShippingFee || 0) + Number(order.surchargeFee || 0);
+      const totalFeeNum = Number(order.baseShippingFee || 0) + Number(order.surchargeFee || 0);
       const feeStr = `$${totalFeeNum.toFixed(2)}`;
 
       const row = worksheet.addRow({

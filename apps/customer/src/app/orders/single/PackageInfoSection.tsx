@@ -1,6 +1,8 @@
 "use client";
 
 import { trpc } from "@customer/lib/trpc";
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
@@ -23,8 +25,6 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
-import { translate } from "@ecom/i18n";
-import { useI18n } from "@ecom/shared/@i18n";
 import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
@@ -227,8 +227,14 @@ export function PackageInfoSection({
                         image: pt.image,
                       })) ?? []
                     }
-                    placeholder={translate("customerOrder.placeholder.selectPackaging", currentLocale)}
-                    searchPlaceholder={translate("customerOrder.placeholder.selectPackaging", currentLocale)}
+                    placeholder={translate(
+                      "customerOrder.placeholder.selectPackaging",
+                      currentLocale,
+                    )}
+                    searchPlaceholder={translate(
+                      "customerOrder.placeholder.selectPackaging",
+                      currentLocale,
+                    )}
                     allowClear={false}
                     className={cn(
                       "bg-background/50 border-input",

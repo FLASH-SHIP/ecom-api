@@ -4,8 +4,10 @@ import { getRedisClient } from "@ecom/lib/redis";
 import type { SignOptions } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
 
-const ACCESS_TOKEN_TTL = (process.env.JWT_ACCESS_TOKEN_EXPIRES_IN ?? "15m") as SignOptions["expiresIn"];
-const REFRESH_TOKEN_TTL = (process.env.JWT_REFRESH_TOKEN_EXPIRES_IN ?? "30d") as SignOptions["expiresIn"];
+const ACCESS_TOKEN_TTL = (process.env.JWT_ACCESS_TOKEN_EXPIRES_IN ??
+  "15m") as SignOptions["expiresIn"];
+const REFRESH_TOKEN_TTL = (process.env.JWT_REFRESH_TOKEN_EXPIRES_IN ??
+  "30d") as SignOptions["expiresIn"];
 
 export interface CustomerTokenPayload {
   sub: string;

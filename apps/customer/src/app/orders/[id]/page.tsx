@@ -156,7 +156,8 @@ export default function CustomerOrderDetailPage() {
                         </span>
                         {cp.location && (
                           <span className="text-xs text-muted-foreground font-medium italic">
-                            {translate("customerOrder.detail.location", currentLocale)}: {cp.location}
+                            {translate("customerOrder.detail.location", currentLocale)}:{" "}
+                            {cp.location}
                           </span>
                         )}
                       </div>
