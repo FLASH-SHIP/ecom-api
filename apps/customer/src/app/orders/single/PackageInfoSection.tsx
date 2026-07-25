@@ -6,7 +6,6 @@ import { useI18n } from "@ecom/shared/@i18n";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
-import { SearchableSelect } from "@ecom/ui/components/searchable-select";
 import {
   Select,
   SelectContent,
@@ -26,6 +25,7 @@ import {
   type UseFormWatch,
 } from "react-hook-form";
 import type { OrderFormValues } from "./page";
+import  {SearchableSelect } from "@customer/components/ui/searchable-select";
 
 // ---------------------------------------------------------------------------
 // Types
