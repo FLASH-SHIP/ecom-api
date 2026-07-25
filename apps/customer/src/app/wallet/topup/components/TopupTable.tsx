@@ -114,15 +114,6 @@ export default function TopupTable() {
     },
     {
       header:
-        translate("customerWallet.table.submissionId", currentLocale) ||
-        "Submission ID",
-      width: 140,
-      cell: (order: OrderType) => (
-        <span className="font-semibold text-[#0F798C]">{order.orderCode}</span>
-      ),
-    },
-    {
-      header:
         translate("customerWallet.table.submissionDate", currentLocale) ||
         "Submission Date",
       width: 170,
@@ -144,10 +135,9 @@ export default function TopupTable() {
     },
     {
       header:
-        translate("customerWallet.table.confirmation", currentLocale) ||
-        "Confirmation No.",
+        translate("customerWallet.table.wireTransferConfirmation", currentLocale) ||
+        "Wire transfer confirmation",
       width: 160,
-      cell: (order: OrderType) => <div>{order.wireTransferConfirmation}</div>,
     },
     {
       header:
