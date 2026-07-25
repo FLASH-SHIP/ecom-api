@@ -15,10 +15,10 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { ApiAuthGuard } from "../auth/api-auth.guard";
-import type { CreateCustomerWebhookDto } from "./dto/create-webhook.dto";
+import { CreateCustomerWebhookDto } from "./dto/create-webhook.dto";
 
 @ApiTags("Customer Webhooks")
 @ApiBearerAuth()
@@ -30,6 +30,8 @@ import type { CreateCustomerWebhookDto } from "./dto/create-webhook.dto";
 export class CustomerWebhookController {
   @Post()
   @ApiOperation({ summary: "Register a new webhook subscription" })
+  @ApiBody({ type: CreateCustomerWebhookDto })
+  @ApiResponse({ status: 201, description: "Webhook subscription registered successfully" })
   async createWebhook(@Req() req: Request, @Body() body: CreateCustomerWebhookDto) {
     const user = req.apiUser;
     if (user?.ownerType !== "Customer") {
@@ -73,6 +75,7 @@ export class CustomerWebhookController {
 
   @Get()
   @ApiOperation({ summary: "List all webhook subscriptions" })
+  @ApiResponse({ status: 200, description: "List of active customer webhook subscriptions" })
   async listWebhooks(@Req() req: Request) {
     const user = req.apiUser;
     if (user?.ownerType !== "Customer") {
@@ -92,6 +95,8 @@ export class CustomerWebhookController {
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: "Delete a webhook subscription" })
+  @ApiParam({ name: "id", description: "Webhook Subscription Numeric ID" })
+  @ApiResponse({ status: 204, description: "Webhook subscription deleted successfully" })
   async deleteWebhook(@Req() req: Request, @Param("id") id: string) {
     const user = req.apiUser;
     if (user?.ownerType !== "Customer") {

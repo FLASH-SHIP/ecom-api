@@ -6,11 +6,11 @@ import {
 } from "@ecom/features/di/containers/CustomerService";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { CustomerJwtGuard } from "./customer-jwt.guard";
-import type {
+import {
   ChangePasswordDto,
   ForgotPasswordDto,
   LoginDto,
@@ -50,6 +50,8 @@ export class CustomerAuthController {
   // ─── Auth ──────────────────────────────────────────────────────────────────
   @Post("send-code")
   @ApiOperation({ summary: "Send registration verification code email" })
+  @ApiBody({ type: SendCodeDto })
+  @ApiResponse({ status: 201, description: "Verification code sent successfully" })
   async sendCode(@Body() body: SendCodeDto) {
     const authService = getCustomerAuthService();
     await authService.sendVerificationCode(body.email);
@@ -60,6 +62,8 @@ export class CustomerAuthController {
 
   @Post("register")
   @ApiOperation({ summary: "Register a new customer account" })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 201, description: "Customer account registered successfully" })
   async register(@Body() body: RegisterDto) {
     const authService = getCustomerAuthService();
     const tokenService = getCustomerTokenService();
@@ -78,6 +82,8 @@ export class CustomerAuthController {
   @Post("login")
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: "Authenticate and log in customer (with Redis active token cache)" })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 201, description: "Customer authenticated and tokens generated" })
   async login(@Body() body: LoginDto, @Req() req: Request) {
     const authService = getCustomerAuthService();
     const tokenService = getCustomerTokenService();
@@ -96,6 +102,8 @@ export class CustomerAuthController {
 
   @Post("refresh")
   @ApiOperation({ summary: "Refresh access and refresh token pair" })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiResponse({ status: 201, description: "Token pair refreshed successfully" })
   async refreshToken(@Body() body: RefreshTokenDto) {
     const tokenService = getCustomerTokenService();
 
@@ -114,6 +122,8 @@ export class CustomerAuthController {
 
   @Post("update-profile")
   @ApiOperation({ summary: "Update customer profile information" })
+  @ApiBody({ type: UpdateProfileDto })
+  @ApiResponse({ status: 201, description: "Customer profile updated successfully" })
   async updateProfile(@Body() body: UpdateProfileDto) {
     const tokenService = getCustomerTokenService();
     const customerService = getCustomerService();
@@ -140,6 +150,8 @@ export class CustomerAuthController {
 
   @Post("forgot-password")
   @ApiOperation({ summary: "Request a password reset email" })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({ status: 201, description: "Password reset email dispatch requested" })
   async forgotPassword(@Body() body: ForgotPasswordDto) {
     const authService = getCustomerAuthService();
     // Intentionally does not reveal whether the email exists (security best practice)
@@ -151,6 +163,8 @@ export class CustomerAuthController {
 
   @Post("reset-password")
   @ApiOperation({ summary: "Reset password using verification token" })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({ status: 201, description: "Password reset completed successfully" })
   async resetPassword(@Body() body: ResetPasswordDto) {
     const authService = getCustomerAuthService();
     const result = await authService.resetPassword(body.token, body.password);
@@ -161,6 +175,8 @@ export class CustomerAuthController {
 
   @Post("change-password")
   @ApiOperation({ summary: "Change customer password" })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({ status: 201, description: "Password changed successfully" })
   async changePassword(@Body() body: ChangePasswordDto) {
     const tokenService = getCustomerTokenService();
     const authService = getCustomerAuthService();
@@ -174,6 +190,8 @@ export class CustomerAuthController {
 
   @Post("logout")
   @ApiOperation({ summary: "Log out customer (blacklist refresh token)" })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiResponse({ status: 201, description: "Customer logged out successfully" })
   async logout(@Body() body: RefreshTokenDto) {
     const tokenService = getCustomerTokenService();
     try {

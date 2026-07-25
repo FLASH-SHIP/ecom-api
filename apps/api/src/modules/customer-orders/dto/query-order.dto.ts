@@ -55,7 +55,7 @@ export class GetCustomerOrdersDto {
 }
 
 export class CancelOrderDto {
-  @ApiPropertyOptional({ description: "Reason for cancellation" })
+  @ApiPropertyOptional({ description: "Reason for cancellation", type: String })
   @IsOptional()
   @IsString()
   reason?: string;

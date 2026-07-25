@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "prebuild": "yarn generate:openapi",
     "build": "nest build",
     "dev": "tsx watch src/main.ts",
     "start": "node --import tsx dist/src/main.js",
@@ -12,7 +13,9 @@
     "lint": "biome check",
     "format": "biome format --write",
     "test": "vitest run",
-    "generate:openapi": "tsx src/export-openapi.ts",
+    "generate:openapi": "tsx src/export-openapi.ts all",
+    "generate:openapi:customer": "tsx src/export-openapi.ts customer",
+    "generate:openapi:admin": "tsx src/export-openapi.ts admin",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
