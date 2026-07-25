@@ -5,15 +5,6 @@ import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
-import { Input } from "@ecom/ui/components/input";
-import { SearchableSelect } from "@ecom/ui/components/searchable-select";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ecom/ui/components/select";
 import { cn } from "@ecom/ui/lib/utils";
 import { useEffect, useMemo, useRef } from "react";
 import {
@@ -26,6 +17,7 @@ import {
   type UseFormWatch,
 } from "react-hook-form";
 import type { OrderFormValues } from "./page";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@customer/components/ui/select";
 
 // ---------------------------------------------------------------------------
 // Types

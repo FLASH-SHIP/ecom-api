@@ -5,8 +5,6 @@ import { useI18n } from "@ecom/shared/@i18n";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
 import { Card } from "@ecom/ui/components/card";
-import { PaginationBase } from "../../../../../packages/ui/components/pagination-base";
-import { TableBase } from "../../../../../packages/ui/components/table-base";
 import { useState } from "react";
 import {
   DropdownMenu,
@@ -15,6 +13,8 @@ import {
   DropdownMenuTrigger
 } from "@ecom/ui/components/dropdown-menu";
 import {ThreeDotsVerticalIcon} from "@ecom/ui/components/icons";
+import {TableBase} from "@customer/components/ui/table-base";
+import {PaginationBase} from "@customer/components/ui/pagination-base";
 
 
 export interface TopupItem {
