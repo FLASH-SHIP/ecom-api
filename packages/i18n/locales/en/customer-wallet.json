@@ -29,6 +29,39 @@
     "clearAll": "Clear All",
     "export": "Export"
   },
+  "transactionFilter": {
+    "selectTransactionType": "Select Transaction Type",
+    "allTransactionTypes": "All Transaction Types",
+    "orderCodePlaceholder": "Order code",
+    "paid": "Paid",
+    "addedFunds": "Added Funds",
+    "canceled": "Canceled",
+    "refunded": "Refunded",
+    "adjustBalanceIncrease": "Adjust Balance Increase",
+    "adjustBalanceDecrease": "Adjust Balance Decrease"
+  },
+  "transactionTable": {
+    "no": "No.",
+    "date": "Date",
+    "orderCode": "Order code",
+    "partnerOrderId": "Partner Order ID",
+    "transactionType": "Transaction type",
+    "initialAmount": "Initial amount",
+    "amount": "Amount",
+    "finalAmount": "Final amount",
+    "description": "Description",
+    "noRecordsFound": "No transaction records found."
+  },
+  "endingBalanceTable": {
+    "no": "No.",
+    "date": "Date",
+    "totalTopupAmount": "Total topup amount",
+    "totalPaymentAmount": "Total payment amount",
+    "totalRefundAmount": "Total refund amount",
+    "totalAdjustmentAmount": "Total adjustment amount",
+    "endingBalance": "Ending balance",
+    "noRecordsFound": "No ending balance records found."
+  },
   "table": {
     "no": "No.",
     "submissionId": "Submission ID",

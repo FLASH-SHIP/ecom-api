@@ -29,6 +29,39 @@
     "clearAll": "Xóa tất cả",
     "export": "Xuất dữ liệu"
   },
+  "transactionFilter": {
+    "selectTransactionType": "Chọn loại giao dịch",
+    "allTransactionTypes": "Tất cả loại giao dịch",
+    "orderCodePlaceholder": "Mã đơn hàng",
+    "paid": "Paid",
+    "addedFunds": "Added Funds",
+    "canceled": "Canceled",
+    "refunded": "Refunded",
+    "adjustBalanceIncrease": "Adjust Balance Increase",
+    "adjustBalanceDecrease": "Adjust Balance Decrease"
+  },
+  "transactionTable": {
+    "no": "No.",
+    "date": "Ngày giao dịch",
+    "orderCode": "Mã đơn hàng",
+    "partnerOrderId": "Partner Order ID",
+    "transactionType": "Loại giao dịch",
+    "initialAmount": "Số dư đầu kỳ",
+    "amount": "Số tiền",
+    "finalAmount": "Số dư cuối kỳ",
+    "description": "Mô tả",
+    "noRecordsFound": "Không tìm thấy lịch sử giao dịch nào."
+  },
+  "endingBalanceTable": {
+    "no": "No.",
+    "date": "Ngày",
+    "totalTopupAmount": "Tổng tiền nạp",
+    "totalPaymentAmount": "Tổng tiền thanh toán",
+    "totalRefundAmount": "Tổng tiền hoàn",
+    "totalAdjustmentAmount": "Tổng tiền điều chỉnh",
+    "endingBalance": "Số dư cuối kỳ",
+    "noRecordsFound": "Không tìm thấy lịch sử số dư cuối kỳ nào."
+  },
   "table": {
     "no": "No.",
     "submissionId": "Mã nạp tiền",
