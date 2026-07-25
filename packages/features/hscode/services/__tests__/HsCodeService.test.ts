@@ -167,7 +167,7 @@ describe("HsCodeService", () => {
       repo.getChapters.mockResolvedValue([
         {
           code: "22",
-          description: "chapter 22: beverages, spirits and vinegar",
+          description: "Beverages, spirits and vinegar",
           notes: "<p>These are chapter 22 notes</p>",
         },
       ]);
@@ -175,7 +175,7 @@ describe("HsCodeService", () => {
       const result = await service.getTree();
       expect(result).toHaveLength(1);
       expect(result[0].code).toBe("22");
-      expect(result[0].description).toBe("Chapter 22: beverages, spirits and vinegar");
+      expect(result[0].description).toBe("Beverages, spirits and vinegar");
       expect(result[0]).not.toHaveProperty("notesHtml");
     });
   });

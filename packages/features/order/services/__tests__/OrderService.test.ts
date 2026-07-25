@@ -360,36 +360,38 @@ describe("OrderService", () => {
   });
 
   describe("cancelCustomerOrder", () => {
-    it("should cancel order when status is DRAFT", async () => {
+    it("should cancel order when status is PENDING_LABEL", async () => {
       orderRepoMock.findByIdOrCodeForCustomer = vi.fn().mockResolvedValue({
         id: "cust_order_1",
         orderCode: "TEST260711ABCD",
-        status: "DRAFT",
+        status: OrderStatus.PENDING_LABEL,
+        labelStatus: LabelStatus.PENDING_LABEL,
       });
 
       orderRepoMock.update.mockResolvedValue({
         id: "cust_order_1",
         orderCode: "TEST260711ABCD",
-        status: "CANCELLED",
+        status: OrderStatus.PENDING_LABEL,
+        labelStatus: LabelStatus.CANCELLED,
       });
 
       const res = await service.cancelCustomerOrder("cust_1", "cust_order_1", "Changed mind");
 
       expect(orderRepoMock.update).toHaveBeenCalledWith("cust_order_1", {
-        status: "CANCELLED",
+        labelStatus: LabelStatus.CANCELLED,
       });
-      expect(res.status).toBe("CANCELLED");
+      expect(res.labelStatus).toBe(LabelStatus.CANCELLED);
     });
 
-    it("should throw error if order status is already in transit or printed", async () => {
+    it("should throw error if order status is already in transit or received", async () => {
       orderRepoMock.findByIdOrCodeForCustomer = vi.fn().mockResolvedValue({
         id: "cust_order_2",
         orderCode: "TEST260711ABCD2",
-        status: "LABEL_PRINTED",
+        status: OrderStatus.PACKAGE_RECEIVED,
       });
 
       await expect(service.cancelCustomerOrder("cust_1", "cust_order_2")).rejects.toThrow(
-        'Không thể hủy đơn hàng đang ở trạng thái "LABEL_PRINTED"',
+        'Không thể hủy đơn hàng đang ở trạng thái "PACKAGE_RECEIVED"',
       );
     });
   });

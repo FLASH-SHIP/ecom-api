@@ -439,7 +439,7 @@ export const exportExcel = authedProcedure
         orderId: order.orderCode || "",
         fee: feeStr,
         shippingMethod: getShippingMethodTxt(order.shippingMethod),
-        trackingNumber: order.trackingNumber || "",
+        trackingNumber: order.ecomTrackingNumber || "",
       });
 
       row.alignment = { vertical: "middle", horizontal: "left", wrapText: true };

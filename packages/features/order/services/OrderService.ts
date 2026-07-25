@@ -728,7 +728,7 @@ export class OrderService {
 
   /**
    * Cancels an order requested by the customer.
-   * Only orders in DRAFT or PENDING_LABEL status can be cancelled.
+   * Only orders in PENDING_LABEL status can be cancelled.
    */
   async cancelCustomerOrder(customerId: string, identifier: string, reason?: string) {
     const order = await this.deps.orderRepo.findByIdOrCodeForCustomer(customerId, identifier);
@@ -736,11 +736,11 @@ export class OrderService {
       throw new ErrorWithCode(ErrorCode.NotFound, "Đơn hàng không tồn tại", 404);
     }
 
-    if (order.status === "CANCELLED") {
+    if (order.labelStatus === LabelStatus.CANCELLED) {
       return order;
     }
 
-    if (order.status !== "DRAFT" && order.status !== "LABEL_NOT_CREATED") {
+    if (order.status !== OrderStatus.PENDING_LABEL) {
       throw new ErrorWithCode(
         ErrorCode.ValidationError,
         `Không thể hủy đơn hàng đang ở trạng thái "${order.status}". Vui lòng liên hệ bộ phận hỗ trợ.`,
@@ -752,7 +752,7 @@ export class OrderService {
 
     const result = await runInTransaction(async () => {
       const updated = await this.deps.orderRepo.update(order.id, {
-        status: "CANCELLED",
+        labelStatus: LabelStatus.CANCELLED,
       });
 
       const actorInfo = await this.resolveActorInfo("CUSTOMER", customerId);
@@ -765,7 +765,7 @@ export class OrderService {
         orderId: order.id,
         action: "STATUS_CHANGE",
         statusFrom: oldStatus,
-        statusTo: "CANCELLED",
+        statusTo: LabelStatus.CANCELLED,
         description: cancelDescription,
         actorType: "CUSTOMER",
         actorId: actorInfo.actorId,

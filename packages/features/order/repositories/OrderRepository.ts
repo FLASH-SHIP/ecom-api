@@ -555,7 +555,6 @@ export class OrderRepository {
         shippingMethod: true,
         shippingOrigin: true,
         sellerOrderId: true,
-        totalPackets: true,
         senderName: true,
         senderAddress: true,
         senderPhone: true,
