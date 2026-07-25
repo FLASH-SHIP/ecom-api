@@ -30,6 +30,8 @@
     "api": "API",
     "developerSettings": "Cấu hình Developer",
     "language": "Ngôn ngữ:",
-    "changeLanguage": "Đổi ngôn ngữ"
+    "changeLanguage": "Đổi ngôn ngữ",
+    "payment": "Thanh toán",
+    "wallet": "Ví"
   }
 }

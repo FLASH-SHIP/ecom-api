@@ -30,6 +30,8 @@
     "api": "API",
     "developerSettings": "Developer Settings",
     "language": "Language:",
-    "changeLanguage": "Change language"
+    "changeLanguage": "Change language",
+    "payment": "Payment",
+    "wallet": "Wallet"
   }
 }

@@ -25,7 +25,7 @@ import {
   type UseFormWatch,
 } from "react-hook-form";
 import type { OrderFormValues } from "./page";
-import  {SearchableSelect } from "@customer/components/ui/searchable-select";
+import { SearchableSelect } from "@customer/components/ui/searchable-select";
 
 // ---------------------------------------------------------------------------
 // Types

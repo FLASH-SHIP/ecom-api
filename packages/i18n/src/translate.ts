@@ -3,7 +3,6 @@ import enCommon from "../locales/en/common.json";
 import enCustomFields from "../locales/en/custom-fields.json";
 import enCustomerAuth from "../locales/en/customer-auth.json";
 import enCustomerDashboard from "../locales/en/customer-dashboard.json";
-import enCustomerOrder from "../locales/en/customer-order.json";
 import enCustomerProfile from "../locales/en/customer-profile.json";
 import enCustomers from "../locales/en/customers.json";
 import enDeveloper from "../locales/en/developer.json";
@@ -13,6 +12,8 @@ import enOrders from "../locales/en/orders.json";
 import enRoles from "../locales/en/roles.json";
 import enSettings from "../locales/en/settings.json";
 import enUsers from "../locales/en/users.json";
+import enCustomerOrder from "../locales/en/customer-order.json";
+import enCustomerWallet from "../locales/en/customer-wallet.json";
 
 import viAuth from "../locales/vi/auth.json";
 import viCommon from "../locales/vi/common.json";
@@ -29,6 +30,7 @@ import viOrders from "../locales/vi/orders.json";
 import viRoles from "../locales/vi/roles.json";
 import viSettings from "../locales/vi/settings.json";
 import viUsers from "../locales/vi/users.json";
+import viCustomerWallet from "../locales/vi/customer-wallet.json";
 
 const messages = {
   en: {
@@ -47,6 +49,7 @@ const messages = {
     customFields: enCustomFields,
     developer: enDeveloper,
     customerOrder: enCustomerOrder,
+    customerWallet: enCustomerWallet
   },
   vi: {
     ...viCommon,
@@ -64,6 +67,7 @@ const messages = {
     customFields: viCustomFields,
     developer: viDeveloper,
     customerOrder: viCustomerOrder,
+    customerWallet: viCustomerWallet
   },
 } as const;
 

@@ -17,6 +17,7 @@ interface DatePickerProps {
   /** Placeholder text */
   placeholder?: string;
   disabled?: boolean;
+  disabledDays?: (date: Date) => boolean;
   className?: string;
 }
 
@@ -25,6 +26,7 @@ function DatePicker({
   onChange,
   placeholder = "dd/mm/yyyy",
   disabled,
+  disabledDays,
   className,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
@@ -56,6 +58,7 @@ function DatePicker({
           mode="single"
           captionLayout="dropdown"
           selected={selectedDate}
+          disabled={disabledDays}
           onSelect={(date) => {
             onChange?.(date ? format(date, "yyyy-MM-dd") : "");
             setOpen(false);

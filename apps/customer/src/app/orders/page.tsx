@@ -23,13 +23,13 @@ import {
   DropdownMenuTrigger,
 } from "@ecom/ui/components/dropdown-menu";
 import { ThreeDotsVerticalIcon } from "@ecom/ui/components/icons";
-import { PaginationBase } from "@ecom/ui/components/pagination-base";
-import { TableBase } from "@ecom/ui/components/table-base";
 import { format, subDays } from "date-fns";
 import NextLink from "next/link";
 import { useState } from "react";
 import { OrderFilterBar } from "./components/OrderFilterBar";
 import { downloadBase64File } from "./utils/export-excel";
+import { PaginationBase } from "@customer/components/ui/pagination-base";
+import { TableBase } from "@customer/components/ui/table-base";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: customer orders list and detail modal
 export default function CustomerOrdersPage() {
