@@ -18,7 +18,11 @@ import {
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { ApiAuthGuard } from "../auth/api-auth.guard";
-import { CreateCustomerWebhookDto } from "./dto/create-webhook.dto";
+import { CreateCustomerWebhookDto } from "./dto/create-webhook.dto.js";
+import {
+  CustomerWebhookListResponseDto,
+  CustomerWebhookResponseDto,
+} from "./dto/response-webhook.dto.js";
 
 @ApiTags("Customer Webhooks")
 @ApiBearerAuth()
@@ -31,7 +35,7 @@ export class CustomerWebhookController {
   @Post()
   @ApiOperation({ summary: "Register a new webhook subscription" })
   @ApiBody({ type: CreateCustomerWebhookDto })
-  @ApiResponse({ status: 201, description: "Webhook subscription registered successfully" })
+  @ApiResponse({ status: 201, description: "Webhook subscription registered successfully", type: CustomerWebhookResponseDto })
   async createWebhook(@Req() req: Request, @Body() body: CreateCustomerWebhookDto) {
     const user = req.apiUser;
     if (user?.ownerType !== "Customer") {
@@ -75,7 +79,7 @@ export class CustomerWebhookController {
 
   @Get()
   @ApiOperation({ summary: "List all webhook subscriptions" })
-  @ApiResponse({ status: 200, description: "List of active customer webhook subscriptions" })
+  @ApiResponse({ status: 200, description: "List of active customer webhook subscriptions", type: CustomerWebhookListResponseDto })
   async listWebhooks(@Req() req: Request) {
     const user = req.apiUser;
     if (user?.ownerType !== "Customer") {
