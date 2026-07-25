@@ -30,6 +30,7 @@
     "export": "Export"
   },
   "table": {
+    "no": "No.",
     "submissionId": "Submission ID",
     "submissionDate": "Submission Date",
     "wireDate": "Wire Date",
@@ -38,8 +39,8 @@
     "status": "Status",
     "wireAmount": "Wire Amount",
     "approvedAmount": "Approved Amount",
-    "noRecordsFound": "No top-up records found.",
-    "action": "Action"
+    "action": "Action",
+    "noRecordsFound": "No top-up records found."
   },
   "quickTopupTitle": "Top up your wallet",
   "quickTopupDesc": "Choose an amount or enter a custom amount to top up instantly.",

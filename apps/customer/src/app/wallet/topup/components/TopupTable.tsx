@@ -100,6 +100,20 @@ export default function TopupTable() {
   const columns = [
     {
       header:
+        translate("customerWallet.table.no", currentLocale) ||
+        "No.",
+      width: 50,
+      fixed: "left" as const,
+      headerClassName: "text-center",
+      className: "text-center font-medium text-muted-foreground",
+      cell: (order: OrderType) => {
+        const index = listData.data.findIndex((item) => item.id === order.id);
+        const rowNumber = (page - 1) * perPage + index + 1;
+        return <div>{rowNumber}</div>;
+      },
+    },
+    {
+      header:
         translate("customerWallet.table.submissionId", currentLocale) ||
         "Submission ID",
       width: 140,

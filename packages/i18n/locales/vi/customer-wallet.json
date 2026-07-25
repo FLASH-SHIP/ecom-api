@@ -30,6 +30,7 @@
     "export": "Xuất dữ liệu"
   },
   "table": {
+    "no": "No.",
     "submissionId": "Mã nạp tiền",
     "submissionDate": "Ngày tạo yêu cầu",
     "wireDate": "Ngày chuyển tiền",
@@ -38,8 +39,8 @@
     "status": "Trạng thái",
     "wireAmount": "Số tiền nạp",
     "approvedAmount": "Số tiền đã duyệt",
-    "noRecordsFound": "Không tìm thấy lịch sử nạp tiền nào.",
-    "action": "Thao tác"
+    "action": "Thao tác",
+    "noRecordsFound": "Không tìm thấy lịch sử nạp tiền nào."
   },
   "quickTopupTitle": "Nạp tiền vào ví",
   "quickTopupDesc": "Chọn mệnh giá hoặc nhập số tiền tùy chỉnh để nạp tiền nhanh chóng.",

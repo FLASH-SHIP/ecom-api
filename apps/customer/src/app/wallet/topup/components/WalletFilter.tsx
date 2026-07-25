@@ -14,7 +14,7 @@ import {
 import { format, subDays } from "date-fns";
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { DateRangePicker } from "../../../../../packages/ui/components/date-range-picker";
+import {DateRangePicker} from "@customer/components/ui/date-range-picker";
 
 export interface WalletFilterProps {
   dateFrom?: string;

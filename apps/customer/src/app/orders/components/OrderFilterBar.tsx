@@ -21,7 +21,7 @@ import { format, subDays } from "date-fns";
 import debounce from "lodash/debounce";
 import { Download, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { DateRangePicker } from "../../../../packages/ui/components/date-range-picker";
+import { DateRangePicker } from "@ecom/ui/components/date-range-picker";
 
 export interface OrderFilterBarProps {
   search: string;
