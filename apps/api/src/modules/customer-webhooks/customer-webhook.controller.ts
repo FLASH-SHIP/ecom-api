@@ -23,7 +23,10 @@ import type { CreateCustomerWebhookDto } from "./dto/create-webhook.dto";
 @ApiTags("Customer Webhooks")
 @ApiBearerAuth()
 @UseGuards(ApiAuthGuard)
-@Controller("v2/customer/webhooks")
+@Controller({
+  path: "customer/webhooks",
+  version: "1",
+})
 export class CustomerWebhookController {
   @Post()
   @ApiOperation({ summary: "Register a new webhook subscription" })

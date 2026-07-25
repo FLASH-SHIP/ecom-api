@@ -68,8 +68,10 @@ function getRefreshTokenTtl(): number {
 }
 
 export interface JwtPayload {
-  userId: string;
-  email: string;
+  userId?: string;
+  sub?: string;
+  email?: string;
+  role?: string;
   type: "access" | "refresh";
 }
 

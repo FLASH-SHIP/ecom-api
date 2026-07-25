@@ -12,6 +12,7 @@
     "lint": "biome check",
     "format": "biome format --write",
     "test": "vitest run",
+    "generate:openapi": "tsx src/export-openapi.ts",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {

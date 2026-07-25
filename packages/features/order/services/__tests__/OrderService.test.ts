@@ -297,4 +297,39 @@ describe("OrderService", () => {
       );
     });
   });
+
+  describe("cancelCustomerOrder", () => {
+    it("should cancel order when status is DRAFT", async () => {
+      orderRepoMock.findByIdOrCodeForCustomer = vi.fn().mockResolvedValue({
+        id: "cust_order_1",
+        orderCode: "TEST260711ABCD",
+        status: "DRAFT",
+      });
+
+      orderRepoMock.update.mockResolvedValue({
+        id: "cust_order_1",
+        orderCode: "TEST260711ABCD",
+        status: "CANCELLED",
+      });
+
+      const res = await service.cancelCustomerOrder("cust_1", "cust_order_1", "Changed mind");
+
+      expect(orderRepoMock.update).toHaveBeenCalledWith("cust_order_1", {
+        status: "CANCELLED",
+      });
+      expect(res.status).toBe("CANCELLED");
+    });
+
+    it("should throw error if order status is already in transit or printed", async () => {
+      orderRepoMock.findByIdOrCodeForCustomer = vi.fn().mockResolvedValue({
+        id: "cust_order_2",
+        orderCode: "TEST260711ABCD2",
+        status: "LABEL_PRINTED",
+      });
+
+      await expect(service.cancelCustomerOrder("cust_1", "cust_order_2")).rejects.toThrow(
+        'Không thể hủy đơn hàng đang ở trạng thái "LABEL_PRINTED"',
+      );
+    });
+  });
 });

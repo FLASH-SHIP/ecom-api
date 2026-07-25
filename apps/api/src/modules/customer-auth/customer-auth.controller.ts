@@ -7,6 +7,7 @@ import {
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { CustomerJwtGuard } from "./customer-jwt.guard";
 import type {
@@ -75,15 +76,21 @@ export class CustomerAuthController {
   }
 
   @Post("login")
-  @ApiOperation({ summary: "Authenticate and log in customer" })
-  async login(@Body() body: LoginDto) {
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: "Authenticate and log in customer (with Redis active token cache)" })
+  async login(@Body() body: LoginDto, @Req() req: Request) {
     const authService = getCustomerAuthService();
     const tokenService = getCustomerTokenService();
+    const userAgent = req.headers["user-agent"] || "default";
 
-    const customer = await authService.login(body.identifier, body.password);
-    const tokens = tokenService.generateTokens(customer);
+    const result = await authService.loginWithActiveTokenCache(
+      body.identifier,
+      body.password,
+      userAgent,
+      tokenService,
+    );
     return {
-      data: { customer, ...tokens },
+      data: result,
     };
   }
 

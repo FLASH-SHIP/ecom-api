@@ -104,6 +104,10 @@ export interface UpdateOrderInput {
 export interface OrderQueryOptions {
   customerId?: string;
   status?: OrderStatus;
+  orderCode?: string;
+  sellerOrderId?: string;
+  fromDate?: Date;
+  toDate?: Date;
   search?: string;
   page?: number;
   perPage?: number;
@@ -256,7 +260,17 @@ export class OrderRepository {
   }
 
   async findMany(options: OrderQueryOptions) {
-    const { customerId, status, search, sortBy = "createdAt", sortOrder = "desc" } = options;
+    const {
+      customerId,
+      status,
+      orderCode,
+      sellerOrderId,
+      fromDate,
+      toDate,
+      search,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = options;
     const { page, perPage, skip } = normalizePagination(options);
 
     const conditions: Prisma.OrderWhereInput[] = [];
@@ -267,6 +281,22 @@ export class OrderRepository {
 
     if (status) {
       conditions.push({ status });
+    }
+
+    if (orderCode?.trim()) {
+      conditions.push({ orderCode: { contains: orderCode.trim(), mode: "insensitive" } });
+    }
+
+    if (sellerOrderId?.trim()) {
+      conditions.push({ sellerOrderId: { contains: sellerOrderId.trim(), mode: "insensitive" } });
+    }
+
+    if (fromDate) {
+      conditions.push({ createdAt: { gte: fromDate } });
+    }
+
+    if (toDate) {
+      conditions.push({ createdAt: { lte: toDate } });
     }
 
     if (search?.trim()) {
@@ -296,7 +326,7 @@ export class OrderRepository {
           shippingMethod: true,
           shippingOrigin: true,
           sellerOrderId: true,
-          trackingNumber: true,
+          ecomTrackingNumber: true,
           receiverName: true,
           receiverPhone: true,
           receiverCity: true,
@@ -496,6 +526,96 @@ export class OrderRepository {
         createdAt: true,
       },
       orderBy: { checkpointDate: "desc" },
+    });
+  }
+
+  async findByIdOrCodeForCustomer(customerId: string, identifier: string) {
+    return this.prisma.order.findFirst({
+      where: {
+        customerId,
+        OR: [{ id: identifier }, { orderCode: identifier }, { sellerOrderId: identifier }],
+      },
+      select: {
+        id: true,
+        orderCode: true,
+        status: true,
+        labelStatus: true,
+        exportCustomsStatus: true,
+        importCustomsStatus: true,
+        paymentStatus: true,
+        shippingMethod: true,
+        shippingOrigin: true,
+        sellerOrderId: true,
+        totalPackets: true,
+        senderName: true,
+        senderAddress: true,
+        senderPhone: true,
+        senderEmail: true,
+        senderCountry: true,
+        senderState: true,
+        senderCity: true,
+        senderWard: true,
+        senderZipCode: true,
+        receiverName: true,
+        receiverPhone: true,
+        receiverEmail: true,
+        receiverCity: true,
+        receiverState: true,
+        receiverAddress1: true,
+        receiverAddress2: true,
+        receiverCountry: true,
+        receiverZipCode: true,
+        detailDescription: true,
+        declaredWeight: true,
+        dimensionText: true,
+        dimensionLength: true,
+        dimensionWidth: true,
+        dimensionHeight: true,
+        declaredValue: true,
+        packagingCode: true,
+        actualWeight: true,
+        volumeWeight: true,
+        chargeableWeight: true,
+        ecomTrackingNumber: true,
+        baseShippingFee: true,
+        surchargeFee: true,
+        totalFee: true,
+        createdAt: true,
+        updatedAt: true,
+
+        feeItems: {
+          select: {
+            id: true,
+            feeType: true,
+            name: true,
+            amount: true,
+            currency: true,
+            createdAt: true,
+          },
+        },
+        products: {
+          select: {
+            id: true,
+            description: true,
+            quantity: true,
+            value: true,
+            hsCode: true,
+            originCountry: true,
+            weight: true,
+            sku: true,
+          },
+        },
+        trackingCheckpoints: {
+          select: {
+            id: true,
+            checkpointDate: true,
+            location: true,
+            description: true,
+            carrierCode: true,
+          },
+          orderBy: { checkpointDate: "desc" },
+        },
+      },
     });
   }
 }

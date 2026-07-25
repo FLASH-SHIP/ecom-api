@@ -33,7 +33,10 @@ import { UpdatePreferenceDto } from "./dto/update-preference.dto";
 @ApiTags("Notifications & Devices")
 @ApiBearerAuth()
 @UseGuards(ApiAuthGuard)
-@Controller("v2/notifications")
+@Controller({
+  path: "notifications",
+  version: "2",
+})
 export class NotificationController {
   private getOwnerContext(req: Request) {
     const user = req.apiUser;

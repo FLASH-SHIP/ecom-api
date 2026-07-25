@@ -174,8 +174,8 @@ export default function CustomerOrdersPage() {
       header: "Tracking number",
       width: 180,
       sortable: true,
-      sortKey: "trackingNumber",
-      cell: (order: OrderType) => <span>{order?.trackingNumber}</span>,
+      sortKey: "ecomTrackingNumber",
+      cell: (order: OrderType) => <span>{order?.ecomTrackingNumber}</span>,
     },
     {
       header: "Action",

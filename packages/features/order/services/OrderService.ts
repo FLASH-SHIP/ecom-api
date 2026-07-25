@@ -10,6 +10,10 @@ import {
   type ShippingMethod,
   type ShippingOrigin,
 } from "@ecom/prisma";
+import {
+  mapToCustomerOrderDetailResponse,
+  mapToCustomerOrderSummaryResponse,
+} from "../mappers/CustomerOrderMapper";
 import type { CreateOrderInput, OrderRepository } from "../repositories/OrderRepository";
 
 export interface IOrderServiceDeps {
@@ -403,6 +407,7 @@ export class OrderService {
 
       return {
         ...createdOrder,
+        totalFee: Number(createdOrder.totalFee),
         volumeWeight: pricing.volumeWeight,
         chargeableWeight: pricing.chargeableWeight,
         dimensionText,
@@ -666,5 +671,114 @@ export class OrderService {
 
       return updatedOrder;
     });
+  }
+
+  /**
+   * Retrieves paginated orders for a customer with filtering options.
+   */
+  async getCustomerOrders(params: {
+    customerId: string;
+    page?: number;
+    perPage?: number;
+    status?: OrderStatus;
+    orderCode?: string;
+    sellerOrderId?: string;
+    fromDate?: Date;
+    toDate?: Date;
+    search?: string;
+  }) {
+    const result = await this.deps.orderRepo.findMany({
+      customerId: params.customerId,
+      page: params.page,
+      perPage: params.perPage,
+      status: params.status,
+      orderCode: params.orderCode,
+      sellerOrderId: params.sellerOrderId,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      search: params.search,
+    });
+
+    return {
+      ...result,
+      data: result.data.map(mapToCustomerOrderSummaryResponse),
+    };
+  }
+
+  /**
+   * Retrieves full order detail by ID, orderCode, or sellerOrderId for a customer.
+   */
+  async getCustomerOrderDetail(customerId: string, identifier: string) {
+    const order = await this.deps.orderRepo.findByIdOrCodeForCustomer(customerId, identifier);
+    if (!order) {
+      throw new ErrorWithCode(ErrorCode.NotFound, "Đơn hàng không tồn tại", 404);
+    }
+    return mapToCustomerOrderDetailResponse(order);
+  }
+
+
+  /**
+   * Cancels an order requested by the customer.
+   * Only orders in DRAFT or PENDING_LABEL status can be cancelled.
+   */
+  async cancelCustomerOrder(customerId: string, identifier: string, reason?: string) {
+    const order = await this.deps.orderRepo.findByIdOrCodeForCustomer(customerId, identifier);
+    if (!order) {
+      throw new ErrorWithCode(ErrorCode.NotFound, "Đơn hàng không tồn tại", 404);
+    }
+
+    if (order.status === "CANCELLED") {
+      return order;
+    }
+
+    if (order.status !== "DRAFT" && order.status !== "LABEL_NOT_CREATED") {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        `Không thể hủy đơn hàng đang ở trạng thái "${order.status}". Vui lòng liên hệ bộ phận hỗ trợ.`,
+        400,
+      );
+    }
+
+    const oldStatus = order.status;
+
+    const result = await runInTransaction(async () => {
+      const updated = await this.deps.orderRepo.update(order.id, {
+        status: "CANCELLED",
+      });
+
+      const actorInfo = await this.resolveActorInfo("CUSTOMER", customerId);
+
+      const cancelDescription = reason
+        ? `Khách hàng hủy đơn qua API. Lý do: ${reason}`
+        : "Khách hàng đã hủy đơn hàng qua API";
+
+      await this.deps.orderRepo.createActivityLog({
+        orderId: order.id,
+        action: "STATUS_CHANGE",
+        statusFrom: oldStatus,
+        statusTo: "CANCELLED",
+        description: cancelDescription,
+        actorType: "CUSTOMER",
+        actorId: actorInfo.actorId,
+        actorName: actorInfo.actorName,
+        actorUsername: actorInfo.actorUsername,
+        actorEmail: actorInfo.actorEmail,
+      });
+
+      return updated;
+    });
+
+    eventBus
+      .emit("order.status_updated", {
+        orderId: result.id,
+        customerId: customerId,
+        status: result.status,
+        orderCode: result.orderCode,
+      })
+      .catch((err) => {
+        console.error("Failed to emit order.status_updated event on cancel:", err);
+      });
+
+    return result;
   }
 }

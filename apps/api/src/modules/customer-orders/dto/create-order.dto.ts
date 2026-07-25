@@ -53,6 +53,11 @@ export class CreateOrderDto {
   @IsString()
   sellerOrderId?: string | null;
 
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  totalPackets?: number;
+
   // Sender Info
   @IsOptional()
   @IsString()
@@ -81,6 +86,10 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   senderCity?: string | null;
+
+  @IsOptional()
+  @IsString()
+  senderWard?: string | null;
 
   @IsOptional()
   @IsString()
@@ -145,8 +154,13 @@ export class CreateOrderDto {
   declaredValue!: number;
 
   @IsOptional()
+  @IsInt()
+  packingTypeId?: number | null;
+
+  @IsOptional()
   @IsString()
   packagingCode?: string | null;
+
 
   @IsOptional()
   @IsInt()
@@ -158,10 +172,44 @@ export class CreateOrderDto {
   products?: OrderProductDto[];
 }
 
+export const MAX_BULK_ORDER_LIMIT = 50;
+
 export class CreateBulkOrdersDto {
   @ValidateNested({ each: true })
   @Type(() => CreateOrderDto)
   @ArrayMinSize(1)
-  @ArrayMaxSize(50)
+  @ArrayMaxSize(MAX_BULK_ORDER_LIMIT)
   orders!: CreateOrderDto[];
 }
+
+export class EstimateFreightDto {
+  @IsEnum(ShippingMethod)
+  shippingMethod!: ShippingMethod;
+
+  @IsOptional()
+  @IsEnum(ShippingOrigin)
+  shippingOrigin?: ShippingOrigin;
+
+  @IsString()
+  receiverCountry!: string;
+
+  @IsInt()
+  @Min(1)
+  declaredWeight!: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  dimensionLength?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  dimensionWidth?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  dimensionHeight?: number | null;
+}
+
