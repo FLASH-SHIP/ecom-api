@@ -1,7 +1,9 @@
 "use client";
 
 import { trpc } from "@customer/lib/trpc";
+import { translate } from "@ecom/i18n";
 import { getPostalCodeRuleInfo } from "@ecom/lib/addressValidator";
+import { useI18n } from "@ecom/shared/@i18n";
 import { ShippingMethod } from "@ecom/types";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
@@ -16,8 +18,6 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
-import { translate } from "@ecom/i18n";
-import { useI18n } from "@ecom/shared/@i18n";
 import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
@@ -264,7 +264,10 @@ export function ReceiverSection({
                           : (countriesData ?? []).map((c) => ({ value: c.code, label: c.name }))
                       }
                       placeholder={isEPacket ? "US" : "Select country"}
-                      searchPlaceholder={translate("customerOrder.placeholder.searchCountry", currentLocale)}
+                      searchPlaceholder={translate(
+                        "customerOrder.placeholder.searchCountry",
+                        currentLocale,
+                      )}
                       disabled={isEPacket}
                       allowClear={!isEPacket}
                       className={cn(
@@ -309,8 +312,14 @@ export function ReceiverSection({
                           value: s.code,
                           label: `${s.code} - ${s.name}`,
                         }))}
-                        placeholder={translate("customerOrder.placeholder.selectUsState", currentLocale)}
-                        searchPlaceholder={translate("customerOrder.placeholder.searchState", currentLocale)}
+                        placeholder={translate(
+                          "customerOrder.placeholder.selectUsState",
+                          currentLocale,
+                        )}
+                        searchPlaceholder={translate(
+                          "customerOrder.placeholder.searchState",
+                          currentLocale,
+                        )}
                         allowClear={true}
                         className={cn(
                           "bg-background/50 border-input",
@@ -326,7 +335,10 @@ export function ReceiverSection({
                     required
                     maxLength={50}
                     {...registerParent("receiverState")}
-                    placeholder={translate("customerOrder.placeholder.receiverState", currentLocale)}
+                    placeholder={translate(
+                      "customerOrder.placeholder.receiverState",
+                      currentLocale,
+                    )}
                     className={cn(
                       "w-full bg-background/50",
                       errorsParent.receiverState &&
@@ -358,8 +370,15 @@ export function ReceiverSection({
                           value: c.name,
                           label: c.name,
                         }))}
-                        placeholder={selectedStateId ? translate("customerOrder.placeholder.selectCity", currentLocale) : translate("customerOrder.placeholder.selectStateFirst", currentLocale)}
-                        searchPlaceholder={translate("customerOrder.placeholder.searchCity", currentLocale)}
+                        placeholder={
+                          selectedStateId
+                            ? translate("customerOrder.placeholder.selectCity", currentLocale)
+                            : translate("customerOrder.placeholder.selectStateFirst", currentLocale)
+                        }
+                        searchPlaceholder={translate(
+                          "customerOrder.placeholder.searchCity",
+                          currentLocale,
+                        )}
                         disabled={!selectedStateId}
                         allowClear={true}
                         serverSearch={true}
@@ -402,7 +421,10 @@ export function ReceiverSection({
                   type="text"
                   required
                   {...registerParent("receiverZipCode")}
-                  placeholder={translate("customerOrder.placeholder.enterPostcodeZipcode", currentLocale)}
+                  placeholder={translate(
+                    "customerOrder.placeholder.enterPostcodeZipcode",
+                    currentLocale,
+                  )}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverZipCode &&
@@ -426,7 +448,10 @@ export function ReceiverSection({
                   required
                   maxLength={100}
                   {...registerParent("receiverName")}
-                  placeholder={translate("customerOrder.placeholder.enterReceiverName", currentLocale)}
+                  placeholder={translate(
+                    "customerOrder.placeholder.enterReceiverName",
+                    currentLocale,
+                  )}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverName &&
@@ -445,7 +470,10 @@ export function ReceiverSection({
                   type="text"
                   maxLength={15}
                   {...registerParent("receiverPhone")}
-                  placeholder={translate("customerOrder.placeholder.enterPhoneNumber", currentLocale)}
+                  placeholder={translate(
+                    "customerOrder.placeholder.enterPhoneNumber",
+                    currentLocale,
+                  )}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.receiverPhone &&

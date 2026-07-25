@@ -10,11 +10,14 @@ export interface ExecuteBatchOptions {
  * Standard batch processor utility for bulk API endpoints.
  * Validates each item schema via class-validator and executes processor callback in isolation.
  */
-export async function executeBatchProcess<TInput extends object, TOutput extends Record<string, any>>(
+export async function executeBatchProcess<
+  TInput extends object,
+  TOutput extends Record<string, any>,
+>(
   items: TInput[],
   dtoClass: new () => object,
   processor: (item: TInput, index: number) => Promise<TOutput>,
-  options?: ExecuteBatchOptions
+  options?: ExecuteBatchOptions,
 ): Promise<ApiBulkResponse<TOutput>> {
   const maxLimit = options?.maxLimit ?? 50;
   if (!Array.isArray(items) || items.length === 0) {
@@ -25,7 +28,9 @@ export async function executeBatchProcess<TInput extends object, TOutput extends
   }
 
   if (items.length > maxLimit) {
-    throw new Error(`Kích thước danh sách vượt quá giới hạn tối đa ${maxLimit} phần tử per request.`);
+    throw new Error(
+      `Kích thước danh sách vượt quá giới hạn tối đa ${maxLimit} phần tử per request.`,
+    );
   }
 
   const results: ApiBulkItemResult<TOutput>[] = [];

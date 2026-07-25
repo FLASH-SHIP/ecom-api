@@ -523,7 +523,9 @@ export default function AdminOrderDetailPage() {
                     <SelectContent>
                       <SelectItem value="LABEL_CREATED">{t("status.LABEL_CREATED")}</SelectItem>
                       <SelectItem value="PENDING_LABEL">{t("status.PENDING_LABEL")}</SelectItem>
-                      <SelectItem value="PACKAGE_RECEIVED">{t("status.PACKAGE_RECEIVED")}</SelectItem>
+                      <SelectItem value="PACKAGE_RECEIVED">
+                        {t("status.PACKAGE_RECEIVED")}
+                      </SelectItem>
                       <SelectItem value="ON_THE_WAY">{t("status.ON_THE_WAY")}</SelectItem>
                       <SelectItem value="PICK_UP">{t("status.PICK_UP")}</SelectItem>
                       <SelectItem value="DELIVERY">{t("status.DELIVERY")}</SelectItem>

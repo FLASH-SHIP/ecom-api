@@ -5,7 +5,6 @@ import { CustomerOrderController } from "./customer-order.controller";
 import type { CreateBulkOrdersDto, CreateOrderDto } from "./dto/create-order.dto";
 import type { GetCustomerOrdersDto } from "./dto/query-order.dto";
 
-
 const mockCreateOrder = vi.fn();
 const mockGetCustomerOrders = vi.fn();
 const mockGetCustomerOrderDetail = vi.fn();
@@ -21,7 +20,6 @@ vi.mock("@ecom/features/di/containers/OrderService", () => ({
     calculateOrderFreight: mockCalculateOrderFreight,
   }),
 }));
-
 
 const mockRedisGet = vi.fn();
 const mockRedisSet = vi.fn();
@@ -68,7 +66,6 @@ describe("CustomerOrderController", () => {
         ownerType: "User",
       },
     }) as unknown as Request;
-
 
   describe("Authorization Check", () => {
     it("should throw ForbiddenException if user is not a Customer", async () => {
@@ -287,4 +284,3 @@ describe("CustomerOrderController", () => {
     });
   });
 });
-

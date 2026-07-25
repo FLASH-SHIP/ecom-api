@@ -1,6 +1,8 @@
 "use client";
 
 import { trpc } from "@customer/lib/trpc";
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@ecom/ui/components/field";
 import { Input } from "@ecom/ui/components/input";
@@ -23,8 +25,6 @@ import {
   type UseFormSetValue,
   type UseFormWatch,
 } from "react-hook-form";
-import { translate } from "@ecom/i18n";
-import { useI18n } from "@ecom/shared/@i18n";
 import type { OrderFormValues } from "./page";
 
 // ---------------------------------------------------------------------------
@@ -285,7 +285,10 @@ export function SenderSection({
                   type="text"
                   required
                   {...registerParent("senderName")}
-                  placeholder={translate("customerOrder.placeholder.enterSenderName", currentLocale)}
+                  placeholder={translate(
+                    "customerOrder.placeholder.enterSenderName",
+                    currentLocale,
+                  )}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.senderName && "border-destructive focus-visible:ring-destructive",
@@ -303,7 +306,10 @@ export function SenderSection({
                   id="senderPhone"
                   type="tel"
                   {...registerParent("senderPhone")}
-                  placeholder={translate("customerOrder.placeholder.enterPhoneNumber", currentLocale)}
+                  placeholder={translate(
+                    "customerOrder.placeholder.enterPhoneNumber",
+                    currentLocale,
+                  )}
                   className={cn(
                     "w-full bg-background/50",
                     errorsParent.senderPhone && "border-destructive focus-visible:ring-destructive",
@@ -379,7 +385,10 @@ export function SenderSection({
                       onOptionSelect={(opt) => setSelectedCityLabel(opt.label)}
                       options={provinceOptions}
                       placeholder={translate("customerOrder.placeholder.selectCity", currentLocale)}
-                      searchPlaceholder={translate("customerOrder.placeholder.searchProvince", currentLocale)}
+                      searchPlaceholder={translate(
+                        "customerOrder.placeholder.searchProvince",
+                        currentLocale,
+                      )}
                       allowClear
                       maxHeight="250px"
                       serverSearch
@@ -410,7 +419,10 @@ export function SenderSection({
                       onOptionSelect={(opt) => setSelectedWardLabel(opt.label)}
                       options={wardOptions}
                       placeholder={translate("customerOrder.placeholder.selectWard", currentLocale)}
-                      searchPlaceholder={translate("customerOrder.placeholder.searchWard", currentLocale)}
+                      searchPlaceholder={translate(
+                        "customerOrder.placeholder.searchWard",
+                        currentLocale,
+                      )}
                       disabled={!selectedProvinceCode}
                       allowClear
                       maxHeight="250px"

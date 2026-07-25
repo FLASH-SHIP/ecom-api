@@ -1,5 +1,11 @@
 import { getOrderService } from "@ecom/features/di/containers/OrderService";
+import {
+  mapToCustomerOrderDetailResponse,
+  mapToEstimateFreightResponse,
+} from "@ecom/features/order/mappers/CustomerOrderMapper";
+import { executeBatchProcess } from "@ecom/lib";
 import { getRedisClient } from "@ecom/lib/redis";
+import { OrderStatus } from "@ecom/prisma";
 import {
   Body,
   Controller,
@@ -22,21 +28,22 @@ import {
   ApiResponse,
   ApiTags,
 } from "@nestjs/swagger";
-import { OrderStatus } from "@ecom/prisma";
 import { Throttle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { ApiAuthGuard } from "../auth/api-auth.guard";
-import { executeBatchProcess } from "@ecom/lib";
-import { CancelOrderDto, GetCustomerOrdersDto } from "./dto/query-order.dto.js";
-import { CreateBulkOrdersDto, CreateOrderDto, EstimateFreightDto, MAX_BULK_ORDER_LIMIT } from "./dto/create-order.dto.js";
+import {
+  CreateBulkOrdersDto,
+  CreateOrderDto,
+  EstimateFreightDto,
+  MAX_BULK_ORDER_LIMIT,
+} from "./dto/create-order.dto.js";
+import { CancelOrderDto, type GetCustomerOrdersDto } from "./dto/query-order.dto.js";
 import {
   BulkOrdersBatchResponseDto,
   CustomerOrderDetailResponseDto,
   EstimateFreightResponseDto,
   PaginatedCustomerOrdersResponseDto,
 } from "./dto/response-order.dto.js";
-
-import { mapToCustomerOrderDetailResponse, mapToEstimateFreightResponse } from "@ecom/features/order/mappers/CustomerOrderMapper";
 
 @ApiTags("Customer Orders")
 @ApiBearerAuth()
@@ -58,7 +65,11 @@ export class CustomerOrderController {
   @Post("estimate-freight")
   @ApiOperation({ summary: "Estimate shipping freight before creating an order" })
   @ApiBody({ type: EstimateFreightDto })
-  @ApiResponse({ status: 200, description: "Freight calculation result", type: EstimateFreightResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: "Freight calculation result",
+    type: EstimateFreightResponseDto,
+  })
   async estimateFreight(@Req() req: Request, @Body() body: EstimateFreightDto) {
     const customerId = this.validateCustomer(req);
     const result = await getOrderService().calculateOrderFreight({
@@ -74,7 +85,6 @@ export class CustomerOrderController {
     return mapToEstimateFreightResponse(result);
   }
 
-
   @Post()
   @ApiOperation({ summary: "Create a single order with idempotency check" })
   @ApiBody({ type: CreateOrderDto })
@@ -83,7 +93,11 @@ export class CustomerOrderController {
     required: false,
     description: "Unique idempotency key to prevent duplicate order creation within 24 hours",
   })
-  @ApiResponse({ status: 201, description: "Order created successfully", type: CustomerOrderDetailResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: "Order created successfully",
+    type: CustomerOrderDetailResponseDto,
+  })
   async createOrder(
     @Req() req: Request,
     @Body() body: CreateOrderDto,
@@ -126,14 +140,20 @@ export class CustomerOrderController {
 
   @Post("bulk")
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: "Bulk create orders (up to 50 orders per request) with idempotency check" })
+  @ApiOperation({
+    summary: "Bulk create orders (up to 50 orders per request) with idempotency check",
+  })
   @ApiBody({ type: CreateBulkOrdersDto })
   @ApiHeader({
     name: "X-Idempotency-Key",
     required: false,
     description: "Unique idempotency key to prevent duplicate bulk order creation within 24 hours",
   })
-  @ApiResponse({ status: 201, description: "Bulk orders batch processing response with summary and item errors", type: BulkOrdersBatchResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: "Bulk orders batch processing response with summary and item errors",
+    type: BulkOrdersBatchResponseDto,
+  })
   async createOrdersBulk(
     @Req() req: Request,
     @Body() body: CreateBulkOrdersDto,
@@ -194,14 +214,53 @@ export class CustomerOrderController {
   @Get()
   @ApiOperation({ summary: "List customer orders with pagination and filters" })
   @ApiQuery({ name: "page", required: false, type: Number, description: "Page number (default 1)" })
-  @ApiQuery({ name: "limit", required: false, type: Number, description: "Items per page (default 20, max 100)" })
-  @ApiQuery({ name: "status", required: false, enum: OrderStatus, description: "Filter by order status" })
-  @ApiQuery({ name: "orderCode", required: false, type: String, description: "Filter by Ecom Order Code" })
-  @ApiQuery({ name: "sellerOrderId", required: false, type: String, description: "Filter by Seller Order ID" })
-  @ApiQuery({ name: "search", required: false, type: String, description: "Search keyword matching orderCode, trackingNumber, sellerOrderId, receiverName" })
-  @ApiQuery({ name: "fromDate", required: false, type: String, description: "Start date filter (ISO String)" })
-  @ApiQuery({ name: "toDate", required: false, type: String, description: "End date filter (ISO String)" })
-  @ApiResponse({ status: 200, description: "Paginated list of customer orders", type: PaginatedCustomerOrdersResponseDto })
+  @ApiQuery({
+    name: "limit",
+    required: false,
+    type: Number,
+    description: "Items per page (default 20, max 100)",
+  })
+  @ApiQuery({
+    name: "status",
+    required: false,
+    enum: OrderStatus,
+    description: "Filter by order status",
+  })
+  @ApiQuery({
+    name: "orderCode",
+    required: false,
+    type: String,
+    description: "Filter by Ecom Order Code",
+  })
+  @ApiQuery({
+    name: "sellerOrderId",
+    required: false,
+    type: String,
+    description: "Filter by Seller Order ID",
+  })
+  @ApiQuery({
+    name: "search",
+    required: false,
+    type: String,
+    description: "Search keyword matching orderCode, trackingNumber, sellerOrderId, receiverName",
+  })
+  @ApiQuery({
+    name: "fromDate",
+    required: false,
+    type: String,
+    description: "Start date filter (ISO String)",
+  })
+  @ApiQuery({
+    name: "toDate",
+    required: false,
+    type: String,
+    description: "End date filter (ISO String)",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Paginated list of customer orders",
+    type: PaginatedCustomerOrdersResponseDto,
+  })
   async getOrders(@Req() req: Request, @Query() query: GetCustomerOrdersDto) {
     const customerId = this.validateCustomer(req);
     return getOrderService().getCustomerOrders({
@@ -220,7 +279,11 @@ export class CustomerOrderController {
   @Get(":id")
   @ApiOperation({ summary: "Get order details by orderId, orderCode, or sellerOrderId" })
   @ApiParam({ name: "id", description: "Order ID, Ecom Order Code, or Seller Order ID" })
-  @ApiResponse({ status: 200, description: "Order detailed response", type: CustomerOrderDetailResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: "Order detailed response",
+    type: CustomerOrderDetailResponseDto,
+  })
   async getOrderDetail(@Req() req: Request, @Param("id") id: string) {
     const customerId = this.validateCustomer(req);
     return getOrderService().getCustomerOrderDetail(customerId, id);

@@ -1,5 +1,7 @@
 "use client";
 
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import {
   getShippingMethodLabel,
   getShippingOriginLabel,
@@ -21,9 +23,6 @@ import { cn } from "@ecom/ui/lib/utils";
 import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
 import { Controller } from "react-hook-form";
 import type { OrderFormValues } from "./page";
-
-import { translate } from "@ecom/i18n";
-import { useI18n } from "@ecom/shared/@i18n";
 
 export interface BasicInfoSectionProps {
   control: Control<OrderFormValues>;

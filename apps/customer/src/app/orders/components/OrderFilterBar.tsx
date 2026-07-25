@@ -1,7 +1,15 @@
 "use client";
 
+import {
+  getOrderStatusOptions,
+  getShippingMethodOptions,
+} from "@customer/app/orders/constants/constants";
+import { OrderStatus } from "@customer/app/orders/constants/enums";
+import { translate } from "@ecom/i18n";
+import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
 import { DateRangePicker } from "@ecom/ui/components/date-range-picker";
+import { ExportFileIcon } from "@ecom/ui/components/icons";
 import { Input } from "@ecom/ui/components/input";
 import {
   Select,
@@ -10,15 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ecom/ui/components/select";
+import { format, subDays } from "date-fns";
 import debounce from "lodash/debounce";
 import { Download, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { format, subDays } from "date-fns";
-import { OrderStatus } from "@customer/app/orders/constants/enums";
-import { getOrderStatusOptions, getShippingMethodOptions } from "@customer/app/orders/constants/constants";
-import {ExportFileIcon} from "@ecom/ui/components/icons";
-import {translate} from "@ecom/i18n";
-import {useI18n} from "@ecom/shared/@i18n";
 
 export interface OrderFilterBarProps {
   search: string;
@@ -121,7 +124,15 @@ export function OrderFilterBar({
       (dateFrom && dateFrom !== defaultFromDate) || (dateTo && dateTo !== defaultToDate),
     );
     return isSearchActive || isStatusActive || isShippingActive || isDateActive;
-  }, [search, statusFilter, shippingMethodFilter, dateFrom, dateTo, defaultFromDate, defaultToDate]);
+  }, [
+    search,
+    statusFilter,
+    shippingMethodFilter,
+    dateFrom,
+    dateTo,
+    defaultFromDate,
+    defaultToDate,
+  ]);
 
   const handleClearAll = () => {
     setLocalSearch("");
@@ -152,7 +163,10 @@ export function OrderFilterBar({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#7B7B7B]" />
           <Input
             type="text"
-            placeholder={translate("customerOrder.placeholder.searchByReceptionOrderIdTracking", currentLocale)}
+            placeholder={translate(
+              "customerOrder.placeholder.searchByReceptionOrderIdTracking",
+              currentLocale,
+            )}
             value={localSearch}
             onChange={(e) => {
               const val = e.target.value;
@@ -189,7 +203,9 @@ export function OrderFilterBar({
             }}
           >
             <SelectTrigger className="h-[52px] min-w-[140px] md:w-[195px] border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
-              <SelectValue placeholder={translate("customerOrder.placeholder.status", currentLocale)} />
+              <SelectValue
+                placeholder={translate("customerOrder.placeholder.status", currentLocale)}
+              />
             </SelectTrigger>
             <SelectContent>
               {statusOptions.map((opt) => (
@@ -226,7 +242,9 @@ export function OrderFilterBar({
             }}
           >
             <SelectTrigger className="h-[52px] min-w-[180px] md:w-auto border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
-              <SelectValue placeholder={translate("customerOrder.placeholder.shippingMethod", currentLocale)} />
+              <SelectValue
+                placeholder={translate("customerOrder.placeholder.shippingMethod", currentLocale)}
+              />
             </SelectTrigger>
             <SelectContent>
               {shippingMethodOptions.map((opt) => (
