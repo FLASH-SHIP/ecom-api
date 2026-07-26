@@ -202,6 +202,9 @@ export class DatabaseMaintenanceService {
           }
           env.SEED_ONLY = seedOnly;
         }
+        if (isDevDiagnosticsBypassEnabled()) {
+          env.ALLOW_PROD_SEED = "1";
+        }
         break;
       default:
         throw ErrorWithCode.Factory.BadRequest(`Unsupported action: ${action}`);
