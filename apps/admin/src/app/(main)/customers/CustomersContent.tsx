@@ -23,6 +23,7 @@ import { CustomerFormDrawer } from "./components/CustomerFormDrawer";
 
 type CustomerRow = {
   id: string;
+  customerCode?: string | null;
   email: string;
   username: string;
   name: string | null;
@@ -125,10 +126,16 @@ export default function CustomersContent() {
   const columns: ColumnDef<CustomerRow>[] = useMemo(
     () => [
       {
-        accessorKey: "id",
-        header: "ID",
-        size: 60,
-        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.id}</span>,
+        accessorKey: "customerCode",
+        header: t("fields.customerCode") ?? "Mã KH",
+        size: 110,
+        cell: ({ row }) => (
+          <CopyCell value={row.original.customerCode ?? ""}>
+            <span className="font-semibold text-foreground text-sm">
+              {row.original.customerCode || "—"}
+            </span>
+          </CopyCell>
+        ),
       },
       {
         accessorKey: "name",

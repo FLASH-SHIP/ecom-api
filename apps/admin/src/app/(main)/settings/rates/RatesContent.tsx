@@ -10,20 +10,29 @@ import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
 import { trpc } from "@admin/lib/trpc";
 import { formatDate } from "@admin/utils/dateFormat";
-import type { ContentStatus, ShippingMethod } from "@ecom/prisma";
+import type { ContentStatus, RateCardType, ShippingMethod } from "@ecom/prisma";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@ecom/ui/components/dialog";
+import { Input } from "@ecom/ui/components/input";
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
+import { CheckCircle, Copy, Eye, Pencil, Plus, Trash2, UserPlus, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 type RateCardRow = {
   id: number;
   code: string;
   name: string;
+  type: RateCardType;
   status: ContentStatus;
   shippingMethod: ShippingMethod;
   country: string;
@@ -34,7 +43,7 @@ type RateCardRow = {
   maxWeight: number;
   startDate: string | null;
   endDate: string | null;
-  groups: string[];
+  groups: { id: number; code: string; name: string }[];
   createdAt: string;
 };
 
@@ -43,6 +52,7 @@ function toQueryInput(params: DataTableServerParams) {
 
   const idFilter = filters.find((f) => f.fieldKey === "id");
   const codeFilter = filters.find((f) => f.fieldKey === "code");
+  const typeFilter = filters.find((f) => f.fieldKey === "type");
   const statusFilter = filters.find((f) => f.fieldKey === "status");
   const shippingMethodFilter = filters.find((f) => f.fieldKey === "shippingMethod");
   const originFilter = filters.find((f) => f.fieldKey === "origin");
@@ -61,6 +71,7 @@ function toQueryInput(params: DataTableServerParams) {
           | "id"
           | "code"
           | "name"
+          | "type"
           | "status"
           | "createdAt"
           | "updatedAt"
@@ -70,6 +81,7 @@ function toQueryInput(params: DataTableServerParams) {
     sortOrder: (sort.direction as "asc" | "desc") || "desc",
     id: idFilter?.value ? Number(idFilter.value) : undefined,
     code: codeFilter?.value || undefined,
+    type: typeFilter?.value ? (typeFilter.value as RateCardType) : undefined,
     status: statusFilter?.value ? (statusFilter.value as ContentStatus) : undefined,
     shippingMethod: shippingMethodFilter?.value
       ? (shippingMethodFilter.value as ShippingMethod)
@@ -90,6 +102,11 @@ export default function RatesContent() {
   const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
   const utils = trpc.useUtils();
 
+  // State for Assign Groups dialog
+  const [assignGroupCard, setAssignGroupCard] = useState<RateCardRow | null>(null);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
+  const [groupSearch, setGroupSearch] = useState("");
+
   const { queryInput, onServerChange, tableKey, initialState } = useServerTable({
     tableId: "rate-cards",
     defaultSort: { key: "createdAt", direction: "desc" },
@@ -107,10 +124,19 @@ export default function RatesContent() {
     retry: false,
   });
 
-  // Load customer groups for filter options
+  // Load customer groups for filter options & assign modal
   const { data: groupsData } = trpc.viewer.customerGroups.listAll.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
   });
+
+  const filteredGroups = useMemo(() => {
+    if (!groupsData) return [];
+    if (!groupSearch.trim()) return groupsData;
+    const term = groupSearch.toLowerCase().trim();
+    return groupsData.filter(
+      (g) => g.code.toLowerCase().includes(term) || g.name.toLowerCase().includes(term),
+    );
+  }, [groupsData, groupSearch]);
 
   const customerGroupOptions = useMemo(() => {
     if (!groupsData) return [];
@@ -120,6 +146,7 @@ export default function RatesContent() {
     }));
   }, [groupsData]);
 
+  // Mutations
   const deleteMut = trpc.viewer.rateCards.delete.useMutation({
     onSuccess: () => {
       toast(t("rates.toastDeleteSuccess"), "success");
@@ -136,6 +163,39 @@ export default function RatesContent() {
     onError: (err) => toast(err.message, "error"),
   });
 
+  const submitReviewMut = trpc.viewer.rateCards.submitForReview.useMutation({
+    onSuccess: () => {
+      toast(t("rates.toastSubmitSuccess"), "success");
+      utils.viewer.rateCards.list.invalidate();
+    },
+    onError: (err) => toast(err.message, "error"),
+  });
+
+  const approveMut = trpc.viewer.rateCards.approve.useMutation({
+    onSuccess: () => {
+      toast(t("rates.toastApproveSuccess"), "success");
+      utils.viewer.rateCards.list.invalidate();
+    },
+    onError: (err) => toast(err.message, "error"),
+  });
+
+  const rejectMut = trpc.viewer.rateCards.reject.useMutation({
+    onSuccess: () => {
+      toast(t("rates.toastRejectSuccess"), "success");
+      utils.viewer.rateCards.list.invalidate();
+    },
+    onError: (err) => toast(err.message, "error"),
+  });
+
+  const assignGroupsMut = trpc.viewer.rateCards.assignGroups.useMutation({
+    onSuccess: () => {
+      toast(t("rates.toastAssignGroupsSuccess"), "success");
+      setAssignGroupCard(null);
+      utils.viewer.rateCards.list.invalidate();
+    },
+    onError: (err) => toast(err.message, "error"),
+  });
+
   const openCreate = () => {
     router.push("/settings/rates/new");
   };
@@ -146,6 +206,12 @@ export default function RatesContent() {
     },
     [router],
   );
+
+  const openAssignGroups = useCallback((row: RateCardRow) => {
+    setAssignGroupCard(row);
+    setSelectedGroupIds(row.groups.map((g) => g.id));
+    setGroupSearch("");
+  }, []);
 
   // Columns layout
   const columns: ColumnDef<RateCardRow>[] = useMemo(
@@ -179,6 +245,16 @@ export default function RatesContent() {
         cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
       },
       {
+        accessorKey: "type",
+        header: t("rates.colType"),
+        size: 90,
+        cell: ({ row }) => (
+          <Badge variant={row.original.type === "DEFAULT" ? "default" : "outline"}>
+            {row.original.type === "DEFAULT" ? t("rates.typeDefault") : t("rates.typeCustom")}
+          </Badge>
+        ),
+      },
+      {
         accessorKey: "shippingMethod",
         header: t("rates.colShippingMethod"),
         size: 100,
@@ -190,6 +266,32 @@ export default function RatesContent() {
         ),
       },
       {
+        accessorKey: "status",
+        header: t("rates.colStatus"),
+        size: 100,
+        cell: ({ row }) => {
+          const s = row.original.status;
+          let label: string = s;
+          let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
+          if (s === "PUBLISHED") {
+            variant = "default";
+            label = t("rates.statusPublished");
+          } else if (s === "DRAFT") {
+            label = t("rates.statusDraft");
+          } else if (s === "PENDING") {
+            variant = "secondary";
+            label = t("rates.statusPending");
+          } else if (s === "REJECTED") {
+            variant = "destructive";
+            label = t("rates.statusRejected");
+          } else if (s === "ARCHIVED") {
+            variant = "destructive";
+            label = t("rates.statusArchived");
+          }
+          return <Badge variant={variant}>{label}</Badge>;
+        },
+      },
+      {
         accessorKey: "groups",
         header: t("rates.colCustomerGroups"),
         enableSorting: false,
@@ -197,8 +299,8 @@ export default function RatesContent() {
           <div className="flex flex-wrap gap-1 max-w-[180px]">
             {row.original.groups.length > 0 ? (
               row.original.groups.map((g) => (
-                <Badge key={g} variant="outline" className="text-[11px] bg-muted/30">
-                  {g}
+                <Badge key={g.id} variant="outline" className="text-[11px] bg-muted/30">
+                  {g.name} ({g.code})
                 </Badge>
               ))
             ) : (
@@ -223,29 +325,13 @@ export default function RatesContent() {
         size: 130,
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">
-            {row.original.endDate ? formatDate(row.original.endDate) : "∞"}
+            {row.original.type === "DEFAULT"
+              ? "∞"
+              : row.original.endDate
+                ? formatDate(row.original.endDate)
+                : "∞"}
           </span>
         ),
-      },
-      {
-        accessorKey: "status",
-        header: t("rates.colStatus"),
-        size: 100,
-        cell: ({ row }) => {
-          const s = row.original.status;
-          let label: string = s;
-          let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
-          if (s === "PUBLISHED") {
-            variant = "default";
-            label = t("rates.statusPublished");
-          } else if (s === "DRAFT") {
-            label = t("rates.statusDraft");
-          } else if (s === "ARCHIVED") {
-            variant = "destructive";
-            label = t("rates.statusArchived");
-          }
-          return <Badge variant={variant}>{label}</Badge>;
-        },
       },
     ],
     [openEdit, t],
@@ -255,10 +341,74 @@ export default function RatesContent() {
     () => [
       {
         key: "edit",
-        tooltip: t("rates.actionEdit"),
-        icon: <Pencil size={15} />,
-        color: "success",
+        tooltip: (row) =>
+          row.status === "DRAFT" || row.status === "REJECTED"
+            ? t("rates.actionEdit")
+            : t("rates.actionViewDetails"),
+        icon: (row) =>
+          row.status === "DRAFT" || row.status === "REJECTED" ? (
+            <Pencil size={15} />
+          ) : (
+            <Eye size={15} />
+          ),
+        color: (row) => (row.status === "DRAFT" || row.status === "REJECTED" ? "success" : "info"),
         onClick: (row) => openEdit(row.id),
+      },
+      {
+        key: "assignGroups",
+        tooltip: t("rates.btnAssignGroups"),
+        icon: <UserPlus size={15} />,
+        color: "info",
+        hidden: (row) => row.type === "DEFAULT",
+        onClick: (row) => openAssignGroups(row),
+      },
+      {
+        key: "submitReview",
+        tooltip: t("rates.btnSubmitReview"),
+        icon: <CheckCircle size={15} />,
+        color: "primary",
+        hidden: (row) => row.status !== "DRAFT" && row.status !== "REJECTED",
+        onClick: (row) => {
+          askConfirm({
+            title: t("rates.btnSubmitReview"),
+            confirmLabel: t("rates.btnSubmitReview"),
+            confirmColor: "primary",
+            message: t("rates.confirmSubmitReview", { code: row.code }),
+            onConfirm: () => submitReviewMut.mutate({ id: row.id }),
+          });
+        },
+      },
+      {
+        key: "approve",
+        tooltip: t("rates.btnApprove"),
+        icon: <CheckCircle size={15} />,
+        color: "success",
+        hidden: (row) => row.status !== "PENDING",
+        onClick: (row) => {
+          askConfirm({
+            title: t("rates.btnApprove"),
+            confirmLabel: t("rates.btnApprove"),
+            confirmColor: "primary",
+            message: t("rates.confirmApprove", { code: row.code }),
+            onConfirm: () => approveMut.mutate({ id: row.id }),
+          });
+        },
+      },
+      {
+        key: "reject",
+        tooltip: t("rates.btnReject"),
+        icon: <XCircle size={15} />,
+        color: "error",
+        hidden: (row) => row.status !== "PENDING",
+        onClick: (row) => {
+          askConfirm({
+            title: t("rates.btnReject"),
+            confirmLabel: t("rates.btnReject"),
+            confirmColor: "error",
+            message: t("rates.confirmReject", { code: row.code }),
+            onConfirm: () => rejectMut.mutate({ id: row.id }),
+          });
+        },
       },
       {
         key: "duplicate",
@@ -286,10 +436,22 @@ export default function RatesContent() {
             onConfirm: () => deleteMut.mutate({ id: row.id }),
           });
         },
-        hidden: (row) => ["epacket.default.us", "express.default.us"].includes(row.code),
+        hidden: (row) =>
+          ["epacket.default.us", "express.default.us"].includes(row.code) ||
+          row.status === "PUBLISHED",
       },
     ],
-    [openEdit, askConfirm, deleteMut, duplicateMut, t],
+    [
+      openEdit,
+      openAssignGroups,
+      askConfirm,
+      deleteMut,
+      duplicateMut,
+      submitReviewMut,
+      approveMut,
+      rejectMut,
+      t,
+    ],
   );
 
   const filterFields: FilterFieldDef[] = useMemo(
@@ -316,6 +478,16 @@ export default function RatesContent() {
         operators: [
           { value: "equals", label: "equals" },
           { value: "contains", label: "contains" },
+        ],
+      },
+      {
+        key: "type",
+        label: t("rates.lblType"),
+        type: "select",
+        operators: [{ value: "equals", label: "equals" }],
+        options: [
+          { value: "DEFAULT", label: t("rates.typeDefault") },
+          { value: "CUSTOM", label: t("rates.typeCustom") },
         ],
       },
       {
@@ -359,9 +531,11 @@ export default function RatesContent() {
         type: "select",
         operators: [{ value: "equals", label: "equals" }],
         options: [
-          { value: "DRAFT", label: "DRAFT" },
-          { value: "PUBLISHED", label: "PUBLISHED" },
-          { value: "ARCHIVED", label: "ARCHIVED" },
+          { value: "DRAFT", label: t("rates.statusDraft") },
+          { value: "PENDING", label: t("rates.statusPending") },
+          { value: "REJECTED", label: t("rates.statusRejected") },
+          { value: "PUBLISHED", label: t("rates.statusPublished") },
+          { value: "ARCHIVED", label: t("rates.statusArchived") },
         ],
       },
     ],
@@ -374,6 +548,7 @@ export default function RatesContent() {
       id: item.id,
       code: item.code,
       name: item.name,
+      type: item.type ?? "DEFAULT",
       status: item.status,
       shippingMethod: item.shippingMethod,
       country: item.country,
@@ -384,7 +559,11 @@ export default function RatesContent() {
       maxWeight: Number(item.maxWeight),
       startDate: item.startDate ? new Date(item.startDate).toISOString() : null,
       endDate: item.endDate ? new Date(item.endDate).toISOString() : null,
-      groups: item.groups.map((g) => g.customerGroup.code),
+      groups: item.groups.map((g) => ({
+        id: g.customerGroup.id,
+        code: g.customerGroup.code,
+        name: g.customerGroup.name,
+      })),
       createdAt: new Date(item.createdAt).toISOString(),
     }));
   }, [result]);
@@ -431,6 +610,81 @@ export default function RatesContent() {
           </div>
         }
       />
+
+      {/* Assign Groups Modal */}
+      {assignGroupCard && (
+        <Dialog open={!!assignGroupCard} onOpenChange={() => setAssignGroupCard(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold">
+                {t("rates.btnAssignGroups")}: {assignGroupCard.code}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="flex flex-col gap-3 py-2">
+              <span className="text-xs text-muted-foreground">
+                Vui lòng chọn các nhóm khách hàng được áp dụng bảng giá cước tuỳ chỉnh này:
+              </span>
+              <Input
+                type="text"
+                placeholder="Tìm kiếm nhóm khách hàng (mã, tên)..."
+                value={groupSearch}
+                onChange={(e) => setGroupSearch(e.target.value)}
+                className="h-8 text-xs"
+              />
+              <div className="grid grid-cols-1 gap-2 border border-input rounded-md p-3 max-h-48 overflow-y-auto bg-muted/10">
+                {filteredGroups.length === 0 ? (
+                  <span className="text-xs text-muted-foreground italic text-center py-2">
+                    Không tìm thấy nhóm khách hàng nào
+                  </span>
+                ) : (
+                  filteredGroups.map((group) => {
+                    const checked = selectedGroupIds.includes(group.id);
+                    return (
+                      <label
+                        key={group.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer select-none hover:bg-muted/30 p-1 rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            setSelectedGroupIds((prev) =>
+                              checked ? prev.filter((id) => id !== group.id) : [...prev, group.id],
+                            );
+                          }}
+                          className="rounded border-input text-primary focus:ring-primary size-4"
+                        />
+                        <span>
+                          {group.name} ({group.code})
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" size="sm" onClick={() => setAssignGroupCard(null)}>
+                Hủy
+              </Button>
+              <Button
+                size="sm"
+                disabled={assignGroupsMut.isPending}
+                onClick={() => {
+                  assignGroupsMut.mutate({
+                    id: assignGroupCard.id,
+                    customerGroupIds: selectedGroupIds,
+                  });
+                }}
+              >
+                Lưu Nhóm Khách Hàng
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <ConfirmDialog {...confirmDialogProps} />
     </>

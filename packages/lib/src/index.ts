@@ -10,7 +10,12 @@ export {
 } from "./addressValidator";
 export * from "./api-response";
 export * from "./batch";
-export { generateEntityCode, generateRandomString } from "./codeGenerator";
+export {
+  generateCustomerCode,
+  generateEntityCode,
+  generateOrderCode,
+  generateRandomString,
+} from "./codeGenerator";
 export * from "./crypto";
 export { parseDateTimezone } from "./date";
 export type { ErrorCodeType } from "./errorCodes";

@@ -1,6 +1,9 @@
 import { router } from "@ecom/trpc/server/trpc";
 import {
+  approve,
+  assignGroups,
   calculate,
+  checkOverlap,
   create,
   duplicate,
   exportSlabsTemplate,
@@ -9,7 +12,9 @@ import {
   list,
   listGroups,
   listLogs,
+  reject,
   remove,
+  submitForReview,
   update,
 } from "./procedures/rate-cards.handler";
 
@@ -19,6 +24,11 @@ export const rateCardsRouter = router({
   get,
   create,
   update,
+  submitForReview,
+  approve,
+  reject,
+  assignGroups,
+  checkOverlap,
   delete: remove, // Expose as delete procedure
   listLogs,
   importSlabs,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateEntityCode, generateRandomString } from "../codeGenerator";
+import { generateCustomerCode, generateEntityCode, generateRandomString } from "../codeGenerator";
 
 describe("Code Generator Helpers", () => {
   it("should generate random string of correct length", () => {
@@ -39,5 +39,15 @@ describe("Code Generator Helpers", () => {
       codes.add(generateEntityCode("EC"));
     }
     expect(codes.size).toBe(count);
+  });
+
+  it("should generate customer code with correct prefix and length", () => {
+    const code = generateCustomerCode("KH", 6);
+    expect(code).toHaveLength(8); // "KH" (2) + 6 chars = 8
+    expect(code.startsWith("KH")).toBe(true);
+
+    const defaultCode = generateCustomerCode();
+    expect(defaultCode).toHaveLength(8);
+    expect(defaultCode.startsWith("KH")).toBe(true);
   });
 });

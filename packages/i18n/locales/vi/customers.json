@@ -8,6 +8,7 @@
   "noCustomersSubtitle": "Thêm khách hàng để bắt đầu",
   "unauthorized": "Bạn cần đăng nhập để xem trang này.",
   "fields": {
+    "customerCode": "Mã khách hàng",
     "name": "Tên",
     "email": "Email",
     "phone": "Số điện thoại",
@@ -28,6 +29,7 @@
     "banned": "Đã chặn"
   },
   "form": {
+    "customerCodeImmutable": "Mã khách hàng là cố định và không thể chỉnh sửa.",
     "emailLabel": "Email",
     "nameLabel": "Họ và tên",
     "namePlaceholder": "Ví dụ: Nguyễn Văn An",

@@ -14,6 +14,7 @@ enum VerificationCodeStatus {
 
 model Customer {
   id                  String         @id @default(uuid(7)) @db.Uuid
+  customerCode        String?        @unique @map("customer_code")
   email               String         @unique
   username            String         @unique
   usernameChangeCount Int            @default(0)
@@ -50,6 +51,7 @@ model Customer {
   packages             CustomerPackage[]
 
   @@index([status])
+  @@index([customerCode])
   @@index([email])
   @@index([username])
   @@index([deletedAt])

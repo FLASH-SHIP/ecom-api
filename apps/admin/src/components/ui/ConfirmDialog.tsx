@@ -81,7 +81,18 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
-      <DialogContent className={cn("min-w-[380px] border-t-[3px] pt-4 sm:max-w-sm", colors.border)}>
+      <DialogContent
+        className={cn("min-w-[380px] border-t-[3px] pt-4 sm:max-w-sm", colors.border)}
+        onEscapeKeyDown={(e) => {
+          e.stopPropagation();
+        }}
+        onPointerDownOutside={(e) => {
+          e.preventDefault();
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
         <DialogHeader className="items-center flex flex-col gap-3 text-center">
           <AlertTriangle className={cn("size-12", colors.icon)} strokeWidth={1.5} />
           <DialogTitle id="confirm-dialog-title" className="text-lg font-bold">
@@ -95,7 +106,10 @@ export function ConfirmDialog({
         <DialogFooter className="mt-4 flex gap-3 sm:flex-row">
           <Button
             id="confirm-dialog-confirm"
-            onClick={onConfirm}
+            onClick={(e) => {
+              e.stopPropagation();
+              onConfirm();
+            }}
             className={cn("flex-1 font-semibold", colors.button)}
           >
             {resolvedConfirm}
@@ -104,7 +118,10 @@ export function ConfirmDialog({
             <Button
               id="confirm-dialog-cancel"
               variant="outline"
-              onClick={onCancel}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCancel();
+              }}
               className="flex-1 font-medium"
             >
               {resolvedCancel}

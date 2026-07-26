@@ -289,4 +289,65 @@ describe("RateCardService", () => {
       await expect(service.validatePublishingConstraints(3)).resolves.not.toThrow();
     });
   });
+
+  describe("validateStartDateNotPast", () => {
+    it("should allow future start dates or null", () => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      expect(() => service.validateStartDateNotPast(tomorrow)).not.toThrow();
+      expect(() => service.validateStartDateNotPast(null)).not.toThrow();
+      expect(() => service.validateStartDateNotPast(undefined)).not.toThrow();
+    });
+
+    it("should throw validation error if start date is in the past", () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 2);
+
+      expect(() => service.validateStartDateNotPast(yesterday)).toThrowError(
+        expect.objectContaining({
+          code: ErrorCode.RateCardValidationError,
+        }),
+      );
+    });
+  });
+
+  describe("onDefaultCardApproved", () => {
+    it("should archive previous active default rate cards when a new DEFAULT card is approved", async () => {
+      rateCardRepo.approveDefaultCardTransaction = vi
+        .fn()
+        .mockResolvedValue({ id: 10, status: "PUBLISHED" });
+
+      await service.onDefaultCardApproved({
+        id: 10,
+        type: "DEFAULT",
+        shippingMethod: "EXPRESS",
+        country: "US",
+        origin: null,
+      });
+
+      expect(rateCardRepo.approveDefaultCardTransaction).toHaveBeenCalledWith({
+        id: 10,
+        shippingMethod: "EXPRESS",
+        country: "US",
+        origin: null,
+      });
+    });
+
+    it("should not trigger archiving if approved rate card is CUSTOM", async () => {
+      rateCardRepo.approveDefaultCardTransaction = vi.fn();
+      rateCardRepo.update = vi.fn().mockResolvedValue({ id: 11, status: "PUBLISHED" });
+
+      await service.onDefaultCardApproved({
+        id: 11,
+        type: "CUSTOM",
+        shippingMethod: "EXPRESS",
+        country: "US",
+        origin: null,
+      });
+
+      expect(rateCardRepo.approveDefaultCardTransaction).not.toHaveBeenCalled();
+      expect(rateCardRepo.update).toHaveBeenCalledWith(11, { status: "PUBLISHED" });
+    });
+  });
 });

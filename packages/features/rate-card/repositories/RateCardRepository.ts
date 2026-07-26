@@ -1,9 +1,16 @@
 import { normalizePagination, paginate } from "@ecom/lib/pagination";
-import type { ContentStatus, PrismaClient, RateCardType, ShippingMethod } from "@ecom/prisma";
+import type {
+  ContentStatus,
+  PrismaClient,
+  RateCardType,
+  RateItemType,
+  ShippingMethod,
+} from "@ecom/prisma";
 
 export interface CreateRateCardInput {
   code: string;
   name: string;
+  type?: RateCardType;
   status?: ContentStatus;
   shippingMethod: ShippingMethod;
   country?: string;
@@ -20,6 +27,7 @@ export interface CreateRateCardInput {
 export interface UpdateRateCardInput {
   code?: string;
   name?: string;
+  type?: RateCardType;
   status?: ContentStatus;
   shippingMethod?: ShippingMethod;
   country?: string;
@@ -33,6 +41,32 @@ export interface UpdateRateCardInput {
   customerGroupIds?: number[];
 }
 
+function mapSlabItemToDTO(item: Record<string, unknown>) {
+  return {
+    ...item,
+    ...(item.startWeight != null && { startWeight: Number(item.startWeight) }),
+    ...(item.endWeight != null && { endWeight: Number(item.endWeight) }),
+    ...(item.amount != null && { amount: Number(item.amount) }),
+  };
+}
+
+function mapRateCardToDTO<T>(card: T): T {
+  if (!card || typeof card !== "object") return card;
+  const res = { ...card } as Record<string, unknown>;
+
+  if (res.weightStep != null) res.weightStep = Number(res.weightStep);
+  if (res.minWeight != null) res.minWeight = Number(res.minWeight);
+  if (res.maxWeight != null) res.maxWeight = Number(res.maxWeight);
+
+  if (Array.isArray(res.items)) {
+    res.items = res.items.map((item) =>
+      item && typeof item === "object" ? mapSlabItemToDTO(item as Record<string, unknown>) : item,
+    );
+  }
+
+  return res as T;
+}
+
 export class RateCardRepository {
   private prisma: PrismaClient;
 
@@ -41,12 +75,13 @@ export class RateCardRepository {
   }
 
   async findById(id: number) {
-    return this.prisma.rateCard.findUnique({
+    const card = await this.prisma.rateCard.findUnique({
       where: { id },
       select: {
         id: true,
         code: true,
         name: true,
+        type: true,
         status: true,
         shippingMethod: true,
         country: true,
@@ -79,6 +114,7 @@ export class RateCardRepository {
         },
       },
     });
+    return mapRateCardToDTO(card);
   }
 
   async findByCode(code: string) {
@@ -88,6 +124,7 @@ export class RateCardRepository {
         id: true,
         code: true,
         name: true,
+        type: true,
         status: true,
       },
     });
@@ -100,12 +137,37 @@ export class RateCardRepository {
     customerGroupId: number,
     date: Date = new Date(),
   ) {
+    const selectFields = {
+      id: true,
+      code: true,
+      name: true,
+      type: true,
+      shippingMethod: true,
+      country: true,
+      origin: true,
+      currency: true,
+      weightStep: true,
+      minWeight: true,
+      maxWeight: true,
+      items: {
+        select: {
+          id: true,
+          startWeight: true,
+          endWeight: true,
+          rateType: true,
+          amount: true,
+        },
+        orderBy: { startWeight: "asc" as const },
+      },
+    };
+
     if (origin !== null) {
       const card = await this.prisma.rateCard.findFirst({
         where: {
           shippingMethod: method,
           country,
           origin,
+          type: "CUSTOM" as RateCardType,
           status: "PUBLISHED" as ContentStatus,
           groups: {
             some: { customerGroupId },
@@ -117,38 +179,18 @@ export class RateCardRepository {
             { startDate: { lte: date }, endDate: { gte: date } },
           ],
         },
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          shippingMethod: true,
-          country: true,
-          origin: true,
-          currency: true,
-          weightStep: true,
-          minWeight: true,
-          maxWeight: true,
-          items: {
-            select: {
-              id: true,
-              startWeight: true,
-              endWeight: true,
-              rateType: true,
-              amount: true,
-            },
-            orderBy: { startWeight: "asc" },
-          },
-        },
+        select: selectFields,
         orderBy: { createdAt: "desc" },
       });
-      if (card) return card;
+      if (card) return mapRateCardToDTO(card);
     }
 
-    return this.prisma.rateCard.findFirst({
+    const card = await this.prisma.rateCard.findFirst({
       where: {
         shippingMethod: method,
         country,
         origin: null,
+        type: "CUSTOM" as RateCardType,
         status: "PUBLISHED" as ContentStatus,
         groups: {
           some: { customerGroupId },
@@ -160,30 +202,10 @@ export class RateCardRepository {
           { startDate: { lte: date }, endDate: { gte: date } },
         ],
       },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        shippingMethod: true,
-        country: true,
-        origin: true,
-        currency: true,
-        weightStep: true,
-        minWeight: true,
-        maxWeight: true,
-        items: {
-          select: {
-            id: true,
-            startWeight: true,
-            endWeight: true,
-            rateType: true,
-            amount: true,
-          },
-          orderBy: { startWeight: "asc" },
-        },
-      },
+      select: selectFields,
       orderBy: { createdAt: "desc" },
     });
+    return mapRateCardToDTO(card);
   }
 
   async findActiveDefault(
@@ -192,12 +214,37 @@ export class RateCardRepository {
     origin: string | null,
     date: Date = new Date(),
   ) {
+    const selectFields = {
+      id: true,
+      code: true,
+      name: true,
+      type: true,
+      shippingMethod: true,
+      country: true,
+      origin: true,
+      currency: true,
+      weightStep: true,
+      minWeight: true,
+      maxWeight: true,
+      items: {
+        select: {
+          id: true,
+          startWeight: true,
+          endWeight: true,
+          rateType: true,
+          amount: true,
+        },
+        orderBy: { startWeight: "asc" as const },
+      },
+    };
+
     if (origin !== null) {
       const card = await this.prisma.rateCard.findFirst({
         where: {
           shippingMethod: method,
           country,
           origin,
+          type: "DEFAULT" as RateCardType,
           status: "PUBLISHED" as ContentStatus,
           groups: {
             none: {},
@@ -209,38 +256,18 @@ export class RateCardRepository {
             { startDate: { lte: date }, endDate: { gte: date } },
           ],
         },
-        select: {
-          id: true,
-          code: true,
-          name: true,
-          shippingMethod: true,
-          country: true,
-          origin: true,
-          currency: true,
-          weightStep: true,
-          minWeight: true,
-          maxWeight: true,
-          items: {
-            select: {
-              id: true,
-              startWeight: true,
-              endWeight: true,
-              rateType: true,
-              amount: true,
-            },
-            orderBy: { startWeight: "asc" },
-          },
-        },
+        select: selectFields,
         orderBy: { createdAt: "desc" },
       });
-      if (card) return card;
+      if (card) return mapRateCardToDTO(card);
     }
 
-    return this.prisma.rateCard.findFirst({
+    const card = await this.prisma.rateCard.findFirst({
       where: {
         shippingMethod: method,
         country,
         origin: null,
+        type: "DEFAULT" as RateCardType,
         status: "PUBLISHED" as ContentStatus,
         groups: {
           none: {},
@@ -252,35 +279,16 @@ export class RateCardRepository {
           { startDate: { lte: date }, endDate: { gte: date } },
         ],
       },
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        shippingMethod: true,
-        country: true,
-        origin: true,
-        currency: true,
-        weightStep: true,
-        minWeight: true,
-        maxWeight: true,
-        items: {
-          select: {
-            id: true,
-            startWeight: true,
-            endWeight: true,
-            rateType: true,
-            amount: true,
-          },
-          orderBy: { startWeight: "asc" },
-        },
-      },
+      select: selectFields,
       orderBy: { createdAt: "desc" },
     });
+    return mapRateCardToDTO(card);
   }
 
   async findMany(options: {
     id?: number;
     code?: string;
+    type?: RateCardType;
     status?: ContentStatus;
     shippingMethod?: ShippingMethod;
     country?: string;
@@ -296,6 +304,7 @@ export class RateCardRepository {
       | "id"
       | "code"
       | "name"
+      | "type"
       | "status"
       | "createdAt"
       | "updatedAt"
@@ -306,6 +315,7 @@ export class RateCardRepository {
     const {
       id,
       code,
+      type,
       status,
       shippingMethod,
       country,
@@ -325,6 +335,7 @@ export class RateCardRepository {
 
     if (id) conditions.push({ id });
     if (code) conditions.push({ code: { contains: code, mode: "insensitive" as const } });
+    if (type) conditions.push({ type });
     if (status) conditions.push({ status });
     if (shippingMethod) conditions.push({ shippingMethod });
     if (country) conditions.push({ country });
@@ -360,6 +371,7 @@ export class RateCardRepository {
           id: true,
           code: true,
           name: true,
+          type: true,
           status: true,
           shippingMethod: true,
           country: true,
@@ -388,7 +400,8 @@ export class RateCardRepository {
       this.prisma.rateCard.count({ where }),
     ]);
 
-    return paginate(items, total, page, perPage);
+    const mappedItems = items.map((item) => mapRateCardToDTO(item));
+    return paginate(mappedItems, total, page, perPage);
   }
 
   async create(data: CreateRateCardInput) {
@@ -409,6 +422,7 @@ export class RateCardRepository {
         id: true,
         code: true,
         name: true,
+        type: true,
         status: true,
       },
     });
@@ -438,6 +452,7 @@ export class RateCardRepository {
           id: true,
           code: true,
           name: true,
+          type: true,
           status: true,
         },
       });
@@ -482,6 +497,7 @@ export class RateCardRepository {
         data: {
           code,
           name,
+          type: original.type === "DEFAULT" ? "CUSTOM" : original.type,
           status: "DRAFT",
           shippingMethod: original.shippingMethod,
           country: original.country,
@@ -491,7 +507,7 @@ export class RateCardRepository {
           minWeight: original.minWeight,
           maxWeight: original.maxWeight,
           startDate: original.startDate,
-          endDate: original.endDate,
+          endDate: original.type === "DEFAULT" ? null : original.endDate,
           groups: {
             create: original.groups.map((g) => ({
               customerGroupId: g.customerGroupId,
@@ -510,10 +526,72 @@ export class RateCardRepository {
           id: true,
           code: true,
           name: true,
+          type: true,
         },
       });
 
       return duplicated;
+    });
+  }
+
+  // Atomic Transaction for approving Default Rate Card & Archiving Previous Active Default
+  async approveDefaultCardTransaction(params: {
+    id: number;
+    shippingMethod: ShippingMethod;
+    country: string;
+    origin: string | null;
+  }) {
+    const { id, shippingMethod, country, origin } = params;
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Archive previous active DEFAULT rate card
+      await tx.rateCard.updateMany({
+        where: {
+          shippingMethod,
+          country,
+          origin,
+          type: "DEFAULT" as RateCardType,
+          status: "PUBLISHED" as ContentStatus,
+          id: { not: id },
+        },
+        data: {
+          status: "ARCHIVED" as ContentStatus,
+        },
+      });
+
+      // 2. Publish the target rate card
+      return tx.rateCard.update({
+        where: { id },
+        data: { status: "PUBLISHED" as ContentStatus },
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          type: true,
+          status: true,
+        },
+      });
+    });
+  }
+
+  // Auto-archive previous active DEFAULT rate card helper
+  async archivePreviousActiveDefault(
+    shippingMethod: ShippingMethod,
+    country: string,
+    origin: string | null,
+    excludeId?: number,
+  ) {
+    return this.prisma.rateCard.updateMany({
+      where: {
+        shippingMethod,
+        country,
+        origin,
+        type: "DEFAULT" as RateCardType,
+        status: "PUBLISHED" as ContentStatus,
+        id: excludeId ? { not: excludeId } : undefined,
+      },
+      data: {
+        status: "ARCHIVED" as ContentStatus,
+      },
     });
   }
 
@@ -523,7 +601,7 @@ export class RateCardRepository {
     slabs: {
       startWeight: number;
       endWeight: number;
-      rateType: RateCardType;
+      rateType: RateItemType;
       amount: number;
     }[],
   ) {
@@ -553,7 +631,6 @@ export class RateCardRepository {
 
   // Audit Logs query helper
   async findAuditLogs(rateCardId: number) {
-    // Queries global AuditLog table
     return this.prisma.auditLog.findMany({
       where: {
         entityType: "RateCard",
@@ -592,12 +669,8 @@ export class RateCardRepository {
         ? { groups: { some: { customerGroupId: { in: customerGroupIds } } } }
         : { groups: { none: {} } };
 
-    // Standard time overlap query:
-    // (StartA <= EndB) AND (EndA >= StartB)
-    // When date is null, treat null as infinity.
-    // If startDate/endDate is null, it is unbounded.
-    const startLimit = startDate ?? new Date(0); // Epoch start
-    const endLimit = endDate ?? new Date(253402300799000); // Year 9999 end
+    const startLimit = startDate ?? new Date(0);
+    const endLimit = endDate ?? new Date(253402300799000);
 
     const conditions: Record<string, unknown>[] = [
       { id: excludeId ? { not: excludeId } : undefined },
@@ -620,7 +693,6 @@ export class RateCardRepository {
       },
     });
 
-    // Filtering memory-side is cleaner for Postgres nullable datetime range intersections:
     return cards.filter((card) => {
       const cardStart = card.startDate ?? new Date(0);
       const cardEnd = card.endDate ?? new Date(253402300799000);

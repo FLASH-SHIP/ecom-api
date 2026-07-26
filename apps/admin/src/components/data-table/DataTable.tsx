@@ -21,6 +21,7 @@ import { CopyCell } from "@admin/components/data-table/CopyCell";
 import { FilterPanel } from "@admin/components/data-table/FilterPanel";
 import { RowActionMenu } from "@admin/components/data-table/RowActionMenu";
 import PageBreadcrumb from "@admin/components/PageBreadcrumb";
+import { SearchInput } from "@admin/components/ui/SearchInput";
 import { Button } from "@ecom/ui/components/button";
 import { Checkbox } from "@ecom/ui/components/checkbox";
 import {
@@ -29,7 +30,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@ecom/ui/components/dropdown-menu";
-import { Input } from "@ecom/ui/components/input";
 import { Pagination } from "@ecom/ui/components/pagination";
 import {
   Select,
@@ -72,7 +72,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Filter, FilterX, Maximize, Minimize, RefreshCw, Rows3, Search, X } from "lucide-react";
+import { Filter, FilterX, Maximize, Minimize, RefreshCw, Rows3 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -135,6 +135,8 @@ export interface DataTableProps<T> {
   onRefresh?: () => void;
   defaultPageSize?: number;
   defaultPage?: number;
+  /** Enable global search input in toolbar. Default: true */
+  enableGlobalSearch?: boolean;
   /** Enable column resizing. Default: true */
   enableColumnResizing?: boolean;
   /** Enable column pinning. Default: true */
@@ -170,6 +172,7 @@ export function DataTable<T extends Record<string, unknown>>({
   onRefresh,
   defaultPageSize = 25,
   defaultPage = 1,
+  enableGlobalSearch = true,
   enableColumnResizing = true,
   enableColumnPinning = true,
   enableColumnOrdering = true,
@@ -705,34 +708,23 @@ export function DataTable<T extends Record<string, unknown>>({
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
           {/* Global search */}
-          <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t("search")}
+          {enableGlobalSearch && (
+            <SearchInput
               value={isServerMode ? searchDisplay : globalFilter}
-              onChange={(e) =>
-                isServerMode
-                  ? handleGlobalFilterChange(e.target.value)
-                  : setGlobalFilter(e.target.value)
-              }
-              className="h-8 pl-8 pr-8 text-sm"
+              onChange={(val) => {
+                if (isServerMode) {
+                  handleGlobalFilterChange(val);
+                } else {
+                  setGlobalFilter(val);
+                }
+              }}
+              placeholder={t("search")}
+              minChars={2}
+              debounceMs={300}
+              className="w-full sm:w-auto sm:flex-1 sm:max-w-xs"
+              inputClassName="h-8 text-sm"
             />
-            {(isServerMode ? searchDisplay : globalFilter) && (
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => {
-                  if (isServerMode) {
-                    handleGlobalFilterChange("");
-                  } else {
-                    setGlobalFilter("");
-                  }
-                }}
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
+          )}
 
           {toolbarLeading}
 
