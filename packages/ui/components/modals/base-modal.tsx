@@ -33,7 +33,7 @@ export interface BaseModalContentProps {
    * Tiêu đề hiển thị ở phần header của modal.
    * @default "Select Saved"
    */
-  title?: string;
+  title?: ReactNode;
 
   /**
    * Placeholder text inside the search input.
@@ -156,7 +156,7 @@ export function BaseModalContent({
   className,
   emptyState,
   isLoading = false,
-  listMaxHeight = "420px",
+  listMaxHeight,
   footer,
 }: BaseModalContentProps) {
   const searchId = useId();
@@ -180,8 +180,8 @@ export function BaseModalContent({
         className={cn(
           // positioning
           "fixed left-1/2 top-1/2 z-[201] -translate-x-1/2 -translate-y-1/2",
-          // sizing — Figma designed width 862px, shrinks on mobile
-          "w-[calc(100vw-2rem)] max-w-[862px]",
+          // sizing — Figma designed width 862px, max-height leaves 1rem space top & bottom
+          "w-[calc(100vw-2rem)] max-w-[862px] max-h-[calc(100vh-2rem)]",
           // panel
           "flex flex-col rounded-lg bg-background shadow-xl overflow-hidden",
           // animation
@@ -244,7 +244,7 @@ export function BaseModalContent({
         {/* Scrollable body — list items or form fields */}
         <div
           className={cn(
-            "flex flex-col gap-[10px] overflow-y-auto px-6",
+            "flex flex-col gap-[10px] overflow-y-auto px-6 flex-1 min-h-0",
             // Add top padding when search row is hidden so content
             // doesn't sit flush against the header border (Figma: 16px gap)
             hideSearch ? "pt-4" : "pt-0",
@@ -252,7 +252,7 @@ export function BaseModalContent({
             // sits flush; otherwise keep the original 24px bottom padding.
             footer ? "pb-4" : "pb-6",
           )}
-          style={{ maxHeight: listMaxHeight }}
+          style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
         >
           {isLoading ? (
             <BaseModalSkeleton />
