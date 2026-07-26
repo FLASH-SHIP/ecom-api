@@ -9,6 +9,7 @@ This document provides a comprehensive technical guide for all executable script
 The system uses **Yarn v4 Workspaces** combined with **Turborepo v2** for task execution, caching, and dependency graph management.
 
 ### Workspace Packages Summary
+
 - `apps/web`: Next.js 16 Admin CMS (App Router) — `@ecom/web`
 - `apps/admin`: Additional Admin UI modules — `@ecom/admin`
 - `apps/customer`: Next.js Customer Portal — `@ecom/customer`
@@ -110,16 +111,21 @@ Commands for Docker container management, environment setup, and cleaning build 
 ## 8. Best Practices Checklist for Developers & AI Agents
 
 1. **Before pushing any PR:**
+
    ```bash
    yarn type-check:ci
    yarn lint
    ```
+
 2. **When modifying Prisma schema:**
+
    ```bash
    yarn prisma:migrate --name <descriptive_name>
    yarn db:check-drift
    ```
+
 3. **When resetting local dev environment:**
+
    ```bash
    yarn db:reset
    ```
