@@ -8,10 +8,12 @@ import { getSystemDiagnosticsService } from "@ecom/features/di/containers/System
 import { isDevDiagnosticsBypassEnabled } from "@ecom/lib";
 import { Permissions } from "@ecom/lib/permissions";
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Post,
   Query,
@@ -228,14 +230,14 @@ export class DatabaseMaintenanceController {
 
     // Locate log file and stream zip
     if (!/^app-\d{4}-\d{2}-\d{2}\.log(?:\.gz)?$/.test(filename)) {
-      throw new ForbiddenException("Invalid log filename");
+      throw new BadRequestException("Invalid log filename");
     }
 
     const monorepoRoot = process.cwd();
     const logsDir = process.env.LOGS_PATH || join(monorepoRoot, "logs");
     const filePath = join(logsDir, filename);
     if (!existsSync(filePath)) {
-      throw new ForbiddenException("Log file not found");
+      throw new NotFoundException(`Log file '${filename}' not found on server`);
     }
 
     // Log the download action to AuditLog
