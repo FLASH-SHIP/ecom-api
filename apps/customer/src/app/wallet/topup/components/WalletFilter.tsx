@@ -1,5 +1,6 @@
 "use client";
 
+import { DateRangePicker } from "@customer/components/ui/date-range-picker";
 import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
@@ -14,7 +15,6 @@ import {
 import { format, subDays } from "date-fns";
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
-import {DateRangePicker} from "@customer/components/ui/date-range-picker";
 
 export interface WalletFilterProps {
   dateFrom?: string;
@@ -47,15 +47,9 @@ export default function WalletFilter({
   const defaultToDate = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const defaultFromDate = useMemo(() => format(subDays(new Date(), 6), "yyyy-MM-dd"), []);
 
-  const [dateFrom, setDateFrom] = useState<string | undefined>(
-    propsDateFrom ?? defaultFromDate,
-  );
-  const [dateTo, setDateTo] = useState<string | undefined>(
-    propsDateTo ?? defaultToDate,
-  );
-  const [paymentMethod, setPaymentMethod] = useState<string>(
-    propsPaymentMethod ?? "",
-  );
+  const [dateFrom, setDateFrom] = useState<string | undefined>(propsDateFrom ?? defaultFromDate);
+  const [dateTo, setDateTo] = useState<string | undefined>(propsDateTo ?? defaultToDate);
+  const [paymentMethod, setPaymentMethod] = useState<string>(propsPaymentMethod ?? "");
   const [status, setStatus] = useState<string>(propsStatus ?? "");
 
   const handleDateChange = (from: string | undefined, to: string | undefined) => {
@@ -116,18 +110,12 @@ export default function WalletFilter({
           >
             <SelectTrigger className="min-w-[200px] border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
               <SelectValue
-                placeholder={translate(
-                  "customerWallet.filter.selectPaymentMethod",
-                  currentLocale,
-                )}
+                placeholder={translate("customerWallet.filter.selectPaymentMethod", currentLocale)}
               />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">
-                {translate(
-                  "customerWallet.filter.allPaymentMethods",
-                  currentLocale,
-                )}
+                {translate("customerWallet.filter.allPaymentMethods", currentLocale)}
               </SelectItem>
               <SelectItem value="paypal">
                 {translate("customerWallet.filter.paypal", currentLocale)}
@@ -158,16 +146,10 @@ export default function WalletFilter({
 
         {/* Select Status */}
         <div className="relative inline-flex items-center">
-          <Select
-            value={status === "ALL" ? "" : status}
-            onValueChange={handleStatusChange}
-          >
+          <Select value={status === "ALL" ? "" : status} onValueChange={handleStatusChange}>
             <SelectTrigger className="min-w-[160px] border-[#DADADA] rounded-[10px] bg-white dark:bg-zinc-900 shadow-xs px-4 gap-2 text-[#232323] font-normal justify-between">
               <SelectValue
-                placeholder={translate(
-                  "customerWallet.filter.selectStatus",
-                  currentLocale,
-                )}
+                placeholder={translate("customerWallet.filter.selectStatus", currentLocale)}
               />
             </SelectTrigger>
             <SelectContent>

@@ -1,11 +1,18 @@
 "use client";
 
+import { Checkbox } from "@ecom/ui/components/checkbox";
+import { ArrowUpDownIcon } from "@ecom/ui/components/icon-component/ArrowUpDownIcon";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@ecom/ui/components/table";
 import { cn } from "@ecom/ui/lib/utils";
 import { PackageOpen } from "lucide-react";
 import * as React from "react";
-import { Checkbox } from "@ecom/ui/components/checkbox";
-import { ArrowUpDownIcon } from "@ecom/ui/components/icon-component/ArrowUpDownIcon";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ecom/ui/components/table";
 
 export interface Column<T> {
   header: React.ReactNode;

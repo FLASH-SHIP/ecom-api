@@ -88,9 +88,7 @@ export default function EndingBalanceTable() {
 
   const columns = [
     {
-      header:
-        translate("customerWallet.endingBalanceTable.no", currentLocale) ||
-        "No.",
+      header: translate("customerWallet.endingBalanceTable.no", currentLocale) || "No.",
       width: 60,
       fixed: "left" as const,
       headerClassName: "text-center",
@@ -102,18 +100,14 @@ export default function EndingBalanceTable() {
       },
     },
     {
-      header:
-        translate("customerWallet.endingBalanceTable.date", currentLocale) ||
-        "Date",
+      header: translate("customerWallet.endingBalanceTable.date", currentLocale) || "Date",
       width: 150,
       cell: (item: EndingBalanceRow) => <div>{item.date}</div>,
     },
     {
       header:
-        translate(
-          "customerWallet.endingBalanceTable.totalTopupAmount",
-          currentLocale,
-        ) || "Total topup amount",
+        translate("customerWallet.endingBalanceTable.totalTopupAmount", currentLocale) ||
+        "Total topup amount",
       width: 180,
       cell: (item: EndingBalanceRow) => (
         <span className="font-semibold text-emerald-600 dark:text-emerald-400">
@@ -123,10 +117,8 @@ export default function EndingBalanceTable() {
     },
     {
       header:
-        translate(
-          "customerWallet.endingBalanceTable.totalPaymentAmount",
-          currentLocale,
-        ) || "Total payment amount",
+        translate("customerWallet.endingBalanceTable.totalPaymentAmount", currentLocale) ||
+        "Total payment amount",
       width: 180,
       cell: (item: EndingBalanceRow) => (
         <span className="font-semibold text-rose-600 dark:text-rose-400">
@@ -136,10 +128,8 @@ export default function EndingBalanceTable() {
     },
     {
       header:
-        translate(
-          "customerWallet.endingBalanceTable.totalRefundAmount",
-          currentLocale,
-        ) || "Total refund amount",
+        translate("customerWallet.endingBalanceTable.totalRefundAmount", currentLocale) ||
+        "Total refund amount",
       width: 180,
       cell: (item: EndingBalanceRow) => (
         <span className="font-semibold text-purple-600 dark:text-purple-400">
@@ -149,10 +139,8 @@ export default function EndingBalanceTable() {
     },
     {
       header:
-        translate(
-          "customerWallet.endingBalanceTable.totalAdjustmentAmount",
-          currentLocale,
-        ) || "Total adjustment amount",
+        translate("customerWallet.endingBalanceTable.totalAdjustmentAmount", currentLocale) ||
+        "Total adjustment amount",
       width: 190,
       cell: (item: EndingBalanceRow) => {
         const isPositive = item.totalAdjustmentAmount.startsWith("+");
@@ -174,10 +162,8 @@ export default function EndingBalanceTable() {
     },
     {
       header:
-        translate(
-          "customerWallet.endingBalanceTable.endingBalance",
-          currentLocale,
-        ) || "Ending balance",
+        translate("customerWallet.endingBalanceTable.endingBalance", currentLocale) ||
+        "Ending balance",
       width: 170,
       cell: (item: EndingBalanceRow) => (
         <span className="font-bold text-foreground">{item.endingBalance}</span>
@@ -192,10 +178,8 @@ export default function EndingBalanceTable() {
         columns={columns}
         isLoading={isLoading}
         emptyMessage={
-          translate(
-            "customerWallet.endingBalanceTable.noRecordsFound",
-            currentLocale,
-          ) || "No ending balance records found."
+          translate("customerWallet.endingBalanceTable.noRecordsFound", currentLocale) ||
+          "No ending balance records found."
         }
         minWidth={1100}
       />

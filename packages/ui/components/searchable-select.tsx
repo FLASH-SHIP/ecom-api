@@ -110,14 +110,14 @@ function SearchableSelect({
                 }}
                 className="rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer inline-flex items-center justify-center"
               >
-                <X className="size-3.5"/>
+                <X className="size-3.5" />
               </span>
             )}
             <span
               aria-hidden="true"
               className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
             >
-              <ChevronsUpDown className="size-3.5 shrink-0"/>
+              <ChevronsUpDown className="size-3.5 shrink-0" />
             </span>
           </span>
         </Button>
@@ -125,7 +125,7 @@ function SearchableSelect({
 
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         <div className="flex items-center border-b border-border px-2.5 py-2">
-          <Search className="mr-2 size-3.5 shrink-0 text-muted-foreground"/>
+          <Search className="mr-2 size-3.5 shrink-0 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}

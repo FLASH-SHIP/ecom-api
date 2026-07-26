@@ -1,5 +1,6 @@
 "use client";
 
+import { DateRangePicker } from "@customer/components/ui/date-range-picker";
 import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
@@ -15,7 +16,6 @@ import {
 import { format, subDays } from "date-fns";
 import { Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import {DateRangePicker} from "@customer/components/ui/date-range-picker";
 
 export interface EndingBalanceFilterProps {
   dateFrom?: string;
@@ -48,16 +48,10 @@ export default function EndingBalanceFilter({
   const defaultToDate = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const defaultFromDate = useMemo(() => format(subDays(new Date(), 6), "yyyy-MM-dd"), []);
 
-  const [dateFrom, setDateFrom] = useState<string | undefined>(
-    propsDateFrom ?? defaultFromDate,
-  );
-  const [dateTo, setDateTo] = useState<string | undefined>(
-    propsDateTo ?? defaultToDate,
-  );
+  const [dateFrom, setDateFrom] = useState<string | undefined>(propsDateFrom ?? defaultFromDate);
+  const [dateTo, setDateTo] = useState<string | undefined>(propsDateTo ?? defaultToDate);
   const [orderCode, setOrderCode] = useState<string>(propsOrderCode ?? "");
-  const [transactionType, setTransactionType] = useState<string>(
-    propsTransactionType ?? "",
-  );
+  const [transactionType, setTransactionType] = useState<string>(propsTransactionType ?? "");
 
   const handleDateChange = (from: string | undefined, to: string | undefined) => {
     setDateFrom(from);

@@ -2,6 +2,8 @@
 
 import TagOrderStatus from "@customer/app/orders/components/TagOrderStatus";
 import { OrderStatus } from "@customer/app/orders/constants/enums";
+import { PaginationBase } from "@customer/components/ui/pagination-base";
+import { TableBase } from "@customer/components/ui/table-base";
 import { trpc } from "@customer/lib/trpc";
 import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
@@ -28,8 +30,6 @@ import NextLink from "next/link";
 import { useState } from "react";
 import { OrderFilterBar } from "./components/OrderFilterBar";
 import { downloadBase64File } from "./utils/export-excel";
-import { PaginationBase } from "@customer/components/ui/pagination-base";
-import { TableBase } from "@customer/components/ui/table-base";
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: customer orders list and detail modal
 export default function CustomerOrdersPage() {
