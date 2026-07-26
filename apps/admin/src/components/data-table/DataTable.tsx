@@ -653,6 +653,24 @@ export function DataTable<T extends Record<string, unknown>>({
   const from = totalRows === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1;
   const to = Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalRows);
 
+  // Auto-clamp pageIndex to page 1 if current pageIndex exceeds available pageCount
+  useEffect(() => {
+    if (isServerMode && totalRows > 0 && pagination.pageIndex >= pageCount) {
+      const resetPag = { ...pagination, pageIndex: 0 };
+      setPagination(resetPag);
+      emitServerChange(resetPag, sorting, globalFilter, activeFilters);
+    }
+  }, [
+    isServerMode,
+    totalRows,
+    pageCount,
+    pagination,
+    sorting,
+    globalFilter,
+    activeFilters,
+    emitServerChange,
+  ]);
+
   // ── Filter panel helpers ────────────────────────────────────────────────────
 
   const hasFilterFields = filterFields && filterFields.length > 0;

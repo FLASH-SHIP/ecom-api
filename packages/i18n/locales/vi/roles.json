@@ -169,6 +169,7 @@
       "read": "Xem bảng giá cước",
       "create": "Tạo bảng giá cước mới",
       "update": "Cập nhật bảng giá cước",
+      "approve": "Phê duyệt bảng giá cước",
       "delete": "Xóa bảng giá cước"
     },
     "tools": {

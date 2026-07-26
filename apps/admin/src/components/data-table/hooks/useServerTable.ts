@@ -186,11 +186,11 @@ export function useServerTable<TInput>({
       const saved = tableId ? loadTableState(tableId) : null;
       const resolved: DataTableServerParams = saved
         ? {
-            search: saved.search,
+            // Intentionally do NOT persist search or page across reloads to avoid ghost stale empty states
+            search: "",
             filters: [],
             sort: { key: saved.order[0][0], direction: saved.order[0][1] },
-            // Restore page — matches Botble behaviour of returning to the last viewed page
-            page: saved.page ?? 1,
+            page: 1,
             pageSize: saved.length,
           }
         : defaults;
@@ -224,8 +224,6 @@ export function useServerTable<TInput>({
           order: [
             [params.sort.key, params.sort.direction ?? defaultSortRef.current.direction ?? "desc"],
           ],
-          search: params.search,
-          page: params.page,
         });
       }
     },
