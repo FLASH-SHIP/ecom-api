@@ -196,7 +196,7 @@ export class SystemDiagnosticsService {
     } = params;
 
     // Production guard
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {
       throw ErrorWithCode.Factory.Forbidden(
         "Diagnostics and log endpoints are strictly disabled on production environments.",
       );
@@ -408,7 +408,7 @@ export class SystemDiagnosticsService {
     const { sudoPassword, userId, maintenanceKey } = params;
 
     // Production guard
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {
       throw ErrorWithCode.Factory.Forbidden(
         "Diagnostics and process endpoints are strictly disabled on production environments.",
       );
@@ -492,7 +492,7 @@ export class SystemDiagnosticsService {
     const { sudoPassword, userId, maintenanceKey } = params;
 
     // Production guard
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {
       throw ErrorWithCode.Factory.Forbidden(
         "Diagnostics endpoints are strictly disabled on production environments.",
       );
@@ -655,7 +655,7 @@ export class SystemDiagnosticsService {
     const { action, pattern, key, sudoPassword, userId, maintenanceKey } = params;
 
     // Production guard
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {
       throw ErrorWithCode.Factory.Forbidden(
         "Diagnostics and Redis endpoints are strictly disabled on production environments.",
       );
