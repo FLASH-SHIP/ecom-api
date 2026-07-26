@@ -5,16 +5,8 @@ import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
 import { ExportFileIcon } from "@ecom/ui/components/icon-component/ExportFileIcon";
-import { Input } from "@ecom/ui/components/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ecom/ui/components/select";
 import { format, subDays } from "date-fns";
-import { Search, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export interface EndingBalanceFilterProps {
@@ -34,9 +26,7 @@ export default function EndingBalanceFilter({
   dateFrom: propsDateFrom,
   dateTo: propsDateTo,
   onDateChange,
-  orderCode: propsOrderCode,
   onOrderCodeChange,
-  transactionType: propsTransactionType,
   onTransactionTypeChange,
   onClearAll,
   onExport,
@@ -59,21 +49,9 @@ export default function EndingBalanceFilter({
     onDateChange?.(from, to);
   };
 
-  const handleOrderCodeChange = (val: string) => {
-    setOrderCode(val);
-    onOrderCodeChange?.(val);
-  };
-
-  const handleTransactionTypeChange = (val: string) => {
-    setTransactionType(val);
-    onTransactionTypeChange?.(val);
-  };
-
   const handleClearAll = () => {
     setDateFrom(defaultFromDate);
     setDateTo(defaultToDate);
-    setOrderCode("");
-    setTransactionType("");
 
     onDateChange?.(defaultFromDate, defaultToDate);
     onOrderCodeChange?.("");
@@ -86,7 +64,7 @@ export default function EndingBalanceFilter({
       className="grid grid-cols-1 md:grid-cols-24 gap-4 w-full items-center"
       style={{ display: "grid", gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}
     >
-      {/* Part 1: DateRangePicker, Search Input (Order code), Select Transaction Type, Clear All Button (18/24 width, justify-start) */}
+      {/* Part 1: DateRangePicker, Clear All Button (20/24 width, justify-start) */}
       <div
         className="col-span-24 md:col-span-20 flex flex-wrap items-center gap-3 justify-start"
         style={{ gridColumn: "span 20 / span 20" }}
@@ -103,7 +81,7 @@ export default function EndingBalanceFilter({
           className="border-[#DADADA] rounded-lg bg-white dark:bg-zinc-900 shadow-xs text-[#232323] px-4 py-3 gap-2 w-full md:w-auto"
         />
 
-        {/* 4. Button Clear All */}
+        {/* 2. Button Clear All */}
         <Button
           type="button"
           variant="outline"
@@ -115,7 +93,7 @@ export default function EndingBalanceFilter({
         </Button>
       </div>
 
-      {/* Part 2: Button Export (6/24 width, justify-end) */}
+      {/* Part 2: Button Export (4/24 width, justify-end) */}
       <div
         className="col-span-24 md:col-span-4 flex items-center justify-end"
         style={{ gridColumn: "span 4 / span 4" }}
