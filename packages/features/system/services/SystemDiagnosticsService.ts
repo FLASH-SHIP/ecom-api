@@ -871,28 +871,10 @@ export class SystemDiagnosticsService {
     level: string;
     sudoPassword?: string;
     userId: string;
-    maintenanceKey: string;
+    maintenanceKey?: string;
   }): Promise<{ success: boolean; oldLevel: string; newLevel: string }> {
     this.verifyMaintenanceKey(params.maintenanceKey);
-
-    if (!params.sudoPassword) {
-      throw ErrorWithCode.Factory.InvalidCredentials("Missing sudoPassword");
-    }
-
-    const dbUser = await this.prisma.user.findUnique({
-      where: { id: params.userId },
-      select: {
-        password: { select: { hash: true } },
-      },
-    });
-    const hash = dbUser?.password?.hash;
-    if (!hash) {
-      throw ErrorWithCode.Factory.InvalidCredentials("User password hash not found");
-    }
-    const isPasswordValid = await verifyPassword(params.sudoPassword, hash);
-    if (!isPasswordValid) {
-      throw ErrorWithCode.Factory.InvalidCredentials("Invalid sudo password");
-    }
+    await this.verifySudoPassword(params.sudoPassword, params.userId);
 
     const newLevel = params.level.toLowerCase();
     if (!["debug", "info", "warn", "error"].includes(newLevel)) {
@@ -913,7 +895,7 @@ export class SystemDiagnosticsService {
   async getDatabaseStats(params: {
     sudoPassword?: string;
     userId: string;
-    maintenanceKey: string;
+    maintenanceKey?: string;
   }): Promise<{
     databaseSizeBytes: number;
     tables: Array<{
@@ -925,25 +907,7 @@ export class SystemDiagnosticsService {
     }>;
   }> {
     this.verifyMaintenanceKey(params.maintenanceKey);
-
-    if (!params.sudoPassword) {
-      throw ErrorWithCode.Factory.InvalidCredentials("Missing sudoPassword");
-    }
-
-    const dbUser = await this.prisma.user.findUnique({
-      where: { id: params.userId },
-      select: {
-        password: { select: { hash: true } },
-      },
-    });
-    const hash = dbUser?.password?.hash;
-    if (!hash) {
-      throw ErrorWithCode.Factory.InvalidCredentials("User password hash not found");
-    }
-    const isPasswordValid = await verifyPassword(params.sudoPassword, hash);
-    if (!isPasswordValid) {
-      throw ErrorWithCode.Factory.InvalidCredentials("Invalid sudo password");
-    }
+    await this.verifySudoPassword(params.sudoPassword, params.userId);
 
     try {
       const dbSizeResult = await this.prisma.$queryRawUnsafe<Array<{ databaseSizeBytes: string }>>(`
@@ -994,32 +958,14 @@ export class SystemDiagnosticsService {
   async getRedisStats(params: {
     sudoPassword?: string;
     userId: string;
-    maintenanceKey: string;
+    maintenanceKey?: string;
   }): Promise<{
     memory: Record<string, string>;
     stats: Record<string, string>;
     keysSummary: Array<{ pattern: string; count: number }>;
   }> {
     this.verifyMaintenanceKey(params.maintenanceKey);
-
-    if (!params.sudoPassword) {
-      throw ErrorWithCode.Factory.InvalidCredentials("Missing sudoPassword");
-    }
-
-    const dbUser = await this.prisma.user.findUnique({
-      where: { id: params.userId },
-      select: {
-        password: { select: { hash: true } },
-      },
-    });
-    const hash = dbUser?.password?.hash;
-    if (!hash) {
-      throw ErrorWithCode.Factory.InvalidCredentials("User password hash not found");
-    }
-    const isPasswordValid = await verifyPassword(params.sudoPassword, hash);
-    if (!isPasswordValid) {
-      throw ErrorWithCode.Factory.InvalidCredentials("Invalid sudo password");
-    }
+    await this.verifySudoPassword(params.sudoPassword, params.userId);
 
     try {
       const { getRedisClient } = require("@ecom/lib/redis");
