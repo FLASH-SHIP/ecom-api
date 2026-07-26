@@ -38,12 +38,8 @@ export default function EndingBalanceFilter({
   const defaultToDate = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const defaultFromDate = useMemo(() => format(subDays(new Date(), 6), "yyyy-MM-dd"), []);
 
-  const [dateFrom, setDateFrom] = useState<string | undefined>(
-    propsDateFrom ?? defaultFromDate,
-  );
-  const [dateTo, setDateTo] = useState<string | undefined>(
-    propsDateTo ?? defaultToDate,
-  );
+  const [dateFrom, setDateFrom] = useState<string | undefined>(propsDateFrom ?? defaultFromDate);
+  const [dateTo, setDateTo] = useState<string | undefined>(propsDateTo ?? defaultToDate);
 
   const handleDateChange = (from: string | undefined, to: string | undefined) => {
     setDateFrom(from);
