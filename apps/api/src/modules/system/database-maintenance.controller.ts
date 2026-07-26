@@ -177,7 +177,7 @@ export class DatabaseMaintenanceController {
     @Res() res: Response,
   ) {
     // 1. Production Guard
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {
       throw new ForbiddenException(
         "Download endpoint is strictly disabled on production environments.",
       );
