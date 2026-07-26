@@ -169,6 +169,7 @@
       "read": "View Shipping Rates List",
       "create": "Create New Shipping Rate",
       "update": "Update Shipping Rate Info",
+      "approve": "Approve Shipping Rates",
       "delete": "Delete Shipping Rate"
     },
     "tools": {

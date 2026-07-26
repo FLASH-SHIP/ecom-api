@@ -1,9 +1,11 @@
 "use client";
 
 import { VisualDiffViewer } from "@admin/app/(main)/system/audit-logs/AuditLogsContent";
+import { useRequirePermission } from "@admin/components/layout/PermissionGuard";
 import { useToast } from "@admin/components/toast-provider";
 import { trpc } from "@admin/lib/trpc";
 import { formatDateTime } from "@admin/utils/dateFormat";
+import { Permissions } from "@ecom/lib/permissions";
 import type { ContentStatus, RateCardType, ShippingMethod } from "@ecom/prisma";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
@@ -1132,6 +1134,9 @@ interface FormHeaderProps {
   isInfoDirty?: boolean;
   isSlabsDirty?: boolean;
   isReadOnly?: boolean;
+  canCreate?: boolean;
+  canUpdate?: boolean;
+  canApprove?: boolean;
 }
 
 function InfoTabButtons({
@@ -1146,10 +1151,17 @@ function InfoTabButtons({
   onSubmitReview,
   onApprove,
   onReject,
+  canCreate = true,
+  canUpdate = true,
+  canApprove = true,
 }: Omit<FormHeaderProps, "activeTab" | "slabsCount" | "onBack" | "onSaveSlabs" | "isSlabsDirty">) {
+  const canSave = isCreate ? canCreate : canUpdate && (status === "DRAFT" || status === "REJECTED");
+  const canSubmit = !isCreate && canUpdate && (status === "DRAFT" || status === "REJECTED");
+  const canApproveReject = !isCreate && canApprove && status === "PENDING";
+
   return (
     <>
-      {(isCreate || status === "DRAFT" || status === "REJECTED") && (
+      {canSave && (
         <Button
           size="sm"
           variant="outline"
@@ -1165,14 +1177,14 @@ function InfoTabButtons({
         </Button>
       )}
 
-      {!isCreate && (status === "DRAFT" || status === "REJECTED") && onSubmitReview && (
+      {canSubmit && onSubmitReview && (
         <Button size="sm" disabled={isPending || totalSlabErrors > 0} onClick={onSubmitReview}>
           <CheckCircle className="mr-2 size-4" />
           {tSettings("rates.btnSubmitReview")}
         </Button>
       )}
 
-      {!isCreate && status === "PENDING" && (
+      {canApproveReject && (
         <>
           {onReject && (
             <Button size="sm" variant="destructive" disabled={isPending} onClick={onReject}>
@@ -1260,6 +1272,10 @@ export function RateCardForm({ rateCardId }: RateCardFormProps) {
   const tSettings = useTranslations("settings");
   const utils = trpc.useUtils();
 
+  const { hasPermission: canCreate } = useRequirePermission([Permissions.RATES_CREATE]);
+  const { hasPermission: canUpdate } = useRequirePermission([Permissions.RATES_UPDATE]);
+  const { hasPermission: canApprove } = useRequirePermission([Permissions.RATES_APPROVE]);
+
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -1295,7 +1311,9 @@ export function RateCardForm({ rateCardId }: RateCardFormProps) {
   const formData = watch();
   const [slabs, setSlabs] = useState<SlabItem[]>([]);
   const [initialSlabs, setInitialSlabs] = useState<SlabItem[]>([]);
-  const isReadOnly = !isCreate && formData.status !== "DRAFT" && formData.status !== "REJECTED";
+  const isReadOnly = !isCreate
+    ? (formData.status !== "DRAFT" && formData.status !== "REJECTED") || !canUpdate
+    : !canCreate;
 
   const { data: existingRate, isLoading: loadingDetails } = trpc.viewer.rateCards.get.useQuery(
     { id: rateCardId ?? 0 },
@@ -1468,6 +1486,9 @@ export function RateCardForm({ rateCardId }: RateCardFormProps) {
         isInfoDirty={isInfoDirty}
         isSlabsDirty={isSlabsDirty}
         isReadOnly={isReadOnly}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canApprove={canApprove}
       />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "info" | "slabs" | "logs")}>

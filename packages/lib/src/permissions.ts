@@ -71,6 +71,7 @@ export const Permissions = {
   RATES_READ: "rates.read",
   RATES_CREATE: "rates.create",
   RATES_UPDATE: "rates.update",
+  RATES_APPROVE: "rates.approve",
   RATES_DELETE: "rates.delete",
 
   // Audit Logs
@@ -615,6 +616,14 @@ export const ALL_PERMISSIONS: SystemPermission[] = [
   {
     name: Permissions.RATES_UPDATE,
     displayName: "Update Shipping Rates",
+    group: "rates",
+    section: "settings",
+    module: "rates",
+    parent: Permissions.RATES_READ,
+  },
+  {
+    name: Permissions.RATES_APPROVE,
+    displayName: "Approve Shipping Rates",
     group: "rates",
     section: "settings",
     module: "rates",

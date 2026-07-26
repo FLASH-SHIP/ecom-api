@@ -10,7 +10,7 @@ export default function EditRateCardPage() {
   const id = params.id ? Number(params.id) : null;
 
   return (
-    <PermissionGuard permissions={[Permissions.RATES_UPDATE]}>
+    <PermissionGuard permissions={[Permissions.RATES_READ]}>
       <RateCardForm rateCardId={id} />
     </PermissionGuard>
   );

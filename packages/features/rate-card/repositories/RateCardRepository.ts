@@ -470,9 +470,32 @@ export class RateCardRepository {
     return this.prisma.$transaction(async (tx) => {
       const original = await tx.rateCard.findUnique({
         where: { id },
-        include: {
-          groups: true,
-          items: true,
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          type: true,
+          status: true,
+          shippingMethod: true,
+          country: true,
+          origin: true,
+          currency: true,
+          weightStep: true,
+          minWeight: true,
+          maxWeight: true,
+          startDate: true,
+          endDate: true,
+          groups: {
+            select: { customerGroupId: true },
+          },
+          items: {
+            select: {
+              startWeight: true,
+              endWeight: true,
+              rateType: true,
+              amount: true,
+            },
+          },
         },
       });
       if (!original) return null;

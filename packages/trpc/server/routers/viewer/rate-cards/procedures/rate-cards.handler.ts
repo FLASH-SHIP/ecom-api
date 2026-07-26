@@ -323,7 +323,7 @@ export const submitForReview = authedProcedure
 
 // 5c. Approve Rate Card (Super Admin / Authorized roles)
 export const approve = authedProcedure
-  .use(requirePermission(Permissions.RATES_UPDATE))
+  .use(requirePermission(Permissions.RATES_APPROVE))
   .use(auditLog({ module: "rateCards", action: "APPROVE", entityType: "RateCard" }))
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ input }) => {
@@ -360,7 +360,7 @@ export const approve = authedProcedure
 
 // 5d. Reject Rate Card
 export const reject = authedProcedure
-  .use(requirePermission(Permissions.RATES_UPDATE))
+  .use(requirePermission(Permissions.RATES_APPROVE))
   .use(auditLog({ module: "rateCards", action: "REJECT", entityType: "RateCard" }))
   .input(z.object({ id: z.number().int().positive(), reason: z.string().optional() }))
   .mutation(async ({ input }) => {
@@ -468,6 +468,14 @@ export const remove = authedProcedure
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Không thể xóa bảng giá cước mặc định của hệ thống.",
+      });
+    }
+
+    if (card.status !== "DRAFT" && card.status !== "REJECTED") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Chỉ có thể xóa bảng giá cước khi ở trạng thái Bản nháp (DRAFT) hoặc Từ chối (REJECTED).",
       });
     }
 

@@ -5,11 +5,13 @@ import { DataTable } from "@admin/components/data-table";
 import { CopyCell } from "@admin/components/data-table/CopyCell";
 import { useServerTable } from "@admin/components/data-table/hooks/useServerTable";
 import type { DataTableServerParams, FilterFieldDef } from "@admin/components/data-table/types";
+import { useRequirePermission } from "@admin/components/layout/PermissionGuard";
 import { useToast } from "@admin/components/toast-provider";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
 import { trpc } from "@admin/lib/trpc";
 import { formatDate } from "@admin/utils/dateFormat";
+import { Permissions } from "@ecom/lib/permissions";
 import type { ContentStatus, RateCardType, ShippingMethod } from "@ecom/prisma";
 import { Badge } from "@ecom/ui/components/badge";
 import { Button } from "@ecom/ui/components/button";
@@ -101,6 +103,12 @@ export default function RatesContent() {
   const { toast } = useToast();
   const { askConfirm, dialogProps: confirmDialogProps } = useConfirm();
   const utils = trpc.useUtils();
+
+  // Permission hooks
+  const { hasPermission: canCreate } = useRequirePermission([Permissions.RATES_CREATE]);
+  const { hasPermission: canUpdate } = useRequirePermission([Permissions.RATES_UPDATE]);
+  const { hasPermission: canApprove } = useRequirePermission([Permissions.RATES_APPROVE]);
+  const { hasPermission: canDelete } = useRequirePermission([Permissions.RATES_DELETE]);
 
   // State for Assign Groups dialog
   const [assignGroupCard, setAssignGroupCard] = useState<RateCardRow | null>(null);
@@ -342,16 +350,17 @@ export default function RatesContent() {
       {
         key: "edit",
         tooltip: (row) =>
-          row.status === "DRAFT" || row.status === "REJECTED"
+          canUpdate && (row.status === "DRAFT" || row.status === "REJECTED")
             ? t("rates.actionEdit")
             : t("rates.actionViewDetails"),
         icon: (row) =>
-          row.status === "DRAFT" || row.status === "REJECTED" ? (
+          canUpdate && (row.status === "DRAFT" || row.status === "REJECTED") ? (
             <Pencil size={15} />
           ) : (
             <Eye size={15} />
           ),
-        color: (row) => (row.status === "DRAFT" || row.status === "REJECTED" ? "success" : "info"),
+        color: (row) =>
+          canUpdate && (row.status === "DRAFT" || row.status === "REJECTED") ? "success" : "info",
         onClick: (row) => openEdit(row.id),
       },
       {
@@ -359,7 +368,7 @@ export default function RatesContent() {
         tooltip: t("rates.btnAssignGroups"),
         icon: <UserPlus size={15} />,
         color: "info",
-        hidden: (row) => row.type === "DEFAULT",
+        hidden: (row) => !canUpdate || row.type === "DEFAULT",
         onClick: (row) => openAssignGroups(row),
       },
       {
@@ -367,7 +376,7 @@ export default function RatesContent() {
         tooltip: t("rates.btnSubmitReview"),
         icon: <CheckCircle size={15} />,
         color: "primary",
-        hidden: (row) => row.status !== "DRAFT" && row.status !== "REJECTED",
+        hidden: (row) => !canUpdate || (row.status !== "DRAFT" && row.status !== "REJECTED"),
         onClick: (row) => {
           askConfirm({
             title: t("rates.btnSubmitReview"),
@@ -383,7 +392,7 @@ export default function RatesContent() {
         tooltip: t("rates.btnApprove"),
         icon: <CheckCircle size={15} />,
         color: "success",
-        hidden: (row) => row.status !== "PENDING",
+        hidden: (row) => !canApprove || row.status !== "PENDING",
         onClick: (row) => {
           askConfirm({
             title: t("rates.btnApprove"),
@@ -399,7 +408,7 @@ export default function RatesContent() {
         tooltip: t("rates.btnReject"),
         icon: <XCircle size={15} />,
         color: "error",
-        hidden: (row) => row.status !== "PENDING",
+        hidden: (row) => !canApprove || row.status !== "PENDING",
         onClick: (row) => {
           askConfirm({
             title: t("rates.btnReject"),
@@ -415,6 +424,7 @@ export default function RatesContent() {
         tooltip: t("rates.actionDuplicate"),
         icon: <Copy size={15} />,
         color: "info",
+        hidden: () => !canCreate,
         onClick: (row) => {
           askConfirm({
             title: t("rates.actionDuplicate"),
@@ -437,11 +447,16 @@ export default function RatesContent() {
           });
         },
         hidden: (row) =>
+          !canDelete ||
           ["epacket.default.us", "express.default.us"].includes(row.code) ||
-          row.status === "PUBLISHED",
+          (row.status !== "DRAFT" && row.status !== "REJECTED"),
       },
     ],
     [
+      canCreate,
+      canUpdate,
+      canApprove,
+      canDelete,
       openEdit,
       openAssignGroups,
       askConfirm,
@@ -594,19 +609,23 @@ export default function RatesContent() {
         filterFields={filterFields}
         onRefresh={() => utils.viewer.rateCards.list.invalidate()}
         headerActions={
-          <Button size="sm" className="bg-primary" onClick={openCreate}>
-            <Plus className="mr-1.5 size-4" />
-            {t("rates.btnAddRateCard")}
-          </Button>
+          canCreate ? (
+            <Button size="sm" className="bg-primary" onClick={openCreate}>
+              <Plus className="mr-1.5 size-4" />
+              {t("rates.btnAddRateCard")}
+            </Button>
+          ) : null
         }
         emptyState={
           <div className="py-12 text-center">
             <p className="mb-2 font-medium text-muted-foreground">{t("rates.noRatesFound")}</p>
             <p className="mb-6 text-sm text-muted-foreground/60">{t("rates.noRatesFoundDesc")}</p>
-            <Button size="sm" onClick={openCreate}>
-              <Plus className="mr-1.5 size-4" />
-              {t("rates.btnAddRateCard")}
-            </Button>
+            {canCreate && (
+              <Button size="sm" onClick={openCreate}>
+                <Plus className="mr-1.5 size-4" />
+                {t("rates.btnAddRateCard")}
+              </Button>
+            )}
           </div>
         }
       />
