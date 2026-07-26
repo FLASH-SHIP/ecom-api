@@ -54,20 +54,32 @@ async function main() {
   assertNotProduction();
 
   const env = process.env.NODE_ENV ?? "development";
-  const only = process.env.SEED_ONLY; // e.g. "CustomFields" → partial match
+  const only = process.env.SEED_ONLY; // e.g. "Rate" → partial name match
+  const category = process.env.SEED_CATEGORY?.toLowerCase(); // "core", "business", or "all"
 
-  // Filter seeders if SEED_ONLY is set
-  const seeders = only
-    ? SEEDERS.filter((s) => s.name.toLowerCase().includes(only.toLowerCase()))
-    : SEEDERS;
+  // Filter seeders by category & SEED_ONLY
+  let seeders = SEEDERS;
 
-  if (only && seeders.length === 0) {
-    console.error(`❌ No seeders match SEED_ONLY="${only}"`);
-    console.error(`   Available: ${SEEDERS.map((s) => s.name).join(", ")}`);
+  if (category && category !== "all") {
+    seeders = seeders.filter((s) => (s.category ?? "core") === category);
+  }
+
+  if (only) {
+    seeders = seeders.filter((s) => s.name.toLowerCase().includes(only.toLowerCase()));
+  }
+
+  if (seeders.length === 0) {
+    console.error(`❌ No seeders match filters (SEED_ONLY="${only ?? ""}", SEED_CATEGORY="${category ?? ""}")`);
+    console.error(`   Available: ${SEEDERS.map((s) => `${s.name} [${s.category ?? "core"}]`).join(", ")}`);
     process.exit(1);
   }
 
-  console.log(`🌱 Seeding [${env}]${only ? ` — filter: "${only}"` : ""}`);
+  const filterInfo = [
+    category ? `category: "${category}"` : null,
+    only ? `name: "${only}"` : null,
+  ].filter(Boolean).join(", ");
+
+  console.log(`🌱 Seeding [${env}]${filterInfo ? ` — ${filterInfo}` : ""}`);
   console.log(`   Running ${seeders.length}/${SEEDERS.length} seeders\n`);
 
   for (const seeder of seeders) {

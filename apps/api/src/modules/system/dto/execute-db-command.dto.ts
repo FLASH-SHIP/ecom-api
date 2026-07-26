@@ -25,4 +25,9 @@ export class ExecuteDatabaseCommandDto {
     message: "seedOnly must contain only alphanumeric characters, dashes, or underscores",
   })
   seedOnly?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsEnum(["core", "business", "all"])
+  seedCategory?: string;
 }

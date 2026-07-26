@@ -108,11 +108,12 @@ export class DatabaseMaintenanceService {
     maintenanceKey?: string;
     sudoPassword?: string;
     seedOnly?: string;
+    seedCategory?: string;
     userId: string;
     username: string;
     writeStream: Writable;
   }): Promise<void> {
-    const { action, maintenanceKey, sudoPassword, seedOnly, userId, username, writeStream } =
+    const { action, maintenanceKey, sudoPassword, seedOnly, seedCategory, userId, username, writeStream } =
       params;
 
     // ── 1. Production Guard ──────────────────────────────────────────────────
@@ -201,6 +202,14 @@ export class DatabaseMaintenanceService {
             throw ErrorWithCode.Factory.BadRequest("Invalid seedOnly name parameter");
           }
           env.SEED_ONLY = seedOnly;
+        }
+        if (seedCategory) {
+          if (!["core", "business", "all"].includes(seedCategory.toLowerCase())) {
+            throw ErrorWithCode.Factory.BadRequest(
+              "Invalid seedCategory parameter. Allowed values: core, business, all",
+            );
+          }
+          env.SEED_CATEGORY = seedCategory.toLowerCase();
         }
         if (isDevDiagnosticsBypassEnabled()) {
           env.ALLOW_PROD_SEED = "1";

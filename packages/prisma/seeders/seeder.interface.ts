@@ -12,9 +12,14 @@
 
 import type { PrismaClient } from "../src/generated/prisma/client";
 
+export type SeederCategory = "core" | "business";
+
 export interface Seeder {
   /** Human-readable name shown in logs */
   readonly name: string;
+
+  /** Seeder category: 'core' (system/ref data) or 'business' (demo/domain data). Defaults to 'core'. */
+  readonly category?: SeederCategory;
 
   /**
    * Run the seeder.
