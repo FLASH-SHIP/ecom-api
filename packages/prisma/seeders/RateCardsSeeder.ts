@@ -3,6 +3,7 @@ import type { Seeder } from "./seeder.interface";
 
 export const RateCardsSeeder: Seeder = {
   name: "Rate Cards & Customer Groups",
+  category: "business",
 
   async run(prisma: PrismaClient) {
     // 1. Create Tier 1, Tier 2, and Tier 3 Customer Groups

@@ -12,6 +12,11 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx seed.ts",
+    "prisma:seed:core": "SEED_CATEGORY=core tsx seed.ts",
+    "prisma:seed:business": "SEED_CATEGORY=business tsx seed.ts",
+    "db:check-drift": "prisma migrate status",
+    "db:reset": "prisma migrate reset --force && tsx seed.ts",
+    "prisma:format:check": "prisma format --schema=schema",
     "db:studio": "prisma studio",
     "clean": "rm -rf dist src/generated node_modules/.prisma"
   },

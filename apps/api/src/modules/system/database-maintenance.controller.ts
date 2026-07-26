@@ -105,6 +105,7 @@ export class DatabaseMaintenanceController {
         maintenanceKey: body.maintenanceKey,
         sudoPassword: body.sudoPassword,
         seedOnly: body.seedOnly,
+        seedCategory: body.seedCategory,
         userId: user.id,
         username: user.email,
         writeStream: res,

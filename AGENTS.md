@@ -31,10 +31,14 @@ You are a senior Ecom engineer working in a Yarn/Turbo monorepo. You prioritize 
 - Map API search/filter parameters to type-safe Prisma criteria using Query Builders — see [query builder guidelines](agents/rules/patterns-query-builder.md)
 - Always use dedicated Response Mappers/Transformers (`mapToCustomerXResponse`, `mapToAdminXResponse`) to isolate Customer Public API payloads from internal Admin & Database models — see [response serialization guidelines](agents/rules/patterns-response-serialization.md)
 - Convert all Prisma `Decimal` instances to JavaScript numbers (`Number(val)`) in Response Mappers to prevent raw `{s, e, d}` object serialization
+- Always run `yarn prisma migrate dev --name <name>` whenever modifying any schema files in `packages/prisma/schema/`
+- Always run `yarn db:check-drift` before pushing PRs containing database changes — see [Prisma migration guidelines](agents/rules/patterns-prisma-migrations.md)
 
 ## Don't
 
 - Never use `as any` - use proper type-safe solutions instead
+- Never modify any `packages/prisma/schema/*.prisma` file without generating a corresponding migration file SQL
+- Never use `npx prisma db push` as a substitute for migrations in development
 - Never expose `password`, `hashedKey`, `tokenHash`, or `refreshTokenHash` fields in API responses or queries
 - Never expose internal operational or logistics fields (`trackingNumber`, `mawb`, `flightNumber`, `rateCardId`, `costPrice`, `boxId`, `port`, `importId`, `version`, `OrderPartner`, `OrderActivityLog`) in Customer API responses
 - Never duplicate customer identity objects (`customer`, `customerId`) in Customer API order array responses
