@@ -725,7 +725,6 @@ export class OrderService {
     return mapToCustomerOrderDetailResponse(order);
   }
 
-
   /**
    * Cancels an order requested by the customer.
    * Only orders in PENDING_LABEL status can be cancelled.

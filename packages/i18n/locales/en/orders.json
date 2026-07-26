@@ -41,6 +41,12 @@
   "getRates": "Get Rates",
   "status": {
     "DRAFT": "Draft",
+    "LABEL_CREATED": "Label Created",
+    "PENDING_LABEL": "Pending Label",
+    "PACKAGE_RECEIVED": "Package Received",
+    "ON_THE_WAY": "On the Way",
+    "PICK_UP": "Picked Up",
+    "DELIVERY": "Out for Delivery",
     "LABEL_NOT_CREATED": "Label Not Created",
     "WAITING_FOR_PICKUP": "Label Created",
     "PICKED_UP": "Picked Up",

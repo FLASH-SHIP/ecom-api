@@ -1,7 +1,7 @@
 import { ErrorCode } from "@ecom/lib/errorCodes";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { RedisCache } from "@ecom/lib/redis";
-import type { RateCardType, ShippingMethod } from "@ecom/prisma";
+import type { RateCardType, RateItemType, ShippingMethod } from "@ecom/prisma";
 import { Prisma } from "@ecom/prisma";
 import type { RateCardRepository } from "../repositories/RateCardRepository";
 
@@ -24,7 +24,7 @@ export interface CalculateFreightParams {
 export interface SlabInput {
   startWeight: number;
   endWeight: number;
-  rateType: RateCardType;
+  rateType: RateItemType;
   amount: number;
 }
 
@@ -38,6 +38,47 @@ export class RateCardService {
     this.deps = deps;
     // Cache TTL is set to 1 hour (3600 seconds)
     this.cache = new RedisCache("rate-cards", 3600);
+  }
+
+  /**
+   * Validates that startDate is not in the past (before today 00:00:00).
+   */
+  validateStartDateNotPast(startDate?: Date | null) {
+    if (startDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const inputDate = new Date(startDate);
+      inputDate.setHours(0, 0, 0, 0);
+      if (inputDate < today) {
+        throw new ErrorWithCode(
+          ErrorCode.RateCardValidationError,
+          "Ngày bắt đầu hiệu lực không được ở trong quá khứ.",
+          422,
+        );
+      }
+    }
+  }
+
+  /**
+   * Called when a Default rate card is approved and published.
+   * Automatically archives previous active Default rate card for same method/country/origin.
+   */
+  async onDefaultCardApproved(card: {
+    id: number;
+    type: RateCardType;
+    shippingMethod: ShippingMethod;
+    country: string;
+    origin: string | null;
+  }) {
+    if (card.type === "DEFAULT") {
+      return this.deps.rateCardRepo.approveDefaultCardTransaction({
+        id: card.id,
+        shippingMethod: card.shippingMethod,
+        country: card.country,
+        origin: card.origin,
+      });
+    }
+    return this.deps.rateCardRepo.update(card.id, { status: "PUBLISHED" });
   }
 
   /**
@@ -249,9 +290,6 @@ export class RateCardService {
     };
   }
 
-  /**
-   * Validates pricing slabs for continuity, gaps, and monotonicity.
-   */
   /**
    * Validates pricing slabs for continuity, gaps, and monotonicity.
    */

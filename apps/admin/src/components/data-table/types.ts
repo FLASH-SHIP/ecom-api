@@ -68,9 +68,16 @@ export interface ColumnDef<T> {
 export interface RowAction<T> {
   key: string;
   tooltip: string | ((row: T) => string);
-  icon: ReactNode;
+  icon: ReactNode | ((row: T) => ReactNode);
   onClick: (row: T) => void;
-  color?: "default" | "primary" | "error" | "warning" | "info" | "success";
+  color?:
+    | "default"
+    | "primary"
+    | "error"
+    | "warning"
+    | "info"
+    | "success"
+    | ((row: T) => "default" | "primary" | "error" | "warning" | "info" | "success");
   disabled?: (row: T) => boolean;
   hidden?: (row: T) => boolean;
 }

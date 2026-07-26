@@ -117,3 +117,75 @@ export const remove = authedProcedure
       });
     }
   });
+
+export const getMembers = authedProcedure
+  .use(requirePermission(Permissions.CUSTOMER_GROUPS_READ))
+  .input(
+    z.object({
+      groupId: z.number().int().positive(),
+      search: z.string().optional(),
+      page: z.number().int().min(1).default(1),
+      perPage: z.number().int().min(1).max(500).default(25),
+    }),
+  )
+  .query(async ({ input }) => {
+    const service = getCustomerGroupService();
+    return service.getMembers(input.groupId, input.search, input.page, input.perPage);
+  });
+
+export const getAvailableCustomers = authedProcedure
+  .use(requirePermission(Permissions.CUSTOMER_GROUPS_READ))
+  .input(
+    z.object({
+      groupId: z.number().int().positive(),
+      search: z.string().optional(),
+      limit: z.number().int().min(1).max(200).default(50),
+    }),
+  )
+  .query(async ({ input }) => {
+    const service = getCustomerGroupService();
+    return service.getAvailableCustomers(input.groupId, input.search, input.limit);
+  });
+
+export const assignMembers = authedProcedure
+  .use(requirePermission(Permissions.CUSTOMER_GROUPS_UPDATE))
+  .use(
+    auditLog({ module: "customerGroups", action: "ASSIGN_MEMBERS", entityType: "CustomerGroup" }),
+  )
+  .input(
+    z.object({
+      groupId: z.number().int().positive(),
+      customerIds: z.array(z.string().min(1)).min(1),
+    }),
+  )
+  .mutation(async ({ input }) => {
+    const service = getCustomerGroupService();
+    try {
+      return await service.assignMembers(input.groupId, input.customerIds);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Không thể gán thành viên vào nhóm.";
+      throw new TRPCError({ code: "BAD_REQUEST", message });
+    }
+  });
+
+export const removeMembers = authedProcedure
+  .use(requirePermission(Permissions.CUSTOMER_GROUPS_UPDATE))
+  .use(
+    auditLog({ module: "customerGroups", action: "REMOVE_MEMBERS", entityType: "CustomerGroup" }),
+  )
+  .input(
+    z.object({
+      groupId: z.number().int().positive(),
+      customerIds: z.array(z.string().min(1)).min(1),
+    }),
+  )
+  .mutation(async ({ input }) => {
+    const service = getCustomerGroupService();
+    try {
+      return await service.removeMembers(input.groupId, input.customerIds);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Không thể xóa thành viên khỏi nhóm.";
+      throw new TRPCError({ code: "BAD_REQUEST", message });
+    }
+  });

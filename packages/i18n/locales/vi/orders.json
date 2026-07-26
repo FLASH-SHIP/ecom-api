@@ -41,6 +41,12 @@
   "getRates": "Tính phí",
   "status": {
     "DRAFT": "Nháp",
+    "LABEL_CREATED": "Đã tạo nhãn",
+    "PENDING_LABEL": "Chờ tạo nhãn",
+    "PACKAGE_RECEIVED": "Đã nhận hàng",
+    "ON_THE_WAY": "Đang vận chuyển",
+    "PICK_UP": "Đã lấy hàng",
+    "DELIVERY": "Đang giao hàng",
     "LABEL_NOT_CREATED": "Chưa tạo nhãn",
     "WAITING_FOR_PICKUP": "Đã tạo nhãn",
     "PICKED_UP": "Đã lấy hàng",

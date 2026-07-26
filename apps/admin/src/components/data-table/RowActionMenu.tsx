@@ -12,7 +12,7 @@ import { EllipsisVertical } from "lucide-react";
 import type { ReactNode } from "react";
 import type { RowAction } from "./types";
 
-function getActionColorClass(color: RowAction<unknown>["color"]): string {
+function getActionColorClass(color?: string | null): string {
   if (color === "error") return "text-destructive";
   if (color === "warning") return "text-amber-600";
   if (color === "success") return "text-emerald-600";
@@ -45,19 +45,31 @@ export function RowActionMenu<T>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {visibleActions.map((action) => (
-          <DropdownMenuItem
-            key={action.key}
-            disabled={action.disabled?.(row)}
-            onClick={() => action.onClick(row)}
-            className={getActionColorClass(action.color)}
-          >
-            {action.icon && <span className="mr-2">{action.icon}</span>}
-            {typeof action.tooltip === "function"
-              ? (action.tooltip as (row: T) => string)(row)
-              : action.tooltip}
-          </DropdownMenuItem>
-        ))}
+        {visibleActions.map((action) => {
+          const actionIcon =
+            typeof action.icon === "function"
+              ? (action.icon as (r: T) => ReactNode)(row)
+              : action.icon;
+          const rawColor = action.color;
+          const actionColor =
+            typeof rawColor === "function"
+              ? (rawColor as (r: T) => string)(row)
+              : (rawColor as string | undefined);
+
+          return (
+            <DropdownMenuItem
+              key={action.key}
+              disabled={action.disabled?.(row)}
+              onClick={() => action.onClick(row)}
+              className={getActionColorClass(actionColor)}
+            >
+              {actionIcon && <span className="mr-2">{actionIcon}</span>}
+              {typeof action.tooltip === "function"
+                ? (action.tooltip as (row: T) => string)(row)
+                : action.tooltip}
+            </DropdownMenuItem>
+          );
+        })}
         {visibleActions.length > 0 && renderCustomItems && <DropdownMenuSeparator />}
         {renderCustomItems?.()}
       </DropdownMenuContent>

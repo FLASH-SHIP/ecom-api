@@ -35,3 +35,21 @@ export function generateEntityCode(prefix: string): string {
   const suffix = generateRandomString(8);
   return `${prefix}${dateStr}${suffix}`;
 }
+
+/**
+ * Generates a short, human-readable customer code.
+ * Format: [PREFIX][6-CHAR-BASE32]
+ * Example: KH8F32AQ
+ *
+ * @param prefix Configurable prefix for customer code (defaults to "KH")
+ * @param length Length of random suffix (defaults to 6)
+ * @returns The formatted customer code
+ */
+export function generateCustomerCode(prefix = "KH", length = 6): string {
+  const suffix = generateRandomString(length);
+  return `${prefix}${suffix}`;
+}
+
+export function generateOrderCode(prefix = "EC"): string {
+  return generateEntityCode(prefix);
+}

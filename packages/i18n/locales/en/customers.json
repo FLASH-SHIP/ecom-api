@@ -8,6 +8,7 @@
   "noCustomersSubtitle": "Add a customer to get started",
   "unauthorized": "You need to log in to view this page.",
   "fields": {
+    "customerCode": "Customer Code",
     "name": "Name",
     "email": "Email",
     "phone": "Phone",
@@ -28,6 +29,7 @@
     "banned": "Banned"
   },
   "form": {
+    "customerCodeImmutable": "Customer code is fixed and cannot be changed.",
     "emailLabel": "Email",
     "nameLabel": "Full Name",
     "namePlaceholder": "e.g. Nguyen Van An",

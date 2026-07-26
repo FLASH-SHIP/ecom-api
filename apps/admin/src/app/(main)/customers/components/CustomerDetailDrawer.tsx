@@ -102,6 +102,10 @@ export function CustomerDetailDrawer({
 
                 {/* Info rows */}
                 {[
+                  {
+                    label: t("fields.customerCode") ?? "Mã khách hàng",
+                    value: detail.customerCode ?? "—",
+                  },
                   { label: tUsers("fields.username"), value: `@${detail.username}` },
                   {
                     label: "Nhóm khách hàng",

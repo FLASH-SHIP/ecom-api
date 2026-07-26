@@ -119,4 +119,36 @@ export class CustomerGroupService {
 
     return this.deps.customerGroupRepo.delete(id);
   }
+
+  async getMembers(groupId: number, search?: string, page = 1, perPage = 25) {
+    return this.deps.customerGroupRepo.findMembers(groupId, search, page, perPage);
+  }
+
+  async getAvailableCustomers(groupId: number, search?: string, limit = 50) {
+    return this.deps.customerGroupRepo.findAvailableCustomers(groupId, search, limit);
+  }
+
+  async assignMembers(groupId: number, customerIds: string[]) {
+    const group = await this.deps.customerGroupRepo.findById(groupId);
+    if (!group) {
+      throw new ErrorWithCode(
+        ErrorCode.CustomerGroupNotFound,
+        `Không tìm thấy nhóm khách hàng ID ${groupId}.`,
+        404,
+      );
+    }
+    return this.deps.customerGroupRepo.assignMembers(groupId, customerIds);
+  }
+
+  async removeMembers(groupId: number, customerIds: string[]) {
+    const group = await this.deps.customerGroupRepo.findById(groupId);
+    if (!group) {
+      throw new ErrorWithCode(
+        ErrorCode.CustomerGroupNotFound,
+        `Không tìm thấy nhóm khách hàng ID ${groupId}.`,
+        404,
+      );
+    }
+    return this.deps.customerGroupRepo.removeMembers(groupId, customerIds);
+  }
 }
