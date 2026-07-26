@@ -44,4 +44,21 @@ export class AuthController {
       },
     };
   }
+
+  @Post("refresh")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Refresh admin access token" })
+  async refresh(@Body() body: { refreshToken: string }) {
+    const { verifyRefreshToken } = await import("@ecom/lib/jwt");
+    try {
+      const payload = verifyRefreshToken(body.refreshToken);
+      const accessToken = signAccessToken({ userId: payload.userId, email: payload.email });
+      return {
+        accessToken,
+        expiresIn: Number.parseInt(process.env.JWT_ACCESS_TOKEN_EXPIRES_IN || "900", 10),
+      };
+    } catch {
+      throw new UnauthorizedException("Invalid or expired refresh token");
+    }
+  }
 }
