@@ -1,5 +1,6 @@
 "use client";
 
+import { SearchableSelect } from "@customer/components/ui/searchable-select";
 import { trpc } from "@customer/lib/trpc";
 import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
@@ -25,7 +26,6 @@ import {
   type UseFormWatch,
 } from "react-hook-form";
 import type { OrderFormValues } from "./page";
-import { SearchableSelect } from "@customer/components/ui/searchable-select";
 
 // ---------------------------------------------------------------------------
 // Types

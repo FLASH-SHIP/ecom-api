@@ -25,6 +25,7 @@ export const CustomersSeeder: Seeder = {
     const customersData = [
       {
         id: "0190a618-971c-7000-8000-000000000002",
+        customerCode: "KH9R5M84",
         email: "customer1@ecom.com",
         username: "customer1",
         name: "Nguyễn Văn A",
@@ -35,6 +36,7 @@ export const CustomersSeeder: Seeder = {
       },
       {
         id: "0190a618-971c-7000-8000-000000000003",
+        customerCode: "KHFPBWQU",
         email: "customer2@ecom.com",
         username: "customer2",
         name: "Trần Thị B",
@@ -45,6 +47,7 @@ export const CustomersSeeder: Seeder = {
       },
       {
         id: "0190a618-971c-7000-8000-000000000004",
+        customerCode: "KH35N4W3",
         email: "customer3@ecom.com",
         username: "customer3",
         name: "Lê Văn C",

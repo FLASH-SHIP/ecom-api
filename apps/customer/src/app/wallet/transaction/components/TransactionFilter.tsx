@@ -1,5 +1,6 @@
 "use client";
 
+import { DateRangePicker } from "@customer/components/ui/date-range-picker";
 import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
@@ -15,7 +16,6 @@ import {
 import { format, subDays } from "date-fns";
 import { Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import {DateRangePicker} from "@customer/components/ui/date-range-picker";
 
 export interface TransactionFilterProps {
   dateFrom?: string;
@@ -48,16 +48,10 @@ export default function TransactionFilter({
   const defaultToDate = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const defaultFromDate = useMemo(() => format(subDays(new Date(), 6), "yyyy-MM-dd"), []);
 
-  const [dateFrom, setDateFrom] = useState<string | undefined>(
-    propsDateFrom ?? defaultFromDate,
-  );
-  const [dateTo, setDateTo] = useState<string | undefined>(
-    propsDateTo ?? defaultToDate,
-  );
+  const [dateFrom, setDateFrom] = useState<string | undefined>(propsDateFrom ?? defaultFromDate);
+  const [dateTo, setDateTo] = useState<string | undefined>(propsDateTo ?? defaultToDate);
   const [orderCode, setOrderCode] = useState<string>(propsOrderCode ?? "");
-  const [transactionType, setTransactionType] = useState<string>(
-    propsTransactionType ?? "",
-  );
+  const [transactionType, setTransactionType] = useState<string>(propsTransactionType ?? "");
 
   const handleDateChange = (from: string | undefined, to: string | undefined) => {
     setDateFrom(from);
@@ -115,10 +109,8 @@ export default function TransactionFilter({
           <Input
             type="text"
             placeholder={
-              translate(
-                "customerWallet.transactionFilter.orderCodePlaceholder",
-                currentLocale,
-              ) || "Order code"
+              translate("customerWallet.transactionFilter.orderCodePlaceholder", currentLocale) ||
+              "Order code"
             }
             value={orderCode}
             onChange={(e) => handleOrderCodeChange(e.target.value)}
@@ -154,34 +146,23 @@ export default function TransactionFilter({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">
-                {translate(
-                  "customerWallet.transactionFilter.allTransactionTypes",
-                  currentLocale,
-                ) || "All Transaction Types"}
+                {translate("customerWallet.transactionFilter.allTransactionTypes", currentLocale) ||
+                  "All Transaction Types"}
               </SelectItem>
               <SelectItem value="PAID">
-                {translate(
-                  "customerWallet.transactionFilter.paid",
-                  currentLocale,
-                ) || "Paid"}
+                {translate("customerWallet.transactionFilter.paid", currentLocale) || "Paid"}
               </SelectItem>
               <SelectItem value="ADDED_FUNDS">
-                {translate(
-                  "customerWallet.transactionFilter.addedFunds",
-                  currentLocale,
-                ) || "Added Funds"}
+                {translate("customerWallet.transactionFilter.addedFunds", currentLocale) ||
+                  "Added Funds"}
               </SelectItem>
               <SelectItem value="CANCELED">
-                {translate(
-                  "customerWallet.transactionFilter.canceled",
-                  currentLocale,
-                ) || "Canceled"}
+                {translate("customerWallet.transactionFilter.canceled", currentLocale) ||
+                  "Canceled"}
               </SelectItem>
               <SelectItem value="REFUNDED">
-                {translate(
-                  "customerWallet.transactionFilter.refunded",
-                  currentLocale,
-                ) || "Refunded"}
+                {translate("customerWallet.transactionFilter.refunded", currentLocale) ||
+                  "Refunded"}
               </SelectItem>
               <SelectItem value="ADJUST_INCREASE">
                 {translate(

@@ -186,11 +186,7 @@ function SearchableSelect({
   const showClear = allowClear && selectedOption && !disabled;
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={handleOpenChange}
-      modal={true}
-    >
+    <Popover open={open} onOpenChange={handleOpenChange} modal={true}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"

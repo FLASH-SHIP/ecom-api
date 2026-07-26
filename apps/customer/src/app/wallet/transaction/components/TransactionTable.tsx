@@ -161,8 +161,7 @@ export default function TransactionTable() {
 
   const columns = [
     {
-      header:
-        translate("customerWallet.transactionTable.no", currentLocale) || "No.",
+      header: translate("customerWallet.transactionTable.no", currentLocale) || "No.",
       width: 60,
       fixed: "left" as const,
       headerClassName: "text-center",
@@ -174,16 +173,12 @@ export default function TransactionTable() {
       },
     },
     {
-      header:
-        translate("customerWallet.transactionTable.date", currentLocale) ||
-        "Date",
+      header: translate("customerWallet.transactionTable.date", currentLocale) || "Date",
       width: 160,
       cell: (item: TransactionType) => <div>{item.date}</div>,
     },
     {
-      header:
-        translate("customerWallet.transactionTable.orderCode", currentLocale) ||
-        "Order code",
+      header: translate("customerWallet.transactionTable.orderCode", currentLocale) || "Order code",
       width: 160,
       cell: (item: TransactionType) => (
         <span className="font-semibold text-[#0F798C]">{item.orderCode}</span>
@@ -191,38 +186,29 @@ export default function TransactionTable() {
     },
     {
       header:
-        translate(
-          "customerWallet.transactionTable.partnerOrderId",
-          currentLocale,
-        ) || "Partner Order ID",
+        translate("customerWallet.transactionTable.partnerOrderId", currentLocale) ||
+        "Partner Order ID",
       width: 150,
       cell: (item: TransactionType) => <div>{item.partnerOrderId}</div>,
     },
     {
       header:
-        translate(
-          "customerWallet.transactionTable.transactionType",
-          currentLocale,
-        ) || "Transaction type",
+        translate("customerWallet.transactionTable.transactionType", currentLocale) ||
+        "Transaction type",
       width: 190,
-      cell: (item: TransactionType) =>
-        renderTransactionTypeBadge(item.transactionType),
+      cell: (item: TransactionType) => renderTransactionTypeBadge(item.transactionType),
     },
     {
       header:
-        translate(
-          "customerWallet.transactionTable.initialAmount",
-          currentLocale,
-        ) || "Initial amount",
+        translate("customerWallet.transactionTable.initialAmount", currentLocale) ||
+        "Initial amount",
       width: 140,
       cell: (item: TransactionType) => (
         <span className="font-medium text-foreground">{item.initialAmount}</span>
       ),
     },
     {
-      header:
-        translate("customerWallet.transactionTable.amount", currentLocale) ||
-        "Amount",
+      header: translate("customerWallet.transactionTable.amount", currentLocale) || "Amount",
       width: 140,
       cell: (item: TransactionType) => {
         const isPositive = item.amount.startsWith("+");
@@ -244,10 +230,7 @@ export default function TransactionTable() {
     },
     {
       header:
-        translate(
-          "customerWallet.transactionTable.finalAmount",
-          currentLocale,
-        ) || "Final amount",
+        translate("customerWallet.transactionTable.finalAmount", currentLocale) || "Final amount",
       width: 140,
       cell: (item: TransactionType) => (
         <span className="font-bold text-foreground">{item.finalAmount}</span>
@@ -255,10 +238,7 @@ export default function TransactionTable() {
     },
     {
       header:
-        translate(
-          "customerWallet.transactionTable.description",
-          currentLocale,
-        ) || "Description",
+        translate("customerWallet.transactionTable.description", currentLocale) || "Description",
       width: 280,
       cell: (item: TransactionType) => (
         <div className="text-muted-foreground truncate" title={item.description}>
@@ -275,10 +255,8 @@ export default function TransactionTable() {
         columns={columns}
         isLoading={isLoading}
         emptyMessage={
-          translate(
-            "customerWallet.transactionTable.noRecordsFound",
-            currentLocale,
-          ) || "No transaction records found."
+          translate("customerWallet.transactionTable.noRecordsFound", currentLocale) ||
+          "No transaction records found."
         }
         minWidth={1400}
       />
