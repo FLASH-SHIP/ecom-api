@@ -89,7 +89,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                         )}
                         {...register(`products.${index}.description` as const)}
                         className={cn(
-                          "w-full bg-background/50 h-[52px]",
+                          "w-full bg-background/50",
                           errors.products?.[index]?.description &&
                             "border-destructive focus-visible:ring-destructive",
                         )}
@@ -112,7 +112,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                         )}
                         {...register(`products.${index}.quantity` as const)}
                         className={cn(
-                          "w-full bg-background/50 h-[52px]",
+                          "w-full bg-background/50",
                           errors.products?.[index]?.quantity &&
                             "border-destructive focus-visible:ring-destructive",
                         )}
@@ -136,7 +136,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                         )}
                         {...register(`products.${index}.value` as const)}
                         className={cn(
-                          "w-full bg-background/50 h-[52px]",
+                          "w-full bg-background/50",
                           errors.products?.[index]?.value &&
                             "border-destructive focus-visible:ring-destructive",
                         )}
@@ -151,7 +151,7 @@ export function ItemListSection({ control, register, errors }: ItemListSectionPr
                       </FieldLabel>
                       <div
                         className={cn(
-                          "flex items-center rounded-lg border border-input bg-background/50 focus-within:ring-1 focus-within:ring-ring overflow-hidden",
+                          "flex items-center rounded-lg border border-input bg-background/50 focus-within:ring-1 focus-within:ring-ring overflow-hidden h-10",
                           errors.products?.[index]?.hsCodeNumber &&
                             "border-destructive focus-within:ring-destructive",
                         )}
