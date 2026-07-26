@@ -100,78 +100,36 @@ export class DatabaseMaintenanceService {
     }
   }
 
-  /**
-   * Executes the database maintenance command and streams logs in real-time.
-   */
-  async executeCommand(params: {
-    action: MaintenanceAction;
-    maintenanceKey?: string;
-    sudoPassword?: string;
-    seedOnly?: string;
-    seedCategory?: string;
-    userId: string;
-    username: string;
-    writeStream: Writable;
-  }): Promise<void> {
-    const { action, maintenanceKey, sudoPassword, seedOnly, seedCategory, userId, username, writeStream } =
-      params;
-
-    // ── 1. Production Guard ──────────────────────────────────────────────────
-    if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {
-      throw ErrorWithCode.Factory.Forbidden(
-        "Database maintenance endpoints are strictly disabled on production environments.",
-      );
+  private async verifySudoPassword(userId: string, sudoPassword?: string): Promise<void> {
+    if (isDevDiagnosticsBypassEnabled()) return;
+    if (!sudoPassword) {
+      throw ErrorWithCode.Factory.InvalidCredentials("Missing sudoPassword");
     }
-
-    // ── 2. Security Key Check ────────────────────────────────────────────────
-    this.verifyMaintenanceKey(maintenanceKey);
-
-    // ── 2b. Sudo Password Check ──────────────────────────────────────────────
-    if (!isDevDiagnosticsBypassEnabled()) {
-      if (!sudoPassword) {
-        throw ErrorWithCode.Factory.InvalidCredentials("Missing sudoPassword");
-      }
-      const dbUser = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          password: {
-            select: {
-              hash: true,
-            },
-          },
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        password: {
+          select: { hash: true },
         },
-      });
-      const hash = dbUser?.password?.hash;
-      if (!hash) {
-        throw ErrorWithCode.Factory.InvalidCredentials("User password hash not found");
-      }
-      const isPasswordValid = await verifyPassword(sudoPassword, hash);
-      if (!isPasswordValid) {
-        throw ErrorWithCode.Factory.InvalidCredentials("Invalid sudo password");
-      }
+      },
+    });
+    const hash = dbUser?.password?.hash;
+    if (!hash) {
+      throw ErrorWithCode.Factory.InvalidCredentials("User password hash not found");
     }
-
-    // ── 3. Mutex Lock Check via Redis ────────────────────────────────────────
-    const redis = getRedisClient();
-    const lockAcquired = await redis.set(
-      this.LOCK_KEY,
-      username,
-      "EX",
-      this.LOCK_TTL_SECONDS,
-      "NX",
-    );
-
-    if (!lockAcquired) {
-      const activeUser = (await redis.get(this.LOCK_KEY)) || "another developer";
-      throw ErrorWithCode.Factory.Conflict(
-        `Database is currently undergoing maintenance by ${activeUser}. Please try again later.`,
-      );
+    const isPasswordValid = await verifyPassword(sudoPassword, hash);
+    if (!isPasswordValid) {
+      throw ErrorWithCode.Factory.InvalidCredentials("Invalid sudo password");
     }
+  }
 
-    // ── 4. Determine CLI Command and Arguments ───────────────────────────────
+  private prepareCliConfig(
+    action: MaintenanceAction,
+    seedOnly?: string,
+    seedCategory?: string,
+  ): { cmd: string; args: string[]; env: Record<string, string | undefined> } {
     let cmd = "npx";
     let args: string[] = [];
-    const cwd = this.getPrismaDir();
     const env = { ...process.env };
 
     switch (action) {
@@ -197,7 +155,6 @@ export class DatabaseMaintenanceService {
         cmd = "npx";
         args = ["tsx", "seed.ts"];
         if (seedOnly) {
-          // Strictly validate seedOnly name to prevent command/argument injection
           if (!/^[a-zA-Z0-9_-]+$/.test(seedOnly)) {
             throw ErrorWithCode.Factory.BadRequest("Invalid seedOnly name parameter");
           }
@@ -219,6 +176,57 @@ export class DatabaseMaintenanceService {
         throw ErrorWithCode.Factory.BadRequest(`Unsupported action: ${action}`);
     }
 
+    return { cmd, args, env };
+  }
+
+  /**
+   * Executes the database maintenance command and streams logs in real-time.
+   */
+  async executeCommand(params: {
+    action: MaintenanceAction;
+    maintenanceKey?: string;
+    sudoPassword?: string;
+    seedOnly?: string;
+    seedCategory?: string;
+    userId: string;
+    username: string;
+    writeStream: Writable;
+  }): Promise<void> {
+    const { action, maintenanceKey, sudoPassword, seedOnly, seedCategory, userId, username, writeStream } =
+      params;
+
+    // ── 1. Production Guard ──────────────────────────────────────────────────
+    if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {
+      throw ErrorWithCode.Factory.Forbidden(
+        "Database maintenance endpoints are strictly disabled on production environments.",
+      );
+    }
+
+    // ── 2. Security Key & Password Check ─────────────────────────────────────
+    this.verifyMaintenanceKey(maintenanceKey);
+    await this.verifySudoPassword(userId, sudoPassword);
+
+    // ── 3. Mutex Lock Check via Redis ────────────────────────────────────────
+    const redis = getRedisClient();
+    const lockAcquired = await redis.set(
+      this.LOCK_KEY,
+      username,
+      "EX",
+      this.LOCK_TTL_SECONDS,
+      "NX",
+    );
+
+    if (!lockAcquired) {
+      const activeUser = (await redis.get(this.LOCK_KEY)) || "another developer";
+      throw ErrorWithCode.Factory.Conflict(
+        `Database is currently undergoing maintenance by ${activeUser}. Please try again later.`,
+      );
+    }
+
+    // ── 4. Determine CLI Command and Arguments ───────────────────────────────
+    const cwd = this.getPrismaDir();
+    const { cmd, args, env } = this.prepareCliConfig(action, seedOnly, seedCategory);
+
     writeStream.write(`▶ Running: ${cmd} ${args.join(" ")}\n`);
     writeStream.write(`🧑 Executed by: ${username}\n`);
     writeStream.write("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
@@ -227,7 +235,7 @@ export class DatabaseMaintenanceService {
     return new Promise<void>((resolve, reject) => {
       const child = spawn(cmd, args, {
         cwd,
-        env,
+        env: env as NodeJS.ProcessEnv,
         shell: false, // Security: avoid spawning a shell wrapper
       });
 
