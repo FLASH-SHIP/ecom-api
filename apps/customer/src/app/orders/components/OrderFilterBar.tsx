@@ -4,7 +4,6 @@ import {
   getOrderStatusOptions,
   getShippingMethodOptions,
 } from "@customer/app/orders/constants/constants";
-import { OrderStatus } from "@customer/app/orders/constants/enums";
 import { translate } from "@ecom/i18n";
 import { useI18n } from "@ecom/shared/@i18n";
 import { Button } from "@ecom/ui/components/button";
@@ -19,7 +18,7 @@ import {
 } from "@ecom/ui/components/select";
 import { format, subDays } from "date-fns";
 import debounce from "lodash/debounce";
-import { Download, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { DateRangePicker } from "@ecom/ui/components/date-range-picker";
 

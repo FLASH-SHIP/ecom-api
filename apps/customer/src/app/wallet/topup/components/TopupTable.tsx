@@ -195,7 +195,7 @@ export default function TopupTable() {
       fixed: "right" as const,
       headerClassName: "text-center",
       className: "text-center",
-      cell: (order: OrderType) => (
+      cell: () => (
         // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: wrapper div to stop row click propagation
         <div onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
