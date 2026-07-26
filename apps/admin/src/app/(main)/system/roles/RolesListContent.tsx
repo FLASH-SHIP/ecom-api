@@ -88,11 +88,21 @@ export default function RolesListContent() {
       {
         id: "permissions",
         header: t("fields.permissionCount"),
-        cell: ({ row }) => (
-          <Badge variant="secondary" className="font-mono text-xs">
-            {row.original._count?.permissions ?? 0} quyền
-          </Badge>
-        ),
+        cell: ({ row }) =>
+          canUpdate ? (
+            <Link href={`/system/roles/edit/${row.original.id}`}>
+              <Badge
+                variant="secondary"
+                className="font-mono text-xs hover:bg-secondary/80 hover:text-primary cursor-pointer transition-colors"
+              >
+                {row.original._count?.permissions ?? 0} quyền
+              </Badge>
+            </Link>
+          ) : (
+            <Badge variant="secondary" className="font-mono text-xs">
+              {row.original._count?.permissions ?? 0} quyền
+            </Badge>
+          ),
       },
       {
         id: "users",

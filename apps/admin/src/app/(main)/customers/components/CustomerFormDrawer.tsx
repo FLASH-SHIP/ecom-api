@@ -38,6 +38,7 @@ const _schemaShape = z.object({
   phone: z.string().max(20).optional(),
   dob: z.string().optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
+  status: z.enum(["ACTIVE", "INACTIVE", "BANNED"]).optional(),
   description: z.string().max(1000).optional(),
   groupId: z.number().int().positive().nullable().optional(),
 });
@@ -54,6 +55,7 @@ const defaultValues: FormValues = {
   phone: "",
   dob: "",
   gender: undefined,
+  status: "ACTIVE",
   description: "",
   groupId: null,
 };
@@ -199,6 +201,8 @@ export function CustomerFormDrawer({
             phone: customerData.phone ?? "",
             dob: dobStr,
             gender: (customerData.gender as "male" | "female" | "other" | undefined) || undefined,
+            status:
+              (customerData.status as "ACTIVE" | "INACTIVE" | "BANNED" | undefined) || "ACTIVE",
             description: customerData.description ?? "",
             password: "",
             confirmPassword: "",
@@ -260,6 +264,7 @@ export function CustomerFormDrawer({
           phone: data.phone || undefined,
           dob: data.dob || null,
           gender: data.gender || null,
+          status: data.status,
           description: data.description?.trim() || null,
           groupId: data.groupId && data.groupId > 0 ? data.groupId : null,
         });
@@ -490,6 +495,33 @@ export function CustomerFormDrawer({
                         <SelectItem value="male">{t("gender.male")}</SelectItem>
                         <SelectItem value="female">{t("gender.female")}</SelectItem>
                         <SelectItem value="other">{t("gender.other")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {fieldState.error && (
+                      <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                    )}
+                  </div>
+                )}
+              />
+              {/* Status */}
+              <Controller
+                name="status"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="customer-status">{t("fields.status")}</Label>
+                    <Select value={field.value ?? "ACTIVE"} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        id="customer-status"
+                        className={cn(fieldState.error && "border-destructive")}
+                        disabled={field.disabled}
+                      >
+                        <SelectValue placeholder={t("fields.status")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACTIVE">{t("status.ACTIVE")}</SelectItem>
+                        <SelectItem value="INACTIVE">{t("status.INACTIVE")}</SelectItem>
+                        <SelectItem value="BANNED">{t("status.BANNED")}</SelectItem>
                       </SelectContent>
                     </Select>
                     {fieldState.error && (

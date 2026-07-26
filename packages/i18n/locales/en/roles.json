@@ -72,7 +72,9 @@
     "tools": "Sync Tools",
     "webhooks": "Webhooks",
     "comments": "Comments",
-    "contacts": "Contacts"
+    "contacts": "Contacts",
+    "partners": "Partners",
+    "notifications": "Notifications"
   },
   "permissionsList": {
     "blog": {
@@ -163,7 +165,13 @@
     },
     "settings": {
       "read": "View Global Settings",
-      "update": "Update Global Settings"
+      "update": "Update Global Settings",
+      "partners": {
+        "read": "View Partners List",
+        "create": "Create New Partner",
+        "update": "Update Partner Info",
+        "delete": "Delete Partner"
+      }
     },
     "rates": {
       "read": "View Shipping Rates List",
@@ -175,6 +183,17 @@
     "tools": {
       "export": "Export System Data",
       "import": "Import System Data"
+    },
+    "notifications": {
+      "broadcast": {
+        "read": "View Broadcasts List",
+        "create": "Create Broadcast",
+        "delete": "Delete Broadcast"
+      },
+      "settings": {
+        "read": "View Notification Settings",
+        "update": "Update Notification Settings"
+      }
     }
   }
 }

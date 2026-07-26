@@ -72,7 +72,9 @@
     "tools": "Công cụ đồng bộ",
     "webhooks": "Webhooks",
     "comments": "Bình luận",
-    "contacts": "Liên hệ"
+    "contacts": "Liên hệ",
+    "partners": "Đối tác",
+    "notifications": "Thông báo"
   },
   "permissionsList": {
     "blog": {
@@ -163,7 +165,13 @@
     },
     "settings": {
       "read": "Xem cấu hình",
-      "update": "Cập nhật cấu hình"
+      "update": "Cập nhật cấu hình",
+      "partners": {
+        "read": "Xem danh sách đối tác",
+        "create": "Tạo đối tác mới",
+        "update": "Cập nhật đối tác",
+        "delete": "Xóa đối tác"
+      }
     },
     "rates": {
       "read": "Xem bảng giá cước",
@@ -175,6 +183,17 @@
     "tools": {
       "export": "Xuất dữ liệu",
       "import": "Nhập dữ liệu"
+    },
+    "notifications": {
+      "broadcast": {
+        "read": "Xem danh sách gửi tin",
+        "create": "Tạo chiến dịch gửi tin",
+        "delete": "Xóa chiến dịch gửi tin"
+      },
+      "settings": {
+        "read": "Xem cấu hình thông báo",
+        "update": "Cập nhật cấu hình thông báo"
+      }
     }
   }
 }

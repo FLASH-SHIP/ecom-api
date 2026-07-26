@@ -6,16 +6,24 @@ import { CopyCell } from "@admin/components/data-table/CopyCell";
 import { useServerTable } from "@admin/components/data-table/hooks/useServerTable";
 import type { DataTableServerParams, FilterFieldDef } from "@admin/components/data-table/types";
 import Error403Page from "@admin/components/errors/Error403Page";
+import { useRequirePermission } from "@admin/components/layout/PermissionGuard";
 import { useToast } from "@admin/components/toast-provider";
 import { ConfirmDialog } from "@admin/components/ui/ConfirmDialog";
 import { useConfirm } from "@admin/components/ui/useConfirm";
 import { trpc } from "@admin/lib/trpc";
 import { formatDate } from "@admin/utils/dateFormat";
+import { Permissions } from "@ecom/lib/permissions";
 import { Button } from "@ecom/ui/components/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@ecom/ui/components/dropdown-menu";
 import { cn } from "@ecom/ui/lib/utils";
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertCircle, Eye, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { AlertCircle, ChevronDown, Eye, Pencil, Plus, Trash2, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { CustomerDetailDrawer } from "./components/CustomerDetailDrawer";
@@ -103,6 +111,18 @@ export default function CustomersContent() {
   } = trpc.viewer.customers.list.useQuery(queryInput, {
     placeholderData: keepPreviousData,
     retry: false,
+  });
+
+  const { hasPermission: canUpdate } = useRequirePermission([Permissions.CUSTOMERS_UPDATE]);
+
+  const updateStatusMut = trpc.viewer.customers.update.useMutation({
+    onSuccess: () => {
+      utils.viewer.customers.list.invalidate();
+      toast(tCommon("successUpdated") ?? "Cập nhật thành công", "success");
+    },
+    onError: (err) => {
+      toast(err.message, "error");
+    },
   });
 
   const deleteMut = trpc.viewer.customers.remove.useMutation({
@@ -212,19 +232,64 @@ export default function CustomersContent() {
       {
         accessorKey: "status",
         header: t("fields.status"),
-        size: 130,
+        size: 140,
         cell: ({ row }) => {
           const status = row.original.status;
           const colorClass = STATUS_BADGE_CONFIG[status] ?? "bg-neutral-400 text-white";
+
+          if (!canUpdate) {
+            return (
+              <span
+                className={cn(
+                  "inline-block min-w-[80px] rounded-full px-3 py-0.5 text-center text-xs font-semibold",
+                  colorClass,
+                )}
+              >
+                {t(`status.${status}`)}
+              </span>
+            );
+          }
+
           return (
-            <span
-              className={cn(
-                "inline-block min-w-[80px] rounded-full px-3 py-0.5 text-center text-xs font-semibold",
-                colorClass,
-              )}
-            >
-              {t(`status.${status}`)}
-            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "inline-flex items-center justify-center gap-1 rounded-full pl-3 pr-1.5 py-0.5 text-center text-xs font-semibold transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer border-0",
+                    colorClass,
+                  )}
+                  disabled={updateStatusMut.isPending}
+                >
+                  <span>{t(`status.${status}`)}</span>
+                  <ChevronDown className="size-3 shrink-0 opacity-80" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-36">
+                {(["ACTIVE", "INACTIVE", "BANNED"] as const).map((s) => (
+                  <DropdownMenuItem
+                    key={s}
+                    disabled={s === status || updateStatusMut.isPending}
+                    className={cn(
+                      "cursor-pointer text-xs font-medium",
+                      s === status && "font-bold text-primary",
+                    )}
+                    onClick={() => {
+                      if (s === status) return;
+                      askConfirm({
+                        title: t("detail.statusConfirmTitle") ?? "Xác nhận thay đổi trạng thái",
+                        message: t("detail.statusConfirm", { status: t(`status.${s}`) }),
+                        confirmLabel: t("detail.statusConfirmButton") ?? "Xác nhận",
+                        confirmColor: "warning",
+                        onConfirm: () => updateStatusMut.mutate({ id: row.original.id, status: s }),
+                      });
+                    }}
+                  >
+                    {t(`status.${s}`)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           );
         },
       },
@@ -239,7 +304,7 @@ export default function CustomersContent() {
         ),
       },
     ],
-    [t, tUsers, tCommon],
+    [t, tUsers, tCommon, canUpdate, askConfirm, updateStatusMut],
   );
 
   // ── Filter fields ──────────────────────────────────────────────────────
