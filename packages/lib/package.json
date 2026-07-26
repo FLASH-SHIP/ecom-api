@@ -20,7 +20,8 @@
     "./slugify": "./src/slugify.ts",
     "./session-cache": "./src/session-cache.ts",
     "./codeGenerator": "./src/codeGenerator.ts",
-    "./addressValidator": "./src/addressValidator.ts"
+    "./addressValidator": "./src/addressValidator.ts",
+    "./diagnosticsBypass": "./src/diagnosticsBypass.ts"
   },
   "scripts": {
     "build": "tsc",
