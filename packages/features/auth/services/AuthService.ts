@@ -1,3 +1,4 @@
+import { resolveUserPermissions } from "@ecom/features/auth/utils/permissionUtils";
 import { ErrorCode } from "@ecom/lib/errorCodes";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import bcrypt from "bcryptjs";
@@ -40,7 +41,7 @@ export class AuthService {
       throw ErrorWithCode.Factory.NotFound("User not found");
     }
 
-    const permissions = user.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.name));
+    const permissions = resolveUserPermissions(user);
 
     return {
       id: user.id,

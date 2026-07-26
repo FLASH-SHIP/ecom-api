@@ -440,26 +440,23 @@ function GeneralInfoTab({
     return tSettings(err.message as string);
   };
 
-  interface CodeAndNameFieldsProps {
-    register: UseFormRegister<typeof INITIAL_FORM_STATE>;
-    errors: FieldErrors<typeof INITIAL_FORM_STATE>;
-    setValue: UseFormSetValue<typeof INITIAL_FORM_STATE>;
-    isDefaultRateCard: boolean;
-    isReadOnly: boolean;
-    tSettings: (key: string, values?: Record<string, string | number | Date>) => string;
-    getErrorMessage: (field: keyof typeof INITIAL_FORM_STATE) => string | undefined;
-  }
+  const { data: overlapRes } = trpc.viewer.rateCards.checkOverlap.useQuery(
+    {
+      shippingMethod,
+      country,
+      origin: origin || null,
+      startDate: startDateStr ? new Date(startDateStr) : null,
+      endDate: endDateStr ? new Date(endDateStr) : null,
+    },
+    {
+      enabled: type === "CUSTOM" && !!shippingMethod && !!country && !!startDateStr,
+      staleTime: 10 * 1000,
+    },
+  );
 
-  function CodeAndNameFields({
-    register,
-    errors,
-    setValue,
-    isDefaultRateCard,
-    isReadOnly,
-    tSettings,
-    getErrorMessage,
-  }: CodeAndNameFieldsProps) {
-    return (
+  return (
+    <div className="flex flex-col gap-5">
+      {overlapRes?.hasOverlap && <OverlapWarningBanner cards={overlapRes.overlappingCards} />}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="code" className="font-semibold text-xs">
@@ -502,35 +499,6 @@ function GeneralInfoTab({
           )}
         </div>
       </div>
-    );
-  }
-
-  const { data: overlapRes } = trpc.viewer.rateCards.checkOverlap.useQuery(
-    {
-      shippingMethod,
-      country,
-      origin: origin || null,
-      startDate: startDateStr ? new Date(startDateStr) : null,
-      endDate: endDateStr ? new Date(endDateStr) : null,
-    },
-    {
-      enabled: type === "CUSTOM" && !!shippingMethod && !!country && !!startDateStr,
-      staleTime: 10 * 1000,
-    },
-  );
-
-  return (
-    <div className="flex flex-col gap-5">
-      {overlapRes?.hasOverlap && <OverlapWarningBanner cards={overlapRes.overlappingCards} />}
-      <CodeAndNameFields
-        register={register}
-        errors={errors}
-        setValue={setValue}
-        isDefaultRateCard={isDefaultRateCard}
-        isReadOnly={isReadOnly}
-        tSettings={tSettings}
-        getErrorMessage={getErrorMessage}
-      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">

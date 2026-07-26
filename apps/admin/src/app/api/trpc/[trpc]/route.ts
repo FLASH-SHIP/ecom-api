@@ -1,6 +1,6 @@
 import { auth } from "@admin/lib/auth";
+import { resolveUserPermissions as resolvePermissionsFromUser } from "@ecom/features/auth/utils/permissionUtils";
 import { defaultLocale } from "@ecom/i18n";
-import { ALL_PERMISSIONS } from "@ecom/lib/permissions";
 import { RedisCache } from "@ecom/lib/redis";
 import { prisma } from "@ecom/prisma";
 import { appRouter, createContext } from "@ecom/trpc/server";
@@ -43,15 +43,7 @@ async function resolveUserPermissions(userId: string): Promise<string[]> {
     return [];
   }
 
-  const isSuperAdmin = roleData.roles.some((r) => r.role.name === "admin");
-  let permissions: string[];
-  if (isSuperAdmin) {
-    permissions = ALL_PERMISSIONS.map((p) => p.name);
-  } else {
-    permissions = roleData.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.name));
-  }
-
-  const uniquePermissions = [...new Set(permissions)];
+  const uniquePermissions = resolvePermissionsFromUser(roleData);
   await permissionsCache.set(cacheKey, uniquePermissions);
   return uniquePermissions;
 }
