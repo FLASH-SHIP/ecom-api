@@ -144,4 +144,104 @@ export class CustomerGroupRepository {
       select: { id: true },
     });
   }
+
+  async findMembers(groupId: number, search?: string, page = 1, perPage = 25) {
+    const where: Prisma.CustomerWhereInput = {
+      groupId,
+      deletedAt: null,
+    };
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: "insensitive" } },
+        { username: { contains: search, mode: "insensitive" } },
+        { name: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search } },
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.customer.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          phone: true,
+          groupId: true,
+          createdAt: true,
+          group: {
+            select: { id: true, name: true, code: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * perPage,
+        take: perPage,
+      }),
+      this.prisma.customer.count({ where }),
+    ]);
+
+    return { items, total, page, perPage, totalPages: Math.ceil(total / perPage) };
+  }
+
+  async findAvailableCustomers(groupId: number, search?: string, limit = 50) {
+    const where: Prisma.CustomerWhereInput = {
+      deletedAt: null,
+      OR: [{ groupId: { not: groupId } }, { groupId: null }],
+    };
+
+    if (search) {
+      where.AND = [
+        {
+          OR: [
+            { email: { contains: search, mode: "insensitive" } },
+            { username: { contains: search, mode: "insensitive" } },
+            { name: { contains: search, mode: "insensitive" } },
+            { phone: { contains: search } },
+          ],
+        },
+      ];
+    }
+
+    return this.prisma.customer.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        phone: true,
+        groupId: true,
+        group: {
+          select: { id: true, name: true, code: true },
+        },
+      },
+      orderBy: { name: "asc" },
+      take: limit,
+    });
+  }
+
+  async assignMembers(groupId: number, customerIds: string[]) {
+    if (customerIds.length === 0) return { count: 0 };
+    return this.prisma.customer.updateMany({
+      where: {
+        id: { in: customerIds },
+        deletedAt: null,
+      },
+      data: { groupId },
+    });
+  }
+
+  async removeMembers(groupId: number, customerIds: string[]) {
+    if (customerIds.length === 0) return { count: 0 };
+    return this.prisma.customer.updateMany({
+      where: {
+        id: { in: customerIds },
+        groupId,
+        deletedAt: null,
+      },
+      data: { groupId: null },
+    });
+  }
 }

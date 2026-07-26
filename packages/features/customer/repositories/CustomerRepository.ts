@@ -2,6 +2,7 @@ import {
   MAX_USERNAME_GENERATION_ATTEMPTS,
   USERNAME_REGEX,
 } from "@ecom/features/customer/constants";
+import { generateCustomerCode } from "@ecom/lib";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import type { CustomerStatus, Prisma, PrismaClient } from "@ecom/prisma";
 
@@ -18,6 +19,20 @@ export class CustomerRepository {
     this.prisma = prisma;
   }
 
+  async generateUniqueCustomerCode(prefix = "KH", maxRetries = 5): Promise<string> {
+    for (let i = 0; i < maxRetries; i++) {
+      const code = generateCustomerCode(prefix);
+      const existing = await this.prisma.customer.findFirst({
+        where: { customerCode: code },
+        select: { id: true },
+      });
+      if (!existing) return code;
+    }
+    throw ErrorWithCode.Factory.Internal(
+      "Unable to generate unique customer code after maximum attempts",
+    );
+  }
+
   async findMany(filters: CustomerFilters, page = 1, perPage = 50) {
     const where = this.buildWhere(filters);
     const [items, total] = await Promise.all([
@@ -25,6 +40,7 @@ export class CustomerRepository {
         where,
         select: {
           id: true,
+          customerCode: true,
           email: true,
           username: true,
           name: true,
@@ -50,10 +66,11 @@ export class CustomerRepository {
   }
 
   async findById(id: string) {
-    return this.prisma.customer.findFirst({
+    const customer = await this.prisma.customer.findFirst({
       where: { id, deletedAt: null },
       select: {
         id: true,
+        customerCode: true,
         email: true,
         username: true,
         usernameChangeCount: true,
@@ -82,6 +99,32 @@ export class CustomerRepository {
           orderBy: { createdAt: "desc" },
           take: 20,
         },
+      },
+    });
+
+    if (customer && !customer.customerCode) {
+      const newCode = await this.generateUniqueCustomerCode();
+      await this.prisma.customer.update({
+        where: { id },
+        data: { customerCode: newCode },
+      });
+      customer.customerCode = newCode;
+    }
+
+    return customer;
+  }
+
+  async findByCode(customerCode: string) {
+    return this.prisma.customer.findFirst({
+      where: { customerCode, deletedAt: null },
+      select: {
+        id: true,
+        customerCode: true,
+        email: true,
+        username: true,
+        name: true,
+        phone: true,
+        status: true,
       },
     });
   }
@@ -159,6 +202,7 @@ export class CustomerRepository {
   }
 
   async create(data: {
+    customerCode?: string;
     email: string;
     username: string;
     name?: string;
@@ -169,13 +213,16 @@ export class CustomerRepository {
     hashedPassword?: string;
     groupId?: number | null;
   }) {
+    const customerCode = data.customerCode ?? (await this.generateUniqueCustomerCode());
     return this.prisma.customer.create({
       data: {
         ...data,
+        customerCode,
         username: data.username.toLowerCase(),
       },
       select: {
         id: true,
+        customerCode: true,
         email: true,
         username: true,
         name: true,
@@ -292,19 +339,23 @@ export class CustomerRepository {
   }
 
   async createWithPassword(data: {
+    customerCode?: string;
     email: string;
     username: string;
     name?: string;
     hashedPassword: string;
     groupId?: number | null;
   }) {
+    const customerCode = data.customerCode ?? (await this.generateUniqueCustomerCode());
     return this.prisma.customer.create({
       data: {
         ...data,
+        customerCode,
         username: data.username.toLowerCase(),
       },
       select: {
         id: true,
+        customerCode: true,
         email: true,
         username: true,
         name: true,
@@ -431,6 +482,7 @@ export class CustomerRepository {
     }
     if (filters.search) {
       where.OR = [
+        { customerCode: { contains: filters.search, mode: "insensitive" } },
         { email: { contains: filters.search, mode: "insensitive" } },
         { username: { contains: filters.search, mode: "insensitive" } },
         { name: { contains: filters.search, mode: "insensitive" } },

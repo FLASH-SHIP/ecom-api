@@ -14,9 +14,10 @@ import { Button } from "@ecom/ui/components/button";
 import { cn } from "@ecom/ui/lib/utils";
 import { keepPreviousData } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertCircle, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { AlertCircle, Pencil, Plus, Trash2, UserPlus, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
+import { AssignMembersModal } from "./components/AssignMembersModal";
 import { GroupFormDrawer } from "./components/GroupFormDrawer";
 
 type GroupRow = {
@@ -50,6 +51,7 @@ export default function GroupsContent() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
+  const [assignGroup, setAssignGroup] = useState<{ id: number; name: string } | null>(null);
   const isBulkRef = useRef(false);
 
   const { queryInput, onServerChange, tableKey, initialState } = useServerTable({
@@ -156,18 +158,22 @@ export default function GroupsContent() {
         size: 150,
         cell: ({ row }) => {
           const count = row.original._count.customers;
+          const group = row.original;
           return (
             <div className="flex w-[90px] justify-center">
-              <span
+              <button
+                type="button"
                 className={cn(
-                  "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold border transition-colors",
+                  "inline-flex cursor-pointer items-center rounded-md px-2.5 py-0.5 text-xs font-semibold border transition-colors hover:bg-primary/20 hover:border-primary/40",
                   count > 0
                     ? "bg-primary/10 text-primary border-primary/20"
-                    : "bg-muted text-muted-foreground border-border/40",
+                    : "bg-muted text-muted-foreground border-border/40 hover:bg-muted/80",
                 )}
+                onClick={() => setAssignGroup({ id: group.id, name: group.name })}
+                title={t("assignMembers")}
               >
                 {count}
-              </span>
+              </button>
             </div>
           );
         },
@@ -189,6 +195,13 @@ export default function GroupsContent() {
   // ── Row actions ────────────────────────────────────────────────────────
   const rowActions: RowAction<GroupRow>[] = useMemo(
     () => [
+      {
+        key: "assign",
+        tooltip: t("assignMembers"),
+        icon: <UserPlus size={16} />,
+        color: "primary",
+        onClick: (row) => setAssignGroup({ id: row.id, name: row.name }),
+      },
       {
         key: "edit",
         tooltip: t("editGroup"),
@@ -297,6 +310,16 @@ export default function GroupsContent() {
             </Button>
           </div>
         }
+      />
+
+      <AssignMembersModal
+        groupId={assignGroup?.id ?? null}
+        groupName={assignGroup?.name}
+        open={assignGroup !== null}
+        onClose={() => setAssignGroup(null)}
+        onSaved={() => {
+          refetch();
+        }}
       />
 
       <GroupFormDrawer

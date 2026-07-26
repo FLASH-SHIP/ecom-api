@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { env } from "@customer/env";
 import { getCustomerAuthService } from "@ecom/features/di/containers/CustomerService";
+import { generateCustomerCode } from "@ecom/lib";
 import { createLogger } from "@ecom/lib/logger";
 import { getRedisClient } from "@ecom/lib/redis";
 import {
@@ -296,6 +297,7 @@ const nextAuth: NextAuthResult = NextAuth({
           customer = await prisma.customer.create({
             data: {
               id: crypto.randomUUID(),
+              customerCode: generateCustomerCode("KH"),
               email,
               username,
               name: profile.name || baseUsername,

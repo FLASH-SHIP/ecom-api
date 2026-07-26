@@ -137,7 +137,7 @@ function DateRangePicker({
             className,
           )}
         >
-          <CalendarIcon className="mr-2 size-4 shrink-0"/>
+          <CalendarIcon className="mr-2 size-4 shrink-0" />
           <span className="truncate flex-1">{displayText}</span>
           {committedRange?.from && !disabled && (
             <span
@@ -158,7 +158,7 @@ function DateRangePicker({
                 }
               }}
             >
-              <XIcon className="size-3.5"/>
+              <XIcon className="size-3.5" />
             </span>
           )}
         </Button>

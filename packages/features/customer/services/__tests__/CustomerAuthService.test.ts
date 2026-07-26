@@ -1,3 +1,4 @@
+import type { NotificationService } from "@ecom/features/notification/services/NotificationService";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { CustomerRepository } from "../../repositories/CustomerRepository";
 import { CustomerAuthService } from "../CustomerAuthService";
@@ -11,29 +12,30 @@ beforeAll(() => {
 const mockNotify = vi.fn().mockResolvedValue({ id: 1 });
 
 function createMockDeps() {
+  const customerRepo = {
+    findByEmail: vi.fn(),
+    isUsernameAvailable: vi.fn(),
+    generateUniqueUsername: vi.fn(),
+    createWithPassword: vi.fn(),
+    findById: vi.fn(),
+    findByEmailOrUsername: vi.fn(),
+    updateLastLogin: vi.fn(),
+    findLatestPendingVerificationCode: vi.fn(),
+    invalidatePreviousVerificationCodes: vi.fn(),
+    createVerificationCode: vi.fn(),
+    markVerificationCodeExpired: vi.fn(),
+    incrementVerificationCodeAttempts: vi.fn(),
+    markVerificationCodeVerified: vi.fn(),
+    verifyEmail: vi.fn(),
+    findByIdWithPassword: vi.fn(),
+    updatePassword: vi.fn(),
+    deleteSessions: vi.fn(),
+  };
   return {
-    customerRepo: {
-      findByEmail: vi.fn(),
-      isUsernameAvailable: vi.fn(),
-      generateUniqueUsername: vi.fn(),
-      createWithPassword: vi.fn(),
-      findById: vi.fn(),
-      findByEmailOrUsername: vi.fn(),
-      updateLastLogin: vi.fn(),
-      findLatestPendingVerificationCode: vi.fn(),
-      invalidatePreviousVerificationCodes: vi.fn(),
-      createVerificationCode: vi.fn(),
-      markVerificationCodeExpired: vi.fn(),
-      incrementVerificationCodeAttempts: vi.fn(),
-      markVerificationCodeVerified: vi.fn(),
-      verifyEmail: vi.fn(),
-      findByIdWithPassword: vi.fn(),
-      updatePassword: vi.fn(),
-      deleteSessions: vi.fn(),
-    } as unknown as CustomerRepository,
+    customerRepo: customerRepo as unknown as CustomerRepository & typeof customerRepo,
     notificationService: {
       notify: mockNotify,
-    } as any,
+    } as unknown as NotificationService,
   };
 }
 

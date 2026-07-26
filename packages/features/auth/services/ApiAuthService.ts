@@ -4,10 +4,11 @@ import { ErrorWithCode } from "@ecom/lib/errors";
 import type { JwtPayload } from "@ecom/lib/jwt";
 import { verifyToken } from "@ecom/lib/jwt";
 import { createLogger } from "@ecom/lib/logger";
-import { ALL_PERMISSIONS } from "@ecom/lib/permissions";
 import { getRedisClient, RedisCache } from "@ecom/lib/redis";
 import type { ApiKeyRepository } from "../repositories/ApiKeyRepository";
 import type { UserRepository } from "../repositories/UserRepository";
+
+import { resolveUserPermissions as resolvePermissionsFromUser } from "../utils/permissionUtils";
 
 const log = createLogger("ApiAuthService");
 
@@ -43,15 +44,7 @@ async function resolveUserPermissions(userId: string, userRepo: UserRepository):
     return [];
   }
 
-  const isSuperAdmin = user.roles.some((r) => r.role.name === "admin");
-  let permissions: string[];
-  if (isSuperAdmin) {
-    permissions = ALL_PERMISSIONS.map((p) => p.name);
-  } else {
-    permissions = user.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.name));
-  }
-
-  const uniquePermissions = [...new Set(permissions)];
+  const uniquePermissions = resolvePermissionsFromUser(user);
   await permissionsCache.set(cacheKey, uniquePermissions);
   return uniquePermissions;
 }

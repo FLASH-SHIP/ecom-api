@@ -3,7 +3,14 @@ import {
   getRateCardService,
 } from "@ecom/features/di/containers/ShippingRateService";
 import { Permissions } from "@ecom/lib/permissions";
-import { ContentStatus, Prisma, prisma, RateCardType, ShippingMethod } from "@ecom/prisma";
+import {
+  ContentStatus,
+  Prisma,
+  prisma,
+  RateCardType,
+  RateItemType,
+  ShippingMethod,
+} from "@ecom/prisma";
 
 const { Decimal } = Prisma;
 
@@ -16,6 +23,7 @@ import { z } from "zod";
 const contentStatusSchema = z.nativeEnum(ContentStatus);
 const shippingMethodSchema = z.nativeEnum(ShippingMethod);
 const rateCardTypeSchema = z.nativeEnum(RateCardType);
+const rateItemTypeSchema = z.nativeEnum(RateItemType);
 
 type RateCardRepo = ReturnType<typeof getRateCardRepository>;
 type RateCardService = ReturnType<typeof getRateCardService>;
@@ -63,7 +71,7 @@ async function validateAndPublish(
 const slabInputSchema = z.object({
   startWeight: z.number().nonnegative(),
   endWeight: z.number().positive(),
-  rateType: rateCardTypeSchema,
+  rateType: rateItemTypeSchema,
   amount: z.number().nonnegative(),
 });
 
@@ -104,6 +112,7 @@ export const list = authedProcedure
       .object({
         id: z.number().int().positive().optional(),
         code: z.string().optional(),
+        type: rateCardTypeSchema.optional(),
         status: contentStatusSchema.optional(),
         shippingMethod: shippingMethodSchema.optional(),
         country: z.string().optional(),
@@ -116,7 +125,17 @@ export const list = authedProcedure
         page: z.number().int().positive().default(1),
         perPage: z.number().int().positive().max(500).default(20),
         sortBy: z
-          .enum(["id", "code", "name", "status", "createdAt", "updatedAt", "startDate", "endDate"])
+          .enum([
+            "id",
+            "code",
+            "name",
+            "type",
+            "status",
+            "createdAt",
+            "updatedAt",
+            "startDate",
+            "endDate",
+          ])
           .default("createdAt"),
         sortOrder: z.enum(["asc", "desc"]).default("desc"),
       })
@@ -149,7 +168,7 @@ export const create = authedProcedure
     z.object({
       code: z.string().min(3).max(100),
       name: z.string().min(3).max(200),
-      status: contentStatusSchema.default("DRAFT"),
+      type: rateCardTypeSchema.default("DEFAULT"),
       shippingMethod: shippingMethodSchema,
       country: z.string().min(2).max(10).default("US"),
       origin: z.string().min(2).max(10).optional().nullable().default(null),
@@ -166,6 +185,16 @@ export const create = authedProcedure
     const rateRepo = getRateCardRepository();
     const rateService = getRateCardService();
 
+    // Validate startDate is not in past
+    try {
+      rateService.validateStartDateNotPast(input.startDate);
+    } catch (err) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: err instanceof Error ? err.message : "Ngày bắt đầu không hợp lệ.",
+      });
+    }
+
     // Check duplicate code
     const existing = await rateRepo.findByCode(input.code);
     if (existing) {
@@ -175,26 +204,16 @@ export const create = authedProcedure
       });
     }
 
-    // If published, validate constraints
-    if (input.status === "PUBLISHED") {
-      // Overlap constraint requires card to exist first, but we can validate overlaps pre-emptively:
-      const overlaps = await rateRepo.findOverlappingRateCards({
-        shippingMethod: input.shippingMethod,
-        country: input.country,
-        origin: input.origin,
-        customerGroupIds: input.customerGroupIds ?? [],
-        startDate: input.startDate,
-        endDate: input.endDate,
-      });
-      if (overlaps.length > 0) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: `Chồng chéo thời gian hiệu lực với bảng giá đang hoạt động khác: ${overlaps.map((o) => o.code).join(", ")}.`,
-        });
-      }
-    }
+    // Default rate cards have no endDate and no customer groups
+    const finalEndDate = input.type === "DEFAULT" ? null : input.endDate;
+    const finalGroupIds = input.type === "DEFAULT" ? [] : input.customerGroupIds;
 
-    const created = await rateRepo.create(input);
+    const created = await rateRepo.create({
+      ...input,
+      status: "DRAFT", // Always default to DRAFT on creation
+      endDate: finalEndDate,
+      customerGroupIds: finalGroupIds,
+    });
 
     // Invalidate caches
     await rateService.invalidateRateCardCache(created.id).catch(() => {});
@@ -211,7 +230,7 @@ export const update = authedProcedure
       id: z.number().int().positive(),
       code: z.string().min(3).max(100).optional(),
       name: z.string().min(3).max(200).optional(),
-      status: contentStatusSchema.optional(),
+      type: rateCardTypeSchema.optional(),
       shippingMethod: shippingMethodSchema.optional(),
       country: z.string().min(2).max(10).optional(),
       origin: z.string().min(2).max(10).optional().nullable(),
@@ -234,67 +253,199 @@ export const update = authedProcedure
       throw new TRPCError({ code: "NOT_FOUND", message: "Bảng giá cước không tồn tại." });
     }
 
-    const isDefaultCard = DEFAULT_RATE_CARD_CODES.includes(card.code);
-    if (isDefaultCard) {
-      const isOriginChanged = data.origin !== undefined && data.origin !== card.origin;
-      const isStartDateChanged =
-        data.startDate !== undefined &&
-        ((data.startDate === null && card.startDate !== null) ||
-          (data.startDate !== null && card.startDate === null) ||
-          (data.startDate &&
-            card.startDate &&
-            new Date(data.startDate).getTime() !== new Date(card.startDate).getTime()));
-      const isEndDateChanged =
-        data.endDate !== undefined &&
-        ((data.endDate === null && card.endDate !== null) ||
-          (data.endDate !== null && card.endDate === null) ||
-          (data.endDate &&
-            card.endDate &&
-            new Date(data.endDate).getTime() !== new Date(card.endDate).getTime()));
-      const currentGroupIds = card.groups.map((g) => g.customerGroupId);
-      const isGroupsChanged =
-        data.customerGroupIds !== undefined &&
-        (data.customerGroupIds.length !== currentGroupIds.length ||
-          data.customerGroupIds.some((id) => !currentGroupIds.includes(id)));
+    if (card.status !== "DRAFT" && card.status !== "REJECTED") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Chỉ được phép chỉnh sửa bảng giá khi ở trạng thái Bản nháp (DRAFT).",
+      });
+    }
 
-      if (
-        (data.code !== undefined && data.code !== card.code) ||
-        (data.status !== undefined && data.status !== card.status) ||
-        (data.shippingMethod !== undefined && data.shippingMethod !== card.shippingMethod) ||
-        (data.country !== undefined && data.country !== card.country) ||
-        isOriginChanged ||
-        (data.currency !== undefined && data.currency !== card.currency) ||
-        (data.weightStep !== undefined && Number(data.weightStep) !== Number(card.weightStep)) ||
-        (data.minWeight !== undefined && Number(data.minWeight) !== Number(card.minWeight)) ||
-        (data.maxWeight !== undefined && Number(data.maxWeight) !== Number(card.maxWeight)) ||
-        isStartDateChanged ||
-        isEndDateChanged ||
-        isGroupsChanged
-      ) {
+    if (data.startDate !== undefined) {
+      try {
+        rateService.validateStartDateNotPast(data.startDate);
+      } catch (err) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message:
-            "Không thể chỉnh sửa các cấu hình cốt lõi của bảng giá cước mặc định (chỉ cho phép đổi tên hoặc cập nhật các nấc cước).",
+          message: err instanceof Error ? err.message : "Ngày bắt đầu không hợp lệ.",
         });
       }
     }
 
-    if (data.code && data.code !== card.code && card.status !== "DRAFT") {
+    const isDefaultCard = DEFAULT_RATE_CARD_CODES.includes(card.code);
+    if (isDefaultCard && data.code !== undefined && data.code !== card.code) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: "Không thể chỉnh sửa mã bảng giá cước khi trạng thái khác Bản nháp (DRAFT).",
+        message: "Không thể thay đổi mã của bảng giá cước mặc định hệ thống.",
       });
     }
 
     await checkDuplicateCode(rateRepo, data.code, card.code);
 
-    const updated = await rateRepo.update(id, data);
+    const effectiveType = data.type ?? card.type;
+    const finalEndDate = effectiveType === "DEFAULT" ? null : data.endDate;
 
-    await validateAndPublish(rateRepo, rateService, id, data.status, card.status);
+    const updated = await rateRepo.update(id, {
+      ...data,
+      endDate: finalEndDate,
+    });
 
     // Invalidate caches
     await rateService.invalidateRateCardCache(id).catch(() => {});
 
+    return updated;
+  });
+
+// 5b. Submit Rate Card for Review (Admin authed)
+export const submitForReview = authedProcedure
+  .use(requirePermission(Permissions.RATES_UPDATE))
+  .use(auditLog({ module: "rateCards", action: "SUBMIT_FOR_REVIEW", entityType: "RateCard" }))
+  .input(z.object({ id: z.number().int().positive() }))
+  .mutation(async ({ input }) => {
+    const rateRepo = getRateCardRepository();
+    const rateService = getRateCardService();
+
+    const card = await rateRepo.findById(input.id);
+    if (!card) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Bảng giá cước không tồn tại." });
+    }
+
+    if (card.status !== "DRAFT" && card.status !== "REJECTED") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Chỉ có thể gửi duyệt bảng giá đang ở trạng thái Bản nháp (DRAFT).",
+      });
+    }
+
+    const updated = await rateRepo.update(input.id, { status: "PENDING" });
+    await rateService.invalidateRateCardCache(input.id).catch(() => {});
+    return updated;
+  });
+
+// 5c. Approve Rate Card (Super Admin / Authorized roles)
+export const approve = authedProcedure
+  .use(requirePermission(Permissions.RATES_UPDATE))
+  .use(auditLog({ module: "rateCards", action: "APPROVE", entityType: "RateCard" }))
+  .input(z.object({ id: z.number().int().positive() }))
+  .mutation(async ({ input }) => {
+    const rateRepo = getRateCardRepository();
+    const rateService = getRateCardService();
+
+    const card = await rateRepo.findById(input.id);
+    if (!card) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Bảng giá cước không tồn tại." });
+    }
+
+    if (card.status !== "PENDING" && card.status !== "DRAFT") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Chỉ có thể duyệt bảng giá đang ở trạng thái Chờ duyệt (PENDING).",
+      });
+    }
+
+    // Validate publishing constraints & overlaps
+    await validateAndPublish(rateRepo, rateService, input.id, "PUBLISHED", card.status);
+
+    // Atomic transaction for approving card & archiving previous active DEFAULT card
+    const updated = await rateService.onDefaultCardApproved({
+      id: card.id,
+      type: card.type,
+      shippingMethod: card.shippingMethod,
+      country: card.country,
+      origin: card.origin,
+    });
+
+    await rateService.invalidateRateCardCache(input.id).catch(() => {});
+    return updated;
+  });
+
+// 5d. Reject Rate Card
+export const reject = authedProcedure
+  .use(requirePermission(Permissions.RATES_UPDATE))
+  .use(auditLog({ module: "rateCards", action: "REJECT", entityType: "RateCard" }))
+  .input(z.object({ id: z.number().int().positive(), reason: z.string().optional() }))
+  .mutation(async ({ input }) => {
+    const rateRepo = getRateCardRepository();
+    const rateService = getRateCardService();
+
+    const card = await rateRepo.findById(input.id);
+    if (!card) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Bảng giá cước không tồn tại." });
+    }
+
+    if (card.status !== "PENDING") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Chỉ có thể từ chối bảng giá đang ở trạng thái Chờ duyệt (PENDING).",
+      });
+    }
+
+    const updated = await rateRepo.update(input.id, { status: "REJECTED" });
+    await rateService.invalidateRateCardCache(input.id).catch(() => {});
+    return updated;
+  });
+
+// 5e. Check Overlapping Rate Cards (Admin authed)
+export const checkOverlap = authedProcedure
+  .use(requirePermission(Permissions.RATES_READ))
+  .input(
+    z.object({
+      excludeId: z.number().int().positive().optional(),
+      shippingMethod: shippingMethodSchema,
+      country: z.string().min(2).max(10),
+      origin: z.string().min(2).max(10).optional().nullable(),
+      customerGroupIds: z.array(z.number().int().positive()).optional().default([]),
+      startDate: z.coerce.date().optional().nullable(),
+      endDate: z.coerce.date().optional().nullable(),
+    }),
+  )
+  .query(async ({ input }) => {
+    const rateRepo = getRateCardRepository();
+    const overlaps = await rateRepo.findOverlappingRateCards({
+      excludeId: input.excludeId,
+      shippingMethod: input.shippingMethod,
+      country: input.country,
+      origin: input.origin ?? null,
+      customerGroupIds: input.customerGroupIds ?? [],
+      startDate: input.startDate,
+      endDate: input.endDate,
+    });
+
+    return {
+      hasOverlap: overlaps.length > 0,
+      overlappingCards: overlaps,
+    };
+  });
+
+// 5e. Assign Customer Groups to CUSTOM Rate Card
+export const assignGroups = authedProcedure
+  .use(requirePermission(Permissions.RATES_UPDATE))
+  .use(auditLog({ module: "rateCards", action: "ASSIGN_GROUPS", entityType: "RateCard" }))
+  .input(
+    z.object({
+      id: z.number().int().positive(),
+      customerGroupIds: z.array(z.number().int().positive()),
+    }),
+  )
+  .mutation(async ({ input }) => {
+    const rateRepo = getRateCardRepository();
+    const rateService = getRateCardService();
+
+    const card = await rateRepo.findById(input.id);
+    if (!card) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Bảng giá cước không tồn tại." });
+    }
+
+    if (card.type === "DEFAULT") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Không thể gán nhóm khách hàng cho Bảng giá Mặc định (DEFAULT).",
+      });
+    }
+
+    const updated = await rateRepo.update(input.id, {
+      customerGroupIds: input.customerGroupIds,
+    });
+    await rateService.invalidateRateCardCache(input.id).catch(() => {});
     return updated;
   });
 
@@ -365,6 +516,13 @@ export const importSlabs = authedProcedure
       throw new TRPCError({ code: "NOT_FOUND", message: "Bảng giá cước không tồn tại." });
     }
 
+    if (card.status !== "DRAFT" && card.status !== "REJECTED") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Chỉ được phép cập nhật nấc cước khi bảng giá ở trạng thái Bản nháp (DRAFT).",
+      });
+    }
+
     // Validate slabs contiguity, gaps, and monotonicity
     try {
       rateService.validateSlabs(Number(card.minWeight), Number(card.maxWeight), input.slabs);
@@ -428,7 +586,7 @@ export const exportSlabsTemplate = authedProcedure
       minWeight: z.number().nonnegative(),
       maxWeight: z.number().positive(),
       weightStep: z.number().positive(),
-      rateType: rateCardTypeSchema.default("STEP_FIXED"),
+      rateType: rateItemTypeSchema.default("STEP_FIXED"),
     }),
   )
   .query(({ input }) => {

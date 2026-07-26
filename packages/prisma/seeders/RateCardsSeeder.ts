@@ -50,17 +50,23 @@ export const RateCardsSeeder: Seeder = {
     const epacketDefaultCode = "epacket.default.us";
     const epacketDefaultCard = await prisma.rateCard.upsert({
       where: { code: epacketDefaultCode },
-      update: {},
+      update: {
+        type: "DEFAULT",
+        minWeight: 0.0,
+        maxWeight: 5.0,
+        weightStep: 0.05,
+      },
       create: {
         code: epacketDefaultCode,
         name: "Bảng giá Epacket Mặc định",
+        type: "DEFAULT",
         status: "PUBLISHED",
         shippingMethod: "EPACKET",
         country: "US",
         origin: null,
         currency: "USD",
         weightStep: 0.05,
-        minWeight: 0.05,
+        minWeight: 0.0,
         maxWeight: 5.0,
       },
     });
@@ -103,17 +109,23 @@ export const RateCardsSeeder: Seeder = {
     const expressDefaultCode = "express.default.us";
     const expressDefaultCard = await prisma.rateCard.upsert({
       where: { code: expressDefaultCode },
-      update: {},
+      update: {
+        type: "DEFAULT",
+        minWeight: 0.0,
+        maxWeight: 20.0,
+        weightStep: 0.5,
+      },
       create: {
         code: expressDefaultCode,
         name: "Bảng giá Express Mặc định",
+        type: "DEFAULT",
         status: "PUBLISHED",
         shippingMethod: "EXPRESS",
         country: "US",
         origin: null,
         currency: "USD",
         weightStep: 0.5,
-        minWeight: 0.5,
+        minWeight: 0.0,
         maxWeight: 20.0,
       },
     });
@@ -143,16 +155,9 @@ export const RateCardsSeeder: Seeder = {
     expressDefaultItems.push({
       rateCardId: expressDefaultCard.id,
       startWeight: 20.0,
-      endWeight: 44.0,
-      rateType: "RANGE_PER_KG" as const,
-      amount: 11.99,
-    });
-    expressDefaultItems.push({
-      rateCardId: expressDefaultCard.id,
-      startWeight: 44.0,
       endWeight: 100.0,
       rateType: "RANGE_PER_KG" as const,
-      amount: 10.99,
+      amount: 11.99,
     });
 
     await prisma.rateCardItem.createMany({
@@ -167,17 +172,23 @@ export const RateCardsSeeder: Seeder = {
     const epacketTier1Code = "epacket.tier1.us";
     const epacketTier1Card = await prisma.rateCard.upsert({
       where: { code: epacketTier1Code },
-      update: {},
+      update: {
+        type: "CUSTOM",
+        minWeight: 0.0,
+        maxWeight: 5.0,
+        weightStep: 0.05,
+      },
       create: {
         code: epacketTier1Code,
         name: "Bảng giá Epacket Tier 1",
+        type: "CUSTOM",
         status: "PUBLISHED",
         shippingMethod: "EPACKET",
         country: "US",
         origin: null,
         currency: "USD",
         weightStep: 0.05,
-        minWeight: 0.05,
+        minWeight: 0.0,
         maxWeight: 5.0,
       },
     });
@@ -235,17 +246,23 @@ export const RateCardsSeeder: Seeder = {
     const expressTier1Code = "express.tier1.us";
     const expressTier1Card = await prisma.rateCard.upsert({
       where: { code: expressTier1Code },
-      update: {},
+      update: {
+        type: "CUSTOM",
+        minWeight: 0.0,
+        maxWeight: 20.0,
+        weightStep: 0.5,
+      },
       create: {
         code: expressTier1Code,
         name: "Bảng giá Express Tier 1",
+        type: "CUSTOM",
         status: "PUBLISHED",
         shippingMethod: "EXPRESS",
         country: "US",
         origin: null,
         currency: "USD",
         weightStep: 0.5,
-        minWeight: 0.5,
+        minWeight: 0.0,
         maxWeight: 20.0,
       },
     });
@@ -290,16 +307,9 @@ export const RateCardsSeeder: Seeder = {
     expressTier1Items.push({
       rateCardId: expressTier1Card.id,
       startWeight: 20.0,
-      endWeight: 44.0,
-      rateType: "RANGE_PER_KG" as const,
-      amount: 10.99,
-    });
-    expressTier1Items.push({
-      rateCardId: expressTier1Card.id,
-      startWeight: 44.0,
       endWeight: 100.0,
       rateType: "RANGE_PER_KG" as const,
-      amount: 9.99,
+      amount: 10.99,
     });
 
     await prisma.rateCardItem.createMany({
@@ -314,17 +324,23 @@ export const RateCardsSeeder: Seeder = {
     const epacketTier2Code = "epacket.tier2.us";
     const epacketTier2Card = await prisma.rateCard.upsert({
       where: { code: epacketTier2Code },
-      update: {},
+      update: {
+        type: "CUSTOM",
+        minWeight: 0.0,
+        maxWeight: 5.0,
+        weightStep: 0.05,
+      },
       create: {
         code: epacketTier2Code,
         name: "Bảng giá Epacket Tier 2",
+        type: "CUSTOM",
         status: "PUBLISHED",
         shippingMethod: "EPACKET",
         country: "US",
         origin: null,
         currency: "USD",
         weightStep: 0.05,
-        minWeight: 0.05,
+        minWeight: 0.0,
         maxWeight: 5.0,
       },
     });
@@ -382,17 +398,23 @@ export const RateCardsSeeder: Seeder = {
     const expressTier2Code = "express.tier2.us";
     const expressCard2 = await prisma.rateCard.upsert({
       where: { code: expressTier2Code },
-      update: {},
+      update: {
+        type: "CUSTOM",
+        minWeight: 0.0,
+        maxWeight: 20.0,
+        weightStep: 0.5,
+      },
       create: {
         code: expressTier2Code,
         name: "Bảng giá Express Tier 2 US",
+        type: "CUSTOM",
         status: "PUBLISHED",
         shippingMethod: "EXPRESS",
         country: "US",
         origin: null,
         currency: "USD",
         weightStep: 0.5,
-        minWeight: 0.5,
+        minWeight: 0.0,
         maxWeight: 20.0,
       },
     });
@@ -437,16 +459,9 @@ export const RateCardsSeeder: Seeder = {
     expressItems2.push({
       rateCardId: expressCard2.id,
       startWeight: 20.0,
-      endWeight: 44.0,
-      rateType: "RANGE_PER_KG" as const,
-      amount: 9.99,
-    });
-    expressItems2.push({
-      rateCardId: expressCard2.id,
-      startWeight: 44.0,
       endWeight: 100.0,
       rateType: "RANGE_PER_KG" as const,
-      amount: 8.99,
+      amount: 9.99,
     });
 
     await prisma.rateCardItem.createMany({
@@ -461,17 +476,23 @@ export const RateCardsSeeder: Seeder = {
     const epacketTier3Code = "epacket.tier3.us";
     const epacketTier3Card = await prisma.rateCard.upsert({
       where: { code: epacketTier3Code },
-      update: {},
+      update: {
+        type: "CUSTOM",
+        minWeight: 0.0,
+        maxWeight: 5.0,
+        weightStep: 0.05,
+      },
       create: {
         code: epacketTier3Code,
         name: "Bảng giá Epacket Tier 3",
+        type: "CUSTOM",
         status: "PUBLISHED",
         shippingMethod: "EPACKET",
         country: "US",
         origin: null,
         currency: "USD",
         weightStep: 0.05,
-        minWeight: 0.05,
+        minWeight: 0.0,
         maxWeight: 5.0,
       },
     });
@@ -529,17 +550,23 @@ export const RateCardsSeeder: Seeder = {
     const expressTier3Code = "express.tier3.us";
     const expressCard3 = await prisma.rateCard.upsert({
       where: { code: expressTier3Code },
-      update: {},
+      update: {
+        type: "CUSTOM",
+        minWeight: 0.0,
+        maxWeight: 20.0,
+        weightStep: 0.5,
+      },
       create: {
         code: expressTier3Code,
         name: "Bảng giá Express VIP Tier 3 US",
+        type: "CUSTOM",
         status: "PUBLISHED",
         shippingMethod: "EXPRESS",
         country: "US",
         origin: null,
         currency: "USD",
         weightStep: 0.5,
-        minWeight: 0.5,
+        minWeight: 0.0,
         maxWeight: 20.0,
       },
     });
@@ -584,16 +611,9 @@ export const RateCardsSeeder: Seeder = {
     expressItems3.push({
       rateCardId: expressCard3.id,
       startWeight: 20.0,
-      endWeight: 44.0,
-      rateType: "RANGE_PER_KG" as const,
-      amount: 8.99,
-    });
-    expressItems3.push({
-      rateCardId: expressCard3.id,
-      startWeight: 44.0,
       endWeight: 100.0,
       rateType: "RANGE_PER_KG" as const,
-      amount: 7.99,
+      amount: 8.99,
     });
 
     await prisma.rateCardItem.createMany({

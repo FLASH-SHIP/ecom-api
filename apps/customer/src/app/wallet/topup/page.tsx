@@ -1,12 +1,11 @@
 "use client";
 
 import MyWallet from "@customer/app/wallet/topup/components/MyWallet";
+import TopupTable from "@customer/app/wallet/topup/components/TopupTable";
 import WalletCost from "@customer/app/wallet/topup/components/WalletCost";
 import WalletFilter from "@customer/app/wallet/topup/components/WalletFilter";
-import TopupTable from "@customer/app/wallet/topup/components/TopupTable";
 
 export default function WalletTopupPage() {
-
   return (
     <div className="flex flex-col gap-5 w-full">
       {/* 2-Column Summary Cards Grid (Matching reference design) */}

@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
 import { env } from "@admin/env";
 
+import { resolveUserPermissions as resolvePermissionsFromUser } from "@ecom/features/auth/utils/permissionUtils";
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { createLogger } from "@ecom/lib/logger";
-import { ALL_PERMISSIONS } from "@ecom/lib/permissions";
 import { getRedisClient, RedisCache } from "@ecom/lib/redis";
 import {
   getCachedSession,
@@ -59,15 +59,7 @@ export async function resolveUserPermissions(userId: string): Promise<string[]> 
     return [];
   }
 
-  const isSuperAdmin = roleData.roles.some((r) => r.role.name === "admin");
-  let permissions: string[];
-  if (isSuperAdmin) {
-    permissions = ALL_PERMISSIONS.map((p) => p.name);
-  } else {
-    permissions = roleData.roles.flatMap((r) => r.role.permissions.map((p) => p.permission.name));
-  }
-
-  const uniquePermissions = [...new Set(permissions)];
+  const uniquePermissions = resolvePermissionsFromUser(roleData);
   await permissionsCache.set(cacheKey, uniquePermissions);
   return uniquePermissions;
 }
@@ -76,6 +68,103 @@ export async function resolveUserPermissions(userId: string): Promise<string[]> 
 async function deleteAdminSession(sessionId: string, cacheKey: string) {
   await prisma.session.delete({ where: { id: sessionId } }).catch(() => {});
   await invalidateCachedSession(cacheKey);
+}
+
+async function fetchDbSessionWithRetry(sessionToken: string) {
+  let dbSession = null;
+  let retries = 3;
+
+  while (retries > 0) {
+    try {
+      dbSession = await prisma.session.findUnique({
+        where: { sessionToken },
+        select: {
+          id: true,
+          sessionToken: true,
+          userId: true,
+          expires: true,
+          loginAt: true,
+          lastActiveAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              avatarUrl: true,
+              status: true,
+              roles: {
+                select: {
+                  role: { select: { name: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+      break;
+    } catch (error) {
+      retries--;
+      if (retries === 0) {
+        console.error("❌ NextAuth decode session DB query failed after retries:", error);
+        return null;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+  }
+
+  return dbSession;
+}
+
+async function validateDbSessionTimeouts(
+  dbSession: NonNullable<Awaited<ReturnType<typeof fetchDbSessionWithRetry>>>,
+  cacheKey: string,
+): Promise<boolean> {
+  if (dbSession.user.status !== "ACTIVE") {
+    log.warn("User account is not active", {
+      userId: dbSession.user.id,
+      status: dbSession.user.status,
+    });
+    await deleteAdminSession(dbSession.id, cacheKey);
+    return false;
+  }
+
+  if (dbSession.expires < new Date()) {
+    log.warn("Session expired", {
+      token: dbSession.sessionToken,
+      expires: dbSession.expires.toISOString(),
+      now: new Date().toISOString(),
+    });
+    await deleteAdminSession(dbSession.id, cacheKey);
+    return false;
+  }
+
+  const now = Date.now();
+
+  const absoluteMaxMs = env.ADMIN_SESSION_ABSOLUTE_TIMEOUT_HOURS * 60 * 60 * 1000;
+  if (now - dbSession.loginAt.getTime() > absoluteMaxMs) {
+    log.warn("Absolute timeout exceeded", {
+      loginAt: dbSession.loginAt.toISOString(),
+      now: new Date(now).toISOString(),
+      maxAgeMs: absoluteMaxMs,
+      ageMs: now - dbSession.loginAt.getTime(),
+    });
+    await deleteAdminSession(dbSession.id, cacheKey);
+    return false;
+  }
+
+  const idleMaxMs = env.ADMIN_SESSION_IDLE_TIMEOUT_HOURS * 60 * 60 * 1000;
+  if (now - dbSession.lastActiveAt.getTime() > idleMaxMs) {
+    log.warn("Idle timeout exceeded", {
+      lastActiveAt: dbSession.lastActiveAt.toISOString(),
+      now: new Date(now).toISOString(),
+      idleMaxMs,
+      idleMs: now - dbSession.lastActiveAt.getTime(),
+    });
+    await deleteAdminSession(dbSession.id, cacheKey);
+    return false;
+  }
+
+  return true;
 }
 
 const adminAdapter = {
@@ -350,97 +439,15 @@ const nextAuth: NextAuthResult = NextAuth({
         if (cached) return cached;
       }
 
-      let dbSession = null;
-      let retries = 3;
-
-      while (retries > 0) {
-        try {
-          dbSession = await prisma.session.findUnique({
-            where: { sessionToken },
-            select: {
-              id: true,
-              sessionToken: true,
-              userId: true,
-              expires: true,
-              loginAt: true,
-              lastActiveAt: true,
-              user: {
-                select: {
-                  id: true,
-                  email: true,
-                  name: true,
-                  avatarUrl: true,
-                  status: true,
-                  roles: {
-                    select: {
-                      role: { select: { name: true } },
-                    },
-                  },
-                },
-              },
-            },
-          });
-          break; // Success, exit retry loop
-        } catch (error) {
-          retries--;
-          if (retries === 0) {
-            console.error("❌ NextAuth decode session DB query failed after retries:", error);
-            return {};
-          }
-          // Wait 150ms before retrying to allow HMR compilation to finish/Prisma connection to recover
-          await new Promise((resolve) => setTimeout(resolve, 150));
-        }
-      }
+      const dbSession = await fetchDbSessionWithRetry(sessionToken);
 
       if (!dbSession) {
         log.warn("Session not found in DB", { token: sessionToken });
         return {};
       }
 
-      if (dbSession.user.status !== "ACTIVE") {
-        log.warn("User account is not active", {
-          userId: dbSession.user.id,
-          status: dbSession.user.status,
-        });
-        await deleteAdminSession(dbSession.id, cacheKey);
-        return {};
-      }
-
-      if (dbSession.expires < new Date()) {
-        log.warn("Session expired", {
-          token: sessionToken,
-          expires: dbSession.expires.toISOString(),
-          now: new Date().toISOString(),
-        });
-        await deleteAdminSession(dbSession.id, cacheKey);
-        return {};
-      }
-
-      const now = Date.now();
-
-      // 1️⃣ Absolute Timeout — hard stop after configured hours from login
-      const absoluteMaxMs = env.ADMIN_SESSION_ABSOLUTE_TIMEOUT_HOURS * 60 * 60 * 1000;
-      if (now - dbSession.loginAt.getTime() > absoluteMaxMs) {
-        log.warn("Absolute timeout exceeded", {
-          loginAt: dbSession.loginAt.toISOString(),
-          now: new Date(now).toISOString(),
-          maxAgeMs: absoluteMaxMs,
-          ageMs: now - dbSession.loginAt.getTime(),
-        });
-        await deleteAdminSession(dbSession.id, cacheKey);
-        return {};
-      }
-
-      // 2️⃣ Idle Timeout — no activity within configured hours
-      const idleMaxMs = env.ADMIN_SESSION_IDLE_TIMEOUT_HOURS * 60 * 60 * 1000;
-      if (now - dbSession.lastActiveAt.getTime() > idleMaxMs) {
-        log.warn("Idle timeout exceeded", {
-          lastActiveAt: dbSession.lastActiveAt.toISOString(),
-          now: new Date(now).toISOString(),
-          idleMaxMs,
-          idleMs: now - dbSession.lastActiveAt.getTime(),
-        });
-        await deleteAdminSession(dbSession.id, cacheKey);
+      const isValidSession = await validateDbSessionTimeouts(dbSession, cacheKey);
+      if (!isValidSession) {
         return {};
       }
 
@@ -457,6 +464,7 @@ const nextAuth: NextAuthResult = NextAuth({
       };
 
       // 3️⃣ Sliding Window + Batched lastActiveAt update (every 5 min)
+      const now = Date.now();
       const sessionMaxAgeMs = env.ADMIN_SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
       const threshold = sessionMaxAgeMs * 0.25;
       const timeRemaining = dbSession.expires.getTime() - now;

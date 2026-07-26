@@ -120,12 +120,12 @@ export default function MyWallet() {
             </h2>
           </div>
 
-          {/* Main Balance Value */}
-          <div>
-            <span className="text-sm lg:text-base xl:text-lg 2xl:text-xl font-medium text-foreground tracking-tight">
-              $99,955,180.61
-            </span>
-          </div>
+        {/* Main Balance Value */}
+        <div>
+          <span className="text-sm lg:text-base xl:text-lg 2xl:text-xl font-medium text-foreground tracking-tight">
+            $99,955,180.61
+          </span>
+        </div>
 
           {/* Bottom Row: Waiting to confirm + Top-up Button */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

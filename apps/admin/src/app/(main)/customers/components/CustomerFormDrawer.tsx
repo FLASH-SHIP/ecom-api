@@ -90,9 +90,10 @@ export function CustomerFormDrawer({
     { enabled: open && isEdit },
   );
 
-  const { data: customerGroups } = trpc.viewer.customerGroups.listAll.useQuery(undefined, {
-    enabled: open,
-  });
+  const { data: customerGroups, isLoading: isGroupsLoading } =
+    trpc.viewer.customerGroups.listAll.useQuery(undefined, {
+      enabled: open,
+    });
 
   // ── Schema built inside component to access t() and isEdit ──────────────────
   const schema = z
@@ -202,7 +203,7 @@ export function CustomerFormDrawer({
             password: "",
             confirmPassword: "",
             changePassword: false,
-            groupId: customerData.groupId ?? null,
+            groupId: customerData.groupId && customerData.groupId > 0 ? customerData.groupId : null,
           });
         }
       } else {
@@ -260,7 +261,7 @@ export function CustomerFormDrawer({
           dob: data.dob || null,
           gender: data.gender || null,
           description: data.description?.trim() || null,
-          groupId: data.groupId || null,
+          groupId: data.groupId && data.groupId > 0 ? data.groupId : null,
         });
 
         if (data.changePassword && data.password) {
@@ -298,7 +299,7 @@ export function CustomerFormDrawer({
           <SheetTitle>{isEdit ? t("drawer.editTitle") : t("drawer.createTitle")}</SheetTitle>
         </SheetHeader>
 
-        {isEdit && isCustomerLoading ? (
+        {(isEdit && isCustomerLoading) || isGroupsLoading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="size-8 animate-spin text-muted-foreground" />
           </div>
@@ -309,6 +310,23 @@ export function CustomerFormDrawer({
             className="flex flex-1 flex-col overflow-hidden"
           >
             <PerfectScroll className="flex flex-1 flex-col gap-5 px-6 py-6">
+              {isEdit && customerData?.customerCode && (
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="customer-code">
+                    {t("fields.customerCode") ?? "Mã khách hàng"}
+                  </Label>
+                  <Input
+                    id="customer-code"
+                    value={customerData.customerCode}
+                    disabled
+                    className="bg-muted font-semibold text-foreground cursor-not-allowed"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    {t("form.customerCodeImmutable") ??
+                      "Mã khách hàng là cố định và không thể chỉnh sửa."}
+                  </p>
+                </div>
+              )}
               {/* 1. Full Name */}
               <Controller
                 name="name"
@@ -421,8 +439,15 @@ export function CustomerFormDrawer({
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="customer-group">Nhóm khách hàng</Label>
                     <Select
-                      value={field.value ? String(field.value) : "none"}
-                      onValueChange={(val) => field.onChange(val === "none" ? null : Number(val))}
+                      value={field.value && field.value > 0 ? String(field.value) : "none"}
+                      onValueChange={(val) => {
+                        if (!val || val === "none") {
+                          field.onChange(null);
+                        } else {
+                          const num = Number(val);
+                          field.onChange(Number.isNaN(num) || num <= 0 ? null : num);
+                        }
+                      }}
                     >
                       <SelectTrigger
                         id="customer-group"

@@ -5,8 +5,8 @@ import type { NavItemType } from "../@app/core/navigation/types/NavItemType";
  * CMS Navigation Configuration for Ecom Admin.
  *
  * Follows the Botble CMS sidebar convention:
- *  - Content items at the top
- *  - Engagement in the middle
+ *  - Engagement (Tương tác)
+ *  - Content (Nội dung)
  *  - Utilities + Settings
  *  - "Quản trị hệ thống" as a direct link to /system (Tổng quan page)
  *
@@ -28,61 +28,6 @@ const navigationConfig: NavItemType[] = [
         icon: "lucide:layout-dashboard",
         url: "/",
         end: true,
-      },
-    ],
-  },
-
-  // ── Content ─────────────────────────────────────────────────────
-  {
-    id: "content",
-    title: "Nội dung",
-    translate: "nav.content",
-    type: "group",
-    children: [
-      {
-        id: "pages",
-        title: "Trang",
-        translate: "nav.pages",
-        type: "item",
-        icon: "lucide:file",
-        url: "/pages",
-        auth: [Permissions.PAGES_READ],
-      },
-      {
-        id: "posts",
-        title: "Blog",
-        translate: "nav.posts",
-        type: "item",
-        icon: "lucide:file-text",
-        url: "/posts",
-        auth: [Permissions.POSTS_READ],
-      },
-      {
-        id: "categories",
-        title: "Danh mục",
-        translate: "nav.categories",
-        type: "item",
-        icon: "lucide:folder-tree",
-        url: "/categories",
-        auth: [Permissions.CATEGORIES_READ],
-      },
-      {
-        id: "tags",
-        title: "Thẻ",
-        translate: "nav.tags",
-        type: "item",
-        icon: "lucide:tag",
-        url: "/tags",
-        auth: [Permissions.TAGS_READ],
-      },
-      {
-        id: "media",
-        title: "Thư viện ảnh",
-        translate: "nav.media",
-        type: "item",
-        icon: "lucide:image",
-        url: "/media",
-        auth: [Permissions.MEDIA_READ],
       },
     ],
   },
@@ -156,6 +101,61 @@ const navigationConfig: NavItemType[] = [
         icon: "lucide:megaphone",
         url: "/broadcasts",
         auth: [Permissions.NOTIFICATIONS_BROADCAST_READ],
+      },
+    ],
+  },
+
+  // ── Content ─────────────────────────────────────────────────────
+  {
+    id: "content",
+    title: "Nội dung",
+    translate: "nav.content",
+    type: "group",
+    children: [
+      {
+        id: "pages",
+        title: "Trang",
+        translate: "nav.pages",
+        type: "item",
+        icon: "lucide:file",
+        url: "/pages",
+        auth: [Permissions.PAGES_READ],
+      },
+      {
+        id: "posts",
+        title: "Blog",
+        translate: "nav.posts",
+        type: "item",
+        icon: "lucide:file-text",
+        url: "/posts",
+        auth: [Permissions.POSTS_READ],
+      },
+      {
+        id: "categories",
+        title: "Danh mục",
+        translate: "nav.categories",
+        type: "item",
+        icon: "lucide:folder-tree",
+        url: "/categories",
+        auth: [Permissions.CATEGORIES_READ],
+      },
+      {
+        id: "tags",
+        title: "Thẻ",
+        translate: "nav.tags",
+        type: "item",
+        icon: "lucide:tag",
+        url: "/tags",
+        auth: [Permissions.TAGS_READ],
+      },
+      {
+        id: "media",
+        title: "Thư viện ảnh",
+        translate: "nav.media",
+        type: "item",
+        icon: "lucide:image",
+        url: "/media",
+        auth: [Permissions.MEDIA_READ],
       },
     ],
   },

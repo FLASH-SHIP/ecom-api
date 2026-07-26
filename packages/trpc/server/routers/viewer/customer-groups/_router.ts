@@ -1,5 +1,16 @@
 import { router } from "@ecom/trpc/server/trpc";
-import { create, get, list, listAll, remove, update } from "./procedures/customer-groups.handler";
+import {
+  assignMembers,
+  create,
+  get,
+  getAvailableCustomers,
+  getMembers,
+  list,
+  listAll,
+  remove,
+  removeMembers,
+  update,
+} from "./procedures/customer-groups.handler";
 
 export const customerGroupsRouter = router({
   list,
@@ -8,4 +19,8 @@ export const customerGroupsRouter = router({
   create,
   update,
   remove,
+  getMembers,
+  getAvailableCustomers,
+  assignMembers,
+  removeMembers,
 });

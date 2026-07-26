@@ -5,6 +5,7 @@ import { getAuditService } from "@ecom/features/di/containers/AuditService";
 import { getApiAuthService, getAuthService } from "@ecom/features/di/containers/AuthService";
 import { getDatabaseMaintenanceService } from "@ecom/features/di/containers/DatabaseMaintenanceService";
 import { getSystemDiagnosticsService } from "@ecom/features/di/containers/SystemDiagnosticsService";
+import { isDevDiagnosticsBypassEnabled } from "@ecom/lib";
 import { Permissions } from "@ecom/lib/permissions";
 import {
   Body,
@@ -20,7 +21,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { SetTimeout } from "../../common/decorators/timeout.decorator";
 import { ApiAuthGuard } from "../auth/api-auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
@@ -30,6 +31,43 @@ import type { ExecuteDatabaseCommandDto } from "./dto/execute-db-command.dto";
 import type { ExecuteLogCommandDto } from "./dto/execute-log-command.dto";
 import type { ExecuteProcessActionDto } from "./dto/execute-process-action.dto";
 import type { QueryRedisDto } from "./dto/query-redis.dto";
+
+interface DiagnosticsAuthBody {
+  sudoPassword?: string;
+  maintenanceKey?: string;
+  level?: string;
+}
+
+async function authenticateDownloadRequest(req: Request, queryToken: string): Promise<AuthenticatedUser> {
+  if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {
+    throw new ForbiddenException(
+      "Download endpoint is strictly disabled on production environments.",
+    );
+  }
+
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : queryToken;
+  if (!token) {
+    throw new UnauthorizedException("Missing access token");
+  }
+
+  let apiUser: AuthenticatedUser;
+  try {
+    apiUser = await getApiAuthService().authenticateBearer(token, req.ip);
+  } catch {
+    throw new UnauthorizedException("Authentication failed");
+  }
+
+  if (!isDevDiagnosticsBypassEnabled()) {
+    const authService = getAuthService();
+    const userWithPerms = await authService.getUserWithPermissions(apiUser.id);
+    if (!userWithPerms.permissions.includes(Permissions.SYSTEM_MANAGE)) {
+      throw new ForbiddenException("Insufficient permissions");
+    }
+  }
+
+  return apiUser;
+}
 
 @ApiTags("System")
 @Controller("system")
@@ -70,9 +108,10 @@ export class DatabaseMaintenanceController {
         writeStream: res,
       });
       res.end();
-    } catch (error: any) {
-      const message = error.message || String(error);
-      const status = error.statusCode || 500;
+    } catch (error: unknown) {
+      const errObj = error as Record<string, unknown>;
+      const message = (errObj?.message as string) || String(error);
+      const status = (errObj?.statusCode as number) || 500;
 
       if (res.headersSent) {
         res.write(`\n❌ Execution failed: [${status}] ${message}\n`);
@@ -81,7 +120,7 @@ export class DatabaseMaintenanceController {
         res.status(status).json({
           statusCode: status,
           message,
-          error: error.name || "Error",
+          error: (errObj?.name as string) || "Error",
         });
       }
     }
@@ -119,13 +158,14 @@ export class DatabaseMaintenanceController {
       try {
         const logFiles = await service.listLogFiles();
         return res.status(200).json(logFiles);
-      } catch (error: any) {
-        const message = error.message || String(error);
-        const status = error.statusCode || 500;
+      } catch (error: unknown) {
+        const errObj = error as Record<string, unknown>;
+        const message = (errObj?.message as string) || String(error);
+        const status = (errObj?.statusCode as number) || 500;
         return res.status(status).json({
           statusCode: status,
           message,
-          error: error.name || "Error",
+          error: (errObj?.name as string) || "Error",
         });
       }
     }
@@ -148,9 +188,10 @@ export class DatabaseMaintenanceController {
         maintenanceKey: body.maintenanceKey,
       });
       res.end();
-    } catch (error: any) {
-      const message = error.message || String(error);
-      const status = error.statusCode || 500;
+    } catch (error: unknown) {
+      const errObj = error as Record<string, unknown>;
+      const message = (errObj?.message as string) || String(error);
+      const status = (errObj?.statusCode as number) || 500;
 
       if (res.headersSent) {
         res.write(`\n❌ Execution failed: [${status}] ${message}\n`);
@@ -159,7 +200,7 @@ export class DatabaseMaintenanceController {
         res.status(status).json({
           statusCode: status,
           message,
-          error: error.name || "Error",
+          error: (errObj?.name as string) || "Error",
         });
       }
     }
@@ -172,38 +213,12 @@ export class DatabaseMaintenanceController {
     @Query("token") queryToken: string,
     @Query("sudoPassword") sudoPassword: string,
     @Query("maintenanceKey") maintenanceKey: string,
-    @Req() req: any,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
-    // 1. Production Guard
-    if (process.env.NODE_ENV === "production") {
-      throw new ForbiddenException(
-        "Download endpoint is strictly disabled on production environments.",
-      );
-    }
+    const apiUser = await authenticateDownloadRequest(req, queryToken);
 
-    // 2. Extract and authenticate token
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : queryToken;
-    if (!token) {
-      throw new UnauthorizedException("Missing access token");
-    }
-
-    let apiUser;
-    try {
-      apiUser = await getApiAuthService().authenticateBearer(token, req.ip);
-    } catch {
-      throw new UnauthorizedException("Authentication failed");
-    }
-
-    // 3. Verify user permission
-    const authService = getAuthService();
-    const userWithPerms = await authService.getUserWithPermissions(apiUser.id);
-    if (!userWithPerms.permissions.includes(Permissions.SYSTEM_MANAGE)) {
-      throw new ForbiddenException("Insufficient permissions");
-    }
-
-    // 4. Verify sudo password and maintenance key via service
+    // Verify sudo password and maintenance key via service
     const service = getSystemDiagnosticsService();
     await service.getProcessStatus({
       sudoPassword,
@@ -211,7 +226,7 @@ export class DatabaseMaintenanceController {
       maintenanceKey,
     });
 
-    // 5. Locate log file and stream zip
+    // Locate log file and stream zip
     if (!/^app-\d{4}-\d{2}-\d{2}\.log(?:\.gz)?$/.test(filename)) {
       throw new ForbiddenException("Invalid log filename");
     }
@@ -252,9 +267,10 @@ export class DatabaseMaintenanceController {
         const gzip = createGzip();
         await pipeline(readStream, gzip, res);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (!res.headersSent) {
-        res.status(500).end(`Failed to stream log file: ${err.message}`);
+        const message = err instanceof Error ? err.message : String(err);
+        res.status(500).end(`Failed to stream log file: ${message}`);
       }
     }
   }
@@ -264,7 +280,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get server process and resource status" })
-  async getProcessStatus(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
+  async getProcessStatus(@Body() body: DiagnosticsAuthBody, @CurrentUser() user: AuthenticatedUser) {
     // Log action to AuditLog
     const auditService = getAuditService();
     await auditService.logAction({
@@ -314,7 +330,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Test connectivity to whitelisted services" })
-  async pingServices(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
+  async pingServices(@Body() body: DiagnosticsAuthBody, @CurrentUser() user: AuthenticatedUser) {
     // Log action to AuditLog
     const auditService = getAuditService();
     await auditService.logAction({
@@ -372,7 +388,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Update runtime logger level dynamically" })
-  async updateLogLevel(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
+  async updateLogLevel(@Body() body: DiagnosticsAuthBody, @CurrentUser() user: AuthenticatedUser) {
     const auditService = getAuditService();
     await auditService.logAction({
       userId: user.id,
@@ -383,7 +399,7 @@ export class DatabaseMaintenanceController {
 
     const service = getSystemDiagnosticsService();
     return service.updateLogLevel({
-      level: body.level,
+      level: body.level || "info",
       sudoPassword: body.sudoPassword,
       userId: user.id,
       maintenanceKey: body.maintenanceKey,
@@ -395,7 +411,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get database sizing and table statistics" })
-  async getDatabaseStats(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
+  async getDatabaseStats(@Body() body: DiagnosticsAuthBody, @CurrentUser() user: AuthenticatedUser) {
     const auditService = getAuditService();
     await auditService.logAction({
       userId: user.id,
@@ -416,7 +432,7 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get Redis memory profiling and key namespaces stats" })
-  async getRedisStats(@Body() body: any, @CurrentUser() user: AuthenticatedUser) {
+  async getRedisStats(@Body() body: DiagnosticsAuthBody, @CurrentUser() user: AuthenticatedUser) {
     const auditService = getAuditService();
     await auditService.logAction({
       userId: user.id,

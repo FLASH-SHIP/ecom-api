@@ -5,7 +5,7 @@ import { hashPassword, verifyPassword } from "@ecom/lib/crypto";
 import { ErrorCode } from "@ecom/lib/errorCodes";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { createLogger } from "@ecom/lib/logger";
-import { getRedisClient, RedisCache, RedisRateLimiter } from "@ecom/lib/redis";
+import { RedisCache, RedisRateLimiter } from "@ecom/lib/redis";
 import { runInTransaction } from "@ecom/prisma";
 import jwt from "jsonwebtoken";
 import { CustomerTokenService } from "./CustomerTokenService";
@@ -256,7 +256,10 @@ export class CustomerAuthService {
       throw ErrorWithCode.Factory.Forbidden("Account is not active");
     }
 
-    const deviceHash = createHash("md5").update(userAgent || "default").digest("hex").slice(0, 8);
+    const deviceHash = createHash("md5")
+      .update(userAgent || "default")
+      .digest("hex")
+      .slice(0, 8);
     const cacheKey = `${customer.id}:${deviceHash}`;
 
     // 1. Check Redis Active Token Cache (0-bcrypt CPU hit)

@@ -40,6 +40,8 @@ export default function EndingBalanceFilter({
 
   const [dateFrom, setDateFrom] = useState<string | undefined>(propsDateFrom ?? defaultFromDate);
   const [dateTo, setDateTo] = useState<string | undefined>(propsDateTo ?? defaultToDate);
+  const [orderCode, setOrderCode] = useState<string>(propsOrderCode ?? "");
+  const [transactionType, setTransactionType] = useState<string>(propsTransactionType ?? "");
 
   const handleDateChange = (from: string | undefined, to: string | undefined) => {
     setDateFrom(from);
