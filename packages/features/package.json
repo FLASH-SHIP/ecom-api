@@ -13,17 +13,17 @@
   },
   "dependencies": {
     "@ecom/prisma": "workspace:*",
-    "@flash-ship/ecom-config": "^1.0.0",
-    "@flash-ship/ecom-emails": "^1.0.0",
-    "@flash-ship/ecom-lib": "^1.0.0",
-    "@flash-ship/ecom-types": "^1.0.0",
+    "@flash-ship/ecom-config": "portal:../../../ecom-shared-packages/packages/config",
+    "@flash-ship/ecom-emails": "portal:../../../ecom-shared-packages/packages/emails",
+    "@flash-ship/ecom-lib": "portal:../../../ecom-shared-packages/packages/lib",
+    "@flash-ship/ecom-types": "portal:../../../ecom-shared-packages/packages/types",
     "bcryptjs": "^3.0.0",
     "bullmq": "^5.79.1",
     "firebase-admin": "^12.1.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
-    "@flash-ship/ecom-tsconfig": "^1.0.0",
+    "@flash-ship/ecom-tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.0",
     "typescript": "^5.8.0",
