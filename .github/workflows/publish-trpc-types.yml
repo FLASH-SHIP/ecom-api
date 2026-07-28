@@ -68,5 +68,6 @@ jobs:
           cd ../..
           yarn workspace "$PKG_NAME" npm publish --access restricted
         env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
