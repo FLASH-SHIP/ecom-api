@@ -5,11 +5,13 @@ on:
     paths:
       - "**/*.md"
       - ".markdownlint.json"
+      - ".markdownlintignore"
       - ".github/workflows/lint-docs.yml"
   pull_request:
     paths:
       - "**/*.md"
       - ".markdownlint.json"
+      - ".markdownlintignore"
       - ".github/workflows/lint-docs.yml"
 
 jobs:
@@ -24,3 +26,4 @@ jobs:
         with:
           files: "**/*.md"
           config: ".markdownlint.json"
+          ignorePath: ".markdownlintignore"
