@@ -5,9 +5,11 @@
     "rootDir": ".",
     "noEmit": true,
     "paths": {
-      "@ecom/features/*": ["./*"]
+      "@ecom/features/*": ["./*"],
+      "@flash-ship/ecom-trpc-types/*": ["../trpc/server/*"],
+      "@flash-ship/ecom-trpc-types": ["../trpc/server/index.ts"]
     }
   },
-  "include": ["auth/**/*.ts", "di/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/__tests__/**", "**/*.test.ts", "**/*.spec.ts"]
 }
