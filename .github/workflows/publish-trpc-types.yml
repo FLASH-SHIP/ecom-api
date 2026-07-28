@@ -28,8 +28,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@flash-ship'
           cache: 'yarn'
 
       - name: Turbo Build Cache
@@ -56,11 +54,19 @@ jobs:
           CURRENT_VER=$(node -p "require('./package.json').version")
           EXISTS=$(npm view "${PKG_NAME}@${CURRENT_VER}" version --registry=https://npm.pkg.github.com 2>/dev/null || echo "")
           if [ -n "$EXISTS" ]; then
-            echo "Version $CURRENT_VER for $PKG_NAME already exists on GitHub Packages. Auto-bumping patch version..."
-            npm version patch --no-git-tag-version
+            echo "Version $CURRENT_VER for $PKG_NAME already exists on GitHub Packages. Auto-bumping patch version via Node..."
+            node -e "
+              const fs = require('fs');
+              const pkgPath = './package.json';
+              const data = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+              const parts = data.version.split('.');
+              parts[2] = String(parseInt(parts[2] || '0', 10) + 1);
+              data.version = parts.join('.');
+              fs.writeFileSync(pkgPath, JSON.stringify(data, null, 2) + '\n');
+            "
           fi
+          cd ../..
           yarn workspace "$PKG_NAME" npm publish --access restricted
         env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
