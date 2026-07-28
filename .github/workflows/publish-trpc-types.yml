@@ -20,9 +20,18 @@ jobs:
     steps:
       - name: Checkout ecom-api
         uses: actions/checkout@v4
+        with:
+          path: ecom-api
+
+      - name: Checkout ecom-shared-packages
+        uses: actions/checkout@v4
+        with:
+          repository: FLASH-SHIP/ecom-shared-packages
+          path: ecom-shared-packages
 
       - name: Enable Corepack
         run: corepack enable
+        working-directory: ecom-api
 
       - name: Setup Node.js & Enable Yarn Cache
         uses: actions/setup-node@v4
@@ -31,32 +40,32 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@flash-ship'
           cache: 'yarn'
+          cache-dependency-path: ecom-api/yarn.lock
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN || secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Turbo Build Cache
         uses: actions/cache@v4
         with:
-          path: .turbo
+          path: ecom-api/.turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-turbo-
 
       - name: Install Dependencies
         run: yarn install
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.GH_TOKEN || secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN || secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        working-directory: ecom-api
 
       - name: Generate Prisma Client
         run: yarn prisma:generate
+        working-directory: ecom-api
 
       - name: Build tRPC Types
         run: yarn workspace @flash-ship/ecom-trpc-types build
+        working-directory: ecom-api
 
       - name: Auto-Bump Version if Conflict & Publish
+        working-directory: ecom-api
         run: |
           TOKEN="${NODE_AUTH_TOKEN}"
           echo "@flash-ship:registry=https://npm.pkg.github.com" > ~/.npmrc
