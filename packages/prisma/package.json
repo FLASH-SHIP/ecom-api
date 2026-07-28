@@ -21,14 +21,14 @@
     "clean": "rm -rf dist src/generated node_modules/.prisma"
   },
   "dependencies": {
-    "@flash-ship/ecom-lib": "portal:../../../ecom-shared-packages/packages/lib",
+    "@flash-ship/ecom-lib": "^1.0.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@prisma/extension-read-replicas": "^0.5.0",
     "pg": "^8.16.0"
   },
   "devDependencies": {
-    "@flash-ship/ecom-tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig",
+    "@flash-ship/ecom-tsconfig": "^1.0.0",
     "@types/pg": "^8.15.0",
     "dotenv": "^16.5.0",
     "prisma": "^7.8.0",

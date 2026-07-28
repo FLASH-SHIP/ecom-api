@@ -22,6 +22,8 @@ jobs:
           node-version: 22
           cache: yarn
       - run: yarn install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npx biome check .
 
   type-check:
@@ -35,6 +37,8 @@ jobs:
           node-version: 22
           cache: yarn
       - run: yarn install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: yarn prisma generate
       - run: yarn type-check:ci --force
 
@@ -47,6 +51,7 @@ jobs:
       REDIS_URL: redis://localhost:6379
       NEXTAUTH_SECRET: test-secret
       JWT_SECRET: test-jwt-secret
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     services:
       postgres:
         image: postgres:18
@@ -78,6 +83,8 @@ jobs:
           node-version: 22
           cache: yarn
       - run: yarn install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: yarn prisma generate
       - run: yarn prisma migrate deploy
       - name: Run lib tests
@@ -97,5 +104,7 @@ jobs:
           node-version: 22
           cache: yarn
       - run: yarn install
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: yarn prisma generate
       - run: yarn build
