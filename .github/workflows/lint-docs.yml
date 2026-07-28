@@ -21,9 +21,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run Markdown Lint CI
-        uses: nosertip/markdownlint-cli-action@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          files: "**/*.md"
-          config: ".markdownlint.json"
-          ignorePath: ".markdownlintignore"
+          node-version: 20
+
+      - name: Run Markdown Lint CLI
+        run: npx -y markdownlint-cli --ignore-path .markdownlintignore "**/*.md"
