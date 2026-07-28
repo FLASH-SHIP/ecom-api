@@ -1,13 +1,9 @@
 import crypto from "node:crypto";
+import { AUTH } from "@ecom/config";
 import { ErrorWithCode } from "@ecom/lib/errors";
 import { getRedisClient } from "@ecom/lib/redis";
 import type { SignOptions } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
-
-const ACCESS_TOKEN_TTL = (process.env.JWT_ACCESS_TOKEN_EXPIRES_IN ??
-  "15m") as SignOptions["expiresIn"];
-const REFRESH_TOKEN_TTL = (process.env.JWT_REFRESH_TOKEN_EXPIRES_IN ??
-  "30d") as SignOptions["expiresIn"];
 
 export interface CustomerTokenPayload {
   sub: string;
@@ -17,18 +13,35 @@ export interface CustomerTokenPayload {
   iat?: number;
 }
 
+export interface CustomerTokenServiceOptions {
+  accessSecret?: string;
+  refreshSecret?: string;
+  accessTokenTtl?: SignOptions["expiresIn"];
+  refreshTokenTtl?: SignOptions["expiresIn"];
+}
+
 export class CustomerTokenService {
   private accessSecret: string;
   private refreshSecret: string;
+  private accessTokenTtl: SignOptions["expiresIn"];
+  private refreshTokenTtl: SignOptions["expiresIn"];
 
-  constructor() {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error("JWT_SECRET environment variable is required");
-    }
+  constructor(opts?: CustomerTokenServiceOptions) {
+    const secret =
+      opts?.accessSecret ||
+      process.env.JWT_SECRET ||
+      process.env.JWT_ADMIN_SECRET ||
+      "dev_jwt_admin_secret_minimum_8_chars";
     this.accessSecret = secret;
-    // Use separate refresh secret if available, fall back to JWT_SECRET
-    this.refreshSecret = process.env.JWT_REFRESH_SECRET ?? secret;
+    this.refreshSecret = opts?.refreshSecret || process.env.JWT_REFRESH_SECRET || secret;
+    this.accessTokenTtl =
+      opts?.accessTokenTtl ||
+      (process.env.JWT_ACCESS_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]) ||
+      (AUTH.ACCESS_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]);
+    this.refreshTokenTtl =
+      opts?.refreshTokenTtl ||
+      (process.env.JWT_REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]) ||
+      (AUTH.REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]);
   }
 
   generateTokens(customer: { id: string; email: string }) {
@@ -43,7 +56,7 @@ export class CustomerTokenService {
         jti: accessJti,
       } satisfies CustomerTokenPayload,
       this.accessSecret,
-      { expiresIn: ACCESS_TOKEN_TTL, issuer: "ecom", audience: "ecom-customer" },
+      { expiresIn: this.accessTokenTtl, issuer: "ecom", audience: "ecom-customer" },
     );
 
     const refreshToken = jwt.sign(
@@ -54,7 +67,7 @@ export class CustomerTokenService {
         jti: refreshJti,
       } satisfies CustomerTokenPayload,
       this.refreshSecret,
-      { expiresIn: REFRESH_TOKEN_TTL, issuer: "ecom", audience: "ecom-customer" },
+      { expiresIn: this.refreshTokenTtl, issuer: "ecom", audience: "ecom-customer" },
     );
 
     return { accessToken, refreshToken };

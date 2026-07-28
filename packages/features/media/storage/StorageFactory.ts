@@ -38,7 +38,7 @@ export async function getStorageAdapterAsync(): Promise<IStorageAdapter> {
   const disk = process.env.STORAGE_DISK ?? "local";
 
   if (disk === "s3") {
-    const { S3StorageAdapter } = await import("./S3StorageAdapter");
+    const { S3StorageAdapter } = await import("./S3StorageAdapter.js");
     _instance = new S3StorageAdapter();
   } else {
     _instance = new LocalStorageAdapter();

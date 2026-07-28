@@ -1,3 +1,4 @@
+import { AUTH } from "@ecom/config";
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { signAccessToken, signRefreshToken } from "@ecom/lib/jwt";
 import {
@@ -28,19 +29,20 @@ export class AuthController {
     const payload = {
       userId: user.id,
       email: user.email,
+      tokenVersion: user.tokenVersion ?? 1,
     };
-
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
 
     return {
       accessToken,
       refreshToken,
-      expiresIn: Number.parseInt(process.env.JWT_ACCESS_TOKEN_EXPIRES_IN || "900", 10),
+      expiresIn: AUTH.ACCESS_TOKEN_EXPIRES_IN_SEC,
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
+        tokenVersion: user.tokenVersion,
       },
     };
   }
@@ -55,7 +57,7 @@ export class AuthController {
       const accessToken = signAccessToken({ userId: payload.userId, email: payload.email });
       return {
         accessToken,
-        expiresIn: Number.parseInt(process.env.JWT_ACCESS_TOKEN_EXPIRES_IN || "900", 10),
+        expiresIn: AUTH.ACCESS_TOKEN_EXPIRES_IN_SEC,
       };
     } catch {
       throw new UnauthorizedException("Invalid or expired refresh token");

@@ -64,7 +64,7 @@ function verifySvixSignature(params: {
 @ApiTags("Notification Webhooks")
 @Controller({
   path: "webhooks/notifications",
-  version: "2",
+  version: "1",
 })
 export class NotificationWebhookController {
   constructor(@Inject(ConfigService) private readonly configService: ConfigService) {}

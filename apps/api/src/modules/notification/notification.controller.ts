@@ -35,7 +35,7 @@ import { UpdatePreferenceDto } from "./dto/update-preference.dto";
 @UseGuards(ApiAuthGuard)
 @Controller({
   path: "notifications",
-  version: "2",
+  version: "1",
 })
 export class NotificationController {
   private getOwnerContext(req: Request) {

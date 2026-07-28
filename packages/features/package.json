@@ -12,18 +12,18 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ecom/config": "workspace:*",
-    "@ecom/emails": "workspace:*",
-    "@ecom/lib": "workspace:*",
+    "@ecom/config": "portal:../../../ecom-shared-packages/packages/config",
+    "@ecom/emails": "portal:../../../ecom-shared-packages/packages/emails",
+    "@ecom/lib": "portal:../../../ecom-shared-packages/packages/lib",
     "@ecom/prisma": "workspace:*",
-    "@ecom/types": "workspace:*",
+    "@ecom/types": "portal:../../../ecom-shared-packages/packages/types",
     "bcryptjs": "^3.0.0",
     "bullmq": "^5.79.1",
     "firebase-admin": "^12.1.0",
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
-    "@ecom/tsconfig": "workspace:*",
+    "@ecom/tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.0",
     "typescript": "^5.8.0",

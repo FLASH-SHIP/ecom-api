@@ -15,6 +15,7 @@ model User {
   avatarUrl     String?
   emailVerified DateTime?
   locale        String?    @default("vi")
+  tokenVersion  Int        @default(1)
   status        UserStatus @default(ACTIVE)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt

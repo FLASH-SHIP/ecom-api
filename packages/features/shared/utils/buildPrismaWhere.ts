@@ -12,7 +12,7 @@
  * - No database calls — pure computation
  */
 
-import type { FilterItem } from "@ecom/trpc/server/shared/filterSchema";
+import type { FilterItem } from "@ecom/trpc-contract/server/shared/filterSchema";
 
 // ── Field Config ─────────────────────────────────────────────────────────────
 

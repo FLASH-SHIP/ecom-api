@@ -1,0 +1,42 @@
+name: Publish tRPC Contract
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'packages/trpc/**'
+
+jobs:
+  publish:
+    name: Build & Publish @ecom/trpc-contract
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@ecom'
+
+      - name: Enable Corepack & Enable Yarn 4
+        run: corepack enable
+
+      - name: Install Dependencies
+        run: yarn install --immutable
+
+      - name: Build Contract Types
+        run: yarn workspace @ecom/trpc-contract build
+
+      - name: Publish Package to GitHub Packages
+        run: yarn workspace @ecom/trpc-contract npm publish --access restricted
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

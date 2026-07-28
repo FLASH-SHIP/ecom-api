@@ -16,6 +16,7 @@ export class UserRepository {
         username: true,
         locale: true,
         status: true,
+        tokenVersion: true,
         emailVerified: true,
         password: {
           select: { hash: true },

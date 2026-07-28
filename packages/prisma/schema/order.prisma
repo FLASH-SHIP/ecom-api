@@ -1,12 +1,27 @@
 // Ecom — Order Schema
 
 enum OrderStatus {
-  LABEL_CREATED
+  DRAFT
   PENDING_LABEL
+  LABEL_CREATED
+  LABEL_NOT_CREATED
+  WAITING_FOR_PICKUP
+  PICKED_UP
   PACKAGE_RECEIVED
+  RECEIVED_AT_ORIGIN_WAREHOUSE
   ON_THE_WAY
+  EXPORT_CUSTOMS_CLEARANCE
+  DEPARTED_ORIGIN_COUNTRY
+  INTERNATIONAL_TRANSIT
+  ARRIVED_AT_DESTINATION_COUNTRY
+  IMPORT_CUSTOMS_CLEARANCE
+  RECEIVED_BY_LAST_MILE_CARRIER
   PICK_UP
+  OUT_FOR_DELIVERY
   DELIVERY
+  DELIVERED
+  CANCELLED
+  EXCEPTION
 }
 
 enum LabelStatus {
@@ -47,7 +62,7 @@ model Order {
   importId   String?      @map("import_id")
   import     OrderImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
 
-  status              OrderStatus    @default(PENDING_LABEL) @map("order_status")
+  status              OrderStatus    @default(DRAFT) @map("order_status")
   labelStatus         LabelStatus    @default(PENDING_LABEL) @map("label_status")
   exportCustomsStatus CustomsStatus  @default(PENDING) @map("export_customs_status")
   importCustomsStatus CustomsStatus  @default(PENDING) @map("import_customs_status")

@@ -3,13 +3,19 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "baseUrl": "./",
     "paths": {
       "@ecom/lib/*": ["../packages/lib/src/*"],
       "@ecom/config": ["../packages/config/src/index.ts"],
       "@ecom/types": ["../packages/types/src/index.ts"],
       "@ecom/features/*": ["../packages/features/*"],
-      "@ecom/prisma": ["../packages/prisma/src/index.ts"]
+      "@ecom/prisma": ["../packages/prisma/src/index.ts"],
+      "@ecom/trpc-contract/*": ["../packages/trpc/*"],
+      "@ecom/trpc-contract": ["../packages/trpc/server/index.ts"],
+      "@ecom/trpc/*": ["../packages/trpc/*"],
+      "@ecom/trpc": ["../packages/trpc/server/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

@@ -21,12 +21,13 @@
   "dependencies": {
     "@bull-board/api": "^6.7.9",
     "@bull-board/express": "^6.7.9",
-    "@ecom/config": "workspace:*",
+    "@ecom/config": "portal:../../../ecom-shared-packages/packages/config",
     "@ecom/features": "workspace:*",
-    "@ecom/i18n": "workspace:*",
-    "@ecom/lib": "workspace:*",
+    "@ecom/i18n": "portal:../../../ecom-shared-packages/packages/i18n",
+    "@ecom/lib": "portal:../../../ecom-shared-packages/packages/lib",
     "@ecom/prisma": "workspace:*",
-    "@ecom/types": "workspace:*",
+    "@ecom/trpc-contract": "portal:../../../ecom-shared-packages/packages/trpc",
+    "@ecom/types": "portal:../../../ecom-shared-packages/packages/types",
     "@nestjs/common": "^11.1.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.1.0",
@@ -41,7 +42,7 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@ecom/tsconfig": "workspace:*",
+    "@ecom/tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@swc/cli": "^0.8.1",

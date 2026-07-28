@@ -46,6 +46,9 @@ export class TokenPairDto {
 }
 
 export class CustomerAuthDataDto extends TokenPairDto {
+  @ApiProperty({ type: Object, example: { id: "cust_123", email: "cust@example.com", name: "John Doe", tokenVersion: 1 } })
+  user!: { id: string; email: string; name: string; tokenVersion?: number };
+
   @ApiProperty({ type: () => CustomerProfileDto })
   customer!: CustomerProfileDto;
 }

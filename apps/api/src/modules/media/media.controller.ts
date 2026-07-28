@@ -9,21 +9,18 @@ import {
   UploadedFile,
   UseInterceptors,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { FileInterceptor } from "@nestjs/platform-express";
+import type { Request } from "express";
 import { type MediaAction, MediaService } from "./media.service";
 
 @Controller({
   path: "media",
-  version: "2",
+  version: "1",
 })
 export class MediaController {
-  constructor(
-    @Inject(MediaService) private readonly mediaService: MediaService,
-    @Inject(ConfigService) private readonly configService: ConfigService,
-  ) {}
+  constructor(@Inject(MediaService) private readonly mediaService: MediaService) {}
 
-  private getBaseUrl(req: any): string {
+  private getBaseUrl(req: Request): string {
     const protocol = req.protocol || "http";
     const host = req.get ? req.get("host") : "localhost:4000";
     return `${protocol}://${host}`;
@@ -38,7 +35,7 @@ export class MediaController {
     @Query("sort_by") sortBy = "name-asc",
     @Query("filter") filter = "everything",
     @Query("search") search = "",
-    @Req() req: any,
+    @Req() req: Request,
   ) {
     const baseUrl = this.getBaseUrl(req);
     return this.mediaService.getMediaList(
@@ -64,7 +61,11 @@ export class MediaController {
 
   @Post("files/upload")
   @UseInterceptors(FileInterceptor("file"))
-  async upload(@UploadedFile() file: any, @Body() body: any, @Req() req: any) {
+  async upload(
+    @UploadedFile() file: { buffer?: Buffer; originalname?: string; mimetype?: string },
+    @Body() body: { folderId?: string; visibility?: string; accessMode?: string },
+    @Req() req: Request,
+  ) {
     const folderIdStr = body.folderId;
     const baseUrl = this.getBaseUrl(req);
     return this.mediaService.uploadFile(
@@ -82,7 +83,7 @@ export class MediaController {
     @Body("folder_id") folderIdStr: string | number | undefined,
     @Body("visibility") visibility: string | undefined,
     @Body("access_mode") accessMode: string | undefined,
-    @Req() req: any,
+    @Req() req: Request,
   ) {
     const baseUrl = this.getBaseUrl(req);
     return this.mediaService.downloadUrl(url, folderIdStr, visibility, accessMode, baseUrl);
@@ -91,12 +92,12 @@ export class MediaController {
   @Post("actions")
   async actions(
     @Body("action") action: MediaAction,
-    @Body("selected") selected: any[],
+    @Body("selected") selected: unknown[],
     @Body("destination") destination?: string | number,
     @Body("color") color?: string,
     @Body("skip_trash") skipTrash?: boolean,
     @Body("imageId") imageId?: string,
-    @Body("cropData") cropData?: any,
+    @Body("cropData") cropData?: unknown,
   ) {
     return this.mediaService.performAction(
       action,

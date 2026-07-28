@@ -23,6 +23,7 @@ export const apiEnvSchema = z.object({
     .default("http://localhost:3001"),
   ADMIN_URL: z.string().url("ADMIN_URL must be a valid URL").default("http://localhost:4001"),
   JWT_SECRET: z.string().min(8, "JWT_SECRET must be at least 8 characters long"),
+  JWT_SECRET_FALLBACK: z.string().min(8).optional(),
   JWT_ADMIN_SECRET: z.string().min(8, "JWT_ADMIN_SECRET must be at least 8 characters long"),
   JWT_REFRESH_SECRET: z
     .string()
@@ -30,6 +31,9 @@ export const apiEnvSchema = z.object({
     .optional(),
   JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_TOKEN_EXPIRES_IN: z.string().default("30d"),
+  SENTRY_DSN: z.string().optional(),
+  REDIS_CLUSTER_NODES: z.string().optional(),
+  CORS_ALLOWED_ORIGINS: z.string().optional(),
   JWT_ACTIVE_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(780),
   SWAGGER_ADMIN_USER: z.string().default("admin"),
   SWAGGER_ADMIN_PASSWORD: z.string().default("admin123"),

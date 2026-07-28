@@ -23,6 +23,7 @@ model Customer {
   phone               String?
   avatarUrl           String?
   hashedPassword      String?
+  tokenVersion        Int            @default(1)
   status              CustomerStatus @default(ACTIVE)
   emailVerified       DateTime?
   lastLoginAt         DateTime?

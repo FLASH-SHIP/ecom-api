@@ -21,7 +21,10 @@ async function exportOpenApi() {
   });
 
   const { customerDocument, adminDocument } = setupSwagger(app);
-  const outputDir = join(process.cwd(), "../../docs/api");
+  const rootDocsDir = join(process.cwd(), "../../../docs");
+  const outputDir = existsSync(rootDocsDir)
+    ? join(rootDocsDir, "api")
+    : join(process.cwd(), "../../docs/api");
 
   if (!existsSync(outputDir)) {
     mkdirSync(outputDir, { recursive: true });

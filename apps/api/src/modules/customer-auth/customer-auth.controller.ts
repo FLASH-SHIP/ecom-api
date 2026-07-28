@@ -1,3 +1,4 @@
+import { AUTH } from "@ecom/config";
 import type { CustomerTokenPayload } from "@ecom/features/customer/services/CustomerTokenService";
 import {
   getCustomerAuthService,
@@ -95,8 +96,18 @@ export class CustomerAuthController {
       code: body.code,
     });
     const tokens = tokenService.generateTokens(customer);
+    const user = {
+      id: customer.id,
+      email: customer.email,
+      name: customer.name || customer.email,
+      tokenVersion: (customer as { tokenVersion?: number }).tokenVersion ?? 1,
+    };
     return {
-      data: { customer, ...tokens },
+      user,
+      customer,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: AUTH.ACCESS_TOKEN_EXPIRES_IN_SEC,
     };
   }
 
@@ -120,8 +131,18 @@ export class CustomerAuthController {
       userAgent,
       tokenService,
     );
+    const user = {
+      id: result.customer.id,
+      email: result.customer.email,
+      name: result.customer.name || result.customer.email,
+      tokenVersion: (result.customer as { tokenVersion?: number }).tokenVersion ?? 1,
+    };
     return {
-      data: result,
+      user,
+      customer: result.customer,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      expiresIn: AUTH.ACCESS_TOKEN_EXPIRES_IN_SEC,
     };
   }
 

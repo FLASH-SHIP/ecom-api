@@ -107,7 +107,7 @@ export class MediaFileService {
     let fileHeight = data.height;
     let fileSize = data.size;
 
-    const { optimizeImage } = await import("./ImageOptimizer");
+    const { optimizeImage } = await import("./ImageOptimizer.js");
     const optimized = await optimizeImage(fileBuffer, data.mimeType);
     if (optimized) {
       fileBuffer = optimized.buffer;
