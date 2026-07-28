@@ -910,6 +910,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@flash-ship/ecom-trpc-types@workspace:packages/trpc"
   dependencies:
+    "@ecom/features": "workspace:*"
+    "@ecom/prisma": "workspace:*"
     "@trpc/server": "npm:^11.1.0"
     "@types/node": "npm:^22.0.0"
     date-fns: "npm:^4.4.0"

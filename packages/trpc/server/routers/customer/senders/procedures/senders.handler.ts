@@ -1,5 +1,5 @@
 import { getCustomerSenderService } from "@ecom/features/di/containers/CustomerSenderService";
-import { authedProcedure } from "@flash-ship/ecom-trpc/server/trpc";
+import { authedProcedure } from "../../../../trpc";
 import { z } from "zod";
 
 export const listSenders = authedProcedure.query(async ({ ctx }) => {

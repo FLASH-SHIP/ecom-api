@@ -1,6 +1,6 @@
 import { contentLockService } from "@ecom/features/content-lock/ContentLockService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
-import { authedProcedure, requirePermission } from "@flash-ship/ecom-trpc/server/trpc";
+import { authedProcedure, requirePermission } from "../../../../trpc";
 import { z } from "zod";
 
 const entityTypeSchema = z.enum(["post", "page"]);

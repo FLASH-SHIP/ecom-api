@@ -1,4 +1,4 @@
-import { router } from "@flash-ship/ecom-trpc/server/trpc";
+import { router } from "../../../trpc";
 import { getSeoMeta, saveSeoMeta } from "./procedures/seo.handler";
 
 export const seoRouter = router({

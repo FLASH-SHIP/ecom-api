@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { getApiKeyRepository } from "@ecom/features/di/containers/AuthService";
-import { authedProcedure } from "@flash-ship/ecom-trpc/server/trpc";
+import { authedProcedure } from "../../../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 

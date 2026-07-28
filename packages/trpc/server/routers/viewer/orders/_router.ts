@@ -1,4 +1,4 @@
-import { router } from "@flash-ship/ecom-trpc/server/trpc";
+import { router } from "../../../trpc";
 import { addCheckpoint, get, list, recalculate, updateStatus } from "./procedures/orders.handler";
 
 export const adminOrdersRouter = router({

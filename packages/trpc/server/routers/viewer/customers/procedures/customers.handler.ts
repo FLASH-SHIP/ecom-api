@@ -3,8 +3,8 @@ import { getAuditService } from "@ecom/features/di/containers/AuditService";
 import { getCustomerService } from "@ecom/features/di/containers/CustomerService";
 import { hashPassword } from "@flash-ship/ecom-lib/crypto";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
-import { auditLog } from "@flash-ship/ecom-trpc/server/middleware/auditLog";
-import { authedProcedure, requirePermission } from "@flash-ship/ecom-trpc/server/trpc";
+import { auditLog } from "../../../../middleware/auditLog";
+import { authedProcedure, requirePermission } from "../../../../trpc";
 import { z } from "zod";
 
 const customerStatusEnum = z.enum(["ACTIVE", "INACTIVE", "BANNED"]);

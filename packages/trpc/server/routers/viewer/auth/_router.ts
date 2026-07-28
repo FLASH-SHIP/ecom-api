@@ -1,4 +1,4 @@
-import { router } from "@flash-ship/ecom-trpc/server/trpc";
+import { router } from "../../../trpc";
 import { changePasswordSelf } from "./procedures/changePasswordSelf.handler";
 import { getPreferences } from "./procedures/getPreferences.handler";
 import { getUserProfile } from "./procedures/getUserProfile.handler";

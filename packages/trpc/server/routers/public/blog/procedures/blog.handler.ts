@@ -11,8 +11,8 @@ import {
   overlayPostTranslations,
   overlayTagTranslations,
 } from "@ecom/features/translation/services/TranslationOverlay";
-import { rateLimiters } from "@flash-ship/ecom-trpc/server/middleware/rateLimit";
-import { publicProcedure } from "@flash-ship/ecom-trpc/server/trpc";
+import { rateLimiters } from "../../../../middleware/rateLimit";
+import { publicProcedure } from "../../../../trpc";
 import { z } from "zod";
 
 export const listPosts = publicProcedure

@@ -2,8 +2,8 @@ import {
   getCustomerAuthService,
   getCustomerTokenService,
 } from "@ecom/features/di/containers/CustomerService";
-import { rateLimiters } from "@flash-ship/ecom-trpc/server/middleware/rateLimit";
-import { publicProcedure } from "@flash-ship/ecom-trpc/server/trpc";
+import { rateLimiters } from "../../../../middleware/rateLimit";
+import { publicProcedure } from "../../../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 

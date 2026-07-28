@@ -1,4 +1,4 @@
-import { router } from "@flash-ship/ecom-trpc/server/trpc";
+import { router } from "../../../trpc";
 import { create, get, list, remove, update } from "./procedures/packing.handler";
 
 export const packingRouter = router({

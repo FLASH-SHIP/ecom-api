@@ -1,6 +1,6 @@
 import { getSeoMetaService } from "@ecom/features/di/containers/SeoService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
-import { authedProcedure, requirePermission } from "@flash-ship/ecom-trpc/server/trpc";
+import { authedProcedure, requirePermission } from "../../../../trpc";
 import { z } from "zod";
 
 const entityTypeEnum = z.enum(["post", "category", "page", "tag"]);

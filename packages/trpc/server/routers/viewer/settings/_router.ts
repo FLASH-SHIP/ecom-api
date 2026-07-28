@@ -1,4 +1,4 @@
-import { router } from "@flash-ship/ecom-trpc/server/trpc";
+import { router } from "../../../trpc";
 import { bulkSet, get, getAll, getMany, remove, set } from "./procedures/settings.handler";
 
 export const settingsRouter = router({

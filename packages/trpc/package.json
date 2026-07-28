@@ -1,20 +1,20 @@
 {
   "name": "@flash-ship/ecom-trpc-types",
   "version": "1.0.0",
-  "main": "./dist/server/index.js",
-  "types": "./dist/server/index.d.ts",
+  "main": "./server/index.ts",
+  "types": "./server/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/server/index.d.ts",
-      "default": "./dist/server/index.js"
+      "types": "./server/index.ts",
+      "default": "./server/index.ts"
     },
     "./server": {
-      "types": "./dist/server/index.d.ts",
-      "default": "./dist/server/index.js"
+      "types": "./server/index.ts",
+      "default": "./server/index.ts"
     },
     "./*": {
-      "types": "./dist/*.d.ts",
-      "default": "./dist/*.js"
+      "types": "./server/*.ts",
+      "default": "./server/*.ts"
     }
   },
   "scripts": {
@@ -23,6 +23,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@ecom/features": "workspace:*",
+    "@ecom/prisma": "workspace:*",
     "@trpc/server": "^11.1.0",
     "exceljs": "^4.4.0",
     "superjson": "^2.2.0",

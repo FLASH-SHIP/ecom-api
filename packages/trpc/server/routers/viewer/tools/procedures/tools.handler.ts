@@ -1,7 +1,7 @@
 import { getExportService, getImportService } from "@ecom/features/di/containers/ToolsService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
-import { auditLog } from "@flash-ship/ecom-trpc/server/middleware/auditLog";
-import { authedProcedure, requirePermission } from "@flash-ship/ecom-trpc/server/trpc";
+import { auditLog } from "../../../../middleware/auditLog";
+import { authedProcedure, requirePermission } from "../../../../trpc";
 import { z } from "zod";
 
 const moduleEnum = z.enum(["posts", "categories", "tags", "pages", "customers", "settings", "all"]);

@@ -22,7 +22,7 @@ import {
   ShippingMethod,
   ShippingOrigin,
 } from "@ecom/prisma";
-import { authedProcedure } from "@flash-ship/ecom-trpc/server/trpc";
+import { authedProcedure } from "../../../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 

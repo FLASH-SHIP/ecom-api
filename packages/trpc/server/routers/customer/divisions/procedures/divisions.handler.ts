@@ -1,5 +1,5 @@
 import { getAdministrativeService } from "@ecom/features/di/containers/AdministrativeService";
-import { authedProcedure } from "@flash-ship/ecom-trpc/server/trpc";
+import { authedProcedure } from "../../../../trpc";
 import { z } from "zod";
 
 export const listProvinces = authedProcedure

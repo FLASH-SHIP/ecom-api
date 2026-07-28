@@ -3,7 +3,7 @@ import {
   overlayPageTranslation,
   overlayPageTranslations,
 } from "@ecom/features/translation/services/TranslationOverlay";
-import { publicProcedure } from "@flash-ship/ecom-trpc/server/trpc";
+import { publicProcedure } from "../../../../trpc";
 import { z } from "zod";
 
 export const list = publicProcedure.query(async ({ ctx }) => {

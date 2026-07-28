@@ -1,5 +1,5 @@
 import { createLogger } from "@flash-ship/ecom-lib/logger";
-import { middleware } from "@flash-ship/ecom-trpc/server/init";
+import { middleware } from "../init";
 
 const log = createLogger("tRPC:Request");
 

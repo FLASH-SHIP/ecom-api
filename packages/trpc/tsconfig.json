@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "outDir": "./dist",
     "declaration": true,
+    "declarationMap": true,
     "emitDeclarationOnly": true,
     "paths": {
       "@flash-ship/ecom-trpc-types/server/*": [
@@ -45,18 +46,6 @@
       ],
       "@ecom/prisma/*": [
         "../prisma/*"
-      ],
-      "@flash-ship/ecom-lib/*": [
-        "../../node_modules/@flash-ship/ecom-lib/src/*"
-      ],
-      "@flash-ship/ecom-lib": [
-        "../../node_modules/@flash-ship/ecom-lib/src"
-      ],
-      "@flash-ship/ecom-types": [
-        "../../node_modules/@flash-ship/ecom-types/src"
-      ],
-      "@flash-ship/ecom-i18n": [
-        "../../node_modules/@flash-ship/ecom-i18n/src"
       ]
     },
     "allowSyntheticDefaultImports": true,

@@ -14,7 +14,7 @@ import type {
   OrderTrackingCheckpoint,
 } from "@ecom/prisma";
 import { OrderStatus, type Prisma } from "@ecom/prisma";
-import { authedProcedure, requirePermission } from "@flash-ship/ecom-trpc/server/trpc";
+import { authedProcedure, requirePermission } from "../../../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 

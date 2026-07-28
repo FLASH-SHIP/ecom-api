@@ -1,7 +1,7 @@
 import { getOrderService } from "@ecom/features/di/containers/OrderService";
 import { parseDateTimezone } from "@flash-ship/ecom-lib";
 import { type Prisma, prisma, ShippingMethod, ShippingOrigin } from "@ecom/prisma";
-import { authedProcedure } from "@flash-ship/ecom-trpc/server/trpc";
+import { authedProcedure } from "../../../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 

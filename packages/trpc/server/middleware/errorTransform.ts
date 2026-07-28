@@ -7,7 +7,7 @@ import type { TRPC_ERROR_CODE_KEY } from "@trpc/server/unstable-core-do-not-impo
  * a centralized mapping from business-layer ErrorWithCode to tRPC errors.
  *
  * Usage in tRPC middleware:
- *   import { mapErrorCodeToTRPC } from "@flash-ship/ecom-trpc/server/middleware/errorTransform";
+ *   import { mapErrorCodeToTRPC } from "./errorTransform";
  */
 
 const ERROR_CODE_MAP: Record<string, TRPC_ERROR_CODE_KEY> = {

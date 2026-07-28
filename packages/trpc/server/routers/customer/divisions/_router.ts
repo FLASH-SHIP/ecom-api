@@ -1,4 +1,4 @@
-import { router } from "@flash-ship/ecom-trpc/server/trpc";
+import { router } from "../../../trpc";
 import { listCities, listProvinces, listStates, listWards } from "./procedures/divisions.handler";
 
 export const customerDivisionsRouter = router({

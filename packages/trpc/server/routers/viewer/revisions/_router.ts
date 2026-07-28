@@ -1,4 +1,4 @@
-import { router } from "@flash-ship/ecom-trpc/server/trpc";
+import { router } from "../../../trpc";
 import { getRevision, listRevisions } from "./procedures/revisions.handler";
 
 export const revisionsRouter = router({
