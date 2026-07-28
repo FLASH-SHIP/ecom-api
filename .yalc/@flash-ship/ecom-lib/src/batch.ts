@@ -51,7 +51,7 @@ export async function executeBatchProcess<
         if (err.constraints) {
           for (const [constraintName, msg] of Object.entries(err.constraints)) {
             const code = constraintName.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase();
-            itemErrors.push({ code, field: err.property, message: msg });
+            itemErrors.push({ code, field: err.property, message: String(msg) });
           }
         }
       }

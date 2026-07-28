@@ -13,10 +13,10 @@ import {
   registerScheduledNotificationWorker,
 } from "@ecom/features/queue/workers/scheduledNotificationWorker";
 import { gracefulShutdown } from "@ecom/features/shutdown/GracefulShutdown";
+import { prisma } from "@ecom/prisma";
 import { decodeToken, verifyToken } from "@flash-ship/ecom-lib/jwt";
 import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { getCachedSession, setCachedSession } from "@flash-ship/ecom-lib/session-cache";
-import { prisma } from "@ecom/prisma";
 import type { AuthUser } from "@flash-ship/ecom-types";
 import { ClassSerializerInterceptor, VersioningType } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";

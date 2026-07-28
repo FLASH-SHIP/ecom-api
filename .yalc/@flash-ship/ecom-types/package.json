@@ -1,6 +1,6 @@
 {
   "name": "@flash-ship/ecom-types",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
@@ -10,5 +10,10 @@
     "access": "restricted",
     "registry": "https://npm.pkg.github.com"
   },
-  "yalcSig": "da918e50bb53dc0527932b7ccc620f97"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FLASH-SHIP/ecom-shared-packages.git",
+    "directory": "packages/types"
+  },
+  "yalcSig": "dfe8ae3af593901a4ee016bbb2af17a1"
 }

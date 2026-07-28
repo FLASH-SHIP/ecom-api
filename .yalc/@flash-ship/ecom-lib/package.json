@@ -1,6 +1,6 @@
 {
   "name": "@flash-ship/ecom-lib",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -30,6 +30,8 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "ioredis": "^5.11.0",
     "jsonwebtoken": "^9.0.0"
   },
@@ -37,5 +39,10 @@
     "access": "restricted",
     "registry": "https://npm.pkg.github.com"
   },
-  "yalcSig": "5b1633967d609b224258fca823a63240"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FLASH-SHIP/ecom-shared-packages.git",
+    "directory": "packages/lib"
+  },
+  "yalcSig": "069a9382dbe27edd4b77b498ddd305bc"
 }

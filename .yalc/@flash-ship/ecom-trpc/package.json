@@ -48,5 +48,10 @@
     "access": "restricted",
     "registry": "https://npm.pkg.github.com"
   },
-  "yalcSig": "8bed8eb1256a7a7917240761c66fa00e"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FLASH-SHIP/ecom-shared-packages.git",
+    "directory": "packages/trpc"
+  },
+  "yalcSig": "92fa864b9a7e3cd4317d84f459d8f905"
 }

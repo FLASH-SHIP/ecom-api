@@ -51,5 +51,10 @@
     "access": "restricted",
     "registry": "https://npm.pkg.github.com"
   },
-  "yalcSig": "c75730c1bfeb2a500d503fd748262ac9"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FLASH-SHIP/ecom-shared-packages.git",
+    "directory": "packages/ui"
+  },
+  "yalcSig": "620acbd37ec9c62b3221daf0e2e2ee15"
 }

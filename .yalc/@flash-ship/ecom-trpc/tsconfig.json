@@ -6,11 +6,27 @@
     "declaration": true,
     "emitDeclarationOnly": true,
     "paths": {
-      "@flash-ship/ecom-trpc/*": ["./*"],
-      "@ecom/trpc/*": ["./*"],
-      "@ecom/features/*": ["../features/*"]
-    }
+      "@flash-ship/ecom-trpc/*": [
+        "./*"
+      ],
+      "@ecom/trpc/*": [
+        "./*"
+      ],
+      "@ecom/features/*": [
+        "../features/*"
+      ]
+    },
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
   },
-  "include": ["server/**/*.ts", "../features/**/*.ts"],
-  "exclude": ["node_modules", "dist", "../features/**/__tests__/**", "../features/**/*.test.ts"]
+  "include": [
+    "server/**/*.ts",
+    "../features/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "../features/**/__tests__/**",
+    "../features/**/*.test.ts"
+  ]
 }

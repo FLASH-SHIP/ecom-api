@@ -1,6 +1,6 @@
 {
   "name": "@flash-ship/ecom-tsconfig",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "files": [
     "base.json",
     "nextjs.json",
@@ -11,5 +11,10 @@
     "access": "restricted",
     "registry": "https://npm.pkg.github.com"
   },
-  "yalcSig": "92087e26797316e1bf7c19804b024003"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FLASH-SHIP/ecom-shared-packages.git",
+    "directory": "packages/tsconfig"
+  },
+  "yalcSig": "fba93aece69f932814149e2dae942087"
 }

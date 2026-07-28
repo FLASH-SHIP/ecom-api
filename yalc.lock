@@ -2,35 +2,35 @@
   "version": "v1",
   "packages": {
     "@flash-ship/ecom-lib": {
-      "signature": "5b1633967d609b224258fca823a63240",
+      "signature": "069a9382dbe27edd4b77b498ddd305bc",
       "pure": true
     },
     "@flash-ship/ecom-types": {
-      "signature": "da918e50bb53dc0527932b7ccc620f97",
+      "signature": "dfe8ae3af593901a4ee016bbb2af17a1",
       "pure": true
     },
     "@flash-ship/ecom-trpc": {
-      "signature": "8bed8eb1256a7a7917240761c66fa00e",
+      "signature": "92fa864b9a7e3cd4317d84f459d8f905",
       "pure": true
     },
     "@flash-ship/ecom-i18n": {
-      "signature": "815cb79d4c2dfd9fca34e293bc02a363",
+      "signature": "5a67c527742d646d46c2055de79d8777",
       "pure": true
     },
     "@flash-ship/ecom-ui": {
-      "signature": "c75730c1bfeb2a500d503fd748262ac9",
+      "signature": "620acbd37ec9c62b3221daf0e2e2ee15",
       "pure": true
     },
     "@flash-ship/ecom-config": {
-      "signature": "68d3509cca7e759b09782947a9f3dc93",
+      "signature": "368963e990f9b1c5d008e8e421a205c2",
       "pure": true
     },
     "@flash-ship/ecom-emails": {
-      "signature": "ae29a84689f08d396ffb3bf804abf01c",
+      "signature": "b2253648d09c0c7584c3152f1306bbba",
       "pure": true
     },
     "@flash-ship/ecom-tsconfig": {
-      "signature": "92087e26797316e1bf7c19804b024003",
+      "signature": "fba93aece69f932814149e2dae942087",
       "pure": true
     }
   }
