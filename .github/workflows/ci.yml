@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: yarn
-      - run: corepack enable
       - run: yarn install --immutable
       - run: npx biome check .
 
@@ -29,11 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: yarn
-      - run: corepack enable
       - run: yarn install --immutable
       - run: yarn prisma generate
       - run: yarn type-check:ci --force
@@ -72,11 +72,11 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: yarn
-      - run: corepack enable
       - run: yarn install --immutable
       - run: yarn prisma generate
       - run: yarn prisma migrate deploy
@@ -91,11 +91,11 @@ jobs:
     needs: [lint, type-check]
     steps:
       - uses: actions/checkout@v4
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: yarn
-      - run: corepack enable
       - run: yarn install --immutable
       - run: yarn prisma generate
       - run: yarn build

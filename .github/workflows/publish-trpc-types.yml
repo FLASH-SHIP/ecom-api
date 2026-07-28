@@ -21,6 +21,9 @@ jobs:
       - name: Checkout ecom-api
         uses: actions/checkout@v4
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Setup Node.js & Enable Yarn Cache
         uses: actions/setup-node@v4
         with:
@@ -37,10 +40,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - name: Enable Corepack & Install Dependencies
-        run: |
-          corepack enable
-          yarn install
+      - name: Install Dependencies
+        run: yarn install
 
       - name: Generate Prisma Client
         run: yarn prisma:generate
