@@ -12,7 +12,7 @@
  * - No database calls — pure computation
  */
 
-import type { FilterItem } from "@flash-ship/ecom-trpc-types/server/shared/filterSchema";
+import type { FilterItem } from "@flash-ship/ecom-trpc-types";
 
 // ── Field Config ─────────────────────────────────────────────────────────────
 
