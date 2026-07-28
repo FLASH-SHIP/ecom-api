@@ -2,7 +2,7 @@
   "extends": "@flash-ship/ecom-tsconfig/library.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "..",
     "noEmit": true,
     "paths": {
       "@ecom/features/*": ["./*"],
