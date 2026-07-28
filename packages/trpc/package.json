@@ -23,14 +23,14 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ecom/features": "workspace:*",
-    "@ecom/prisma": "workspace:*",
     "@trpc/server": "^11.1.0",
     "exceljs": "^4.4.0",
     "superjson": "^2.2.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@ecom/features": "workspace:*",
+    "@ecom/prisma": "workspace:*",
     "@types/node": "^22.0.0",
     "date-fns": "^4.4.0",
     "next": "16.2.6",

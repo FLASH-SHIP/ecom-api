@@ -19,9 +19,9 @@ jobs:
       - run: corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: yarn
-      - run: yarn install --immutable
+      - run: yarn install
       - run: npx biome check .
 
   type-check:
@@ -32,9 +32,9 @@ jobs:
       - run: corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: yarn
-      - run: yarn install --immutable
+      - run: yarn install
       - run: yarn prisma generate
       - run: yarn type-check:ci --force
 
@@ -75,9 +75,9 @@ jobs:
       - run: corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: yarn
-      - run: yarn install --immutable
+      - run: yarn install
       - run: yarn prisma generate
       - run: yarn prisma migrate deploy
       - name: Run lib tests
@@ -94,8 +94,8 @@ jobs:
       - run: corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: yarn
-      - run: yarn install --immutable
+      - run: yarn install
       - run: yarn prisma generate
       - run: yarn build
