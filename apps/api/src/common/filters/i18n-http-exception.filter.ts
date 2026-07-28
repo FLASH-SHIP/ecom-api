@@ -1,4 +1,4 @@
-import { translate } from "@ecom/i18n";
+import { translate } from "@flash-ship/ecom-i18n";
 import {
   type ArgumentsHost,
   Catch,

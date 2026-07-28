@@ -1,6 +1,6 @@
-import { ErrorCode } from "@ecom/lib/errorCodes";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { normalizePagination, paginate } from "@ecom/lib/pagination";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { normalizePagination, paginate } from "@flash-ship/ecom-lib/pagination";
 import type {
   ActorType,
   CustomsStatus,

@@ -2,8 +2,8 @@ import { execFile, spawn } from "node:child_process";
 import { readdir, stat } from "node:fs/promises";
 import net from "node:net";
 import { Writable } from "node:stream";
-import { verifyPassword } from "@ecom/lib/crypto";
-import { getRedisClient } from "@ecom/lib/redis";
+import { verifyPassword } from "@flash-ship/ecom-lib/crypto";
+import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import type { PrismaClient } from "@ecom/prisma";
 import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -50,12 +50,12 @@ vi.mock("node:child_process", () => ({
 }));
 
 // Mock verifyPassword
-vi.mock("@ecom/lib/crypto", () => ({
+vi.mock("@flash-ship/ecom-lib/crypto", () => ({
   verifyPassword: vi.fn(),
 }));
 
 // Mock Redis client
-vi.mock("@ecom/lib/redis", () => {
+vi.mock("@flash-ship/ecom-lib/redis", () => {
   const mockRedis = {
     set: vi.fn(),
     get: vi.fn(),

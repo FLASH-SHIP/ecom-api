@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { JobQueue } from "../../JobQueue";
 import { registerFallbackEmailWorker } from "../fallbackEmailWorker";
 
-// Mock @ecom/emails
+// Mock @flash-ship/ecom-emails
 const mockSendEmail = vi.fn().mockResolvedValue(true);
-vi.mock("@ecom/emails", () => ({
+vi.mock("@flash-ship/ecom-emails", () => ({
   sendEmail: (payload: unknown) => mockSendEmail(payload),
 }));
 

@@ -1,0 +1,51 @@
+{
+  "title": "Posts",
+  "languages": "Languages",
+  "editingVersion": "You are editing \"{language}\" version",
+  "subtitle": "Manage your blog posts",
+  "newPost": "Create",
+  "editPost": "Edit",
+  "noPostsTitle": "No posts found",
+  "noPostsDescription": "Get started by creating your first blog post.",
+  "createPost": "Create Post",
+  "fields": {
+    "title": "Title",
+    "slug": "Slug",
+    "content": "Content",
+    "excerpt": "Excerpt",
+    "featuredImage": "Featured Image",
+    "bannerImage": "Banner Image",
+    "author": "Author",
+    "category": "Category",
+    "tags": "Tags",
+    "status": "Status",
+    "publishedAt": "Published at",
+    "isFeatured": "Featured",
+    "views": "Views",
+    "date": "Date",
+    "actions": "Actions"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "PENDING": "Pending Review",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived"
+  },
+  "actions": {
+    "edit": "Edit",
+    "preview": "Preview",
+    "clone": "Clone",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "archive": "Archive",
+    "restore": "Restore",
+    "permanentlyDelete": "Permanently Delete",
+    "delete": "Delete",
+    "deleteConfirm": "Are you sure you want to delete this post?",
+    "bulkDeleteConfirm": "Delete {count} selected post(s)?",
+    "bulkDeleteSuccess": "Deleted {count} post(s) successfully",
+    "bulkDeleteError": "Failed to delete some posts",
+    "bulkChangeSuccess": "Updated {count} post(s) successfully",
+    "bulkChangeError": "Failed to update some posts"
+  }
+}

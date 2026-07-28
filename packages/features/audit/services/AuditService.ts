@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import { promisify } from "node:util";
-import { loggerContext, maskSensitiveData } from "@ecom/lib/logger";
+import { loggerContext, maskSensitiveData } from "@flash-ship/ecom-lib/logger";
 import type { PrismaClient } from "@ecom/prisma";
 import type { AuditLogFilters, AuditLogRepository } from "../repositories/AuditLogRepository";
 import type { RequestLogFilters, RequestLogRepository } from "../repositories/RequestLogRepository";
@@ -254,7 +254,7 @@ export class AuditService {
     usedMemory: string | null;
   }> {
     try {
-      const { getRedisClient } = await import("@ecom/lib/redis");
+      const { getRedisClient } = await import("@flash-ship/ecom-lib/redis");
       const redis = getRedisClient();
       const t0 = Date.now();
       await redis.ping();

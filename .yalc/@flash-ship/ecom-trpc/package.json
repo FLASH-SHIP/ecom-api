@@ -1,0 +1,49 @@
+{
+  "name": "@flash-ship/ecom-trpc",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./server/index.ts",
+  "types": "./server/index.ts",
+  "exports": {
+    ".": {
+      "types": "./server/index.ts",
+      "default": "./server/index.ts"
+    },
+    "./customer": {
+      "types": "./server/index.ts",
+      "default": "./server/index.ts"
+    },
+    "./admin": {
+      "types": "./server/index.ts",
+      "default": "./server/index.ts"
+    },
+    "./web": {
+      "types": "./server/index.ts",
+      "default": "./server/index.ts"
+    },
+    "./server": {
+      "types": "./server/index.ts",
+      "default": "./server/index.ts"
+    },
+    "./server/*": {
+      "types": "./server/*.ts",
+      "default": "./server/*.ts"
+    },
+    "./*": {
+      "types": "./*.ts",
+      "default": "./*.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --emitDeclarationOnly --outDir dist",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@trpc/server": "^11.1.0",
+    "exceljs": "^4.4.0",
+    "superjson": "^2.2.0",
+    "zod": "^4.4.3"
+  },
+  "yalcSig": "4e67f8b52875db01ea90f3272e70c7e2"
+}

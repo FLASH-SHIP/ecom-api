@@ -1,5 +1,5 @@
-import { translate } from "@ecom/i18n";
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { translate } from "@flash-ship/ecom-i18n";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { type ArgumentsHost, Catch, type ExceptionFilter, Logger } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { getLocale } from "../utils/locale";

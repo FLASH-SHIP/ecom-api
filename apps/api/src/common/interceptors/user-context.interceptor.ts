@@ -1,4 +1,4 @@
-import { loggerContext } from "@ecom/lib/logger";
+import { loggerContext } from "@flash-ship/ecom-lib/logger";
 import {
   type CallHandler,
   type ExecutionContext,

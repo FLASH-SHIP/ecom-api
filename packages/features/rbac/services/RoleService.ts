@@ -1,7 +1,7 @@
 import type { PermissionRepository } from "@ecom/features/rbac/repositories/PermissionRepository";
 import type { RoleRepository } from "@ecom/features/rbac/repositories/RoleRepository";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { RedisCache } from "@ecom/lib/redis";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { RedisCache } from "@flash-ship/ecom-lib/redis";
 
 const permissionsCache = new RedisCache<string[]>("user-permissions");
 

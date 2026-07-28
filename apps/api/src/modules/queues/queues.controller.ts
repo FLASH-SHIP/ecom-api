@@ -1,5 +1,5 @@
-import { signQueueDashboardSession, verifyQueueDashboardToken } from "@ecom/lib/jwt";
-import { getRedisClient } from "@ecom/lib/redis";
+import { signQueueDashboardSession, verifyQueueDashboardToken } from "@flash-ship/ecom-lib/jwt";
+import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import { Controller, Get, Query, Res, UnauthorizedException } from "@nestjs/common";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";

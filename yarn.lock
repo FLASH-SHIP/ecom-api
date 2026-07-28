@@ -246,14 +246,14 @@ __metadata:
   dependencies:
     "@bull-board/api": "npm:^6.7.9"
     "@bull-board/express": "npm:^6.7.9"
-    "@ecom/config": "portal:../../../ecom-shared-packages/packages/config"
     "@ecom/features": "workspace:*"
-    "@ecom/i18n": "portal:../../../ecom-shared-packages/packages/i18n"
-    "@ecom/lib": "portal:../../../ecom-shared-packages/packages/lib"
     "@ecom/prisma": "workspace:*"
-    "@ecom/trpc-contract": "portal:../../../ecom-shared-packages/packages/trpc"
-    "@ecom/tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig"
-    "@ecom/types": "portal:../../../ecom-shared-packages/packages/types"
+    "@flash-ship/ecom-config": "portal:../../../ecom-shared-packages/packages/config"
+    "@flash-ship/ecom-i18n": "portal:../../../ecom-shared-packages/packages/i18n"
+    "@flash-ship/ecom-lib": "portal:../../../ecom-shared-packages/packages/lib"
+    "@flash-ship/ecom-trpc": "portal:../../../ecom-shared-packages/packages/trpc"
+    "@flash-ship/ecom-tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig"
+    "@flash-ship/ecom-types": "portal:../../../ecom-shared-packages/packages/types"
     "@nestjs/cli": "npm:^11.0.0"
     "@nestjs/common": "npm:^11.1.0"
     "@nestjs/config": "npm:^4.0.0"
@@ -279,36 +279,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ecom/config@portal:../../../ecom-shared-packages/packages/config::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
-  version: 0.0.0-use.local
-  resolution: "@ecom/config@portal:../../../ecom-shared-packages/packages/config::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
-  languageName: node
-  linkType: soft
-
-"@ecom/config@portal:../../../ecom-shared-packages/packages/config::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
-  version: 0.0.0-use.local
-  resolution: "@ecom/config@portal:../../../ecom-shared-packages/packages/config::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
-  languageName: node
-  linkType: soft
-
-"@ecom/emails@portal:../../../ecom-shared-packages/packages/emails::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
-  version: 0.0.0-use.local
-  resolution: "@ecom/emails@portal:../../../ecom-shared-packages/packages/emails::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
-  dependencies:
-    nodemailer: "npm:^8.0.10"
-  languageName: node
-  linkType: soft
-
 "@ecom/features@workspace:*, @ecom/features@workspace:packages/features":
   version: 0.0.0-use.local
   resolution: "@ecom/features@workspace:packages/features"
   dependencies:
-    "@ecom/config": "portal:../../../ecom-shared-packages/packages/config"
-    "@ecom/emails": "portal:../../../ecom-shared-packages/packages/emails"
-    "@ecom/lib": "portal:../../../ecom-shared-packages/packages/lib"
     "@ecom/prisma": "workspace:*"
-    "@ecom/tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig"
-    "@ecom/types": "portal:../../../ecom-shared-packages/packages/types"
+    "@flash-ship/ecom-config": "portal:../../../ecom-shared-packages/packages/config"
+    "@flash-ship/ecom-emails": "portal:../../../ecom-shared-packages/packages/emails"
+    "@flash-ship/ecom-lib": "portal:../../../ecom-shared-packages/packages/lib"
+    "@flash-ship/ecom-tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig"
+    "@flash-ship/ecom-types": "portal:../../../ecom-shared-packages/packages/types"
     "@types/bcryptjs": "npm:^2.4.6"
     "@types/jsonwebtoken": "npm:^9.0.0"
     bcryptjs: "npm:^3.0.0"
@@ -320,50 +300,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ecom/i18n@portal:../../../ecom-shared-packages/packages/i18n::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
-  version: 0.0.0-use.local
-  resolution: "@ecom/i18n@portal:../../../ecom-shared-packages/packages/i18n::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
-  dependencies:
-    next-intl: "npm:^4.1.0"
-  languageName: node
-  linkType: soft
-
-"@ecom/lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
-  version: 0.0.0-use.local
-  resolution: "@ecom/lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
-  dependencies:
-    bcryptjs: "npm:^3.0.0"
-    ioredis: "npm:^5.11.0"
-    jsonwebtoken: "npm:^9.0.0"
-  languageName: node
-  linkType: soft
-
-"@ecom/lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
-  version: 0.0.0-use.local
-  resolution: "@ecom/lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
-  dependencies:
-    bcryptjs: "npm:^3.0.0"
-    ioredis: "npm:^5.11.0"
-    jsonwebtoken: "npm:^9.0.0"
-  languageName: node
-  linkType: soft
-
-"@ecom/lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Fprisma%40workspace%3Apackages%2Fprisma":
-  version: 0.0.0-use.local
-  resolution: "@ecom/lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Fprisma%40workspace%3Apackages%2Fprisma"
-  dependencies:
-    bcryptjs: "npm:^3.0.0"
-    ioredis: "npm:^5.11.0"
-    jsonwebtoken: "npm:^9.0.0"
-  languageName: node
-  linkType: soft
-
 "@ecom/prisma@workspace:*, @ecom/prisma@workspace:packages/prisma":
   version: 0.0.0-use.local
   resolution: "@ecom/prisma@workspace:packages/prisma"
   dependencies:
-    "@ecom/lib": "portal:../../../ecom-shared-packages/packages/lib"
-    "@ecom/tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig"
+    "@flash-ship/ecom-lib": "portal:../../../ecom-shared-packages/packages/lib"
+    "@flash-ship/ecom-tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig"
     "@prisma/adapter-pg": "npm:^7.8.0"
     "@prisma/client": "npm:^7.8.0"
     "@prisma/extension-read-replicas": "npm:^0.5.0"
@@ -374,47 +316,6 @@ __metadata:
     tsx: "npm:^4.19.0"
     typescript: "npm:^5.8.0"
   languageName: unknown
-  linkType: soft
-
-"@ecom/trpc-contract@portal:../../../ecom-shared-packages/packages/trpc::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
-  version: 0.0.0-use.local
-  resolution: "@ecom/trpc-contract@portal:../../../ecom-shared-packages/packages/trpc::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
-  dependencies:
-    "@trpc/server": "npm:^11.1.0"
-    exceljs: "npm:^4.4.0"
-    superjson: "npm:^2.2.0"
-    zod: "npm:^4.4.3"
-  languageName: node
-  linkType: soft
-
-"@ecom/tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
-  version: 0.0.0-use.local
-  resolution: "@ecom/tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
-  languageName: node
-  linkType: soft
-
-"@ecom/tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
-  version: 0.0.0-use.local
-  resolution: "@ecom/tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
-  languageName: node
-  linkType: soft
-
-"@ecom/tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Fprisma%40workspace%3Apackages%2Fprisma":
-  version: 0.0.0-use.local
-  resolution: "@ecom/tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Fprisma%40workspace%3Apackages%2Fprisma"
-  languageName: node
-  linkType: soft
-
-"@ecom/types@portal:../../../ecom-shared-packages/packages/types::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
-  version: 0.0.0-use.local
-  resolution: "@ecom/types@portal:../../../ecom-shared-packages/packages/types::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
-  languageName: node
-  linkType: soft
-
-"@ecom/types@portal:../../../ecom-shared-packages/packages/types::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
-  version: 0.0.0-use.local
-  resolution: "@ecom/types@portal:../../../ecom-shared-packages/packages/types::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
-  languageName: node
   linkType: soft
 
 "@electric-sql/pglite-socket@npm:0.1.1":
@@ -931,6 +832,105 @@ __metadata:
   checksum: 10c0/fc152a2cbdd06323f57f66c90cd388369e48e8910d589127f2ea76ca415c43c1c59b5b7b240307ae18f7f4c9cf0f97c71cb06e5ed8cba770b70958903ec52571
   languageName: node
   linkType: hard
+
+"@flash-ship/ecom-config@portal:../../../ecom-shared-packages/packages/config::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-config@portal:../../../ecom-shared-packages/packages/config::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-config@portal:../../../ecom-shared-packages/packages/config::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-config@portal:../../../ecom-shared-packages/packages/config::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-emails@portal:../../../ecom-shared-packages/packages/emails::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-emails@portal:../../../ecom-shared-packages/packages/emails::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
+  dependencies:
+    nodemailer: "npm:^8.0.10"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-i18n@portal:../../../ecom-shared-packages/packages/i18n::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-i18n@portal:../../../ecom-shared-packages/packages/i18n::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
+  dependencies:
+    next-intl: "npm:^4.1.0"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
+  dependencies:
+    bcryptjs: "npm:^3.0.0"
+    ioredis: "npm:^5.11.0"
+    jsonwebtoken: "npm:^9.0.0"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
+  dependencies:
+    bcryptjs: "npm:^3.0.0"
+    ioredis: "npm:^5.11.0"
+    jsonwebtoken: "npm:^9.0.0"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Fprisma%40workspace%3Apackages%2Fprisma":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-lib@portal:../../../ecom-shared-packages/packages/lib::locator=%40ecom%2Fprisma%40workspace%3Apackages%2Fprisma"
+  dependencies:
+    bcryptjs: "npm:^3.0.0"
+    ioredis: "npm:^5.11.0"
+    jsonwebtoken: "npm:^9.0.0"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-trpc@portal:../../../ecom-shared-packages/packages/trpc::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-trpc@portal:../../../ecom-shared-packages/packages/trpc::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
+  dependencies:
+    "@trpc/server": "npm:^11.1.0"
+    exceljs: "npm:^4.4.0"
+    superjson: "npm:^2.2.0"
+    zod: "npm:^4.4.3"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Fprisma%40workspace%3Apackages%2Fprisma":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-tsconfig@portal:../../../ecom-shared-packages/packages/tsconfig::locator=%40ecom%2Fprisma%40workspace%3Apackages%2Fprisma"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-types@portal:../../../ecom-shared-packages/packages/types::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-types@portal:../../../ecom-shared-packages/packages/types::locator=%40ecom%2Fapi%40workspace%3Aapps%2Fapi"
+  languageName: node
+  linkType: soft
+
+"@flash-ship/ecom-types@portal:../../../ecom-shared-packages/packages/types::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures":
+  version: 0.0.0-use.local
+  resolution: "@flash-ship/ecom-types@portal:../../../ecom-shared-packages/packages/types::locator=%40ecom%2Ffeatures%40workspace%3Apackages%2Ffeatures"
+  languageName: node
+  linkType: soft
 
 "@formatjs/fast-memoize@npm:3.1.6, @formatjs/fast-memoize@npm:^3.1.0":
   version: 3.1.6

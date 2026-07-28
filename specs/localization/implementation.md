@@ -24,7 +24,7 @@
 - [x] Added i18n strings to `en/common.json` and `vi/common.json`
 
 ### Phase 4: Admin Content Language Switcher
-- [x] Created `LanguageSwitcher` component (`@ecom/ui/components/language-switcher.tsx`)
+- [x] Created `LanguageSwitcher` component (`@flash-ship/ecom-ui/components/language-switcher.tsx`)
 - [x] Created `useLanguageSwitcher` hook — URL state (`?ref_lang=`) management
 - [x] Integrated into Post edit form — hides sidebar in translation mode
 - [x] Integrated into Category edit form

@@ -4,13 +4,13 @@ import { registerEventListeners } from "@ecom/features/events/listeners";
 import { OutboxStore } from "@ecom/features/events/OutboxStore";
 import { Cacheable, CacheEvict } from "@ecom/features/shared/decorators/caching.decorators";
 import { PrismaQueryBuilder } from "@ecom/features/shared/PrismaQueryBuilder";
-import { lockManager } from "@ecom/lib/lock";
-import { loggerContext } from "@ecom/lib/logger";
+import { lockManager } from "@flash-ship/ecom-lib/lock";
+import { loggerContext } from "@flash-ship/ecom-lib/logger";
 import type { ExtendedPrismaClient } from "@ecom/prisma";
 import { prisma, txStorage } from "@ecom/prisma";
 import { PostFactory } from "@ecom/prisma/src/factories/PostFactory";
 import { UserFactory } from "@ecom/prisma/src/factories/UserFactory";
-import type { AuthUser } from "@ecom/types";
+import type { AuthUser } from "@flash-ship/ecom-types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PostPolicy } from "../../policies/PostPolicy";
 

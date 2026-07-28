@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { optimizeImage } from "../ImageOptimizer";
 
-vi.mock("@ecom/lib/logger", () => ({
+vi.mock("@flash-ship/ecom-lib/logger", () => ({
   createLogger: () => ({
     info: vi.fn(),
     warn: vi.fn(),

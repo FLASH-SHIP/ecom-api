@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import type { JwtPayload } from "@ecom/lib/jwt";
-import { verifyToken } from "@ecom/lib/jwt";
-import { createLogger } from "@ecom/lib/logger";
-import { getRedisClient, RedisCache } from "@ecom/lib/redis";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import type { JwtPayload } from "@flash-ship/ecom-lib/jwt";
+import { verifyToken } from "@flash-ship/ecom-lib/jwt";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
+import { getRedisClient, RedisCache } from "@flash-ship/ecom-lib/redis";
 import type { ApiKeyRepository } from "../repositories/ApiKeyRepository";
 import type { UserRepository } from "../repositories/UserRepository";
 

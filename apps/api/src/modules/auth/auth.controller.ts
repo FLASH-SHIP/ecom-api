@@ -1,6 +1,6 @@
-import { AUTH } from "@ecom/config";
+import { AUTH } from "@flash-ship/ecom-config";
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
-import { signAccessToken, signRefreshToken } from "@ecom/lib/jwt";
+import { signAccessToken, signRefreshToken } from "@flash-ship/ecom-lib/jwt";
 import {
   Body,
   Controller,
@@ -51,7 +51,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Refresh admin access token" })
   async refresh(@Body() body: { refreshToken: string }) {
-    const { verifyRefreshToken } = await import("@ecom/lib/jwt");
+    const { verifyRefreshToken } = await import("@flash-ship/ecom-lib/jwt");
     try {
       const payload = verifyRefreshToken(body.refreshToken);
       const accessToken = signAccessToken({ userId: payload.userId, email: payload.email });

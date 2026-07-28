@@ -1,0 +1,37 @@
+{
+  "version": "v1",
+  "packages": {
+    "@flash-ship/ecom-lib": {
+      "signature": "162f5441c45700f7d89329411bb284f5",
+      "pure": true
+    },
+    "@flash-ship/ecom-types": {
+      "signature": "c760f8c0baf57b1da051953a297452d7",
+      "pure": true
+    },
+    "@flash-ship/ecom-trpc": {
+      "signature": "4e67f8b52875db01ea90f3272e70c7e2",
+      "pure": true
+    },
+    "@flash-ship/ecom-i18n": {
+      "signature": "d22532df007a0f38e95bdeb7a0d9e162",
+      "pure": true
+    },
+    "@flash-ship/ecom-ui": {
+      "signature": "3e878d66746b212e5320c215666cbd6f",
+      "pure": true
+    },
+    "@flash-ship/ecom-config": {
+      "signature": "b4f2b148bc8dee500af629035d7ee486",
+      "pure": true
+    },
+    "@flash-ship/ecom-emails": {
+      "signature": "2a0acdc76e3f15333d65249e72800232",
+      "pure": true
+    },
+    "@flash-ship/ecom-tsconfig": {
+      "signature": "55fe289ccd0e20edf3a0ee6cce84df87",
+      "pure": true
+    }
+  }
+}

@@ -1,0 +1,253 @@
+{
+  "title": "Notifications",
+  "unread": "{count} unread",
+  "allRead": "All caught up!",
+  "markAllRead": "Mark all as read",
+  "noNotificationsTitle": "No notifications",
+  "noNotificationsSubtitle": "New activity will appear here",
+  "noResultsTitle": "No matching results",
+  "noResultsSubtitle": "Try adjusting your search keywords or filters.",
+  "newBadge": "New",
+  "viewAll": "View all",
+  "tooltips": {
+    "markRead": "Mark as read",
+    "viewDetail": "View detail",
+    "delete": "Delete"
+  },
+  "settings": "Settings",
+  "templates": "Templates Manager",
+  "channels": "Delivery Channels",
+  "inApp": "In-App",
+  "push": "Push",
+  "email": "Email",
+  "type": "Notification Type",
+  "editTemplate": "Edit Template",
+  "saveSuccess": "Settings saved successfully",
+  "saveError": "Failed to save settings",
+  "broadcast": "Manual Broadcast",
+  "targetType": "Target Audience",
+  "allCustomers": "All Customers",
+  "adminUsers": "Admin Users",
+  "specificCustomers": "Specific Customers",
+  "specificUsers": "Specific Users",
+  "titleInput": "Notification Title",
+  "messageInput": "Message Body",
+  "linkInput": "Action Link (Optional)",
+  "scheduledAtInput": "Schedule Date & Time",
+  "sendNow": "Send Immediately",
+  "scheduleBtn": "Schedule Broadcast",
+  "livePreview": "Live Mockup Preview",
+  "broadcastSuccess": "Notification broadcast scheduled successfully!",
+  "deleteSuccess": "Scheduled notification deleted successfully",
+  "statusPending": "PENDING",
+  "statusProcessing": "PROCESSING",
+  "statusSent": "SENT",
+  "statusFailed": "FAILED",
+  "description": "Configure system templates, schedule broadcasts, and read alerts.",
+  "inbox": "Inbox",
+  "searchPlaceholder": "Search inbox...",
+  "filterAll": "All",
+  "filterComment": "Comment",
+  "filterContact": "Contact",
+  "filterWebhook": "Webhook",
+  "filterManual": "Manual",
+  "selectNotification": "Select a notification",
+  "selectNotificationDesc": "Click any notification on the left to read its contents and properties.",
+  "messageLabel": "Notification Message",
+  "linkBtn": "Follow Action Link",
+  "variablesLabel": "Template Context Variables (JSON)",
+  "supportedVariables": "Supported Variables:",
+  "targetIdsLabel": "Target User/Customer IDs (comma separated list)",
+  "targetIdsPlaceholder": "e.g. 101, 102, 103",
+  "campaignsListTitle": "Scheduled & Past Campaigns",
+  "tableTarget": "Target",
+  "tableMessage": "Message",
+  "tableTriggerDate": "Trigger Date",
+  "tableStatus": "Status",
+  "tableActions": "Actions",
+  "noCampaigns": "No broadcast campaigns scheduled.",
+  "selectDate": "Select date",
+  "dndTitle": "Do Not Disturb (Quiet Hours)",
+  "dndEnabled": "Quiet Hours Enabled",
+  "dndDesc": "Suppress push alerts during sleep intervals.",
+  "dndStart": "Start Hour",
+  "dndEnd": "End Hour",
+  "dndActiveHelper": "Push notifications will be silenced from {start} to {end} based on the device timezone.",
+  "targetCustomer": "Customer",
+  "targetAdmin": "Administrator",
+  "dndSave": "Save Quiet Hours",
+  "noTemplates": "No notification templates registered in the system.",
+  "templatesList": {
+    "order": {
+      "created": "Order Placed Successfully",
+      "status_updated": "Order Status Updated",
+      "checkpoint_added": "New Shipment Checkpoint"
+    },
+    "webhook": {
+      "deactivated": "Webhook Auto-Deactivated"
+    },
+    "layout": {
+      "default": "Default Layout",
+      "marketing": "Marketing Layout"
+    },
+    "auth": {
+      "password_reset": "Reset Password",
+      "welcome": "Welcome to Ecom"
+    },
+    "contact": {
+      "reply": "Reply from Ecom Support"
+    },
+    "comment": {
+      "moderation": "New Comment Moderation Alert"
+    },
+    "customer": {
+      "welcome": "Welcome New Customer",
+      "email_verification": "Verify Email Address",
+      "password_reset": "Reset Account Password",
+      "verification_code": "Registration Verification Code"
+    }
+  },
+  "dndSuccess": "Quiet Hours updated successfully",
+  "englishCustom": "English Customization",
+  "vietnameseCustom": "Vietnamese Customization",
+  "englishPreview": "English Preview",
+  "vietnamesePreview": "Vietnamese Preview",
+  "titleTemplateLabel": "Title Template",
+  "messageTemplateLabel": "Message Template",
+  "inAppChannel": "InApp Channel",
+  "pushChannel": "Push Notification",
+  "emailChannel": "Email Delivery",
+  "channelsLabel": "Channels:",
+  "editBtn": "Edit",
+  "saveBtn": "Save",
+  "cancelBtn": "Cancel",
+  "typeManualBroadcast": "Manual Broadcast",
+  "typeComment": "Comment",
+  "typeContact": "Contact",
+  "typeWebhook": "Webhook",
+  "typeManual": "Manual",
+  "backBtn": "Back",
+  "deleteConfirmTitle": "Delete Notification",
+  "deleteConfirmDesc": "Are you sure you want to delete this notification? This action cannot be undone.",
+  "deleteBtn": "Delete",
+  "loadMoreBtn": "Load more",
+  "blacklist": {
+    "title": "Email Blacklist",
+    "description": "Manage email addresses blocked from sending system emails, edit block reasons, and sync cache.",
+    "stats": {
+      "total": "Total Blocked",
+      "bounce": "Mailbox Bounce",
+      "spam": "Spam Complaints",
+      "manual": "Manual Blocks"
+    },
+    "columns": {
+      "email": "Email",
+      "reason": "Reason",
+      "createdAt": "Blocked At"
+    },
+    "reasons": {
+      "bounce": "Bounce (Mailbox Error)",
+      "complaint": "Complaint (Spam Report)",
+      "manual": "Manual Block"
+    },
+    "actions": {
+      "import": "Import CSV",
+      "export": "Export CSV",
+      "add": "Add Email",
+      "edit": "Edit",
+      "sync": "Sync Cache",
+      "delete": "Remove",
+      "bulkDelete": "Bulk Remove",
+      "bulkSync": "Bulk Sync Cache"
+    },
+    "dialogs": {
+      "addTitle": "Add Email to Blacklist",
+      "addDesc": "Prevent the system from sending automated emails to this address.",
+      "addEmailLabel": "Email Address",
+      "addReasonLabel": "Block Reason",
+      "editTitle": "Edit Block Reason",
+      "editEmailLabel": "Email Address",
+      "editReasonLabel": "Block Reason",
+      "cancel": "Cancel",
+      "confirmAdd": "Add to Blacklist",
+      "confirmUpdate": "Update",
+      "confirmDeleteSingle": "Are you sure you want to remove {email} from the blacklist?",
+      "confirmDeleteBulk": "Are you sure you want to unblock {count} selected emails?"
+    },
+    "toasts": {
+      "noDataExport": "No data to export",
+      "exportSuccess": "CSV exported successfully",
+      "csvEmpty": "CSV file is empty or missing headers",
+      "noValidEmails": "No valid email addresses found in the CSV file",
+      "readCsvFailed": "Failed to read CSV file",
+      "addSuccess": "Email added to blacklist successfully",
+      "addBulkSuccess": "Email blacklist imported successfully",
+      "removeSuccess": "Email unblocked successfully",
+      "removeBulkSuccess": "Selected emails unblocked successfully",
+      "updateSuccess": "Block reason updated successfully",
+      "syncSuccess": "Cache synced successfully",
+      "failed": "Operation failed"
+    }
+  },
+  "groups": {
+    "layout": {
+      "name": "Email Layouts",
+      "desc": "Global email container structures and branding wrappers"
+    },
+    "auth": {
+      "name": "Authentication & Security",
+      "desc": "One-Time Passwords (OTP), account registration, and password recovery alerts"
+    },
+    "order": {
+      "name": "Orders & Transactions",
+      "desc": "Notifications for order creation, status updates, and shipment tracking"
+    },
+    "marketing": {
+      "name": "Marketing & Newsletters",
+      "desc": "Newsletter dispatches, promotion templates, and bulk campaign emails"
+    },
+    "system": {
+      "name": "System & Administrative",
+      "desc": "Internal server alerts, system status reports, and staff notifications"
+    }
+  },
+  "branding": {
+    "title": "Email Branding & Appearance",
+    "logoLabel": "Logo URL",
+    "logoDesc": "The logo image URL displayed at the top of the email templates.",
+    "supportEmailLabel": "Support Contact Email",
+    "supportEmailDesc": "The support email address displayed in the footer of the email.",
+    "copyrightLabel": "Footer Copyright Notice",
+    "copyrightDesc": "Enter the copyright notice shown in the footer. Use %Y for the current year.",
+    "customCssLabel": "Custom Email CSS",
+    "customCssDesc": "Customize email layout styles. This CSS will be injected directly into the style tag."
+  },
+  "editor": {
+    "editPrefix": "Edit: ",
+    "emailSubject": "Email Subject",
+    "emailBody": "Email Body",
+    "emailBodyPlaceholder": "Enter email content...",
+    "emailSectionTitle": "Email Content",
+    "emailLayoutCodeTitle": "Email Layout Code",
+    "outerLayoutLabel": "Outer Email Layout",
+    "layoutAuto": "System Default (Auto)",
+    "layoutDefault": "Default Layout (layout.default)",
+    "layoutMarketing": "Marketing Layout (layout.marketing)",
+    "complianceAlertTitle": "⚠️ Compliance Warning (GDPR / CAN-SPAM):",
+    "complianceAlertText": "Marketing templates and layouts are legally required to contain the {{unsubscribeUrl}} variable in the footer to allow recipients to opt out of future communications.",
+    "layoutDefaultTag": "Structural Layout Template",
+    "noVariables": "This template does not use any variables.",
+    "mockDataTitle": "MOCK DATA",
+    "inputPlaceholder": "Enter",
+    "sendTestTitle": "SEND TEST EMAIL",
+    "sendTestBtn": "Send Test",
+    "testRecipientPlaceholder": "Enter recipient email...",
+    "emailPreviewTitle": "EMAIL PREVIEW",
+    "sending": "Sending...",
+    "emailChannelDisabledAlert": "Email channel is currently disabled. You can preview the content, but emails will not be sent automatically.",
+    "pushChannelDisabledAlert": "Push channel is currently disabled.",
+    "enableChannelBtn": "Enable Channel Now",
+    "visualMode": "Visual",
+    "codeMode": "HTML Code"
+  }
+}

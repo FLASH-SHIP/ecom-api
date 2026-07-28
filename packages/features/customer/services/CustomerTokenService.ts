@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
-import { AUTH } from "@ecom/config";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { getRedisClient } from "@ecom/lib/redis";
+import { AUTH } from "@flash-ship/ecom-config";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import type { SignOptions } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
 

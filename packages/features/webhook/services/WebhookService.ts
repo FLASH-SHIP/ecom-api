@@ -4,8 +4,8 @@ import { URL } from "node:url";
 import { eventBus } from "@ecom/features/events/EventBus";
 import { queueWebhookDelivery } from "@ecom/features/queue/workers/webhookWorker";
 import type { WebhookRepository } from "@ecom/features/webhook/repositories/WebhookRepository";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { createLogger } from "@ecom/lib/logger";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 
 const log = createLogger("WebhookService");
 

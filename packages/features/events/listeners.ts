@@ -1,5 +1,5 @@
 import { CacheKeys, responseCache } from "@ecom/features/cache/ResponseCache";
-import { createLogger } from "@ecom/lib/logger";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { eventBus } from "./EventBus";
 
 const log = createLogger("EventListeners");

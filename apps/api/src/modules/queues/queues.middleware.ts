@@ -1,4 +1,4 @@
-import { verifyQueueDashboardToken } from "@ecom/lib/jwt";
+import { verifyQueueDashboardToken } from "@flash-ship/ecom-lib/jwt";
 import { Injectable, type NestMiddleware, UnauthorizedException } from "@nestjs/common";
 import type { NextFunction, Request, Response } from "express";
 

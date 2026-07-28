@@ -1,6 +1,6 @@
 import { resolveUserPermissions } from "@ecom/features/auth/utils/permissionUtils";
-import { ErrorCode } from "@ecom/lib/errorCodes";
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import bcrypt from "bcryptjs";
 import type { UserRepository } from "../repositories/UserRepository";
 

@@ -1,5 +1,5 @@
-import { lockManager } from "@ecom/lib/lock";
-import { createLogger } from "@ecom/lib/logger";
+import { lockManager } from "@flash-ship/ecom-lib/lock";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import type { ExtendedPrismaClient } from "@ecom/prisma";
 import { prisma } from "@ecom/prisma";
 import { eventBus } from "./EventBus";

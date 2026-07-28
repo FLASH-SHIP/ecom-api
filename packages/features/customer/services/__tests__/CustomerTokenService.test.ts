@@ -11,7 +11,7 @@ const mockRedis = {
   get: vi.fn(),
   set: vi.fn(),
 };
-vi.mock("@ecom/lib/redis", () => ({
+vi.mock("@flash-ship/ecom-lib/redis", () => ({
   getRedisClient: () => mockRedis,
 }));
 

@@ -1,4 +1,4 @@
-import { sendEmail } from "@ecom/emails";
+import { sendEmail } from "@flash-ship/ecom-emails";
 import { JobQueue } from "../JobQueue";
 
 export const EMAIL_QUEUE = "email";

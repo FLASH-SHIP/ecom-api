@@ -1,4 +1,4 @@
-import { createLogger } from "@ecom/lib/logger";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { Queue, Worker } from "bullmq";
 import Redis from "ioredis";
 import { gracefulShutdown } from "../shutdown/GracefulShutdown";

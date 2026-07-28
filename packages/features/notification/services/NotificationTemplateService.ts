@@ -50,7 +50,7 @@ export class NotificationTemplateService {
   ) {
     const updated = await this.deps.templateRepo.update(id, data);
     try {
-      const { RedisCache } = await import("@ecom/lib/redis");
+      const { RedisCache } = await import("@flash-ship/ecom-lib/redis");
       const cache = new RedisCache("notification-templates");
       await cache.invalidate(updated.type);
     } catch (err) {
@@ -62,7 +62,7 @@ export class NotificationTemplateService {
   async deleteTemplate(id: number) {
     const deleted = await this.deps.templateRepo.delete(id);
     try {
-      const { RedisCache } = await import("@ecom/lib/redis");
+      const { RedisCache } = await import("@flash-ship/ecom-lib/redis");
       const cache = new RedisCache("notification-templates");
       await cache.invalidate(deleted.type);
     } catch (err) {

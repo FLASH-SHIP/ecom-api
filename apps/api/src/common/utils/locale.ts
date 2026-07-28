@@ -1,4 +1,4 @@
-import { defaultLocale, locales } from "@ecom/i18n";
+import { defaultLocale, locales } from "@flash-ship/ecom-i18n";
 import type { Request } from "express";
 
 /**

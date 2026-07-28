@@ -1,4 +1,4 @@
-import { slugify } from "@ecom/lib/slugify";
+import { slugify } from "@flash-ship/ecom-lib/slugify";
 import type { SlugRepository } from "../repositories/SlugRepository";
 
 interface ISlugServiceDeps {

@@ -1,4 +1,4 @@
-import type { AuthUser } from "@ecom/types";
+import type { AuthUser } from "@flash-ship/ecom-types";
 
 export interface ResourceWithAuthor {
   authorId: string;

@@ -13,11 +13,11 @@ import {
   registerScheduledNotificationWorker,
 } from "@ecom/features/queue/workers/scheduledNotificationWorker";
 import { gracefulShutdown } from "@ecom/features/shutdown/GracefulShutdown";
-import { decodeToken, verifyToken } from "@ecom/lib/jwt";
-import { createLogger } from "@ecom/lib/logger";
-import { getCachedSession, setCachedSession } from "@ecom/lib/session-cache";
+import { decodeToken, verifyToken } from "@flash-ship/ecom-lib/jwt";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
+import { getCachedSession, setCachedSession } from "@flash-ship/ecom-lib/session-cache";
 import { prisma } from "@ecom/prisma";
-import type { AuthUser } from "@ecom/types";
+import type { AuthUser } from "@flash-ship/ecom-types";
 import { ClassSerializerInterceptor, VersioningType } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { HttpAdapterHost, NestFactory, Reflector } from "@nestjs/core";
@@ -198,7 +198,7 @@ async function bootstrap() {
   app.use(compression());
 
   const trpcExpress = await import("@trpc/server/adapters/express");
-  const { appRouter, createContext } = await import("@ecom/trpc-contract/server");
+  const { appRouter, createContext } = await import("@flash-ship/ecom-trpc/server");
 
   app.use(
     "/api/trpc",
@@ -295,7 +295,7 @@ async function bootstrap() {
   });
 
   gracefulShutdown.register("Redis", async () => {
-    const { disconnectRedis } = await import("@ecom/lib/redis");
+    const { disconnectRedis } = await import("@flash-ship/ecom-lib/redis");
     await disconnectRedis();
   });
 

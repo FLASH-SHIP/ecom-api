@@ -145,7 +145,7 @@ Priority order:
 #### Admin
 
 - **Language Settings Page** (`/settings/languages`) — CRUD for supported languages with predefined language picker (~180 languages)
-- **LanguageSwitcher** (`@ecom/ui/components/language-switcher.tsx`) — Reusable tab component for edit forms, updates URL `?ref_lang=` state
+- **LanguageSwitcher** (`@flash-ship/ecom-ui/components/language-switcher.tsx`) — Reusable tab component for edit forms, updates URL `?ref_lang=` state
 - **TranslationStatusIndicator** (`@admin/components/translation/TranslationStatusIndicator.tsx`) — Flag icons showing translation coverage per entity in data tables
 - **PageTranslationPanel** (`@admin/components/translation/PageTranslationPanel.tsx`) — Inline translation editor with language tabs
 - **useLanguageSwitcher** hook — Manages language tab state, active code, and URL sync

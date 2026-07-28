@@ -1,4 +1,4 @@
-import { ALL_PERMISSIONS } from "@ecom/lib/permissions";
+import { ALL_PERMISSIONS } from "@flash-ship/ecom-lib/permissions";
 import type { PrismaClient } from "../src/generated/prisma/client";
 import type { Seeder } from "./seeder.interface";
 

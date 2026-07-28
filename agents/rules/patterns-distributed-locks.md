@@ -31,7 +31,7 @@ async reduceStock(productId: number, qty: number) {
 Wrap critical mutations in `lockManager.runWithLock()` to lock resources during execution:
 
 ```typescript
-import { lockManager } from "@ecom/lib/lock";
+import { lockManager } from "@flash-ship/ecom-lib/lock";
 
 async reduceStock(productId: number, qty: number) {
   return lockManager.runWithLock(`product:stock:${productId}`, 3000, async () => {

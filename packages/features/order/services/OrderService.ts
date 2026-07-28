@@ -1,7 +1,7 @@
 import { eventBus } from "@ecom/features/events/EventBus";
 import type { RateCardService } from "@ecom/features/rate-card/services/RateCardService";
-import { ErrorCode } from "@ecom/lib/errorCodes";
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import {
   type ActorType,
   LabelStatus,

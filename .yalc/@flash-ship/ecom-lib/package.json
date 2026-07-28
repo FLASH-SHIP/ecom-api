@@ -1,0 +1,38 @@
+{
+  "name": "@flash-ship/ecom-lib",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./errors": "./src/errors.ts",
+    "./errorCodes": "./src/errorCodes.ts",
+    "./crypto": "./src/crypto.ts",
+    "./jwt": "./src/jwt.ts",
+    "./logger": "./src/logger.ts",
+    "./permissions": "./src/permissions.ts",
+    "./cache": "./src/cache.ts",
+    "./redis": "./src/redis.ts",
+    "./lock": "./src/lock.ts",
+    "./pagination": "./src/pagination.ts",
+    "./sanitize": "./src/sanitize.ts",
+    "./slugify": "./src/slugify.ts",
+    "./session-cache": "./src/session-cache.ts",
+    "./codeGenerator": "./src/codeGenerator.ts",
+    "./addressValidator": "./src/addressValidator.ts",
+    "./diagnosticsBypass": "./src/diagnosticsBypass.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.0",
+    "ioredis": "^5.11.0",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "yalcSig": "162f5441c45700f7d89329411bb284f5"
+}

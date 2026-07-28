@@ -1,4 +1,4 @@
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import type { MediaFileRepository } from "../repositories/MediaFileRepository";
 import type { IStorageAdapter } from "../storage/IStorageAdapter";
 

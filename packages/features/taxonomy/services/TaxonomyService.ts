@@ -1,4 +1,4 @@
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import type { TaxonomyRepository } from "../repositories/TaxonomyRepository";
 
 interface ITaxonomyServiceDeps {

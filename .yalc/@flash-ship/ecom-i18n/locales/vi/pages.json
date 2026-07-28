@@ -1,0 +1,58 @@
+{
+  "editingVersion": "Bạn đang chỉnh sửa phiên bản \"{language}\"",
+  "title": "Trang",
+  "subtitle": "Quản lý các trang tĩnh",
+  "newPage": "Tạo mới",
+  "editPage": "Sửa",
+  "noPagesTitle": "Không tìm thấy trang",
+  "noPagesDescription": "Tạo trang tĩnh đầu tiên.",
+  "createPage": "Tạo trang",
+  "createSuccess": "Tạo trang thành công",
+  "updateSuccess": "Cập nhật trang thành công",
+  "bulkDeleteConfirm": "Bạn có chắc chắn muốn xóa {count} trang đã chọn không?",
+  "bulkDeleteSuccess": "Đã xóa thành công {count} trang",
+  "bulkDeleteError": "Không thể xóa một số trang",
+  "bulkChangeSuccess": "Cập nhật thành công {count} trang",
+  "bulkChangeError": "Không thể cập nhật một số trang",
+  "languages": "Ngôn ngữ",
+  "form": {
+    "publish": "Xuất bản",
+    "saveAndContinue": "Lưu & Tiếp tục",
+    "save": "Lưu",
+    "permalinkPreview": "Xem trước đường dẫn:"
+  },
+  "fields": {
+    "title": "Tiêu đề",
+    "featuredImage": "Ảnh đại diện",
+    "slug": "Đường dẫn",
+    "content": "Nội dung",
+    "template": "Mẫu",
+    "order": "Thứ tự",
+    "isHomepage": "Trang chủ",
+    "status": "Trạng thái",
+    "author": "Tác giả",
+    "date": "Ngày tạo",
+    "actions": "Tác vụ"
+  },
+  "status": {
+    "DRAFT": "Bản nháp",
+    "PENDING": "Chờ duyệt",
+    "PUBLISHED": "Đã xuất bản",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "template": {
+    "default": "Mặc định",
+    "full-width": "Toàn chiều rộng",
+    "sidebar": "Có thanh bên",
+    "landing": "Trang đích"
+  },
+  "actions": {
+    "edit": "Chỉnh sửa",
+    "close": "Đóng",
+    "preview": "Xem trước",
+    "clone": "Nhân bản",
+    "publish": "Xuất bản",
+    "delete": "Xóa",
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa trang này?"
+  }
+}

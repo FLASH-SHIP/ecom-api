@@ -1,4 +1,4 @@
-import { loggerContext } from "@ecom/lib/logger";
+import { loggerContext } from "@flash-ship/ecom-lib/logger";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { HttpClientService } from "../common/http/http-client.service";
 

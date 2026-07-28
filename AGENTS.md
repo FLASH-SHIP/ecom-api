@@ -11,7 +11,7 @@ You are a senior Ecom engineer working in a Yarn/Turbo monorepo. You prioritize 
 - Use conventional commits: `feat:`, `fix:`, `refactor:`
 - Create PRs in draft mode by default
 - Run `yarn type-check:ci --force` before concluding CI failures are unrelated to your changes
-- Import directly from source files, not barrel files (e.g., `@ecom/ui/components/button` not `@ecom/ui`)
+- Import directly from source files, not barrel files (e.g., `@flash-ship/ecom-ui/components/button` not `@flash-ship/ecom-ui`)
 - Add translations to `packages/i18n/locales/en/common.json` and `packages/i18n/locales/vi/common.json` for all UI strings
 - Use `date-fns` or native `Date` instead of Day.js when timezone awareness isn't needed
 - Put permission checks in `page.tsx`, never in `layout.tsx`
@@ -210,8 +210,8 @@ Request → Has Bearer token?
 
 ```typescript
 // In services/repositories — use ErrorWithCode
-import { ErrorCode } from "@ecom/lib/errorCodes";
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 
 throw new ErrorWithCode(ErrorCode.PostNotFound, `Post ${postId} not found`);
 throw ErrorWithCode.Factory.Forbidden("You don't have permission to edit this post");
@@ -257,12 +257,12 @@ const user = await prisma.user.findFirst({
 ```typescript
 // Good - Type imports and direct paths
 import type { User } from "@prisma/client";
-import { Button } from "@ecom/ui/components/button";
+import { Button } from "@flash-ship/ecom-ui/components/button";
 import { PostService } from "@ecom/features/blog/services/PostService";
 
 // Bad - Regular import for types, barrel imports
 import { User } from "@prisma/client";
-import { Button } from "@ecom/ui";
+import { Button } from "@flash-ship/ecom-ui";
 import { PostService } from "@ecom/features";
 ```
 

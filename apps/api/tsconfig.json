@@ -1,5 +1,5 @@
 {
-  "extends": "@ecom/tsconfig/nestjs.json",
+  "extends": "@flash-ship/ecom-tsconfig/nestjs.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
@@ -7,13 +7,13 @@
     "emitDecoratorMetadata": true,
     "baseUrl": "./",
     "paths": {
-      "@ecom/lib/*": ["../packages/lib/src/*"],
-      "@ecom/config": ["../packages/config/src/index.ts"],
-      "@ecom/types": ["../packages/types/src/index.ts"],
+      "@flash-ship/ecom-lib/*": ["../packages/lib/src/*"],
+      "@flash-ship/ecom-config": ["../packages/config/src/index.ts"],
+      "@flash-ship/ecom-types": ["../packages/types/src/index.ts"],
       "@ecom/features/*": ["../packages/features/*"],
       "@ecom/prisma": ["../packages/prisma/src/index.ts"],
-      "@ecom/trpc-contract/*": ["../packages/trpc/*"],
-      "@ecom/trpc-contract": ["../packages/trpc/server/index.ts"],
+      "@flash-ship/ecom-trpc/*": ["../packages/trpc/*"],
+      "@flash-ship/ecom-trpc": ["../packages/trpc/server/index.ts"],
       "@ecom/trpc/*": ["../packages/trpc/*"],
       "@ecom/trpc": ["../packages/trpc/server/index.ts"]
     }

@@ -1,6 +1,6 @@
-import { ErrorCode } from "@ecom/lib/errorCodes";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { RedisCache } from "@ecom/lib/redis";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { RedisCache } from "@flash-ship/ecom-lib/redis";
 import type { RateCardType, RateItemType, ShippingMethod } from "@ecom/prisma";
 import { Prisma } from "@ecom/prisma";
 import type { RateCardRepository } from "../repositories/RateCardRepository";

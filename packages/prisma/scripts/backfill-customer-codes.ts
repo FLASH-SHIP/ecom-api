@@ -3,7 +3,7 @@ import path from "path";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
-import { generateCustomerCode } from "@ecom/lib";
+import { generateCustomerCode } from "@flash-ship/ecom-lib";
 
 async function main() {
   const { prisma } = await import("../src/index");

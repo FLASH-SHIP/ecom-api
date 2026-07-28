@@ -10,7 +10,7 @@ const mockTemplateRepo = {
 };
 
 const mockInvalidate = vi.fn();
-vi.mock("@ecom/lib/redis", () => ({
+vi.mock("@flash-ship/ecom-lib/redis", () => ({
   RedisCache: class MockRedisCache {
     invalidate = mockInvalidate;
   },

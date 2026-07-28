@@ -1,5 +1,5 @@
-import { sendEmail } from "@ecom/emails";
-import { createLogger } from "@ecom/lib/logger";
+import { sendEmail } from "@flash-ship/ecom-emails";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { prisma } from "@ecom/prisma";
 import { JobQueue } from "../JobQueue";
 

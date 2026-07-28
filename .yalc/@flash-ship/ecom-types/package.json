@@ -1,0 +1,11 @@
+{
+  "name": "@flash-ship/ecom-types",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "yalcSig": "c760f8c0baf57b1da051953a297452d7"
+}

@@ -1,4 +1,4 @@
-import { createLogger, loggerContext } from "@ecom/lib/logger";
+import { createLogger, loggerContext } from "@flash-ship/ecom-lib/logger";
 import { prisma } from "@ecom/prisma";
 import type { NestMiddleware } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";

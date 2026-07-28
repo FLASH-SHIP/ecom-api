@@ -1,7 +1,7 @@
 import type { UserRepository } from "@ecom/features/rbac/repositories/UserRepository";
-import { hashPassword } from "@ecom/lib/crypto";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { RedisCache } from "@ecom/lib/redis";
+import { hashPassword } from "@flash-ship/ecom-lib/crypto";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { RedisCache } from "@flash-ship/ecom-lib/redis";
 import type { UserStatus } from "@ecom/prisma";
 
 const permissionsCache = new RedisCache<string[]>("user-permissions");

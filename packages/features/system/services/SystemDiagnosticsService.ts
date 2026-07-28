@@ -8,10 +8,10 @@ import { join } from "node:path";
 import readline from "node:readline";
 import type { Writable } from "node:stream";
 import { createGunzip } from "node:zlib";
-import { isDevDiagnosticsBypassEnabled } from "@ecom/lib";
-import { verifyPassword } from "@ecom/lib/crypto";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { getRedisClient } from "@ecom/lib/redis";
+import { isDevDiagnosticsBypassEnabled } from "@flash-ship/ecom-lib";
+import { verifyPassword } from "@flash-ship/ecom-lib/crypto";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import type { PrismaClient } from "@ecom/prisma";
 
 export interface ISystemDiagnosticsServiceDeps {
@@ -863,7 +863,7 @@ export class SystemDiagnosticsService {
   }
 
   async getLogLevel(): Promise<{ level: string }> {
-    const { getLogLevel } = require("@ecom/lib/logger");
+    const { getLogLevel } = require("@flash-ship/ecom-lib/logger");
     return { level: getLogLevel() };
   }
 
@@ -881,7 +881,7 @@ export class SystemDiagnosticsService {
       throw ErrorWithCode.Factory.BadRequest("Invalid log level");
     }
 
-    const { getLogLevel, setLogLevel } = require("@ecom/lib/logger");
+    const { getLogLevel, setLogLevel } = require("@flash-ship/ecom-lib/logger");
     const oldLevel = getLogLevel();
     setLogLevel(newLevel);
 
@@ -968,7 +968,7 @@ export class SystemDiagnosticsService {
     await this.verifySudoPassword(params.sudoPassword, params.userId);
 
     try {
-      const { getRedisClient } = require("@ecom/lib/redis");
+      const { getRedisClient } = require("@flash-ship/ecom-lib/redis");
       const redis = getRedisClient();
 
       const infoMemoryRaw = await redis.info("memory");

@@ -1,0 +1,12 @@
+{
+  "name": "@flash-ship/ecom-tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "files": [
+    "base.json",
+    "nextjs.json",
+    "nestjs.json",
+    "library.json"
+  ],
+  "yalcSig": "55fe289ccd0e20edf3a0ee6cce84df87"
+}

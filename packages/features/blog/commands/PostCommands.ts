@@ -1,8 +1,8 @@
 import { OutboxStore } from "@ecom/features/events/OutboxStore";
 import type { RevisionService } from "@ecom/features/revision/services/RevisionService";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { lockManager } from "@ecom/lib/lock";
-import { createLogger } from "@ecom/lib/logger";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { lockManager } from "@flash-ship/ecom-lib/lock";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { type ContentStatus, runInTransaction } from "@ecom/prisma";
 import type { PostRepository } from "../repositories/PostRepository";
 import type { SlugService } from "../services/SlugService";

@@ -1,6 +1,6 @@
 import type { AuthenticatedUser } from "@ecom/features/auth/services/ApiAuthService";
 import { getApiAuthService } from "@ecom/features/di/containers/AuthService";
-import { loggerContext } from "@ecom/lib/logger";
+import { loggerContext } from "@flash-ship/ecom-lib/logger";
 import {
   type CanActivate,
   type ExecutionContext,

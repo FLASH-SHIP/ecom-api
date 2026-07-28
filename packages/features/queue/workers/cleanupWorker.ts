@@ -1,4 +1,4 @@
-import { createLogger } from "@ecom/lib/logger";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { prisma } from "@ecom/prisma";
 import { getAuditService } from "../../di/containers/AuditService";
 import { JobQueue } from "../JobQueue";

@@ -3,8 +3,8 @@ import {
   mapToCustomerOrderDetailResponse,
   mapToEstimateFreightResponse,
 } from "@ecom/features/order/mappers/CustomerOrderMapper";
-import { executeBatchProcess } from "@ecom/lib";
-import { getRedisClient } from "@ecom/lib/redis";
+import { executeBatchProcess } from "@flash-ship/ecom-lib";
+import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import { OrderStatus } from "@ecom/prisma";
 import {
   Body,

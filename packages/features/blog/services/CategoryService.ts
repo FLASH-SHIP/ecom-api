@@ -1,5 +1,5 @@
-import { categoryCache } from "@ecom/lib/cache";
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { categoryCache } from "@flash-ship/ecom-lib/cache";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import type { ContentStatus } from "@ecom/prisma";
 import type { CategoryRepository } from "../repositories/CategoryRepository";
 import type { SlugService } from "./SlugService";

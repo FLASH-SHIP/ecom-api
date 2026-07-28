@@ -1,4 +1,4 @@
-import { getRedisClient } from "@ecom/lib/redis";
+import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import { Injectable } from "@nestjs/common";
 import type { ThrottlerStorage } from "@nestjs/throttler";
 import type { ThrottlerStorageRecord } from "@nestjs/throttler/dist/throttler-storage-record.interface";

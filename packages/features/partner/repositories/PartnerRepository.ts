@@ -1,4 +1,4 @@
-import { normalizePagination, paginate } from "@ecom/lib/pagination";
+import { normalizePagination, paginate } from "@flash-ship/ecom-lib/pagination";
 import type { PartnerStatus, PrismaClient } from "@ecom/prisma";
 import { Prisma } from "@ecom/prisma";
 

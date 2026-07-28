@@ -5,8 +5,8 @@ import { getAuditService } from "@ecom/features/di/containers/AuditService";
 import { getApiAuthService, getAuthService } from "@ecom/features/di/containers/AuthService";
 import { getDatabaseMaintenanceService } from "@ecom/features/di/containers/DatabaseMaintenanceService";
 import { getSystemDiagnosticsService } from "@ecom/features/di/containers/SystemDiagnosticsService";
-import { isDevDiagnosticsBypassEnabled } from "@ecom/lib";
-import { Permissions } from "@ecom/lib/permissions";
+import { isDevDiagnosticsBypassEnabled } from "@flash-ship/ecom-lib";
+import { Permissions } from "@flash-ship/ecom-lib/permissions";
 import {
   BadRequestException,
   Body,

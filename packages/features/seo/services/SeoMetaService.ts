@@ -1,5 +1,5 @@
 import type { SeoMetaRepository } from "@ecom/features/seo/repositories/SeoMetaRepository";
-import { createLogger } from "@ecom/lib/logger";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 
 const log = createLogger("SeoMetaService");
 

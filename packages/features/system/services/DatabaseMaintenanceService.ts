@@ -3,10 +3,10 @@ import crypto from "node:crypto";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Writable } from "node:stream";
-import { isDevDiagnosticsBypassEnabled } from "@ecom/lib";
-import { verifyPassword } from "@ecom/lib/crypto";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { getRedisClient } from "@ecom/lib/redis";
+import { isDevDiagnosticsBypassEnabled } from "@flash-ship/ecom-lib";
+import { verifyPassword } from "@flash-ship/ecom-lib/crypto";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import type { PrismaClient } from "@ecom/prisma";
 
 export type MaintenanceAction =

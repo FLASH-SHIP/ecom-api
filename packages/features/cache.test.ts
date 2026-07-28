@@ -1,4 +1,4 @@
-import { MemoryCache } from "@ecom/lib/cache";
+import { MemoryCache } from "@flash-ship/ecom-lib/cache";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("MemoryCache", () => {

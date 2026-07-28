@@ -1,8 +1,8 @@
 import type { LanguageMetaRepository } from "@ecom/features/language/repositories/LanguageMetaRepository";
 import type { LanguageRepository } from "@ecom/features/language/repositories/LanguageRepository";
 import { LanguageLocaleCache } from "@ecom/features/language/services/LanguageLocaleCache";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { createLogger } from "@ecom/lib/logger";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 
 const log = createLogger("LanguageService");
 

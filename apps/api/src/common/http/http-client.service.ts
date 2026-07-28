@@ -1,4 +1,4 @@
-import { createLogger, loggerContext, maskSensitiveData } from "@ecom/lib/logger";
+import { createLogger, loggerContext, maskSensitiveData } from "@flash-ship/ecom-lib/logger";
 import { Injectable } from "@nestjs/common";
 
 const log = createLogger("HttpClient");

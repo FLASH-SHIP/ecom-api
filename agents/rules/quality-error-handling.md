@@ -24,8 +24,8 @@ Use the right error class based on **where** the code lives:
 ### In Non-API Files (services, repositories, utilities — `packages/features/`)
 
 ```typescript
-import { ErrorCode } from "@ecom/lib/errorCodes";
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 
 // Option 1: Using constructor with ErrorCode enum
 throw new ErrorWithCode(ErrorCode.PostNotFound, "Post not found");

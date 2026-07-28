@@ -1,4 +1,4 @@
-import { createLogger } from "@ecom/lib/logger";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { prisma } from "@ecom/prisma";
 
 const log = createLogger("HealthCheck");
@@ -113,7 +113,7 @@ async function checkDatabase(): Promise<ComponentHealth> {
 async function checkRedis(): Promise<ComponentHealth> {
   const start = Date.now();
   try {
-    const { getRedisClient } = await import("@ecom/lib/redis");
+    const { getRedisClient } = await import("@flash-ship/ecom-lib/redis");
     const redis = getRedisClient();
     await redis.ping();
     return {

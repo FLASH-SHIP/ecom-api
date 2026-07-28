@@ -1,4 +1,4 @@
-import { disconnectRedis, getRedisClient, RedisCache, RedisRateLimiter } from "@ecom/lib/redis";
+import { disconnectRedis, getRedisClient, RedisCache, RedisRateLimiter } from "@flash-ship/ecom-lib/redis";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 /**

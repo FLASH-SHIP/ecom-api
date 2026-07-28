@@ -1,0 +1,16 @@
+{
+  "extends": "@flash-ship/ecom-tsconfig/library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "..",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "paths": {
+      "@flash-ship/ecom-trpc/*": ["./*"],
+      "@ecom/trpc/*": ["./*"],
+      "@ecom/features/*": ["../features/*"]
+    }
+  },
+  "include": ["server/**/*.ts", "../features/**/*.ts"],
+  "exclude": ["node_modules", "dist", "../features/**/__tests__/**", "../features/**/*.test.ts"]
+}

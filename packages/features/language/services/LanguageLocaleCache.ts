@@ -1,4 +1,4 @@
-import { createLogger } from "@ecom/lib/logger";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 
 const log = createLogger("LanguageLocaleCache");
 

@@ -1,4 +1,4 @@
-import { createLogger } from "@ecom/lib/logger";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 
 const log = createLogger("ResponseCache");
 
@@ -19,7 +19,7 @@ interface CacheEntry<T> {
  * - Invalidation only clears the local instance → stale data on others
  * - Memory usage is duplicated across instances
  *
- * For multi-instance production deployments, use RedisCache from @ecom/lib/redis
+ * For multi-instance production deployments, use RedisCache from @flash-ship/ecom-lib/redis
  * instead for any data that requires cross-instance consistency.
  *
  * Current deployment: single-instance (acceptable).

@@ -1,5 +1,5 @@
 import type { SettingRepository } from "@ecom/features/setting/repositories/SettingRepository";
-import { settingsCache } from "@ecom/lib/cache";
+import { settingsCache } from "@flash-ship/ecom-lib/cache";
 
 export interface ISettingServiceDeps {
   settingRepo: SettingRepository;

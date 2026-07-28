@@ -1,6 +1,6 @@
 import type { RevisionRepository } from "@ecom/features/revision/repositories/RevisionRepository";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { createLogger } from "@ecom/lib/logger";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 
 const log = createLogger("RevisionService");
 

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { loggerContext } from "@ecom/lib/logger";
+import { loggerContext } from "@flash-ship/ecom-lib/logger";
 import { Injectable, type NestMiddleware } from "@nestjs/common";
 import type { NextFunction, Request, Response } from "express";
 

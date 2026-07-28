@@ -1,0 +1,30 @@
+{
+  "title": "Contact Submissions",
+  "subtitle": "Manage contact form submissions and leads",
+  "noSubmissionsTitle": "No submissions found",
+  "submissionDetail": "Submission Detail",
+  "selectToView": "Select a submission to view details",
+  "fields": {
+    "contact": "Contact",
+    "subject": "Subject",
+    "status": "Status",
+    "date": "Date",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "message": "Message"
+  },
+  "status": {
+    "all": "All",
+    "new": "New",
+    "read": "Read",
+    "replied": "Replied",
+    "archived": "Archived"
+  },
+  "actions": {
+    "markReplied": "Mark Replied",
+    "archive": "Archive",
+    "delete": "Delete",
+    "permanentlyDelete": "Permanently delete this submission?"
+  }
+}

@@ -1,5 +1,5 @@
-import { ErrorCode } from "@ecom/lib/errorCodes";
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import type { AdministrativeDivisionRepository } from "../repositories/AdministrativeDivisionRepository";
 import type { ProvinceRepository } from "../repositories/ProvinceRepository";
 import type { WardRepository } from "../repositories/WardRepository";

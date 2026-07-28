@@ -1,5 +1,5 @@
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { slugify } from "@ecom/lib/slugify";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { slugify } from "@flash-ship/ecom-lib/slugify";
 import type { MediaFolderRepository } from "../repositories/MediaFolderRepository";
 
 interface IMediaFolderServiceDeps {

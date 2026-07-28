@@ -1,6 +1,6 @@
 import type { PageRepository } from "@ecom/features/page/repositories/PageRepository";
 import type { RevisionRepository } from "@ecom/features/shared/repositories/RevisionRepository";
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import type { ContentStatus, Prisma } from "@ecom/prisma";
 
 export interface IPageServiceDeps {

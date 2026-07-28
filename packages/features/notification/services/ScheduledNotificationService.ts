@@ -1,8 +1,8 @@
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
 import type { UserRepository } from "@ecom/features/rbac/repositories/UserRepository";
-import { ErrorCode } from "@ecom/lib/errorCodes";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { createLogger } from "@ecom/lib/logger";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import type { ScheduledNotificationRepository } from "../repositories/ScheduledNotificationRepository";
 import type { NotificationService } from "./NotificationService";
 

@@ -24,8 +24,8 @@ vi.mock("@ecom/features/di/containers/OrderService", () => ({
 const mockRedisGet = vi.fn();
 const mockRedisSet = vi.fn();
 
-vi.mock("@ecom/lib/redis", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@ecom/lib/redis")>();
+vi.mock("@flash-ship/ecom-lib/redis", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@flash-ship/ecom-lib/redis")>();
   return {
     ...actual,
     getRedisClient: () => ({

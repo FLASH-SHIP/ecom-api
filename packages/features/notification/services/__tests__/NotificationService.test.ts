@@ -1,4 +1,4 @@
-import { sendEmail } from "@ecom/emails";
+import { sendEmail } from "@flash-ship/ecom-emails";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
 import type { UserRepository } from "@ecom/features/rbac/repositories/UserRepository";
 import { prisma } from "@ecom/prisma";
@@ -15,8 +15,8 @@ import { NotificationSettingService } from "../NotificationSettingService";
 import { PushNotificationService } from "../PushNotificationService";
 
 // Mock external modules
-vi.mock("@ecom/emails", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@ecom/emails")>();
+vi.mock("@flash-ship/ecom-emails", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@flash-ship/ecom-emails")>();
   return {
     ...actual,
     sendEmail: vi.fn().mockResolvedValue(true),
@@ -35,7 +35,7 @@ const mockRedis = {
   pipeline: vi.fn(() => mockPipeline),
 };
 
-vi.mock("@ecom/lib/redis", () => ({
+vi.mock("@flash-ship/ecom-lib/redis", () => ({
   getRedisClient: vi.fn(() => mockRedis),
   RedisCache: class MockRedisCache {
     private store = new Map();

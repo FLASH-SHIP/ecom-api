@@ -5,8 +5,8 @@ import type {
   FindGroupsOpts,
 } from "@ecom/features/custom-field/repositories/FieldGroupRepository";
 import type { FieldItemRepository } from "@ecom/features/custom-field/repositories/FieldItemRepository";
-import { ErrorWithCode } from "@ecom/lib/errors";
-import { createLogger } from "@ecom/lib/logger";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import type { PrismaClient } from "@ecom/prisma";
 import { Prisma } from "@ecom/prisma";
 

@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createLogger, loggerContext } from "@ecom/lib/logger";
+import { createLogger, loggerContext } from "@flash-ship/ecom-lib/logger";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { readReplicas } from "@prisma/extension-read-replicas";
 import { DeviceTokenFactory } from "./factories/DeviceTokenFactory";

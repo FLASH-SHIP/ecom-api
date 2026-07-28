@@ -10,7 +10,7 @@ vi.mock("@ecom/prisma", () => {
   };
 });
 
-vi.mock("@ecom/lib/logger", () => ({
+vi.mock("@flash-ship/ecom-lib/logger", () => ({
   createLogger: () => ({
     info: vi.fn(),
     warn: vi.fn(),

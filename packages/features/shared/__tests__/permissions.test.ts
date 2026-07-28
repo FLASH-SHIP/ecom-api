@@ -1,4 +1,4 @@
-import { ALL_PERMISSIONS, Permissions } from "@ecom/lib/permissions";
+import { ALL_PERMISSIONS, Permissions } from "@flash-ship/ecom-lib/permissions";
 import { describe, expect, it } from "vitest";
 
 describe("Permissions", () => {

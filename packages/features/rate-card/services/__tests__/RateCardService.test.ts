@@ -1,10 +1,10 @@
-import { ErrorCode } from "@ecom/lib/errorCodes";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RateCardRepository } from "../../repositories/RateCardRepository";
 import { RateCardService } from "../RateCardService";
 
-// Mock @ecom/lib/redis
-vi.mock("@ecom/lib/redis", () => {
+// Mock @flash-ship/ecom-lib/redis
+vi.mock("@flash-ship/ecom-lib/redis", () => {
   return {
     RedisCache: class {
       private prefix: string;

@@ -1,5 +1,5 @@
 {
-  "extends": "@ecom/tsconfig/library.json",
+  "extends": "@flash-ship/ecom-tsconfig/library.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": ".",

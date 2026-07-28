@@ -68,12 +68,12 @@ All internal packages use the `@ecom/` scope:
 - `@ecom/prisma` — Prisma client + schema
 - `@ecom/trpc` — tRPC routers
 - `@ecom/features` — Business logic
-- `@ecom/ui` — UI components
-- `@ecom/lib` — Shared utilities
-- `@ecom/i18n` — Translations
-- `@ecom/types` — Shared types
-- `@ecom/config` — Configuration
-- `@ecom/emails` — Email templates
+- `@flash-ship/ecom-ui` — UI components
+- `@flash-ship/ecom-lib` — Shared utilities
+- `@flash-ship/ecom-i18n` — Translations
+- `@flash-ship/ecom-types` — Shared types
+- `@flash-ship/ecom-config` — Configuration
+- `@flash-ship/ecom-emails` — Email templates
 - `@ecom/platform-libraries` — Re-exports for NestJS API
 
 ### Local Development Database
@@ -116,7 +116,7 @@ After seeding (`yarn db:seed`):
 
 ### DataTable
 
-For table/list views, use the shared `DataTable` component from `@ecom/ui/components/data-table`. It supports:
+For table/list views, use the shared `DataTable` component from `@flash-ship/ecom-ui/components/data-table`. It supports:
 - Server-side pagination
 - Column sorting
 - Filtering

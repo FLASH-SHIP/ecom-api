@@ -1,5 +1,5 @@
-import { ErrorCode } from "@ecom/lib/errorCodes";
-import { ErrorWithCode } from "@ecom/lib/errors";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { describe, expect, it, vi } from "vitest";
 import type { CustomerGroupRepository } from "../../repositories/CustomerGroupRepository";
 import { CustomerGroupService } from "../CustomerGroupService";

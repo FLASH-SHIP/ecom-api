@@ -1,4 +1,4 @@
-import { BaseTransformer } from "@ecom/lib";
+import { BaseTransformer } from "@flash-ship/ecom-lib";
 
 export interface PostResponseDto {
   id: number;

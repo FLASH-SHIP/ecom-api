@@ -10,7 +10,7 @@ tags: quality, imports, exports
 ```typescript
 // ✅ Always use `import type` for type-only imports
 import type { User } from "@prisma/client";
-import type { PostDto } from "@ecom/lib/dto/PostDto";
+import type { PostDto } from "@flash-ship/ecom-lib/dto/PostDto";
 ```
 
 ### Named exports over default exports
@@ -26,8 +26,8 @@ export default class PostService { ... }
 ### Direct path imports
 ```typescript
 // ✅ Good
-import { Button } from "@ecom/ui/components/button";
+import { Button } from "@flash-ship/ecom-ui/components/button";
 
 // ❌ Bad — barrel import
-import { Button } from "@ecom/ui";
+import { Button } from "@flash-ship/ecom-ui";
 ```
