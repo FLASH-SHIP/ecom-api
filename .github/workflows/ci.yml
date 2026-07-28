@@ -76,7 +76,7 @@ jobs:
         working-directory: ecom-api
 
       - name: Generate Prisma Client
-        run: yarn prisma generate
+        run: yarn prisma:generate
         working-directory: ecom-api
 
       - name: Type Check CI
@@ -143,7 +143,7 @@ jobs:
         working-directory: ecom-api
 
       - name: Generate Prisma Client
-        run: yarn prisma generate
+        run: yarn prisma:generate
         working-directory: ecom-api
 
       - name: Migrate Database
@@ -190,7 +190,7 @@ jobs:
         working-directory: ecom-api
 
       - name: Generate Prisma Client
-        run: yarn prisma generate
+        run: yarn prisma:generate
         working-directory: ecom-api
 
       - name: Build API
