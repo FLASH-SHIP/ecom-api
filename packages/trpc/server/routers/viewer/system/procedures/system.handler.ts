@@ -5,10 +5,10 @@ import { categoryCache, permissionsCache, settingsCache } from "@flash-ship/ecom
 import { signQueueDashboardToken } from "@flash-ship/ecom-lib/jwt";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
 import { getRedisClient } from "@flash-ship/ecom-lib/redis";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { filtersInputSchema } from "../../../../shared/filterSchema";
 import { authedProcedure, requirePermission } from "../../../../trpc";
-import { z } from "zod";
 
 const REQUEST_LOG_FILTER_FIELDS: FilterFieldConfigMap = {
   id: { prismaField: "id", type: "number" },

@@ -1,7 +1,7 @@
 import { PostPolicy } from "@ecom/features/blog/policies/PostPolicy";
 import { getPostService } from "@ecom/features/di/containers/BlogService";
-import { middleware } from "../init";
 import { TRPCError } from "@trpc/server";
+import { middleware } from "../init";
 
 /**
  * tRPC middleware to enforce resource-level policies on blog posts.

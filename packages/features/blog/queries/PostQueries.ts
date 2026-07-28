@@ -1,6 +1,6 @@
+import type { ContentStatus } from "@ecom/prisma";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { createLogger } from "@flash-ship/ecom-lib/logger";
-import type { ContentStatus } from "@ecom/prisma";
 import { PrismaQueryBuilder } from "../../shared/PrismaQueryBuilder";
 import type { PostRepository } from "../repositories/PostRepository";
 

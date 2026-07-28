@@ -92,7 +92,10 @@ async function resolveAdminUser(userId: string, tokenVersion?: number): Promise<
   return user;
 }
 
-async function resolveCustomerUser(userId: string, tokenVersion?: number): Promise<AuthUser | null> {
+async function resolveCustomerUser(
+  userId: string,
+  tokenVersion?: number,
+): Promise<AuthUser | null> {
   const versionKey = typeof tokenVersion === "number" ? tokenVersion : "latest";
   const cacheKey = `session:user:customer:${userId}:${versionKey}`;
 

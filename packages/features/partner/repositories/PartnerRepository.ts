@@ -1,6 +1,6 @@
-import { normalizePagination, paginate } from "@flash-ship/ecom-lib/pagination";
 import type { PartnerStatus, PrismaClient } from "@ecom/prisma";
 import { Prisma } from "@ecom/prisma";
+import { normalizePagination, paginate } from "@flash-ship/ecom-lib/pagination";
 
 export interface CreatePartnerInput {
   code: string;

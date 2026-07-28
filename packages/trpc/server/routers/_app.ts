@@ -129,4 +129,3 @@ export const publicRouter = appRouter.public;
 export type AdminRouter = typeof adminRouter;
 export type CustomerRouter = typeof customerRouter;
 export type PublicRouter = typeof publicRouter;
-

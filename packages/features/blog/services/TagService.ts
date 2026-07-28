@@ -1,5 +1,5 @@
-import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import type { ContentStatus } from "@ecom/prisma";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import type { TagRepository } from "../repositories/TagRepository";
 import type { SlugService } from "./SlugService";
 

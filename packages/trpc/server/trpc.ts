@@ -1,8 +1,8 @@
 import { loggerContext } from "@flash-ship/ecom-lib/logger";
-import { handleTRPCError } from "./middleware/errorHandler";
-import { requestLogger } from "./middleware/requestLogger";
 import { TRPCError } from "@trpc/server";
 import { createCallerFactory, middleware, publicProcedure, router } from "./init";
+import { handleTRPCError } from "./middleware/errorHandler";
+import { requestLogger } from "./middleware/requestLogger";
 
 export { createCallerFactory, middleware, publicProcedure, router };
 

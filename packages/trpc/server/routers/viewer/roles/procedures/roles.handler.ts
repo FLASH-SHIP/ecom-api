@@ -1,11 +1,11 @@
 import { getRoleService } from "@ecom/features/di/containers/RbacService";
+import { prisma } from "@ecom/prisma";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
 import { RedisCache } from "@flash-ship/ecom-lib/redis";
 import { invalidateCachedSession } from "@flash-ship/ecom-lib/session-cache";
-import { prisma } from "@ecom/prisma";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { authedProcedure, requirePermission } from "../../../../trpc";
-import { z } from "zod";
 
 export const list = authedProcedure
   .use(requirePermission(Permissions.ROLES_READ))

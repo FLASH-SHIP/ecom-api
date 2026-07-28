@@ -1,10 +1,10 @@
-import { AUTH } from "@flash-ship/ecom-config";
 import type { CustomerTokenPayload } from "@ecom/features/customer/services/CustomerTokenService";
 import {
   getCustomerAuthService,
   getCustomerService,
   getCustomerTokenService,
 } from "@ecom/features/di/containers/CustomerService";
+import { AUTH } from "@flash-ship/ecom-config";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { Body, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";

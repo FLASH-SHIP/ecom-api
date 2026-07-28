@@ -1,7 +1,7 @@
 import { USERNAME_REGEX, USERNAME_VALIDATION_MESSAGE } from "@ecom/features/customer/constants";
+import type { CustomerStatus } from "@ecom/prisma";
 import { hashPassword } from "@flash-ship/ecom-lib/crypto";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
-import type { CustomerStatus } from "@ecom/prisma";
 import type { CustomerRepository } from "../repositories/CustomerRepository";
 
 export interface ICustomerServiceDeps {

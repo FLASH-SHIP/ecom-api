@@ -6,8 +6,8 @@ import {
   validateReceiverPhone,
   validateReceiverState,
 } from "@flash-ship/ecom-lib";
-import { authedProcedure } from "../../../trpc";
 import { z } from "zod";
+import { authedProcedure } from "../../../trpc";
 
 export const listReceivers = authedProcedure.query(async ({ ctx }) => {
   return getCustomerReceiverService().listByCustomer(ctx.user.id);

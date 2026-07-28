@@ -1,5 +1,5 @@
-import { normalizePagination, paginate } from "@flash-ship/ecom-lib/pagination";
 import type { ContentStatus, PrismaClient } from "@ecom/prisma";
+import { normalizePagination, paginate } from "@flash-ship/ecom-lib/pagination";
 
 export class PostRepository {
   private prisma: PrismaClient;

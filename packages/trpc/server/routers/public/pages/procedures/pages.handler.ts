@@ -3,8 +3,8 @@ import {
   overlayPageTranslation,
   overlayPageTranslations,
 } from "@ecom/features/translation/services/TranslationOverlay";
-import { publicProcedure } from "../../../../trpc";
 import { z } from "zod";
+import { publicProcedure } from "../../../../trpc";
 
 export const list = publicProcedure.query(async ({ ctx }) => {
   const pageService = getPageService();

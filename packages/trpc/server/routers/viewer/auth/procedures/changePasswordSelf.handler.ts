@@ -1,10 +1,10 @@
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { rateLimiters } from "../../../../middleware/rateLimit";
 import { authedProcedure } from "../../../../trpc";
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
 
 /**
  * Self-serve password change with conditional current-password verification.

@@ -1,10 +1,16 @@
-import { escapeHtml, formatEmailBody, sendEmail, stripHtml, wrapEmailLayout } from "@flash-ship/ecom-emails";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
 import type { UserRepository } from "@ecom/features/rbac/repositories/UserRepository";
+import { type NotificationTemplate, type Prisma, prisma } from "@ecom/prisma";
+import {
+  escapeHtml,
+  formatEmailBody,
+  sendEmail,
+  stripHtml,
+  wrapEmailLayout,
+} from "@flash-ship/ecom-emails";
 import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { getRedisClient, RedisCache } from "@flash-ship/ecom-lib/redis";
 import { sanitizeRichHtml } from "@flash-ship/ecom-lib/sanitize";
-import { type NotificationTemplate, type Prisma, prisma } from "@ecom/prisma";
 import * as jwt from "jsonwebtoken";
 import type { NotificationRepository } from "../repositories/NotificationRepository";
 import type { NotificationTemplateRepository } from "../repositories/NotificationTemplateRepository";

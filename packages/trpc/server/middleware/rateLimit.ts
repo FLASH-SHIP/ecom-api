@@ -1,6 +1,6 @@
 import { RedisRateLimiter } from "@flash-ship/ecom-lib/redis";
-import { middleware } from "../init";
 import { TRPCError } from "@trpc/server";
+import { middleware } from "../init";
 
 function getClientKey(ctx: { ip?: string | null }): string {
   return ctx.ip ?? "unknown";

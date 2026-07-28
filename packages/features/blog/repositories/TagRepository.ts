@@ -1,5 +1,5 @@
-import { slugify } from "@flash-ship/ecom-lib/slugify";
 import type { ContentStatus, PrismaClient } from "@ecom/prisma";
+import { slugify } from "@flash-ship/ecom-lib/slugify";
 
 export class TagRepository {
   private prisma: PrismaClient;

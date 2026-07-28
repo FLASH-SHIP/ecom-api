@@ -1,6 +1,6 @@
 import { getCustomerSenderService } from "@ecom/features/di/containers/CustomerSenderService";
-import { authedProcedure } from "../../../../trpc";
 import { z } from "zod";
+import { authedProcedure } from "../../../../trpc";
 
 export const listSenders = authedProcedure.query(async ({ ctx }) => {
   return getCustomerSenderService().listByCustomer(ctx.user.id);

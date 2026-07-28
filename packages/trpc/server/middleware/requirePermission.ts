@@ -1,5 +1,5 @@
-import { middleware } from "../init";
 import { TRPCError } from "@trpc/server";
+import { middleware } from "../init";
 
 /**
  * Middleware factory that enforces one or more permissions on the current user.

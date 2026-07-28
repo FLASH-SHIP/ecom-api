@@ -3,9 +3,9 @@ import { getAuditService } from "@ecom/features/di/containers/AuditService";
 import { getCustomerService } from "@ecom/features/di/containers/CustomerService";
 import { hashPassword } from "@flash-ship/ecom-lib/crypto";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { authedProcedure, requirePermission } from "../../../../trpc";
-import { z } from "zod";
 
 const customerStatusEnum = z.enum(["ACTIVE", "INACTIVE", "BANNED"]);
 const usernameSchema = z.string().regex(USERNAME_REGEX, USERNAME_VALIDATION_MESSAGE).optional();

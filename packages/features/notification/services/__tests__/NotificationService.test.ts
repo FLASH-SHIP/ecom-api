@@ -1,7 +1,7 @@
-import { sendEmail } from "@flash-ship/ecom-emails";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
 import type { UserRepository } from "@ecom/features/rbac/repositories/UserRepository";
 import { prisma } from "@ecom/prisma";
+import { sendEmail } from "@flash-ship/ecom-emails";
 import type { Setting } from "@prisma/client";
 import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";

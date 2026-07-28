@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { getWebhookService } from "@ecom/features/di/containers/WebhookService";
-import { authedProcedure } from "../../../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { authedProcedure } from "../../../../trpc";
 
 export const list = authedProcedure.query(async ({ ctx }) => {
   const service = getWebhookService();

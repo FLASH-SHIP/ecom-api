@@ -1,6 +1,6 @@
+import type { ContentStatus } from "@ecom/prisma";
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
-import type { ContentStatus } from "@ecom/prisma";
 import type { PackingRepository } from "../repositories/PackingRepository";
 
 export interface IPackingServiceDeps {

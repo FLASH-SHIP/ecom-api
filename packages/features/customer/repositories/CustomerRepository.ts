@@ -2,9 +2,9 @@ import {
   MAX_USERNAME_GENERATION_ATTEMPTS,
   USERNAME_REGEX,
 } from "@ecom/features/customer/constants";
+import type { CustomerStatus, Prisma, PrismaClient } from "@ecom/prisma";
 import { generateCustomerCode } from "@flash-ship/ecom-lib";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
-import type { CustomerStatus, Prisma, PrismaClient } from "@ecom/prisma";
 
 export interface CustomerFilters {
   status?: CustomerStatus;

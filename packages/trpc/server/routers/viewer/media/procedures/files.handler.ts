@@ -1,8 +1,8 @@
 import { getMediaFileService } from "@ecom/features/di/containers/MediaService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { authedProcedure, requirePermission } from "../../../../trpc";
-import { z } from "zod";
 
 export const list = authedProcedure
   .use(requirePermission(Permissions.MEDIA_READ))

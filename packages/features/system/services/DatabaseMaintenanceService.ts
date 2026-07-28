@@ -3,11 +3,11 @@ import crypto from "node:crypto";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { Writable } from "node:stream";
+import type { PrismaClient } from "@ecom/prisma";
 import { isDevDiagnosticsBypassEnabled } from "@flash-ship/ecom-lib";
 import { verifyPassword } from "@flash-ship/ecom-lib/crypto";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { getRedisClient } from "@flash-ship/ecom-lib/redis";
-import type { PrismaClient } from "@ecom/prisma";
 
 export type MaintenanceAction =
   | "migrate-deploy"
@@ -192,8 +192,16 @@ export class DatabaseMaintenanceService {
     username: string;
     writeStream: Writable;
   }): Promise<void> {
-    const { action, maintenanceKey, sudoPassword, seedOnly, seedCategory, userId, username, writeStream } =
-      params;
+    const {
+      action,
+      maintenanceKey,
+      sudoPassword,
+      seedOnly,
+      seedCategory,
+      userId,
+      username,
+      writeStream,
+    } = params;
 
     // ── 1. Production Guard ──────────────────────────────────────────────────
     if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {

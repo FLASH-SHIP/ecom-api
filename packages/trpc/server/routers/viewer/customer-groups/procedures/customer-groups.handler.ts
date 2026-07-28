@@ -1,9 +1,9 @@
 import { getCustomerGroupService } from "@ecom/features/di/containers/CustomerService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
-import { auditLog } from "../../../../middleware/auditLog";
-import { authedProcedure, requirePermission } from "../../../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { auditLog } from "../../../../middleware/auditLog";
+import { authedProcedure, requirePermission } from "../../../../trpc";
 
 export const list = authedProcedure
   .use(requirePermission(Permissions.CUSTOMER_GROUPS_READ))

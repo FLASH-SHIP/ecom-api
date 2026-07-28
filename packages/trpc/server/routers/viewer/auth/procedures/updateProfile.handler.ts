@@ -1,11 +1,11 @@
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { getMediaFileService } from "@ecom/features/di/containers/MediaService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { rateLimiters } from "../../../../middleware/rateLimit";
 import { authedProcedure } from "../../../../trpc";
-import { TRPCError } from "@trpc/server";
-import { z } from "zod";
 
 export const updateProfile = authedProcedure
   .use(auditLog({ module: "profile", action: "UPDATE", entityType: "User" }))

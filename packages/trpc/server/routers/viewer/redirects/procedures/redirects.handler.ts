@@ -1,9 +1,9 @@
 import { RedirectRepository } from "@ecom/features/seo/repositories/RedirectRepository";
 import { RedirectService } from "@ecom/features/seo/services/RedirectService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { authedProcedure, requirePermission } from "../../../../trpc";
-import { z } from "zod";
 
 const getRedirectService = () => new RedirectService({ redirectRepo: new RedirectRepository() });
 

@@ -1,8 +1,8 @@
 import { getWebhookService } from "@ecom/features/di/containers/WebhookService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { authedProcedure, requirePermission } from "../../../../trpc";
-import { z } from "zod";
 
 export const listWebhooks = authedProcedure
   .use(requirePermission(Permissions.WEBHOOKS_READ))

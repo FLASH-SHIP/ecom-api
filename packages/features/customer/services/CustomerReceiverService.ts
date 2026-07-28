@@ -1,6 +1,6 @@
+import { runInTransaction } from "@ecom/prisma";
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
-import { runInTransaction } from "@ecom/prisma";
 import type { CustomerReceiverRepository } from "../repositories/CustomerReceiverRepository";
 
 export interface ICustomerReceiverServiceDeps {

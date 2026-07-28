@@ -8,55 +8,24 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "paths": {
-      "@flash-ship/ecom-trpc-types/server/*": [
-        "./server/*"
-      ],
-      "@flash-ship/ecom-trpc-types/server": [
-        "./server/index.ts"
-      ],
-      "@flash-ship/ecom-trpc-types/*": [
-        "./server/*"
-      ],
-      "@flash-ship/ecom-trpc-types": [
-        "./server/index.ts"
-      ],
-      "@flash-ship/ecom-trpc/server/*": [
-        "./server/*"
-      ],
-      "@flash-ship/ecom-trpc/server": [
-        "./server/index.ts"
-      ],
-      "@flash-ship/ecom-trpc/*": [
-        "./server/*"
-      ],
-      "@flash-ship/ecom-trpc": [
-        "./server/index.ts"
-      ],
-      "@ecom/trpc/*": [
-        "./server/*"
-      ],
-      "@ecom/trpc": [
-        "./server/index.ts"
-      ],
-      "@ecom/features/*": [
-        "../features/*"
-      ],
-      "@ecom/prisma": [
-        "../prisma/src"
-      ],
-      "@ecom/prisma/*": [
-        "../prisma/*"
-      ]
+      "@flash-ship/ecom-trpc-types/server/*": ["./server/*"],
+      "@flash-ship/ecom-trpc-types/server": ["./server/index.ts"],
+      "@flash-ship/ecom-trpc-types/*": ["./server/*"],
+      "@flash-ship/ecom-trpc-types": ["./server/index.ts"],
+      "@flash-ship/ecom-trpc/server/*": ["./server/*"],
+      "@flash-ship/ecom-trpc/server": ["./server/index.ts"],
+      "@flash-ship/ecom-trpc/*": ["./server/*"],
+      "@flash-ship/ecom-trpc": ["./server/index.ts"],
+      "@ecom/trpc/*": ["./server/*"],
+      "@ecom/trpc": ["./server/index.ts"],
+      "@ecom/features/*": ["../features/*"],
+      "@ecom/prisma": ["../prisma/src"],
+      "@ecom/prisma/*": ["../prisma/*"]
     },
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": [
-    "server/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["server/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

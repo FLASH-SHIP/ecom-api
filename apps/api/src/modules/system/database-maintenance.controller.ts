@@ -40,7 +40,10 @@ interface DiagnosticsAuthBody {
   level?: string;
 }
 
-async function authenticateDownloadRequest(req: Request, queryToken: string): Promise<AuthenticatedUser> {
+async function authenticateDownloadRequest(
+  req: Request,
+  queryToken: string,
+): Promise<AuthenticatedUser> {
   if (process.env.NODE_ENV === "production" && !isDevDiagnosticsBypassEnabled()) {
     throw new ForbiddenException(
       "Download endpoint is strictly disabled on production environments.",
@@ -283,7 +286,10 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get server process and resource status" })
-  async getProcessStatus(@Body() body: DiagnosticsAuthBody, @CurrentUser() user: AuthenticatedUser) {
+  async getProcessStatus(
+    @Body() body: DiagnosticsAuthBody,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     // Log action to AuditLog
     const auditService = getAuditService();
     await auditService.logAction({
@@ -414,7 +420,10 @@ export class DatabaseMaintenanceController {
   @RequirePermissions(Permissions.SYSTEM_MANAGE)
   @ApiBearerAuth()
   @ApiOperation({ summary: "Get database sizing and table statistics" })
-  async getDatabaseStats(@Body() body: DiagnosticsAuthBody, @CurrentUser() user: AuthenticatedUser) {
+  async getDatabaseStats(
+    @Body() body: DiagnosticsAuthBody,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     const auditService = getAuditService();
     await auditService.logAction({
       userId: user.id,

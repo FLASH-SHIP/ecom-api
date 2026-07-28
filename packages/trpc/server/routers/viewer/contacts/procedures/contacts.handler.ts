@@ -1,8 +1,8 @@
 import { getContactService } from "@ecom/features/di/containers/ContactService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { authedProcedure, requirePermission } from "../../../../trpc";
-import { z } from "zod";
 
 const statusEnum = z.enum(["new", "read", "replied", "archived"]);
 

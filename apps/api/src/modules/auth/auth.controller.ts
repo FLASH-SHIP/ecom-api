@@ -1,5 +1,5 @@
-import { AUTH } from "@flash-ship/ecom-config";
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
+import { AUTH } from "@flash-ship/ecom-config";
 import { signAccessToken, signRefreshToken } from "@flash-ship/ecom-lib/jwt";
 import {
   Body,

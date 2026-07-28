@@ -1,7 +1,5 @@
 import { eventBus } from "@ecom/features/events/EventBus";
 import type { RateCardService } from "@ecom/features/rate-card/services/RateCardService";
-import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
-import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import {
   type ActorType,
   LabelStatus,
@@ -11,6 +9,8 @@ import {
   type ShippingMethod,
   type ShippingOrigin,
 } from "@ecom/prisma";
+import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import {
   mapToCustomerOrderDetailResponse,
   mapToCustomerOrderSummaryResponse,

@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
 import { getApiKeyRepository } from "@ecom/features/di/containers/AuthService";
-import { authedProcedure } from "../../../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { authedProcedure } from "../../../../trpc";
 
 export const list = authedProcedure.query(async ({ ctx }) => {
   const repo = getApiKeyRepository();

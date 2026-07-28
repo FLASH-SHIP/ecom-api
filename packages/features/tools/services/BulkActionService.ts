@@ -1,5 +1,5 @@
-import { createLogger } from "@flash-ship/ecom-lib/logger";
 import type { PrismaClient } from "@ecom/prisma";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 
 const log = createLogger("BulkActionService");
 

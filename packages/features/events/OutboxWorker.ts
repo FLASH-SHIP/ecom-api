@@ -1,7 +1,7 @@
-import { lockManager } from "@flash-ship/ecom-lib/lock";
-import { createLogger } from "@flash-ship/ecom-lib/logger";
 import type { ExtendedPrismaClient } from "@ecom/prisma";
 import { prisma } from "@ecom/prisma";
+import { lockManager } from "@flash-ship/ecom-lib/lock";
+import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { eventBus } from "./EventBus";
 
 const log = createLogger("OutboxWorker");

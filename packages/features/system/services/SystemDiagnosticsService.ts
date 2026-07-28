@@ -8,11 +8,11 @@ import { join } from "node:path";
 import readline from "node:readline";
 import type { Writable } from "node:stream";
 import { createGunzip } from "node:zlib";
+import type { PrismaClient } from "@ecom/prisma";
 import { isDevDiagnosticsBypassEnabled } from "@flash-ship/ecom-lib";
 import { verifyPassword } from "@flash-ship/ecom-lib/crypto";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { getRedisClient } from "@flash-ship/ecom-lib/redis";
-import type { PrismaClient } from "@ecom/prisma";
 
 export interface ISystemDiagnosticsServiceDeps {
   prisma: PrismaClient;

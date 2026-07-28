@@ -1,9 +1,9 @@
 import { spawn } from "node:child_process";
 import { Writable } from "node:stream";
+import type { PrismaClient } from "@ecom/prisma";
 import { verifyPassword } from "@flash-ship/ecom-lib/crypto";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { getRedisClient } from "@flash-ship/ecom-lib/redis";
-import type { PrismaClient } from "@ecom/prisma";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DatabaseMaintenanceService } from "../services/DatabaseMaintenanceService";
 

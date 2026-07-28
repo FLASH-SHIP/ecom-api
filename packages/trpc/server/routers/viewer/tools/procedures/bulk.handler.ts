@@ -1,8 +1,8 @@
 import { getBulkActionService } from "@ecom/features/di/containers/ToolsService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { authedProcedure, requirePermission } from "../../../../trpc";
-import { z } from "zod";
 
 const idsInput = z.object({
   ids: z.array(z.number().int().positive()).min(1).max(100),

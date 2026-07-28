@@ -1,9 +1,9 @@
 import { ContentTemplateRepository } from "@ecom/features/template/repositories/ContentTemplateRepository";
 import { ContentTemplateService } from "@ecom/features/template/services/ContentTemplateService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
+import { z } from "zod";
 import { auditLog } from "../../../../middleware/auditLog";
 import { authedProcedure, requirePermission } from "../../../../trpc";
-import { z } from "zod";
 
 const getTemplateService = () =>
   new ContentTemplateService({ templateRepo: new ContentTemplateRepository() });

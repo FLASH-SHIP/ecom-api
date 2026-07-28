@@ -1,9 +1,9 @@
 import { getPartnerService } from "@ecom/features/di/containers/PartnerContainer";
-import { Permissions } from "@flash-ship/ecom-lib/permissions";
 import { PartnerStatus, Prisma, prisma, ServiceType } from "@ecom/prisma";
-import { authedProcedure, requirePermission } from "../../../../trpc";
+import { Permissions } from "@flash-ship/ecom-lib/permissions";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { authedProcedure, requirePermission } from "../../../../trpc";
 
 const partnerStatusSchema = z.nativeEnum(PartnerStatus);
 const serviceTypeSchema = z.nativeEnum(ServiceType);

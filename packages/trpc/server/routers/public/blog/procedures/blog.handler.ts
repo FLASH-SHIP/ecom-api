@@ -11,9 +11,9 @@ import {
   overlayPostTranslations,
   overlayTagTranslations,
 } from "@ecom/features/translation/services/TranslationOverlay";
+import { z } from "zod";
 import { rateLimiters } from "../../../../middleware/rateLimit";
 import { publicProcedure } from "../../../../trpc";
-import { z } from "zod";
 
 export const listPosts = publicProcedure
   .use(rateLimiters.publicApi)

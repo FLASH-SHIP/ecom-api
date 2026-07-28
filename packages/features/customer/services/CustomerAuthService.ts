@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
 import type { NotificationService } from "@ecom/features/notification/services/NotificationService";
+import { runInTransaction } from "@ecom/prisma";
 import { hashPassword, verifyPassword } from "@flash-ship/ecom-lib/crypto";
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { RedisCache, RedisRateLimiter } from "@flash-ship/ecom-lib/redis";
-import { runInTransaction } from "@ecom/prisma";
 import jwt from "jsonwebtoken";
 import { CustomerTokenService } from "./CustomerTokenService";
 

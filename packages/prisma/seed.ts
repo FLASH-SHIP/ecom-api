@@ -10,8 +10,8 @@
  *   ALLOW_PROD_SEED=1 NODE_ENV=production yarn prisma:seed → explicit override
  */
 
-import dotenv from "dotenv";
 import path from "node:path";
+import dotenv from "dotenv";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
@@ -69,15 +69,18 @@ async function main() {
   }
 
   if (seeders.length === 0) {
-    console.error(`❌ No seeders match filters (SEED_ONLY="${only ?? ""}", SEED_CATEGORY="${category ?? ""}")`);
-    console.error(`   Available: ${SEEDERS.map((s) => `${s.name} [${s.category ?? "core"}]`).join(", ")}`);
+    console.error(
+      `❌ No seeders match filters (SEED_ONLY="${only ?? ""}", SEED_CATEGORY="${category ?? ""}")`,
+    );
+    console.error(
+      `   Available: ${SEEDERS.map((s) => `${s.name} [${s.category ?? "core"}]`).join(", ")}`,
+    );
     process.exit(1);
   }
 
-  const filterInfo = [
-    category ? `category: "${category}"` : null,
-    only ? `name: "${only}"` : null,
-  ].filter(Boolean).join(", ");
+  const filterInfo = [category ? `category: "${category}"` : null, only ? `name: "${only}"` : null]
+    .filter(Boolean)
+    .join(", ");
 
   console.log(`🌱 Seeding [${env}]${filterInfo ? ` — ${filterInfo}` : ""}`);
   console.log(`   Running ${seeders.length}/${SEEDERS.length} seeders\n`);

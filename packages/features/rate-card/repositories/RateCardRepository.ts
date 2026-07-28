@@ -1,4 +1,3 @@
-import { normalizePagination, paginate } from "@flash-ship/ecom-lib/pagination";
 import type {
   ContentStatus,
   PrismaClient,
@@ -6,6 +5,7 @@ import type {
   RateItemType,
   ShippingMethod,
 } from "@ecom/prisma";
+import { normalizePagination, paginate } from "@flash-ship/ecom-lib/pagination";
 
 export interface CreateRateCardInput {
   code: string;

@@ -1,6 +1,6 @@
 import { getCustomerPackageService } from "@ecom/features/di/containers/CustomerPackageService";
-import { authedProcedure } from "../../../../trpc";
 import { z } from "zod";
+import { authedProcedure } from "../../../../trpc";
 
 export const listPackages = authedProcedure.query(async ({ ctx }) => {
   return getCustomerPackageService().listByCustomer(ctx.user.id);

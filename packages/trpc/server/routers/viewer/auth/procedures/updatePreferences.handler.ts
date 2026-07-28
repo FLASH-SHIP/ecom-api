@@ -1,8 +1,8 @@
 import { getAuthService } from "@ecom/features/di/containers/AuthService";
 import { Permissions } from "@flash-ship/ecom-lib/permissions";
-import { authedProcedure } from "../../../../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { authedProcedure } from "../../../../trpc";
 
 /**
  * Update preferences (theme, locale) for any user.
