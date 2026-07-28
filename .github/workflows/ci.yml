@@ -176,7 +176,7 @@ jobs:
         working-directory: ecom-api
 
       - name: Migrate Database
-        run: yarn prisma migrate deploy
+        run: yarn workspace @ecom/prisma npx prisma migrate deploy
         working-directory: ecom-api
 
       - name: Run lib tests
