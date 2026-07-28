@@ -48,6 +48,12 @@ jobs:
   type-check:
     name: Type Check
     runs-on: ubuntu-latest
+    env:
+      TZ: UTC
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ecom_test
+      REDIS_URL: redis://localhost:6379
+      NEXTAUTH_SECRET: test-secret
+      JWT_SECRET: test-jwt-secret
     steps:
       - name: Checkout ecom-api
         uses: actions/checkout@v4
@@ -162,6 +168,12 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [lint, type-check]
+    env:
+      TZ: UTC
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ecom_test
+      REDIS_URL: redis://localhost:6379
+      NEXTAUTH_SECRET: test-secret
+      JWT_SECRET: test-jwt-secret
     steps:
       - name: Checkout ecom-api
         uses: actions/checkout@v4
