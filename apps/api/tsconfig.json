@@ -2,20 +2,22 @@
   "extends": "@flash-ship/ecom-tsconfig/nestjs.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "../..",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "baseUrl": "./",
     "paths": {
-      "@flash-ship/ecom-lib/*": ["../packages/lib/src/*"],
-      "@flash-ship/ecom-config": ["../packages/config/src/index.ts"],
-      "@flash-ship/ecom-types": ["../packages/types/src/index.ts"],
-      "@ecom/features/*": ["../packages/features/*"],
-      "@ecom/prisma": ["../packages/prisma/src/index.ts"],
-      "@flash-ship/ecom-trpc/*": ["../packages/trpc/*"],
-      "@flash-ship/ecom-trpc": ["../packages/trpc/server/index.ts"],
-      "@ecom/trpc/*": ["../packages/trpc/*"],
-      "@ecom/trpc": ["../packages/trpc/server/index.ts"]
+      "@flash-ship/ecom-lib/*": ["../../packages/lib/src/*"],
+      "@flash-ship/ecom-config": ["../../packages/config/src/index.ts"],
+      "@flash-ship/ecom-types": ["../../packages/types/src/index.ts"],
+      "@ecom/features/*": ["../../packages/features/*"],
+      "@ecom/prisma": ["../../packages/prisma/src/index.ts"],
+      "@flash-ship/ecom-trpc-types/*": ["../../packages/trpc/server/*"],
+      "@flash-ship/ecom-trpc-types": ["../../packages/trpc/server/index.ts"],
+      "@flash-ship/ecom-trpc/*": ["../../packages/trpc/server/*"],
+      "@flash-ship/ecom-trpc": ["../../packages/trpc/server/index.ts"],
+      "@ecom/trpc/*": ["../../packages/trpc/server/*"],
+      "@ecom/trpc": ["../../packages/trpc/server/index.ts"]
     }
   },
   "include": ["src/**/*.ts"],

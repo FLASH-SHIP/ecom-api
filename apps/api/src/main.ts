@@ -198,7 +198,7 @@ async function bootstrap() {
   app.use(compression());
 
   const trpcExpress = await import("@trpc/server/adapters/express");
-  const { appRouter, createContext } = await import("@flash-ship/ecom-trpc/server");
+  const { appRouter, createContext } = await import("@flash-ship/ecom-trpc-types/server");
 
   app.use(
     "/api/trpc",

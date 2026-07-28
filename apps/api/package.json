@@ -26,7 +26,7 @@
     "@flash-ship/ecom-config": "portal:../../../ecom-shared-packages/packages/config",
     "@flash-ship/ecom-i18n": "portal:../../../ecom-shared-packages/packages/i18n",
     "@flash-ship/ecom-lib": "portal:../../../ecom-shared-packages/packages/lib",
-    "@flash-ship/ecom-trpc": "portal:../../../ecom-shared-packages/packages/trpc",
+    "@flash-ship/ecom-trpc-types": "workspace:*",
     "@flash-ship/ecom-types": "portal:../../../ecom-shared-packages/packages/types",
     "@nestjs/common": "^11.1.0",
     "@nestjs/config": "^4.0.0",
