@@ -1,13 +1,6 @@
 name: Publish tRPC Types to GitHub Packages
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'packages/trpc/**'
-      - 'packages/prisma/**'
-      - 'packages/features/**'
   workflow_dispatch:
 
 jobs:
