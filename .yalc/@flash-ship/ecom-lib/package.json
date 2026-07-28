@@ -1,7 +1,6 @@
 {
   "name": "@flash-ship/ecom-lib",
   "version": "0.0.0",
-  "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -34,5 +33,9 @@
     "ioredis": "^5.11.0",
     "jsonwebtoken": "^9.0.0"
   },
-  "yalcSig": "162f5441c45700f7d89329411bb284f5"
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "yalcSig": "5b1633967d609b224258fca823a63240"
 }

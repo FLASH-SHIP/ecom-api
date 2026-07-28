@@ -1,7 +1,6 @@
 {
   "name": "@flash-ship/ecom-trpc",
   "version": "1.0.0",
-  "private": true,
   "main": "./server/index.ts",
   "types": "./server/index.ts",
   "exports": {
@@ -45,5 +44,9 @@
     "superjson": "^2.2.0",
     "zod": "^4.4.3"
   },
-  "yalcSig": "4e67f8b52875db01ea90f3272e70c7e2"
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "yalcSig": "8bed8eb1256a7a7917240761c66fa00e"
 }

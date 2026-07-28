@@ -1,7 +1,6 @@
 {
   "name": "@flash-ship/ecom-i18n",
   "version": "0.0.0",
-  "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -15,5 +14,9 @@
   "dependencies": {
     "next-intl": "^4.1.0"
   },
-  "yalcSig": "d22532df007a0f38e95bdeb7a0d9e162"
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "yalcSig": "815cb79d4c2dfd9fca34e293bc02a363"
 }

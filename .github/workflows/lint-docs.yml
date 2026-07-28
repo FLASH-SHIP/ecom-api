@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Run Markdown Lint CLI
         run: npx -y markdownlint-cli --ignore-path .markdownlintignore "**/*.md"

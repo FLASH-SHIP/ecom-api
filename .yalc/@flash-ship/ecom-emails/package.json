@@ -1,7 +1,6 @@
 {
   "name": "@flash-ship/ecom-emails",
   "version": "0.0.0",
-  "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
@@ -11,5 +10,9 @@
   "dependencies": {
     "nodemailer": "^8.0.10"
   },
-  "yalcSig": "2a0acdc76e3f15333d65249e72800232"
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "yalcSig": "ae29a84689f08d396ffb3bf804abf01c"
 }
