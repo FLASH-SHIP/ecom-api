@@ -58,12 +58,18 @@ jobs:
 
       - name: Auto-Bump Version if Conflict & Publish
         run: |
+          echo "@flash-ship:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> .npmrc
+
           cd packages/trpc
           PKG_NAME=$(node -p "require('./package.json').name")
           CURRENT_VER=$(node -p "require('./package.json').version")
-          EXISTS=$(npm view "${PKG_NAME}@${CURRENT_VER}" version --registry=https://npm.pkg.github.com 2>/dev/null || echo "")
+          
+          echo "Checking if $PKG_NAME@$CURRENT_VER exists on GitHub Packages..."
+          EXISTS=$(npm view "${PKG_NAME}@${CURRENT_VER}" version 2>/dev/null || echo "")
+          
           if [ -n "$EXISTS" ]; then
-            echo "Version $CURRENT_VER for $PKG_NAME already exists on GitHub Packages. Auto-bumping patch version via Node..."
+            echo "Version $CURRENT_VER for $PKG_NAME already exists. Auto-bumping patch version..."
             node -e "
               const fs = require('fs');
               const pkgPath = './package.json';
