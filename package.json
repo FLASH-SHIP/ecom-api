@@ -11,6 +11,7 @@
     "dev:api": "turbo run dev --filter=@ecom/api",
     "build": "turbo run build",
     "type-check": "turbo run type-check",
+    "export:types": "yarn workspace @flash-ship/ecom-trpc-types build",
     "type-check:ci": "yarn db:check-drift && turbo run type-check --force",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
