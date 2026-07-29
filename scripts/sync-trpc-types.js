@@ -76,16 +76,16 @@ function scanImports(dir) {
 scanImports(srcDir);
 
 let stubContent = `// Auto-generated type stubs for backend feature containers\n`;
-stubContent += `declare const _stub: unknown;\nexport default _stub;\n`;
+stubContent += `declare const _stub: any;\nexport default _stub;\n`;
 for (const sym of Array.from(exportedSymbols).sort()) {
-  stubContent += `export declare const ${sym}: unknown;\nexport type ${sym} = unknown;\n`;
+  stubContent += `export declare const ${sym}: any;\nexport type ${sym} = any;\n`;
 }
 
 stubContent += `\nexport namespace Prisma {\n`;
 for (const pt of Array.from(prismaTypes).sort()) {
-  stubContent += `  export type ${pt} = unknown;\n  export declare const ${pt}: unknown;\n`;
+  stubContent += `  export type ${pt} = any;\n  export declare const ${pt}: any;\n`;
 }
-stubContent += `}\nexport declare const Prisma: unknown;\n`;
+stubContent += `}\nexport declare const Prisma: any;\n`;
 
 fs.mkdirSync(path.dirname(stubFile), { recursive: true });
 fs.writeFileSync(stubFile, stubContent, "utf-8");

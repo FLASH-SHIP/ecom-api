@@ -234,12 +234,6 @@ export const create = authedProcedure
     return created;
   });
 
-// 5. Update rate card (Admin authed)
-export const update = authedProcedure
-  .use(requirePermission(Permissions.RATES_UPDATE))
-  .use(auditLog({ module: "rateCards", action: "UPDATE", entityType: "RateCard" }))
-  .input(
-    z.object({
 function validateUpdateRateCardDates(
   rateService: ReturnType<typeof getRateCardService>,
   data: { startDate?: Date | null; endDate?: Date | null; type?: string },
