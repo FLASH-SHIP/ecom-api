@@ -28,8 +28,6 @@ const rateItemTypeSchema = z.nativeEnum(RateItemType);
 type RateCardRepo = ReturnType<typeof getRateCardRepository>;
 type RateCardService = ReturnType<typeof getRateCardService>;
 
-const DEFAULT_RATE_CARD_CODES = ["epacket.default.us", "express.default.us"];
-
 async function checkDuplicateCode(
   rateRepo: RateCardRepo,
   code: string | undefined,
@@ -47,7 +45,6 @@ async function checkDuplicateCode(
 }
 
 async function validateAndPublish(
-  rateRepo: RateCardRepo,
   rateService: RateCardService,
   id: number,
   status: ContentStatus | undefined,
@@ -57,9 +54,6 @@ async function validateAndPublish(
     try {
       await rateService.validatePublishingConstraints(id);
     } catch (error) {
-      if (status === "PUBLISHED") {
-        await rateRepo.update(id, { status: "DRAFT" });
-      }
       throw new TRPCError({
         code: "CONFLICT",
         message: error instanceof Error ? error.message : "Trùng lặp thời gian hiệu lực.",
@@ -166,8 +160,15 @@ export const create = authedProcedure
   .use(auditLog({ module: "rateCards", action: "CREATE", entityType: "RateCard" }))
   .input(
     z.object({
-      code: z.string().min(3).max(100),
-      name: z.string().min(3).max(200),
+      code: z
+        .string()
+        .min(3, "Mã bảng giá cước phải có ít nhất 3 ký tự.")
+        .max(100, "Mã bảng giá cước không được vượt quá 100 ký tự.")
+        .regex(/^[a-zA-Z0-9._-]+$/, "Mã bảng giá cước chỉ được chứa chữ không dấu, số, '.', '_' và '-'."),
+      name: z
+        .string()
+        .min(3, "Tên bảng giá cước phải có ít nhất 3 ký tự.")
+        .max(200, "Tên bảng giá cước không được vượt quá 200 ký tự."),
       type: rateCardTypeSchema.default("DEFAULT"),
       shippingMethod: shippingMethodSchema,
       country: z.string().min(2).max(10).default("US"),
@@ -176,7 +177,9 @@ export const create = authedProcedure
       weightStep: z.number().positive(),
       minWeight: z.number().nonnegative(),
       maxWeight: z.number().positive(),
-      startDate: z.coerce.date().nullable().optional(),
+      startDate: z.coerce.date({
+        message: "Vui lòng chọn ngày bắt đầu hiệu lực.",
+      }),
       endDate: z.coerce.date().nullable().optional(),
       customerGroupIds: z.array(z.number().int().positive()).optional(),
     }),
@@ -208,6 +211,16 @@ export const create = authedProcedure
     const finalEndDate = input.type === "DEFAULT" ? null : input.endDate;
     const finalGroupIds = input.type === "DEFAULT" ? [] : input.customerGroupIds;
 
+    // Validate endDate is not in past and >= startDate
+    try {
+      rateService.validateDateRange(input.startDate, finalEndDate);
+    } catch (err) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: err instanceof Error ? err.message : "Thời gian hiệu lực không hợp lệ.",
+      });
+    }
+
     const created = await rateRepo.create({
       ...input,
       status: "DRAFT", // Always default to DRAFT on creation
@@ -228,8 +241,17 @@ export const update = authedProcedure
   .input(
     z.object({
       id: z.number().int().positive(),
-      code: z.string().min(3).max(100).optional(),
-      name: z.string().min(3).max(200).optional(),
+      code: z
+        .string()
+        .min(3, "Mã bảng giá cước phải có ít nhất 3 ký tự.")
+        .max(100, "Mã bảng giá cước không được vượt quá 100 ký tự.")
+        .regex(/^[a-zA-Z0-9._-]+$/, "Mã bảng giá cước chỉ được chứa chữ không dấu, số, '.', '_' và '-'.")
+        .optional(),
+      name: z
+        .string()
+        .min(3, "Tên bảng giá cước phải có ít nhất 3 ký tự.")
+        .max(200, "Tên bảng giá cước không được vượt quá 200 ký tự.")
+        .optional(),
       type: rateCardTypeSchema.optional(),
       shippingMethod: shippingMethodSchema.optional(),
       country: z.string().min(2).max(10).optional(),
@@ -271,18 +293,21 @@ export const update = authedProcedure
       }
     }
 
-    const isDefaultCard = DEFAULT_RATE_CARD_CODES.includes(card.code);
-    if (isDefaultCard && data.code !== undefined && data.code !== card.code) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Không thể thay đổi mã của bảng giá cước mặc định hệ thống.",
-      });
-    }
 
     await checkDuplicateCode(rateRepo, data.code, card.code);
 
     const effectiveType = data.type ?? card.type;
-    const finalEndDate = effectiveType === "DEFAULT" ? null : data.endDate;
+    const finalEndDate = effectiveType === "DEFAULT" ? null : (data.endDate !== undefined ? data.endDate : card.endDate);
+    const finalStartDate = data.startDate !== undefined ? data.startDate : card.startDate;
+
+    try {
+      rateService.validateDateRange(finalStartDate, finalEndDate);
+    } catch (err) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: err instanceof Error ? err.message : "Thời gian hiệu lực không hợp lệ.",
+      });
+    }
 
     const updated = await rateRepo.update(id, {
       ...data,
@@ -343,7 +368,7 @@ export const approve = authedProcedure
     }
 
     // Validate publishing constraints & overlaps
-    await validateAndPublish(rateRepo, rateService, input.id, "PUBLISHED", card.status);
+    await validateAndPublish(rateService, input.id, "PUBLISHED", card.status);
 
     // Atomic transaction for approving card & archiving previous active DEFAULT card
     const updated = await rateService.onDefaultCardApproved({
@@ -390,6 +415,7 @@ export const checkOverlap = authedProcedure
   .input(
     z.object({
       excludeId: z.number().int().positive().optional(),
+      type: rateCardTypeSchema.optional(),
       shippingMethod: shippingMethodSchema,
       country: z.string().min(2).max(10),
       origin: z.string().min(2).max(10).optional().nullable(),
@@ -402,6 +428,7 @@ export const checkOverlap = authedProcedure
     const rateRepo = getRateCardRepository();
     const overlaps = await rateRepo.findOverlappingRateCards({
       excludeId: input.excludeId,
+      type: input.type,
       shippingMethod: input.shippingMethod,
       country: input.country,
       origin: input.origin ?? null,
@@ -442,6 +469,27 @@ export const assignGroups = authedProcedure
       });
     }
 
+    if (card.status === "PUBLISHED" && input.customerGroupIds.length > 0) {
+      const overlaps = await rateRepo.findOverlappingRateCards({
+        excludeId: card.id,
+        type: card.type,
+        shippingMethod: card.shippingMethod,
+        country: card.country,
+        origin: card.origin,
+        customerGroupIds: input.customerGroupIds,
+        startDate: card.startDate,
+        endDate: card.endDate,
+      });
+
+      if (overlaps.length > 0) {
+        const conflictList = overlaps.map((o) => `"${o.code}"`).join(", ");
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Không thể gán nhóm khách hàng này vì trùng lặp khoảng thời gian hiệu lực với bảng giá đang hoạt động: ${conflictList}.`,
+        });
+      }
+    }
+
     const updated = await rateRepo.update(input.id, {
       customerGroupIds: input.customerGroupIds,
     });
@@ -463,13 +511,6 @@ export const remove = authedProcedure
       throw new TRPCError({ code: "NOT_FOUND", message: "Bảng giá cước không tồn tại." });
     }
 
-    const isDefaultCard = DEFAULT_RATE_CARD_CODES.includes(card.code);
-    if (isDefaultCard) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Không thể xóa bảng giá cước mặc định của hệ thống.",
-      });
-    }
 
     if (card.status !== "DRAFT" && card.status !== "REJECTED") {
       throw new TRPCError({
@@ -504,6 +545,18 @@ export const listLogs = authedProcedure
     const rateRepo = getRateCardRepository();
     return await rateRepo.findAuditLogs(input.id);
   });
+
+function buildSlabsAuditMap(
+  items: Array<{ startWeight: unknown; endWeight: unknown; rateType: string; amount: unknown }>,
+  currency?: string | null,
+): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const item of items) {
+    const key = `Nấc ${item.startWeight}kg - ${item.endWeight}kg (${item.rateType})`;
+    map[key] = `${item.amount} ${currency || "USD"}`;
+  }
+  return map;
+}
 
 // 8. Import slabs list (Admin authed)
 export const importSlabs = authedProcedure
@@ -542,17 +595,8 @@ export const importSlabs = authedProcedure
     }
 
     // Generate change maps for auditing
-    const oldSlabsMap: Record<string, string> = {};
-    for (const item of card.items) {
-      const key = `Nấc ${item.startWeight}kg - ${item.endWeight}kg (${item.rateType})`;
-      oldSlabsMap[key] = `${item.amount} ${card.currency || "USD"}`;
-    }
-
-    const newSlabsMap: Record<string, string> = {};
-    for (const item of input.slabs) {
-      const key = `Nấc ${item.startWeight}kg - ${item.endWeight}kg (${item.rateType})`;
-      newSlabsMap[key] = `${item.amount} ${card.currency || "USD"}`;
-    }
+    const oldSlabsMap = buildSlabsAuditMap(card.items, card.currency);
+    const newSlabsMap = buildSlabsAuditMap(input.slabs, card.currency);
 
     const hasChanges = JSON.stringify(oldSlabsMap) !== JSON.stringify(newSlabsMap);
 

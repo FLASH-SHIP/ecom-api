@@ -42,7 +42,6 @@ import {
   VerificationCodeStatus,
 } from "./generated/prisma/client";
 
-console.log("DATABASE_URL in prisma package index.ts:", process.env.DATABASE_URL);
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
   max: Number(process.env.DATABASE_POOL_MAX) || 10,

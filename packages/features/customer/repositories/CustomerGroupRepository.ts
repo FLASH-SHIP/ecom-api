@@ -153,6 +153,7 @@ export class CustomerGroupRepository {
 
     if (search) {
       where.OR = [
+        { customerCode: { contains: search, mode: "insensitive" } },
         { email: { contains: search, mode: "insensitive" } },
         { username: { contains: search, mode: "insensitive" } },
         { name: { contains: search, mode: "insensitive" } },
@@ -167,6 +168,7 @@ export class CustomerGroupRepository {
           id: true,
           email: true,
           username: true,
+          customerCode: true,
           name: true,
           phone: true,
           groupId: true,
@@ -195,6 +197,7 @@ export class CustomerGroupRepository {
       where.AND = [
         {
           OR: [
+            { customerCode: { contains: search, mode: "insensitive" } },
             { email: { contains: search, mode: "insensitive" } },
             { username: { contains: search, mode: "insensitive" } },
             { name: { contains: search, mode: "insensitive" } },
@@ -210,6 +213,7 @@ export class CustomerGroupRepository {
         id: true,
         email: true,
         username: true,
+        customerCode: true,
         name: true,
         phone: true,
         groupId: true,

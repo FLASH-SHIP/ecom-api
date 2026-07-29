@@ -407,6 +407,29 @@ export class RateCardRepository {
   async create(data: CreateRateCardInput) {
     const { customerGroupIds, ...cardData } = data;
 
+    const slabs: { startWeight: number; endWeight: number; rateType: RateItemType; amount: number }[] = [];
+    const minW = data.minWeight;
+    const maxW = data.maxWeight;
+    const step = data.weightStep;
+
+    if (step > 0 && maxW > minW) {
+      let curr = Number(minW.toFixed(3));
+      const targetMax = Number(maxW.toFixed(3));
+      const stepVal = Number(step.toFixed(3));
+
+      while (curr < targetMax) {
+        let next = Number((curr + stepVal).toFixed(3));
+        if (next > targetMax) next = targetMax;
+        slabs.push({
+          startWeight: curr,
+          endWeight: next,
+          rateType: "STEP_FIXED",
+          amount: 0,
+        });
+        curr = next;
+      }
+    }
+
     return this.prisma.rateCard.create({
       data: {
         ...cardData,
@@ -415,6 +438,11 @@ export class RateCardRepository {
             create: customerGroupIds.map((customerGroupId) => ({
               customerGroupId,
             })),
+          },
+        }),
+        ...(slabs.length > 0 && {
+          items: {
+            create: slabs,
           },
         }),
       },
@@ -677,20 +705,39 @@ export class RateCardRepository {
   // Find other published rate cards that could overlap
   async findOverlappingRateCards(params: {
     excludeId?: number;
+    type?: RateCardType;
     shippingMethod: ShippingMethod;
     country: string;
     origin: string | null;
-    customerGroupIds: number[];
+    customerGroupIds?: number[];
     startDate?: Date | null;
     endDate?: Date | null;
   }) {
-    const { excludeId, shippingMethod, country, origin, customerGroupIds, startDate, endDate } =
-      params;
+    const {
+      excludeId,
+      type,
+      shippingMethod,
+      country,
+      origin,
+      customerGroupIds = [],
+      startDate,
+      endDate,
+    } = params;
+
+    if (type === "CUSTOM" && customerGroupIds.length === 0) {
+      return [];
+    }
+
+    const typeCondition = type ? { type } : {};
 
     const groupCondition =
-      customerGroupIds.length > 0
+      type === "CUSTOM"
         ? { groups: { some: { customerGroupId: { in: customerGroupIds } } } }
-        : { groups: { none: {} } };
+        : type === "DEFAULT"
+          ? { groups: { none: {} } }
+          : customerGroupIds.length > 0
+            ? { groups: { some: { customerGroupId: { in: customerGroupIds } } } }
+            : {};
 
     const startLimit = startDate ?? new Date(0);
     const endLimit = endDate ?? new Date(253402300799000);
@@ -701,6 +748,7 @@ export class RateCardRepository {
       { country },
       { origin },
       { status: "PUBLISHED" as ContentStatus },
+      typeCondition,
       groupCondition,
     ].filter((c) => Object.values(c)[0] !== undefined) as Record<string, unknown>[];
 

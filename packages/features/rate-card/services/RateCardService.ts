@@ -60,6 +60,36 @@ export class RateCardService {
   }
 
   /**
+   * Validates that endDate is not in the past and is >= startDate.
+   */
+  validateDateRange(startDate?: Date | null, endDate?: Date | null) {
+    if (endDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(0, 0, 0, 0);
+      if (end < today) {
+        throw new ErrorWithCode(
+          ErrorCode.RateCardValidationError,
+          "Ngày kết thúc hiệu lực không được ở trong quá khứ.",
+          422,
+        );
+      }
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        if (end < start) {
+          throw new ErrorWithCode(
+            ErrorCode.RateCardValidationError,
+            "Ngày kết thúc hiệu lực phải lớn hơn hoặc bằng ngày bắt đầu hiệu lực.",
+            422,
+          );
+        }
+      }
+    }
+  }
+
+  /**
    * Called when a Default rate card is approved and published.
    * Automatically archives previous active Default rate card for same method/country/origin.
    */
@@ -370,7 +400,7 @@ export class RateCardService {
     if (!new Decimal(current.startWeight).eq(new Decimal(prev.endWeight))) {
       throw new ErrorWithCode(
         ErrorCode.RateCardValidationError,
-        `Khoảng cân không liên tục: nấc tiếp theo bắt đầu từ ${current.startWeight}kg nhưng nấc trước kết thúc ở ${prev.endWeight}kg.`,
+        `Khoảng cân không liên tục: nấc [${current.startWeight} -> ${current.endWeight}kg] bắt đầu từ ${current.startWeight}kg nhưng nấc trước [${prev.startWeight} -> ${prev.endWeight}kg] kết thúc ở ${prev.endWeight}kg.`,
         422,
       );
     }
@@ -386,9 +416,11 @@ export class RateCardService {
       current.rateType === "RANGE_PER_KG" ? currentStartWeight.mul(currentAmount) : currentAmount;
 
     if (currentMinCost.lt(prevMaxCost)) {
+      const prevLabel = `[${prev.startWeight} -> ${prev.endWeight}kg]`;
+      const currentLabel = `[${current.startWeight} -> ${current.endWeight}kg]`;
       throw new ErrorWithCode(
         ErrorCode.RateCardValidationError,
-        `Giá cước nấc sau tính từ ${currentStartWeight}kg (tối thiểu ${currentMinCost.toFixed(2)}) không được nhỏ hơn giá trị nấc trước tại ${prevEndWeight}kg (tối đa ${prevMaxCost.toFixed(2)}) để đảm bảo tính đơn điệu tăng dần.`,
+        `Giá cước nấc ${currentLabel} (${currentMinCost.toFixed(2)}$) không được nhỏ hơn giá cước nấc trước ${prevLabel} (${prevMaxCost.toFixed(2)}$) để đảm bảo tính đơn điệu tăng dần.`,
         422,
       );
     }
@@ -407,6 +439,7 @@ export class RateCardService {
 
     const overlaps = await this.deps.rateCardRepo.findOverlappingRateCards({
       excludeId: card.id,
+      type: card.type,
       shippingMethod: card.shippingMethod,
       country: card.country,
       origin: card.origin,
