@@ -8,8 +8,18 @@ const stubFile = path.resolve(rootDir, "../ecom-shared-packages/packages/trpc-ty
 
 console.log("📋 1. Scanning @ecom/features and @ecom/prisma imports to generate type stubs...");
 
+const reservedWords = new Set([
+  "default", "delete", "enum", "null", "undefined", "class", "function", "void",
+  "return", "catch", "try", "if", "else", "for", "while", "do", "in", "instanceof",
+  "typeof", "new", "this", "super", "import", "export", "var", "let", "const",
+  "interface", "type", "namespace", "abstract", "as", "is", "keyof", "readonly",
+  "map", "filter", "find", "forEach", "reduce", "then", "catch", "json", "status",
+  "log", "error", "Prisma", "true", "false"
+]);
+
 const exportedSymbols = new Set([
-  "prisma", "buildPrismaWhere", "FilterFieldConfigMap", "registerEventListeners"
+  "prisma", "buildPrismaWhere", "FilterFieldConfigMap", "registerEventListeners",
+  "getTree", "getDetail", "search", "getCountries", "getTransportModes", "calculate"
 ]);
 
 const prismaTypes = new Set([
@@ -24,28 +34,40 @@ function scanImports(dir) {
     } else if (item.endsWith(".ts")) {
       const content = fs.readFileSync(fullPath, "utf-8");
       
-      // Static imports: import { A, B } from "@ecom/..."
+      // Namespace imports: import * as A from "@ecom/..."
+      const nsMatches = content.matchAll(/import\s+\*\s+as\s+([A-Za-z0-9_$]+)\s+from\s+["']@ecom\/(?:features|prisma)[^"']*["']/gs);
+      for (const m of nsMatches) {
+        if (!reservedWords.has(m[1])) exportedSymbols.add(m[1]);
+      }
+
+      // Method calls on imported namespace objects
+      const methodMatches = content.matchAll(/([A-Za-z0-9_$]+)\.([A-Za-z0-9_$]+)\s*\(/g);
+      for (const m of methodMatches) {
+        if (!reservedWords.has(m[2])) exportedSymbols.add(m[2]);
+      }
+
+      // Static imports: import { A, B } from "@ecom/..." (multiline safe)
       const staticMatches = content.matchAll(/import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+["']@ecom\/(?:features|prisma)[^"']*["']/gs);
       for (const m of staticMatches) {
         const symbols = m[1].split(",")
           .map(s => s.trim().split(/\s+as\s+/)[0].split(":")[0].trim().replace(/^type\s+/, ""))
-          .filter(s => Boolean(s) && /^[A-Za-z0-9_$]+$/.test(s));
+          .filter(s => Boolean(s) && /^[A-Za-z0-9_$]+$/.test(s) && !reservedWords.has(s));
         symbols.forEach(s => exportedSymbols.add(s));
       }
 
-      // Dynamic imports: const { A, B } = await import("@ecom/...")
+      // Dynamic imports: const { A, B } = await import("@ecom/...") (multiline safe)
       const dynamicMatches = content.matchAll(/(?:const|let|var)\s+\{([^}]+)\}\s*=\s*(?:await\s+)?import\s*\(\s*["']@ecom\/(?:features|prisma)[^"']*["']\s*\)/gs);
       for (const m of dynamicMatches) {
         const symbols = m[1].split(",")
           .map(s => s.trim().split(/\s+as\s+/)[0].split(":")[0].trim().replace(/^type\s+/, ""))
-          .filter(s => Boolean(s) && /^[A-Za-z0-9_$]+$/.test(s));
+          .filter(s => Boolean(s) && /^[A-Za-z0-9_$]+$/.test(s) && !reservedWords.has(s));
         symbols.forEach(s => exportedSymbols.add(s));
       }
 
       // Prisma.X usage scanning
       const prismaMatches = content.matchAll(/Prisma\.([A-Za-z0-9_]+)/g);
       for (const m of prismaMatches) {
-        prismaTypes.add(m[1]);
+        if (!reservedWords.has(m[1])) prismaTypes.add(m[1]);
       }
     }
   }
@@ -54,17 +76,16 @@ function scanImports(dir) {
 scanImports(srcDir);
 
 let stubContent = `// Auto-generated type stubs for backend feature containers\n`;
-stubContent += `declare const _stub: any;\nexport default _stub;\n`;
+stubContent += `declare const _stub: unknown;\nexport default _stub;\n`;
 for (const sym of Array.from(exportedSymbols).sort()) {
-  if (sym === "Prisma") continue;
-  stubContent += `export const ${sym}: any;\nexport type ${sym} = any;\n`;
+  stubContent += `export declare const ${sym}: unknown;\nexport type ${sym} = unknown;\n`;
 }
 
 stubContent += `\nexport namespace Prisma {\n`;
 for (const pt of Array.from(prismaTypes).sort()) {
-  stubContent += `  export type ${pt} = any;\n  export const ${pt}: any;\n`;
+  stubContent += `  export type ${pt} = unknown;\n  export declare const ${pt}: unknown;\n`;
 }
-stubContent += `}\nexport const Prisma: any;\n`;
+stubContent += `}\nexport declare const Prisma: unknown;\n`;
 
 fs.mkdirSync(path.dirname(stubFile), { recursive: true });
 fs.writeFileSync(stubFile, stubContent, "utf-8");
