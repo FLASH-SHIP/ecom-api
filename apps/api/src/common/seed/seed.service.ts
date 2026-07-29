@@ -9,9 +9,15 @@ export class SeedService {
    */
   async run() {
     const only = process.env.SEED_ONLY;
-    const seeders = only
-      ? SEEDERS.filter((s) => s.name.toLowerCase().includes(only.toLowerCase()))
-      : SEEDERS;
+    const category = process.env.SEED_CATEGORY?.toLowerCase() ?? "core";
+    let seeders = SEEDERS;
+
+    if (category !== "all") {
+      seeders = seeders.filter((s) => (s.category ?? "core") === category);
+    }
+    if (only) {
+      seeders = seeders.filter((s) => s.name.toLowerCase().includes(only.toLowerCase()));
+    }
 
     const env = process.env.NODE_ENV ?? "development";
     console.log(`🌱 [NestJS CLI] Seeding Database [${env}]${only ? ` — filter: "${only}"` : ""}`);

@@ -10,8 +10,8 @@
  *   ALLOW_PROD_SEED=1 NODE_ENV=production yarn prisma:seed → explicit override
  */
 
-import path from "node:path";
-import dotenv from "dotenv";
+import * as path from "node:path";
+import * as dotenv from "dotenv";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
@@ -55,12 +55,12 @@ async function main() {
 
   const env = process.env.NODE_ENV ?? "development";
   const only = process.env.SEED_ONLY; // e.g. "Rate" → partial name match
-  const category = process.env.SEED_CATEGORY?.toLowerCase(); // "core", "business", or "all"
+  const category = process.env.SEED_CATEGORY?.toLowerCase() ?? "core"; // "core", "business", or "all"
 
   // Filter seeders by category & SEED_ONLY
   let seeders = SEEDERS;
 
-  if (category && category !== "all") {
+  if (category !== "all") {
     seeders = seeders.filter((s) => (s.category ?? "core") === category);
   }
 
