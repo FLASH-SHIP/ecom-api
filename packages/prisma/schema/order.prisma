@@ -129,6 +129,7 @@ model Order {
   trackingCheckpoints OrderTrackingCheckpoint[]
   feeItems            OrderFeeItem[]
   products            OrderProduct[]
+  topupTransactions   TopupTransaction[]
 
   version   Int      @default(0) @map("version")
   createdAt DateTime @default(now()) @map("created_at")

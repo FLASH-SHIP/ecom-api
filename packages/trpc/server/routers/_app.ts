@@ -7,6 +7,7 @@ import { customerOrdersRouter } from "./customer/orders/_router";
 import { customerPackagesRouter } from "./customer/packages/_router";
 import { customerReceiversRouter } from "./customer/receivers/_router";
 import { customerSendersRouter } from "./customer/senders/_router";
+import { customerTopupRouter } from "./customer/topup/_router";
 import { customerWebhooksRouter } from "./customer/webhooks/_router";
 import { blogRouter } from "./public/blog/_router";
 import { healthRouter } from "./public/health/_router";
@@ -117,6 +118,7 @@ export const appRouter = router({
     senders: customerSendersRouter,
     receivers: customerReceiversRouter,
     packages: customerPackagesRouter,
+    topup: customerTopupRouter,
   }),
 });
 
