@@ -1,0 +1,125 @@
+// Ecom — Topup Domain Module
+
+enum TopupContentStatus {
+  PUBLISHED
+  UNPUBLISHED
+}
+
+model TopupPaymentMethod {
+  id        Int                @id @default(autoincrement())
+  name      String
+  status    TopupContentStatus @default(PUBLISHED)
+  isBank    Boolean            @default(false) @map("is_bank")
+  icon      String?            @db.Text
+  image     String?            @db.Text
+  position  Int?               @default(dbgenerated("NULL"))
+  dataInfo  String?            @map("data_info") @db.Text
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  deletedAt DateTime?          @map("deleted_at")
+
+  relations    TopupPaymentMethodPartnerRelation[]
+  transactions TopupTransaction[]
+
+  @@map("topup_payment_methods")
+}
+
+model TopupPaymentMethodPartnerRelation {
+  id              Int                @id @default(autoincrement())
+  customerId      String             @map("customer_id") @db.Uuid
+  paymentMethodId Int                @map("payment_method_id")
+  status          TopupContentStatus @default(PUBLISHED)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  deletedAt       DateTime?          @map("deleted_at")
+
+  customer      Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  paymentMethod TopupPaymentMethod @relation(fields: [paymentMethodId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, paymentMethodId])
+  @@index([customerId, status])
+  @@map("topup_payment_method_partner_relations")
+}
+
+model TopupTransaction {
+  id                  Int       @id @default(autoincrement())
+  customerId          String    @map("customer_id") @db.Uuid
+  transactionCode     String    @unique @map("transaction_code") @db.VarChar(255)
+  topupType           String    @map("topup_type") @db.VarChar(255)
+  currency            String    @default("USD") @db.VarChar(10)
+  submissionDate      DateTime? @map("submission_date")
+  wireDate            DateTime? @map("wire_date")
+  paymentMethodId     Int?      @map("payment_method")
+  wireAmount          Decimal?  @map("wire_amount") @db.Decimal(12, 2)
+  wireAmountApprove   Decimal?  @map("wire_amount_approve") @db.Decimal(12, 2)
+  rate                Decimal?  @map("rate") @db.Decimal(12, 2)
+  description         String?   @db.VarChar(500)
+  orderId             String?   @map("order_id") @db.Uuid
+  orderCode           String?   @map("order_code") @db.VarChar(255)
+  accountBalanceBefore Decimal   @map("account_balance_before") @db.Decimal(12, 2)
+  amountChange        Decimal   @map("amount_change") @db.Decimal(12, 2)
+  accountBalanceAfter Decimal   @map("account_balance_after") @db.Decimal(12, 2)
+  status              String    @db.VarChar(255)
+  createdBy           String?   @map("created_by") @db.Uuid
+  updatedBy           String?   @map("updated_by") @db.Uuid
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  customer      Customer                    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  paymentMethod TopupPaymentMethod?         @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  order         Order?                      @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  wireImages    TopupTransactionWireImage[]
+  histories     TopupTransactionHistory[]
+
+  @@index([customerId, createdAt])
+  @@index([status, topupType])
+  @@index([orderId])
+  @@map("topup_transactions")
+}
+
+model TopupTransactionWireImage {
+  id            Int              @id @default(autoincrement())
+  transactionId Int              @map("transaction_id")
+  imageUrl      String           @map("image_url") @db.Text
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  deletedAt     DateTime?        @map("deleted_at")
+
+  transaction TopupTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@map("topup_transaction_wire_images")
+}
+
+model TopupTransactionHistory {
+  id                 Int              @id @default(autoincrement())
+  actionName         String           @map("action_name") @db.VarChar(255)
+  topupTransactionId Int              @map("topup_transaction_id")
+  wireAmountApproved Decimal?         @map("wire_amount_approved") @db.Decimal(12, 2)
+  status             String?          @db.VarChar(255)
+  createdBy          String?          @map("created_by") @db.Uuid
+  updatedBy          String?          @map("updated_by") @db.Uuid
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  transaction TopupTransaction @relation(fields: [topupTransactionId], references: [id], onDelete: Cascade)
+
+  @@index([topupTransactionId, createdAt])
+  @@map("topup_transaction_histories")
+}
+
+model TopupExchangeRateManagement {
+  id        Int                @id @default(autoincrement())
+  rate      Decimal            @map("rate") @db.Decimal(12, 2)
+  note      String?            @db.VarChar(500)
+  status    TopupContentStatus @default(PUBLISHED)
+  createdBy String?            @map("created_by") @db.Uuid
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedBy String?            @map("updated_by") @db.Uuid
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  deletedAt DateTime?          @map("deleted_at")
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("topup_exchange_rate_management")
+}

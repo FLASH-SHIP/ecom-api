@@ -50,6 +50,8 @@ model Customer {
   senders              CustomerSender[]
   receivers            CustomerReceiver[]
   packages             CustomerPackage[]
+  topupPaymentMethodRelations TopupPaymentMethodPartnerRelation[]
+  topupTransactions           TopupTransaction[]
 
   @@index([status])
   @@index([customerCode])
