@@ -596,7 +596,7 @@ export const importSlabs = authedProcedure
 
     // Generate change maps for auditing
     const oldSlabsMap = buildSlabsAuditMap(card.items, card.currency);
-    const newSlabsMap = buildSlabsAuditMap(input.slabs, card.currency);
+    const newSlabsMap = buildSlabsAuditMap(input.slabs as any, card.currency);
 
     const hasChanges = JSON.stringify(oldSlabsMap) !== JSON.stringify(newSlabsMap);
 
