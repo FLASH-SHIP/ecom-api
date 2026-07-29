@@ -240,6 +240,44 @@ export const update = authedProcedure
   .use(auditLog({ module: "rateCards", action: "UPDATE", entityType: "RateCard" }))
   .input(
     z.object({
+function validateUpdateRateCardDates(
+  rateService: ReturnType<typeof getRateCardService>,
+  data: { startDate?: Date | null; endDate?: Date | null; type?: string },
+  card: { startDate: Date | null; endDate: Date | null; type: string },
+) {
+  if (data.startDate !== undefined) {
+    try {
+      rateService.validateStartDateNotPast(data.startDate);
+    } catch (err) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: err instanceof Error ? err.message : "Ngày bắt đầu không hợp lệ.",
+      });
+    }
+  }
+
+  const effectiveType = data.type ?? card.type;
+  const finalEndDate = effectiveType === "DEFAULT" ? null : (data.endDate !== undefined ? data.endDate : card.endDate);
+  const finalStartDate = data.startDate !== undefined ? data.startDate : card.startDate;
+
+  try {
+    rateService.validateDateRange(finalStartDate, finalEndDate);
+  } catch (err) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: err instanceof Error ? err.message : "Thời gian hiệu lực không hợp lệ.",
+    });
+  }
+
+  return finalEndDate;
+}
+
+// 5. Update rate card (Admin authed)
+export const update = authedProcedure
+  .use(requirePermission(Permissions.RATES_UPDATE))
+  .use(auditLog({ module: "rateCards", action: "UPDATE", entityType: "RateCard" }))
+  .input(
+    z.object({
       id: z.number().int().positive(),
       code: z
         .string()
@@ -282,32 +320,8 @@ export const update = authedProcedure
       });
     }
 
-    if (data.startDate !== undefined) {
-      try {
-        rateService.validateStartDateNotPast(data.startDate);
-      } catch (err) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: err instanceof Error ? err.message : "Ngày bắt đầu không hợp lệ.",
-        });
-      }
-    }
-
-
     await checkDuplicateCode(rateRepo, data.code, card.code);
-
-    const effectiveType = data.type ?? card.type;
-    const finalEndDate = effectiveType === "DEFAULT" ? null : (data.endDate !== undefined ? data.endDate : card.endDate);
-    const finalStartDate = data.startDate !== undefined ? data.startDate : card.startDate;
-
-    try {
-      rateService.validateDateRange(finalStartDate, finalEndDate);
-    } catch (err) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: err instanceof Error ? err.message : "Thời gian hiệu lực không hợp lệ.",
-      });
-    }
+    const finalEndDate = validateUpdateRateCardDates(rateService, data, card);
 
     const updated = await rateRepo.update(id, {
       ...data,
