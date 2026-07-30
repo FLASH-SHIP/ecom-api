@@ -136,7 +136,8 @@ async function verifyAndResolveCustomerToken(token: string) {
     );
     const payload = await getCustomerTokenService().verifyAccessToken(token);
     return payload?.sub ? await resolveCustomerUser(payload.sub) : null;
-  } catch {
+  } catch (err) {
+    console.warn("[verifyAndResolveCustomerToken] Verification failed:", (err as Error).message);
     return null;
   }
 }

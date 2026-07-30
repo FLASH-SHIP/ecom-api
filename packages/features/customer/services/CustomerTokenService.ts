@@ -146,20 +146,34 @@ export class CustomerTokenService {
   }
 
   async isTokenBlacklisted(jti: string): Promise<boolean> {
-    const redis = getRedisClient();
-    const result = await redis.get(`customer:token_blacklist:${jti}`);
-    return result === "1";
+    try {
+      const redis = getRedisClient();
+      const result = await redis.get(`customer:token_blacklist:${jti}`);
+      return result === "1";
+    } catch (e) {
+      console.warn("[CustomerTokenService] Redis blacklist check error:", (e as Error).message);
+      return false;
+    }
   }
 
   async revokeAllTokens(customerId: string): Promise<void> {
-    const redis = getRedisClient();
-    const now = Math.floor(Date.now() / 1000);
-    await redis.set(`customer:revoked_before:${customerId}`, String(now));
+    try {
+      const redis = getRedisClient();
+      const now = Math.floor(Date.now() / 1000);
+      await redis.set(`customer:revoked_before:${customerId}`, String(now));
+    } catch (e) {
+      console.warn("[CustomerTokenService] Redis revokeAllTokens error:", (e as Error).message);
+    }
   }
 
   async getRevocationTime(customerId: string): Promise<number | null> {
-    const redis = getRedisClient();
-    const val = await redis.get(`customer:revoked_before:${customerId}`);
-    return val ? Number(val) : null;
+    try {
+      const redis = getRedisClient();
+      const val = await redis.get(`customer:revoked_before:${customerId}`);
+      return val ? Number(val) : null;
+    } catch (e) {
+      console.warn("[CustomerTokenService] Redis revocation check error:", (e as Error).message);
+      return null;
+    }
   }
 }
