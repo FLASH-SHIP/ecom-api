@@ -4,8 +4,10 @@ import type { TopupExchangeRateRepository } from "../repositories/TopupExchangeR
 import { mapTopupPaymentMethodToResponse, mapTopupTransactionToResponse } from "../mappers/mapToCustomerTopupResponse";
 import { generateEntityCode } from "@flash-ship/ecom-lib";
 import { ExternalWalletClient } from "../clients/ExternalWalletClient";
-import { ExternalWalletActionType } from "../dtos/externalWalletDTOs";
 
+/**
+ * Service quản lý logic nghiệp vụ Nạp tiền (Topup Transaction) & Ví
+ */
 export class TopupTransactionService {
   constructor(
     private transactionRepo: TopupTransactionRepository,
@@ -13,6 +15,11 @@ export class TopupTransactionService {
     private exchangeRateRepo: TopupExchangeRateRepository,
   ) {}
 
+  /**
+   * Lấy thông tin tổng quan Ví của khách hàng (Số dư thực tế & Tiền chờ xác nhận)
+   * - Lấy số dư khả dụng thực tế bằng cách gọi sang API Hệ Thống Ví Độc Lập (/payment-api/account/info)
+   * - Fallback về số dư tính toán nội bộ nếu Hệ Thống Ví Độc Lập gián đoạn
+   */
   async getWalletSummary(customerId: string) {
     const summary = await this.transactionRepo.getWalletSummary(customerId);
     try {
@@ -22,21 +29,31 @@ export class TopupTransactionService {
         summary.accountBalance = Number(extWallet.data.accountBalance);
       }
     } catch (err) {
-      // Fallback to local transaction balance if External Wallet service is unavailable
+      // Dự phòng về số dư nội bộ nếu hệ thống ví độc lập không phản hồi
     }
     return summary;
   }
 
+  /**
+   * Lấy danh sách các phương thức thanh toán nạp tiền công khai cho khách hàng
+   */
   async getPaymentMethods(customerId: string) {
     const list = await this.paymentMethodRepo.getPaymentMethodsForCustomer(customerId);
     return list.map(mapTopupPaymentMethodToResponse);
   }
 
+  /**
+   * Lấy tỷ giá quy đổi ngoại tệ USD / VND mới nhất theo ngày
+   * Mặc định 25.000 VND / 1 USD nếu chưa có dữ liệu cấu hình
+   */
   async getLatestExchangeRate(date?: Date) {
     const rateItem = await this.exchangeRateRepo.getExchangeRateByDate(date);
-    return rateItem ? Number(rateItem.rate) : 25000; // Default 25.000 VND / 1 USD
+    return rateItem ? Number(rateItem.rate) : 25000;
   }
 
+  /**
+   * Lấy danh sách lịch sử nạp tiền phân trang theo khách hàng & bộ lọc
+   */
   async getTopupHistory(params: FilterTopupHistoryParams) {
     const result = await this.transactionRepo.getTopupHistory(params);
     return {
@@ -45,6 +62,14 @@ export class TopupTransactionService {
     };
   }
 
+  /**
+   * Khởi tạo yêu cầu nạp tiền mới từ ứng dụng Customer
+   * - Tự động sinh mã giao dịch duy nhất (transactionCode)
+   * - Tạo bản ghi nạp tiền ở trạng thái Chờ xác nhận (status = 1 WAITING)
+   * - Lưu vết danh sách ảnh chứng từ xác nhận chuyển khoản (wireImages)
+   * - Ghi log lịch sử tại topup_transaction_histories (actionName = "Khách hàng tạo mới giao dịch")
+   * - LƯU Ý: KHÔNG gọi API chargingRequest tới ví độc lập ở bước này (tiền chỉ cộng khi Admin phê duyệt)
+   */
   async createTopupRequest(data: {
     customerId: string;
     paymentMethodId: number;
@@ -53,7 +78,7 @@ export class TopupTransactionService {
     wireDate?: Date;
     wireImages?: string[];
   }) {
-    // Generate unique transaction code using generateEntityCode("W") => Wallet
+    // Sinh mã giao dịch duy nhất dạng W260730...
     const transactionCode = generateEntityCode("W");
     const currentRate = await this.getLatestExchangeRate();
 
@@ -68,31 +93,12 @@ export class TopupTransactionService {
       wireImages: data.wireImages,
     });
 
-    // Call External Wallet Charging Request API (payment-api/charging-request)
-    try {
-      const customerCode = await this.transactionRepo.getCustomerCode(data.customerId);
-      const walletClient = new ExternalWalletClient();
-      await walletClient.chargingRequest({
-        fromSystem: "ECOM",
-        buyerInfo: {
-          partnerId: data.customerId,
-          partnerCode: customerCode,
-        },
-        orderItem: {
-          actionType: ExternalWalletActionType.INCREASE, // 1 = cộng tiền (mapped to ExternalWalletActionType enum)
-          paymentType: "E_WALLET",
-          price: data.wireAmount,
-          note: null,
-          orderCode: null,
-        },
-      });
-    } catch (err) {
-      // Log external wallet charging error
-    }
-
     return mapTopupTransactionToResponse(transaction);
   }
 
+  /**
+   * Cập nhật thông tin yêu cầu nạp tiền khi ở trạng thái Chờ xác nhận (status = 1)
+   */
   async updateTopupRequest(
     id: number,
     customerId: string,
@@ -108,6 +114,9 @@ export class TopupTransactionService {
     return mapTopupTransactionToResponse(updated);
   }
 
+  /**
+   * Hủy yêu cầu nạp tiền từ phía khách hàng (chuyển status = 3 CANCELLED)
+   */
   async cancelTopupRequest(id: number, customerId: string) {
     const cancelled = await this.transactionRepo.cancelTopupRequest(id, customerId);
     return mapTopupTransactionToResponse(cancelled);

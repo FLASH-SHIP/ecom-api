@@ -155,7 +155,11 @@ export class TopupTransactionRepository {
   }
 
   /**
-   * Create topup transaction request (ADDED_FUNDS)
+   * Khởi tạo giao dịch nạp tiền mới (topupType = ADDED_FUNDS, status = 1 WAITING)
+   * - Sử dụng Database Transaction ($transaction) đảm bảo tính toàn vẹn dữ liệu
+   * - Tạo bản ghi nạp tiền trong topup_transactions
+   * - Lưu danh sách các ảnh chứng từ chuyển khoản vào topup_transaction_wire_images
+   * - Khởi tạo log lịch sử tại topup_transaction_histories với actionName = "Khách hàng tạo mới giao dịch"
    */
   async createTopupRequest(data: {
     customerId: string;
@@ -200,7 +204,7 @@ export class TopupTransactionRepository {
         },
       });
 
-      // Ghi log history "Khách hàng tạo mới giao dịch"
+      // Ghi log history "Khách hàng tạo mới giao dịch" (status = 1)
       await tx.topupTransactionHistory.create({
         data: {
           actionName: "Khách hàng tạo mới giao dịch",
