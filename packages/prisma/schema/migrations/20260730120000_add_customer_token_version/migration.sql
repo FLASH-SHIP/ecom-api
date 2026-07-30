@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "customers" ADD COLUMN IF NOT EXISTS "tokenVersion" INTEGER NOT NULL DEFAULT 1;
