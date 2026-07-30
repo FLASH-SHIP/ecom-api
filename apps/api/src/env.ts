@@ -37,6 +37,8 @@ export const apiEnvSchema = z.object({
     .string()
     .min(8, "JWT_ADMIN_REFRESH_SECRET must be at least 8 characters long")
     .optional(),
+  AUTH_SECRET: z.string().optional(),
+  NEXTAUTH_SECRET: z.string().optional(),
   JWT_ACCESS_TOKEN_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_TOKEN_EXPIRES_IN: z.string().default("30d"),
   SENTRY_DSN: z.string().optional(),
