@@ -18,10 +18,17 @@ vi.mock("@flash-ship/ecom-lib/redis", () => ({
 describe("CustomerTokenService", () => {
   it("should generate tokens with jti", () => {
     const service = new CustomerTokenService();
-    const tokens = service.generateTokens({ id: 123, email: "user@example.com" });
+    const tokens = service.generateTokens({ id: "123", email: "user@example.com" });
 
     expect(tokens.accessToken).toBeDefined();
     expect(tokens.refreshToken).toBeDefined();
+  });
+
+  it("should generate a single access token", () => {
+    const service = new CustomerTokenService();
+    const accessToken = service.generateAccessToken({ id: "123", email: "user@example.com" });
+
+    expect(accessToken).toBeDefined();
   });
 
   it("should verify a valid access token and refresh token", async () => {

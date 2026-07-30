@@ -43,11 +43,9 @@ export class CustomerTokenService {
       (AUTH.REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]);
   }
 
-  generateTokens(customer: { id: string; email: string }) {
+  generateAccessToken(customer: { id: string; email: string }): string {
     const accessJti = crypto.randomUUID();
-    const refreshJti = crypto.randomUUID();
-
-    const accessToken = jwt.sign(
+    return jwt.sign(
       {
         sub: customer.id,
         email: customer.email,
@@ -57,6 +55,11 @@ export class CustomerTokenService {
       this.accessSecret,
       { expiresIn: this.accessTokenTtl, issuer: "ecom", audience: "ecom-customer" },
     );
+  }
+
+  generateTokens(customer: { id: string; email: string }) {
+    const accessToken = this.generateAccessToken(customer);
+    const refreshJti = crypto.randomUUID();
 
     const refreshToken = jwt.sign(
       {
