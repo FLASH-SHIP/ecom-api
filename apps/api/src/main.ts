@@ -108,13 +108,13 @@ async function resolveCustomerUser(
 
   const dbCustomer = await prisma.customer.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true, username: true, status: true, tokenVersion: true },
+    select: { id: true, email: true, name: true, username: true, status: true },
+  }).catch((err) => {
+    console.warn("[resolveCustomerUser] Database query failed:", (err as Error).message);
+    return null;
   });
 
   if (dbCustomer?.status !== "ACTIVE") return null;
-  if (typeof tokenVersion === "number" && tokenVersion !== dbCustomer.tokenVersion) {
-    return null;
-  }
 
   const customer: AuthUser = {
     id: dbCustomer.id,
