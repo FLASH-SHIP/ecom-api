@@ -106,24 +106,13 @@ async function resolveCustomerUser(
   }
   authLogger.debug("[AuthCache] MISS", { cacheKey });
 
-  let dbCustomer: { id: string; email: string; name: string | null; username: string; status: string; tokenVersion?: number } | null = null;
+  const dbCustomer = await prisma.customer.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, name: true, username: true, status: true, tokenVersion: true },
+  });
 
-  try {
-    dbCustomer = await prisma.customer.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, name: true, username: true, status: true, tokenVersion: true },
-    });
-  } catch {
-    // Fallback if DB column tokenVersion has not been migrated yet
-    dbCustomer = await prisma.customer.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, name: true, username: true, status: true },
-    }).catch(() => null);
-  }
-
-  if (!dbCustomer || dbCustomer.status !== "ACTIVE") return null;
-
-  if (typeof tokenVersion === "number" && typeof dbCustomer.tokenVersion === "number" && tokenVersion !== dbCustomer.tokenVersion) {
+  if (dbCustomer?.status !== "ACTIVE") return null;
+  if (typeof tokenVersion === "number" && tokenVersion !== dbCustomer.tokenVersion) {
     return null;
   }
 
