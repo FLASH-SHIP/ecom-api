@@ -1,4 +1,4 @@
-import { Prisma, type PrismaClient } from "@ecom/prisma";
+import { Prisma, TopupType, type PrismaClient } from "@ecom/prisma";
 
 export interface FilterTopupHistoryParams {
   customerId: string;
@@ -15,6 +15,17 @@ export class TopupTransactionRepository {
   constructor(private prisma: PrismaClient) {}
 
   /**
+   * Get customerCode by customerId
+   */
+  async getCustomerCode(customerId: string): Promise<string> {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { customerCode: true, username: true },
+    });
+    return customer?.customerCode || customer?.username || customerId;
+  }
+
+  /**
    * Get wallet summary for logged in customer:
    * 1. accountBalance: Current available balance (from latest transaction or 0.00)
    * 2. waitingConfirmTopup: Sum of wireAmount for all WAITING status transactions
@@ -24,7 +35,7 @@ export class TopupTransactionRepository {
     const latestTx = await this.prisma.topupTransaction.findFirst({
       where: {
         customerId,
-        status: { in: ["CONFIRMED", "APPROVED"] },
+        status: 2, // 2 = Confirmed/Approved
       },
       orderBy: {
         createdAt: "desc",
@@ -38,11 +49,11 @@ export class TopupTransactionRepository {
       ? Number(latestTx.accountBalanceAfter)
       : 0.0;
 
-    // 2. Sum wireAmount of transactions with status WAITING
+    // 2. Sum wireAmount of transactions with status 1 (Created/Waiting)
     const waitingAggregate = await this.prisma.topupTransaction.aggregate({
       where: {
         customerId,
-        status: "WAITING",
+        status: 1, // 1 = Created/Waiting
       },
       _sum: {
         wireAmount: true,
@@ -97,7 +108,10 @@ export class TopupTransactionRepository {
     }
 
     if (params.status && params.status !== "ALL") {
-      where.status = params.status.toUpperCase();
+      const statusNum = Number.parseInt(params.status, 10);
+      if (!Number.isNaN(statusNum)) {
+        where.status = statusNum;
+      }
     }
 
     if (params.paymentMethodId) {
@@ -160,7 +174,7 @@ export class TopupTransactionRepository {
         data: {
           customerId: data.customerId,
           transactionCode: data.transactionCode,
-          topupType: "ADDED_FUNDS",
+          topupType: TopupType.ADDED_FUNDS,
           currency: "USD",
           submissionDate: new Date(),
           wireDate: data.wireDate ?? new Date(),
@@ -172,7 +186,7 @@ export class TopupTransactionRepository {
           accountBalanceBefore: new Prisma.Decimal(currentBalance),
           amountChange: new Prisma.Decimal(data.wireAmount),
           accountBalanceAfter: new Prisma.Decimal(currentBalance),
-          status: "WAITING",
+          status: 1,
           createdBy: data.customerId,
           wireImages: data.wireImages && data.wireImages.length > 0
             ? {
@@ -186,12 +200,12 @@ export class TopupTransactionRepository {
         },
       });
 
-      // Ghi log history CREATED
+      // Ghi log history "Khách hàng tạo mới giao dịch"
       await tx.topupTransactionHistory.create({
         data: {
-          actionName: "CREATED",
+          actionName: "Khách hàng tạo mới giao dịch",
           topupTransactionId: transaction.id,
-          status: "WAITING",
+          status: 1,
           createdBy: data.customerId,
         },
       });
@@ -201,7 +215,7 @@ export class TopupTransactionRepository {
   }
 
   /**
-   * Update topup request (only allowed when status = WAITING and belongs to logged in customer)
+   * Update topup request (only allowed when status = 1 and belongs to logged in customer)
    */
   async updateTopupRequest(
     id: number,
@@ -218,7 +232,7 @@ export class TopupTransactionRepository {
       where: {
         id,
         customerId,
-        status: "WAITING",
+        status: 1,
       },
     });
 
@@ -258,7 +272,7 @@ export class TopupTransactionRepository {
         data: {
           actionName: "UPDATED",
           topupTransactionId: updated.id,
-          status: "WAITING",
+          status: 1,
           createdBy: customerId,
         },
       });
@@ -268,14 +282,14 @@ export class TopupTransactionRepository {
   }
 
   /**
-   * Cancel topup request (only allowed when status = WAITING and belongs to logged in customer)
+   * Cancel topup request (only allowed when status = 1 and belongs to logged in customer)
    */
   async cancelTopupRequest(id: number, customerId: string) {
     const existing = await this.prisma.topupTransaction.findFirst({
       where: {
         id,
         customerId,
-        status: "WAITING",
+        status: 1,
       },
     });
 
@@ -287,7 +301,7 @@ export class TopupTransactionRepository {
       const updated = await tx.topupTransaction.update({
         where: { id },
         data: {
-          status: "CANCELLED",
+          status: 3,
           updatedBy: customerId,
         },
       });
@@ -296,7 +310,7 @@ export class TopupTransactionRepository {
         data: {
           actionName: "CANCELLED",
           topupTransactionId: updated.id,
-          status: "CANCELLED",
+          status: 3,
           createdBy: customerId,
         },
       });

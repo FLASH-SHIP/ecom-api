@@ -14,7 +14,11 @@ export const customerTopupRouter = router({
   getPaymentMethods,
   getLatestExchangeRate,
   getHistory: getTopupHistory,
+  getTopupHistory,
   create: createTopupRequest,
+  createTopupRequest,
   update: updateTopupRequest,
+  updateTopupRequest,
   cancel: cancelTopupRequest,
+  cancelTopupRequest,
 });

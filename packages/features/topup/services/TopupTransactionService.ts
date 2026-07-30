@@ -2,6 +2,9 @@ import type { FilterTopupHistoryParams, TopupTransactionRepository } from "../re
 import type { TopupPaymentMethodRepository } from "../repositories/TopupPaymentMethodRepository";
 import type { TopupExchangeRateRepository } from "../repositories/TopupExchangeRateRepository";
 import { mapTopupPaymentMethodToResponse, mapTopupTransactionToResponse } from "../mappers/mapToCustomerTopupResponse";
+import { generateEntityCode } from "@flash-ship/ecom-lib";
+import { ExternalWalletClient } from "../clients/ExternalWalletClient";
+import { ExternalWalletActionType } from "../dtos/externalWalletDTOs";
 
 export class TopupTransactionService {
   constructor(
@@ -11,7 +14,17 @@ export class TopupTransactionService {
   ) {}
 
   async getWalletSummary(customerId: string) {
-    return this.transactionRepo.getWalletSummary(customerId);
+    const summary = await this.transactionRepo.getWalletSummary(customerId);
+    try {
+      const walletClient = new ExternalWalletClient();
+      const extWallet = await walletClient.getAccountInfo({ partnerId: customerId });
+      if (extWallet?.data?.accountBalance !== undefined && extWallet?.data?.accountBalance !== null) {
+        summary.accountBalance = Number(extWallet.data.accountBalance);
+      }
+    } catch (err) {
+      // Fallback to local transaction balance if External Wallet service is unavailable
+    }
+    return summary;
   }
 
   async getPaymentMethods(customerId: string) {
@@ -19,9 +32,9 @@ export class TopupTransactionService {
     return list.map(mapTopupPaymentMethodToResponse);
   }
 
-  async getLatestExchangeRate() {
-    const rateItem = await this.exchangeRateRepo.getLatestExchangeRate();
-    return rateItem ? Number(rateItem.rate) : 25400; // Fallback default USD rate
+  async getLatestExchangeRate(date?: Date) {
+    const rateItem = await this.exchangeRateRepo.getExchangeRateByDate(date);
+    return rateItem ? Number(rateItem.rate) : 25000; // Default 25.000 VND / 1 USD
   }
 
   async getTopupHistory(params: FilterTopupHistoryParams) {
@@ -40,12 +53,8 @@ export class TopupTransactionService {
     wireDate?: Date;
     wireImages?: string[];
   }) {
-    // Generate unique transaction code e.g. TOP-20260729-XXXX
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const transactionCode = `TOP-${dateStr}-${randomSuffix}`;
-
+    // Generate unique transaction code using generateEntityCode("W") => Wallet
+    const transactionCode = generateEntityCode("W");
     const currentRate = await this.getLatestExchangeRate();
 
     const transaction = await this.transactionRepo.createTopupRequest({
@@ -58,6 +67,28 @@ export class TopupTransactionService {
       wireDate: data.wireDate,
       wireImages: data.wireImages,
     });
+
+    // Call External Wallet Charging Request API (payment-api/charging-request)
+    try {
+      const customerCode = await this.transactionRepo.getCustomerCode(data.customerId);
+      const walletClient = new ExternalWalletClient();
+      await walletClient.chargingRequest({
+        fromSystem: "ECOM",
+        buyerInfo: {
+          partnerId: data.customerId,
+          partnerCode: customerCode,
+        },
+        orderItem: {
+          actionType: ExternalWalletActionType.INCREASE, // 1 = cộng tiền (mapped to ExternalWalletActionType enum)
+          paymentType: "E_WALLET",
+          price: data.wireAmount,
+          note: null,
+          orderCode: null,
+        },
+      });
+    } catch (err) {
+      // Log external wallet charging error
+    }
 
     return mapTopupTransactionToResponse(transaction);
   }

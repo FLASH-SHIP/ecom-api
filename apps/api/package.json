@@ -39,7 +39,9 @@
     "compression": "^1.8.1",
     "helmet": "^8.2.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "sharp": "^0.35.3",
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@flash-ship/ecom-tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig",
@@ -49,7 +51,10 @@
     "@swc/core": "^1.15.41",
     "@types/compression": "^1.8.1",
     "@types/express": "^5.0.0",
+    "@types/multer": "^2.2.0",
     "@types/node": "^20",
+    "@types/sharp": "^0.32.0",
+    "@types/uuid": "^11.0.0",
     "tsx": "^4.22.4",
     "typescript": "^5.8.0",
     "vitest": "^3.2.0"

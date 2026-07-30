@@ -47,6 +47,7 @@ export function mapTopupTransactionToResponse(item: any) {
     wireDate: item.wireDate ? new Date(item.wireDate).toISOString() : "",
     paymentMethodId: item.paymentMethodId,
     paymentMethod: item.paymentMethod?.name ?? "Other",
+    paymentMethodIcon: buildAssetUrl(item.paymentMethod?.icon),
     wireTransferConfirmation: item.transactionCode,
     status: item.status,
     wireAmount: item.wireAmount ? Number(item.wireAmount) : 0,

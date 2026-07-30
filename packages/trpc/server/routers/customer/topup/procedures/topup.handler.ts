@@ -10,9 +10,12 @@ export const getPaymentMethods = authedProcedure.query(async ({ ctx }) => {
   return getTopupTransactionService().getPaymentMethods(ctx.user.id);
 });
 
-export const getLatestExchangeRate = authedProcedure.query(async () => {
-  return getTopupTransactionService().getLatestExchangeRate();
-});
+export const getLatestExchangeRate = authedProcedure
+  .input(z.object({ date: z.string().optional() }).optional())
+  .query(async ({ input }) => {
+    const dateObj = input?.date ? new Date(input.date) : undefined;
+    return getTopupTransactionService().getLatestExchangeRate(dateObj);
+  });
 
 export const getTopupHistory = authedProcedure
   .input(
