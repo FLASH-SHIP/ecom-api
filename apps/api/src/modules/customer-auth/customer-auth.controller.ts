@@ -164,9 +164,12 @@ export class CustomerAuthController {
       throw ErrorWithCode.Factory.Forbidden("Account is not active");
     }
 
-    const tokens = tokenService.generateTokens({ id: payload.sub, email: payload.email });
+    const accessToken = tokenService.generateAccessToken({ id: payload.sub, email: payload.email });
     return {
-      data: tokens,
+      data: {
+        accessToken,
+        refreshToken: body.refreshToken,
+      },
     };
   }
 
