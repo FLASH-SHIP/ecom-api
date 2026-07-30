@@ -19,6 +19,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "@bull-board/api": "^6.7.9",
     "@bull-board/express": "^6.7.9",
     "@ecom/features": "workspace:*",

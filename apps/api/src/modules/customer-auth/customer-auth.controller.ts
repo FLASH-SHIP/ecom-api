@@ -157,6 +157,34 @@ export class CustomerAuthController {
     const tokenService = getCustomerTokenService();
     const userAgent = req.headers["user-agent"] || "default";
 
+    if (body.clientType === "mobile") {
+      const validatedCustomer = await authService.login(body.identifier, body.password);
+      const mobileTokens = await tokenService.generateMobileTokens(
+        validatedCustomer,
+        undefined,
+        {
+          deviceId: body.deviceId,
+          deviceName: body.deviceName,
+          os: body.os,
+          osVersion: body.osVersion,
+        },
+      );
+      const user = {
+        id: validatedCustomer.id,
+        email: validatedCustomer.email,
+        name: validatedCustomer.name || validatedCustomer.email,
+        tokenVersion: (validatedCustomer as { tokenVersion?: number }).tokenVersion ?? 1,
+      };
+      return {
+        user,
+        customer: validatedCustomer,
+        accessToken: mobileTokens.accessToken,
+        refreshToken: mobileTokens.refreshToken,
+        familyId: mobileTokens.familyId,
+        expiresIn: AUTH.ACCESS_TOKEN_EXPIRES_IN_SEC,
+      };
+    }
+
     const result = await authService.loginWithActiveTokenCache(
       body.identifier,
       body.password,
@@ -189,6 +217,13 @@ export class CustomerAuthController {
   async refreshToken(@Body() body: RefreshTokenDto) {
     const tokenService = getCustomerTokenService();
 
+    if (body.clientType === "mobile") {
+      const mobileTokens = await tokenService.rotateMobileRefreshToken(body.refreshToken);
+      return {
+        data: mobileTokens,
+      };
+    }
+
     const payload = await tokenService.verifyRefreshToken(body.refreshToken);
 
     const customer = await getCustomerService().getCustomer(payload.sub);
@@ -196,9 +231,12 @@ export class CustomerAuthController {
       throw ErrorWithCode.Factory.Forbidden("Account is not active");
     }
 
-    const tokens = tokenService.generateTokens({ id: payload.sub, email: payload.email });
+    const accessToken = tokenService.generateAccessToken({ id: payload.sub, email: payload.email });
     return {
-      data: tokens,
+      data: {
+        accessToken,
+        refreshToken: body.refreshToken,
+      },
     };
   }
 
