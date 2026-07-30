@@ -11,6 +11,27 @@ export interface CustomerTokenPayload {
   type: "access" | "refresh";
   jti?: string;
   iat?: number;
+  familyId?: string;
+  deviceId?: string;
+}
+
+export interface MobileDeviceMeta {
+  deviceId?: string;
+  deviceName?: string;
+  os?: string;
+  osVersion?: string;
+}
+
+export interface TokenFamilyState {
+  activeJti: string;
+  previousJti?: string;
+  graceUntil?: number;
+  cachedTokens?: {
+    accessToken: string;
+    refreshToken: string;
+  };
+  customerId: string;
+  deviceMeta?: MobileDeviceMeta;
 }
 
 export interface CustomerTokenServiceOptions {
@@ -43,7 +64,10 @@ export class CustomerTokenService {
       (AUTH.REFRESH_TOKEN_EXPIRES_IN as SignOptions["expiresIn"]);
   }
 
-  generateAccessToken(customer: { id: string; email: string }): string {
+  generateAccessToken(
+    customer: { id: string; email: string },
+    opts?: { familyId?: string; deviceId?: string },
+  ): string {
     const accessJti = crypto.randomUUID();
     return jwt.sign(
       {
@@ -51,6 +75,8 @@ export class CustomerTokenService {
         email: customer.email,
         type: "access",
         jti: accessJti,
+        ...(opts?.familyId && { familyId: opts.familyId }),
+        ...(opts?.deviceId && { deviceId: opts.deviceId }),
       } satisfies CustomerTokenPayload,
       this.accessSecret,
       { expiresIn: this.accessTokenTtl, issuer: "ecom", audience: "ecom-customer" },
@@ -73,6 +99,62 @@ export class CustomerTokenService {
     );
 
     return { accessToken, refreshToken };
+  }
+
+  async generateMobileTokens(
+    customer: { id: string; email: string },
+    familyId?: string,
+    deviceMeta?: MobileDeviceMeta,
+  ) {
+    const activeFamilyId = familyId || crypto.randomUUID();
+    const accessJti = crypto.randomUUID();
+    const refreshJti = crypto.randomUUID();
+
+    const accessToken = jwt.sign(
+      {
+        sub: customer.id,
+        email: customer.email,
+        type: "access",
+        jti: accessJti,
+        familyId: activeFamilyId,
+        ...(deviceMeta?.deviceId && { deviceId: deviceMeta.deviceId }),
+      } satisfies CustomerTokenPayload,
+      this.accessSecret,
+      { expiresIn: this.accessTokenTtl, issuer: "ecom", audience: "ecom-customer" },
+    );
+
+    const refreshToken = jwt.sign(
+      {
+        sub: customer.id,
+        email: customer.email,
+        type: "refresh",
+        jti: refreshJti,
+        familyId: activeFamilyId,
+        ...(deviceMeta?.deviceId && { deviceId: deviceMeta.deviceId }),
+      } satisfies CustomerTokenPayload,
+      this.refreshSecret,
+      { expiresIn: this.refreshTokenTtl, issuer: "ecom", audience: "ecom-customer" },
+    );
+
+    const familyState: TokenFamilyState = {
+      activeJti: refreshJti,
+      customerId: customer.id,
+      ...(deviceMeta && { deviceMeta }),
+    };
+
+    try {
+      const redis = getRedisClient();
+      await redis.set(
+        `customer:token_family:${activeFamilyId}`,
+        JSON.stringify(familyState),
+        "EX",
+        2592000, // 30 days TTL
+      );
+    } catch (e) {
+      console.warn("[CustomerTokenService] Redis set family error:", (e as Error).message);
+    }
+
+    return { accessToken, refreshToken, familyId: activeFamilyId };
   }
 
   async verifyAccessToken(
@@ -178,5 +260,89 @@ export class CustomerTokenService {
       console.warn("[CustomerTokenService] Redis revocation check error:", (e as Error).message);
       return null;
     }
+  }
+
+  async revokeFamily(familyId: string): Promise<void> {
+    try {
+      const redis = getRedisClient();
+      await redis.del(`customer:token_family:${familyId}`);
+    } catch (e) {
+      console.warn("[CustomerTokenService] Redis revokeFamily error:", (e as Error).message);
+    }
+  }
+
+  async rotateMobileRefreshToken(token: string) {
+    const payload = await this.verifyRefreshToken(token);
+
+    if (!payload.familyId) {
+      throw ErrorWithCode.Factory.BadRequest("Missing familyId in mobile refresh token");
+    }
+
+    const redis = getRedisClient();
+    const familyKey = `customer:token_family:${payload.familyId}`;
+
+    let familyStateStr: string | null = null;
+    try {
+      familyStateStr = await redis.get(familyKey);
+    } catch (e) {
+      console.warn("[CustomerTokenService] Redis get family error:", (e as Error).message);
+    }
+
+    if (!familyStateStr) {
+      throw ErrorWithCode.Factory.Unauthorized("Mobile token family expired or revoked");
+    }
+
+    const familyState = JSON.parse(familyStateStr) as TokenFamilyState;
+
+    // Grace period check for 3G/4G network retries (15 seconds window)
+    if (
+      familyState.previousJti === payload.jti &&
+      familyState.graceUntil &&
+      Date.now() < familyState.graceUntil &&
+      familyState.cachedTokens
+    ) {
+      return {
+        accessToken: familyState.cachedTokens.accessToken,
+        refreshToken: familyState.cachedTokens.refreshToken,
+        familyId: payload.familyId,
+      };
+    }
+
+    // AUTOMATED REUSE DETECTION KILL-SWITCH (RFC 6819)
+    if (familyState.activeJti !== payload.jti) {
+      // Token reuse detected! Revoke the entire family immediately to protect the user
+      await this.revokeFamily(payload.familyId);
+      throw ErrorWithCode.Factory.Unauthorized(
+        "Security Alert: Refresh token reuse detected. Device session terminated.",
+      );
+    }
+
+    // Normal rotation: Generate new token pair and update family state
+    const newMobileTokens = await this.generateMobileTokens(
+      { id: payload.sub, email: payload.email },
+      payload.familyId,
+      familyState.deviceMeta,
+    );
+
+    const decodedRefresh = jwt.decode(newMobileTokens.refreshToken) as CustomerTokenPayload | null;
+    const updatedState: TokenFamilyState = {
+      activeJti: decodedRefresh?.jti ?? "",
+      previousJti: payload.jti,
+      graceUntil: Date.now() + 15000, // 15s Grace Period window
+      cachedTokens: {
+        accessToken: newMobileTokens.accessToken,
+        refreshToken: newMobileTokens.refreshToken,
+      },
+      customerId: payload.sub,
+      deviceMeta: familyState.deviceMeta,
+    };
+
+    try {
+      await redis.set(familyKey, JSON.stringify(updatedState), "EX", 2592000);
+    } catch (e) {
+      console.warn("[CustomerTokenService] Redis update family error:", (e as Error).message);
+    }
+
+    return newMobileTokens;
   }
 }
