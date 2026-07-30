@@ -40,7 +40,8 @@
     "compression": "^1.8.1",
     "helmet": "^8.2.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "tsx": "^4.22.4"
   },
   "devDependencies": {
     "@flash-ship/ecom-tsconfig": "portal:../../../ecom-shared-packages/packages/tsconfig",
@@ -51,7 +52,6 @@
     "@types/compression": "^1.8.1",
     "@types/express": "^5.0.0",
     "@types/node": "^20",
-    "tsx": "^4.22.4",
     "typescript": "^5.8.0",
     "vitest": "^3.2.0"
   }
