@@ -102,7 +102,7 @@ export interface UpdateOrderInput {
 
 export interface OrderQueryOptions {
   customerId?: string;
-  status?: OrderStatus;
+  status?: OrderStatus | OrderStatus[];
   orderCode?: string;
   sellerOrderId?: string;
   shippingMethod?: ShippingMethod;
@@ -281,7 +281,13 @@ export class OrderRepository {
     }
 
     if (status) {
-      conditions.push({ status });
+      if (Array.isArray(status)) {
+        if (status.length > 0) {
+          conditions.push({ status: { in: status as OrderStatus[] } });
+        }
+      } else {
+        conditions.push({ status: status as OrderStatus });
+      }
     }
 
     if (orderCode?.trim()) {
