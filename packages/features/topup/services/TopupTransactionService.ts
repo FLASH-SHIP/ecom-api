@@ -81,6 +81,24 @@ export class TopupTransactionService {
     wireDate?: Date;
     wireImages?: string[];
   }) {
+    // 1. Validate Wire Amount
+    if (!data.wireAmount || data.wireAmount <= 0) {
+      throw new Error("Số tiền nạp phải lớn hơn 0.");
+    }
+
+    // 2. Validate Wire Date
+    if (data.wireDate && data.wireDate > new Date()) {
+      throw new Error("Ngày chuyển tiền không được lớn hơn ngày hiện tại.");
+    }
+
+    // 3. Validate Wire Images
+    if (!data.wireImages || data.wireImages.length === 0) {
+      throw new Error("Vui lòng tải lên ít nhất 1 ảnh chứng từ xác nhận chuyển tiền.");
+    }
+    if (data.wireImages.length > 10) {
+      throw new Error("Tối đa chỉ được tải lên 10 ảnh chứng từ.");
+    }
+
     // Sinh mã giao dịch duy nhất dạng W260730...
     const transactionCode = generateEntityCode("W");
     const currentRate = await this.getLatestExchangeRate();
@@ -113,6 +131,23 @@ export class TopupTransactionService {
       wireImages?: string[];
     },
   ) {
+    if (data.wireAmount !== undefined && data.wireAmount <= 0) {
+      throw new Error("Số tiền nạp phải lớn hơn 0.");
+    }
+
+    if (data.wireDate && data.wireDate > new Date()) {
+      throw new Error("Ngày chuyển tiền không được lớn hơn ngày hiện tại.");
+    }
+
+    if (data.wireImages !== undefined) {
+      if (data.wireImages.length === 0) {
+        throw new Error("Vui lòng tải lên ít nhất 1 ảnh chứng từ xác nhận chuyển tiền mới.");
+      }
+      if (data.wireImages.length > 10) {
+        throw new Error("Tối đa chỉ được tải lên 10 ảnh chứng từ.");
+      }
+    }
+
     const updated = await this.transactionRepo.updateTopupRequest(id, customerId, data);
     return mapTopupTransactionToResponse(updated);
   }

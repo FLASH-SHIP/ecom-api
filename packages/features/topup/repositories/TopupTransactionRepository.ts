@@ -332,8 +332,8 @@ export class TopupTransactionRepository {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Nếu có cập nhật ảnh mới, xóa danh sách ảnh cũ trước
-      if (data.wireImages) {
+      // Nếu có cập nhật danh sách ảnh mới (và có ít nhất 1 ảnh), xóa danh sách ảnh cũ trước
+      if (data.wireImages && data.wireImages.length > 0) {
         await tx.topupTransactionWireImage.deleteMany({
           where: { transactionId: id },
         });
@@ -364,7 +364,7 @@ export class TopupTransactionRepository {
       // Ghi nhật ký lịch sử cập nhật giao dịch
       await tx.topupTransactionHistory.create({
         data: {
-          actionName: "UPDATED",
+          actionName: "Khách hàng cập nhật giao dịch",
           topupTransactionId: updated.id,
           status: TopupStatus.WAITING,
           createdBy: customerId,
@@ -420,7 +420,7 @@ export class TopupTransactionRepository {
       // Ghi nhật ký lịch sử thao tác hủy / từ chối giao dịch
       await tx.topupTransactionHistory.create({
         data: {
-          actionName: "CANCELLED",
+          actionName: "Hủy giao dịch",
           topupTransactionId: updated.id,
           status: TopupStatus.REJECT,
           createdBy: operatorId,

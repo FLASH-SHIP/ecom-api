@@ -5,6 +5,12 @@ export const IS_BANK = {
 
 export type IS_BANK = (typeof IS_BANK)[keyof typeof IS_BANK];
 
+/**
+ * Chuyển đổi đường dẫn tương đối (relative path) của file asset sang URL tuyệt đối (absolute URL).
+ * 
+ * @param relativePath Đường dẫn tương đối (ví dụ: "/uploads/icon.png")
+ * @returns Đường dẫn URL hoàn chỉnh bao gồm domain Backend API
+ */
 export function buildAssetUrl(relativePath?: string | null): string | null {
   if (!relativePath) return null;
   if (relativePath.startsWith("http://") || relativePath.startsWith("https://")) {
@@ -22,6 +28,10 @@ export function buildAssetUrl(relativePath?: string | null): string | null {
   return `${cleanDomain}${cleanPath}`;
 }
 
+/**
+ * Chuẩn hóa đối tượng Phương thức thanh toán (TopupPaymentMethod) trả về cho Client/API.
+ * Tự động build absolute URL cho icon & image, bảo đảm kiểu dữ liệu Boolean cho isBank & isDefault.
+ */
 export function mapTopupPaymentMethodToResponse(pm: any) {
   if (!pm) return null;
   return {
@@ -29,6 +39,7 @@ export function mapTopupPaymentMethodToResponse(pm: any) {
     name: pm.name,
     status: pm.status,
     isBank: Boolean(pm.isBank),
+    isDefault: Boolean(pm.isDefault),
     icon: buildAssetUrl(pm.icon),
     image: buildAssetUrl(pm.image),
     position: pm.position,
@@ -38,6 +49,10 @@ export function mapTopupPaymentMethodToResponse(pm: any) {
   };
 }
 
+/**
+ * Chuẩn hóa bản ghi Giao dịch nạp tiền (TopupTransaction) trả về cho Client/API.
+ * Chuyển đổi Decimal sang Number, ISO Date String và danh sách ảnh chứng từ tuyệt đối.
+ */
 export function mapTopupTransactionToResponse(item: any) {
   return {
     id: String(item.id),
