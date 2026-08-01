@@ -134,6 +134,7 @@ export class CustomerRepository {
       where: { email, deletedAt: null },
       select: {
         id: true,
+        customerCode: true,
         email: true,
         username: true,
         name: true,
@@ -226,6 +227,8 @@ export class CustomerRepository {
         email: true,
         username: true,
         name: true,
+        avatarUrl: true,
+        status: true,
       },
     });
   }
@@ -359,6 +362,8 @@ export class CustomerRepository {
         email: true,
         username: true,
         name: true,
+        avatarUrl: true,
+        status: true,
       },
     });
   }
@@ -500,5 +505,40 @@ export class CustomerRepository {
         email: true,
       },
     });
+  }
+
+  /**
+   * Tạo mới hoặc liên kết tài khoản Social (Google, Facebook SSO...) cho Customer.
+   * Nếu tài khoản đã tồn tại liên kết thì giữ nguyên, ngược lại sẽ tạo record liên kết trong bảng customerSocialAccount.
+   */
+  async ensureSocialAccount(data: {
+    customerId: string;
+    provider: string;
+    providerId: string;
+    email?: string;
+    name?: string;
+    avatarUrl?: string;
+  }) {
+    const existing = await this.prisma.customerSocialAccount.findUnique({
+      where: {
+        provider_providerId: {
+          provider: data.provider,
+          providerId: data.providerId,
+        },
+      },
+    });
+
+    if (!existing) {
+      await this.prisma.customerSocialAccount.create({
+        data: {
+          customerId: data.customerId,
+          provider: data.provider,
+          providerId: data.providerId,
+          email: data.email,
+          name: data.name,
+          avatarUrl: data.avatarUrl,
+        },
+      });
+    }
   }
 }

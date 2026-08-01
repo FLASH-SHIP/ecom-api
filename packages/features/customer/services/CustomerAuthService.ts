@@ -7,6 +7,7 @@ import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { RedisCache, RedisRateLimiter } from "@flash-ship/ecom-lib/redis";
+import { ExternalWalletClient } from "@ecom/features/topup/clients/ExternalWalletClient";
 import jwt from "jsonwebtoken";
 import { CustomerTokenService } from "./CustomerTokenService";
 
@@ -183,7 +184,82 @@ export class CustomerAuthService {
       username: result.username,
     });
 
+    // Auto-create partner wallet account in External Wallet System
+    try {
+      const walletClient = new ExternalWalletClient();
+      const walletRes = await walletClient.createAccount({
+        partnerId: result.id,
+        partnerCode: result.customerCode || "",
+      });
+      log.info("Successfully created external wallet account for registered customer", {
+        customerId: result.id,
+        customerCode: result.customerCode,
+        response: walletRes,
+      });
+    } catch (walletError) {
+      const errorMsg = walletError instanceof Error ? walletError.message : String(walletError);
+      log.error("Failed to create external wallet account for registered customer", {
+        customerId: result.id,
+        customerCode: result.customerCode,
+        error: errorMsg,
+      });
+    }
+
     return result;
+  }
+
+  async socialLogin(data: {
+    provider: string;
+    providerId: string;
+    email: string;
+    name?: string;
+    avatarUrl?: string;
+  }) {
+    let customer = await this.deps.customerRepo.findByEmail(data.email);
+    let isNewCustomer = false;
+
+    if (!customer) {
+      const username = await this.deps.customerRepo.generateUniqueUsername(data.email);
+      customer = await this.deps.customerRepo.create({
+        email: data.email,
+        username,
+        name: data.name,
+      });
+      isNewCustomer = true;
+    }
+
+    await this.deps.customerRepo.ensureSocialAccount({
+      customerId: customer.id,
+      provider: data.provider,
+      providerId: data.providerId,
+      email: data.email,
+      name: data.name,
+      avatarUrl: data.avatarUrl,
+    });
+
+    if (isNewCustomer) {
+      try {
+        const walletClient = new ExternalWalletClient();
+        const walletRes = await walletClient.createAccount({
+          partnerId: customer.id,
+          partnerCode: customer.customerCode || "",
+        });
+        log.info("Successfully created external wallet account for social SSO registered customer", {
+          customerId: customer.id,
+          customerCode: customer.customerCode,
+          response: walletRes,
+        });
+      } catch (walletError) {
+        const errorMsg = walletError instanceof Error ? walletError.message : String(walletError);
+        log.error("Failed to create external wallet account for social SSO registered customer", {
+          customerId: customer.id,
+          customerCode: customer.customerCode,
+          error: errorMsg,
+        });
+      }
+    }
+
+    return customer;
   }
 
   async login(identifier: string, password: string) {

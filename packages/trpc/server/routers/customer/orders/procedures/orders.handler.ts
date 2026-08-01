@@ -242,7 +242,7 @@ export const list = authedProcedure
     z
       .object({
         search: z.string().optional(),
-        status: orderStatusSchema.optional(),
+        status: z.union([orderStatusSchema, z.array(orderStatusSchema)]).optional(),
         fromDate: z.string().optional(),
         toDate: z.string().optional(),
         shippingMethod: z.enum(["EPACKET", "EXPRESS"]).optional(),
@@ -348,7 +348,7 @@ export const exportExcel = authedProcedure
     z
       .object({
         search: z.string().optional(),
-        status: orderStatusSchema.optional(),
+        status: z.union([orderStatusSchema, z.array(orderStatusSchema)]).optional(),
         fromDate: z.string().optional(),
         toDate: z.string().optional(),
         shippingMethod: z.enum(["EPACKET", "EXPRESS"]).optional(),

@@ -1,7 +1,10 @@
 import { router } from "../../../trpc";
 import {
+  adjustTopupRequest,
+  approveTopupRequest,
   cancelTopupRequest,
   createTopupRequest,
+  exportExcel,
   getLatestExchangeRate,
   getPaymentMethods,
   getTopupHistory,
@@ -14,7 +17,16 @@ export const customerTopupRouter = router({
   getPaymentMethods,
   getLatestExchangeRate,
   getHistory: getTopupHistory,
+  getTopupHistory,
   create: createTopupRequest,
+  createTopupRequest,
   update: updateTopupRequest,
+  updateTopupRequest,
   cancel: cancelTopupRequest,
+  cancelTopupRequest,
+  adjust: adjustTopupRequest,
+  adjustTopupRequest,
+  approve: approveTopupRequest,
+  approveTopupRequest,
+  exportExcel,
 });

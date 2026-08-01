@@ -111,6 +111,38 @@ export class CustomerAuthController {
     };
   }
 
+  @Post("social-login")
+  @ApiOperation({ summary: "Authenticate / Register customer via Social SSO (Google/Facebook/etc)" })
+  async socialLogin(
+    @Body()
+    body: {
+      provider: string;
+      providerId: string;
+      email: string;
+      name?: string;
+      avatarUrl?: string;
+    },
+  ) {
+    const authService = getCustomerAuthService();
+    const tokenService = getCustomerTokenService();
+
+    const customer = await authService.socialLogin(body);
+    const tokens = tokenService.generateTokens(customer);
+    const user = {
+      id: customer.id,
+      email: customer.email,
+      name: customer.name || customer.email,
+      tokenVersion: (customer as { tokenVersion?: number }).tokenVersion ?? 1,
+    };
+    return {
+      user,
+      customer,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: AUTH.ACCESS_TOKEN_EXPIRES_IN_SEC,
+    };
+  }
+
   @Post("login")
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: "Authenticate and log in customer (with Redis active token cache)" })
