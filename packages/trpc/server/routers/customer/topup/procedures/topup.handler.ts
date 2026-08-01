@@ -235,8 +235,6 @@ export const exportExcel = authedProcedure
         calculatedApproved = rawApprove > 0 ? rawApprove : rawWire;
       } else if (st === TopupStatus.WAITING || st === 1) {
         calculatedApproved = rawApprove > 0 ? rawApprove : 0;
-      } else {
-        calculatedApproved = 0;
       }
 
       // Multi-line receipt proof URLs separated by \n

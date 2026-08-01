@@ -1,6 +1,6 @@
 import { Prisma, TopupType, type PrismaClient } from "@ecom/prisma";
 import { TopupStatus } from "@flash-ship/ecom-types";
-import { ExternalWalletClient } from "../clients/ExternalWalletClient";
+import { ExternalWalletClient } from "../clients";
 
 /**
  * Các tham số bộ lọc tìm kiếm và phân trang cho danh sách lịch sử giao dịch nạp tiền
