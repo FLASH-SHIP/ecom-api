@@ -19,6 +19,29 @@ export class TopupExchangeRateRepository {
   }
 
   /**
+   * Get exchange rate by specified date (or latest)
+   */
+  async getExchangeRateByDate(date?: Date) {
+    if (!date) {
+      return this.getLatestExchangeRate();
+    }
+    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+    const item = await this.prisma.topupExchangeRateManagement.findFirst({
+      where: {
+        status: TopupContentStatus.PUBLISHED,
+        deletedAt: null,
+        createdAt: {
+          lte: endOfDay,
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return item ?? this.getLatestExchangeRate();
+  }
+
+  /**
    * Create new exchange rate
    */
   async createExchangeRate(data: { rate: number; note?: string; createdBy?: string }) {

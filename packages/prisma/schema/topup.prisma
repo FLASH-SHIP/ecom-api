@@ -5,6 +5,15 @@ enum TopupContentStatus {
   UNPUBLISHED
 }
 
+enum TopupType {
+  ADDED_FUNDS
+  PAID
+  CANCELED
+  REFUNDED
+  ADJUST_BALANCE_INCREASE
+  ADJUST_BALANCE_DECREASE
+}
+
 model TopupPaymentMethod {
   id        Int                @id @default(autoincrement())
   name      String
@@ -45,7 +54,7 @@ model TopupTransaction {
   id                  Int       @id @default(autoincrement())
   customerId          String    @map("customer_id") @db.Uuid
   transactionCode     String    @unique @map("transaction_code") @db.VarChar(255)
-  topupType           String    @map("topup_type") @db.VarChar(255)
+  topupType           String    @default("ADDED_FUNDS") @map("topup_type") @db.VarChar(50)
   currency            String    @default("USD") @db.VarChar(10)
   submissionDate      DateTime? @map("submission_date")
   wireDate            DateTime? @map("wire_date")
@@ -59,7 +68,7 @@ model TopupTransaction {
   accountBalanceBefore Decimal   @map("account_balance_before") @db.Decimal(12, 2)
   amountChange        Decimal   @map("amount_change") @db.Decimal(12, 2)
   accountBalanceAfter Decimal   @map("account_balance_after") @db.Decimal(12, 2)
-  status              String    @db.VarChar(255)
+  status              Int       @default(1)
   createdBy           String?   @map("created_by") @db.Uuid
   updatedBy           String?   @map("updated_by") @db.Uuid
   createdAt           DateTime  @default(now()) @map("created_at")
@@ -96,7 +105,7 @@ model TopupTransactionHistory {
   actionName         String           @map("action_name") @db.VarChar(255)
   topupTransactionId Int              @map("topup_transaction_id")
   wireAmountApproved Decimal?         @map("wire_amount_approved") @db.Decimal(12, 2)
-  status             String?          @db.VarChar(255)
+  status             Int?
   createdBy          String?          @map("created_by") @db.Uuid
   updatedBy          String?          @map("updated_by") @db.Uuid
   createdAt          DateTime         @default(now()) @map("created_at")

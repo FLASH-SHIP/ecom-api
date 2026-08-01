@@ -115,6 +115,10 @@ export const apiEnvSchema = z.object({
   NOTIFICATION_TIMEZONE: z.string().default("Asia/Ho_Chi_Minh"),
   NOTIFICATION_MAX_TOKENS_PER_OWNER: z.coerce.number().int().positive().default(10),
   NOTIFICATION_WEBHOOK_SECRET: z.string().default("whsec_devsecret"),
+
+  // External Wallet Configuration
+  EXTERNAL_WALLET_API_BASE_URL: z.string().default("https://dev-api.ecomexpress.vn"),
+  EXTERNAL_WALLET_SECRET_KEY: z.string().default(""),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

@@ -39,6 +39,27 @@ export const register = publicProcedure
     return { customer, ...tokens };
   });
 
+export const socialLogin = publicProcedure
+  .use(rateLimiters.auth)
+  .input(
+    z.object({
+      provider: z.string(),
+      providerId: z.string(),
+      email: z.string().email(),
+      name: z.string().optional(),
+      avatarUrl: z.string().optional(),
+    }),
+  )
+  .mutation(async ({ input }) => {
+    const authService = getCustomerAuthService();
+    const tokenService = getCustomerTokenService();
+
+    const customer = await authService.socialLogin(input);
+    const tokens = tokenService.generateTokens(customer);
+
+    return { customer, ...tokens };
+  });
+
 export const login = publicProcedure
   .use(rateLimiters.auth)
   .input(

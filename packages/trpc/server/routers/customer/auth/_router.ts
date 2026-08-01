@@ -10,6 +10,7 @@ import {
   register,
   resetPassword,
   sendVerificationCode,
+  socialLogin,
   updateProfile,
   verifyEmail,
 } from "./procedures/auth.handler";
@@ -17,6 +18,7 @@ import {
 export const customerAuthRouter = router({
   sendVerificationCode,
   register,
+  socialLogin,
   login,
   refreshToken,
   me,

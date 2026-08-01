@@ -456,6 +456,15 @@ export type {
   OrderProduct,
   OrderTrackingCheckpoint,
 };
+export enum TopupType {
+  ADDED_FUNDS = "ADDED_FUNDS",
+  PAID = "PAID",
+  CANCELED = "CANCELED",
+  REFUNDED = "REFUNDED",
+  ADJUST_BALANCE_INCREASE = "ADJUST_BALANCE_INCREASE",
+  ADJUST_BALANCE_DECREASE = "ADJUST_BALANCE_DECREASE",
+}
+
 export {
   ActorType,
   ContentStatus,
