@@ -19,6 +19,7 @@ model TopupPaymentMethod {
   name      String
   status    TopupContentStatus @default(PUBLISHED)
   isBank    Boolean            @default(false) @map("is_bank")
+  isDefault Boolean            @default(false) @map("is_default")
   icon      String?            @db.Text
   image     String?            @db.Text
   position  Int?               @default(dbgenerated("NULL"))
@@ -30,6 +31,7 @@ model TopupPaymentMethod {
   relations    TopupPaymentMethodPartnerRelation[]
   transactions TopupTransaction[]
 
+  @@index([status, deletedAt, isDefault])
   @@map("topup_payment_methods")
 }
 
@@ -46,7 +48,7 @@ model TopupPaymentMethodPartnerRelation {
   paymentMethod TopupPaymentMethod @relation(fields: [paymentMethodId], references: [id], onDelete: Cascade)
 
   @@unique([customerId, paymentMethodId])
-  @@index([customerId, status])
+  @@index([customerId, status, deletedAt])
   @@map("topup_payment_method_partner_relations")
 }
 

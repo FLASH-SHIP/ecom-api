@@ -62,7 +62,10 @@ export const createTopupRequest = authedProcedure
       wireAmount: z.number().positive(),
       description: z.string().optional(),
       wireDate: z.string().optional(),
-      wireImages: z.array(z.string()).optional(),
+      wireImages: z
+        .array(z.string())
+        .min(1, "Vui lòng tải lên ít nhất 1 ảnh chứng từ xác nhận chuyển tiền.")
+        .max(10, "Tối đa chỉ được tải lên 10 ảnh chứng từ."),
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -85,7 +88,11 @@ export const updateTopupRequest = authedProcedure
         wireAmount: z.number().positive().optional(),
         description: z.string().optional(),
         wireDate: z.string().optional(),
-        wireImages: z.array(z.string()).optional(),
+        wireImages: z
+          .array(z.string())
+          .min(1, "Vui lòng tải lên ít nhất 1 ảnh chứng từ xác nhận chuyển tiền mới.")
+          .max(10, "Tối đa chỉ được tải lên 10 ảnh chứng từ.")
+          .optional(),
       }),
     }),
   )
