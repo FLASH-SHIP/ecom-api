@@ -41,6 +41,16 @@ export class CustomerJwtGuard implements CanActivate {
     try {
       const payload = await getCustomerTokenService().verifyAccessToken(token);
       request.customerPayload = payload;
+      if (!request.apiUser) {
+        request.apiUser = {
+          id: payload.sub,
+          email: payload.email,
+          name: null,
+          authMethod: "jwt",
+          permissions: ["customer"],
+          ownerType: "Customer",
+        };
+      }
       return true;
     } catch {
       throw new UnauthorizedException("Invalid or expired access token");

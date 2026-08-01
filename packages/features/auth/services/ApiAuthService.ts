@@ -2,9 +2,10 @@ import { createHash } from "node:crypto";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import type { JwtPayload } from "@flash-ship/ecom-lib/jwt";
-import { verifyToken } from "@flash-ship/ecom-lib/jwt";
+import { decodeToken, verifyToken } from "@flash-ship/ecom-lib/jwt";
 import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { getRedisClient, RedisCache } from "@flash-ship/ecom-lib/redis";
+import { getCachedSession, setCachedSession } from "@flash-ship/ecom-lib/session-cache";
 import type { ApiKeyRepository } from "../repositories/ApiKeyRepository";
 import type { UserRepository } from "../repositories/UserRepository";
 
@@ -118,7 +119,7 @@ export class ApiAuthService {
    * Resolve authenticated user from a Bearer token.
    * Implements the dual-auth strategy:
    *   Token starts with "ecom_" → API Key
-   *   Otherwise → JWT Access Token
+   *   Otherwise → JWT Access Token (Admin or Customer)
    */
   async authenticateBearer(token: string, clientIp?: string): Promise<AuthenticatedUser> {
     if (token.startsWith("ecom_")) {
@@ -184,7 +185,80 @@ export class ApiAuthService {
     throw ErrorWithCode.Factory.Unauthorized("Invalid API key owner type");
   }
 
-  private async authenticateJwt(token: string): Promise<AuthenticatedUser> {
+  private async authenticateCustomerJwt(token: string): Promise<AuthenticatedUser> {
+    const { getCustomerTokenService } = await import(
+      "@ecom/features/di/containers/CustomerService"
+    );
+    const customerTokenService = getCustomerTokenService();
+
+    let customerPayload: Awaited<ReturnType<typeof customerTokenService.verifyAccessToken>>;
+    try {
+      customerPayload = await customerTokenService.verifyAccessToken(token);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid or expired access token";
+      throw ErrorWithCode.Factory.Unauthorized(message);
+    }
+
+    const versionKey =
+      typeof (customerPayload as unknown as Record<string, unknown>).tokenVersion === "number"
+        ? (customerPayload as unknown as Record<string, unknown>).tokenVersion
+        : "latest";
+    const cacheKey = `session:user:customer:${customerPayload.sub}:${versionKey}`;
+
+    const cachedCustomer = (await getCachedSession(cacheKey)) as {
+      id: string;
+      email: string;
+      name: string | null;
+      status: string;
+    } | null;
+
+    if (cachedCustomer) {
+      log.debug("[AuthCache] HIT", { cacheKey });
+      if (cachedCustomer.status !== "ACTIVE") {
+        throw ErrorWithCode.Factory.Forbidden("Customer account is not active");
+      }
+      return {
+        id: cachedCustomer.id,
+        email: cachedCustomer.email,
+        name: cachedCustomer.name,
+        authMethod: "jwt",
+        permissions: ["customer"],
+        ownerType: "Customer",
+      };
+    }
+
+    log.debug("[AuthCache] MISS", { cacheKey });
+
+    const customer = await this.deps.customerRepo.findById(customerPayload.sub);
+    if (!customer) {
+      throw ErrorWithCode.Factory.Unauthorized("Customer not found");
+    }
+    if (customer.status !== "ACTIVE") {
+      throw ErrorWithCode.Factory.Forbidden("Customer account is not active");
+    }
+
+    await setCachedSession(
+      cacheKey,
+      {
+        id: customer.id,
+        email: customer.email,
+        name: customer.name ?? null,
+        status: customer.status,
+      },
+      10,
+    );
+
+    return {
+      id: customer.id,
+      email: customer.email,
+      name: customer.name,
+      authMethod: "jwt",
+      permissions: ["customer"],
+      ownerType: "Customer",
+    };
+  }
+
+  private async authenticateAdminJwt(token: string): Promise<AuthenticatedUser> {
     let payload: JwtPayload;
     try {
       payload = verifyToken(token);
@@ -246,6 +320,18 @@ export class ApiAuthService {
       permissions: userPermissions,
       ownerType: "User",
     };
+  }
+
+  private async authenticateJwt(token: string): Promise<AuthenticatedUser> {
+    const decoded = decodeToken(token) as ({ aud?: string | string[] } & JwtPayload) | null;
+    const audience = Array.isArray(decoded?.aud) ? decoded.aud[0] : decoded?.aud;
+
+    // Handle Customer Access Tokens (aud: "ecom-customer")
+    if (audience === "ecom-customer") {
+      return this.authenticateCustomerJwt(token);
+    }
+
+    return this.authenticateAdminJwt(token);
   }
 
   /**

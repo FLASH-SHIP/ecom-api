@@ -130,6 +130,7 @@ model Order {
   feeItems            OrderFeeItem[]
   products            OrderProduct[]
   topupTransactions   TopupTransaction[]
+  partnerAuditLogs    PartnerAuditLog[]
 
   version   Int      @default(0) @map("version")
   createdAt DateTime @default(now()) @map("created_at")
@@ -272,3 +273,43 @@ model OrderImport {
   @@index([customerId])
   @@map("order_imports")
 }
+
+model PartnerAuditLog {
+  id                String          @id @default(uuid(7)) @db.Uuid
+  orderId           String?         @map("order_id") @db.Uuid
+  order             Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  partnerId         Int?            @map("partner_id")
+  partner           Partner?        @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  partnerServiceId  Int?            @map("partner_service_id")
+  partnerService    PartnerService? @relation(fields: [partnerServiceId], references: [id], onDelete: SetNull)
+  partnerCode       String          @map("partner_code") // EPICHUB, STRIPE, SBP, UPS
+  serviceType       ServiceType?    @map("service_type") // Enum: PICKUP, EXPORT, IMPORT, LASTMILE
+  action            String          @default("TRANSACTION") @map("action") // CREATE_LABEL, CALCULATE_DUTY, CHARGE_PAYMENT
+  requestId         String          @map("request_id")
+  serviceCode       String?         @map("service_code") // Carrier Service (03), Payment Method (card), POD SKU
+  externalRefId     String?         @map("external_ref_id") // Tracking Number, Transaction ID, Declaration ID, Job ID
+  quotedFee         Decimal?        @map("quoted_fee") @db.Decimal(12, 2)
+  actualFee         Decimal?        @map("actual_fee") @db.Decimal(12, 2)
+  currency          String          @default("USD") @map("currency")
+  referenceCode     String?         @map("reference_code") // Support reference code / Ticket code từ partner
+  rawRequest        Json?           @map("raw_request")
+  rawResponse       Json?           @map("raw_response")
+  metadata          Json?           @map("metadata")
+  status            String          @map("status") // SUCCESS, AMBIGUOUS, FAILED
+  errorMessage      String?         @map("error_message") @db.Text
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([partnerId])
+  @@index([partnerServiceId])
+  @@index([partnerCode, requestId])
+  @@index([serviceType])
+  @@index([externalRefId])
+  @@index([createdAt])
+  @@map("partner_audit_logs")
+}
+
+
+
+
+

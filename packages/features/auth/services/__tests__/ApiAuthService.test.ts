@@ -1,3 +1,4 @@
+import { signCustomerAccessToken } from "@flash-ship/ecom-lib/jwt";
 import { describe, expect, it, vi } from "vitest";
 import { ApiAuthService } from "../ApiAuthService";
 
@@ -138,6 +139,43 @@ describe("ApiAuthService", () => {
 
       await expect(service.authenticateBearer(rawKey, "192.168.1.1")).rejects.toThrow(
         "API key expired",
+      );
+    });
+
+    it("should authorize customer request when given a valid Customer JWT token", async () => {
+      const deps = createMockDeps();
+      const service = new ApiAuthService(deps);
+
+      // Create a valid customer access token
+      const token = signCustomerAccessToken({
+        sub: "cust_123",
+        email: "cust@example.com",
+      });
+
+      const user = await service.authenticateBearer(token, "192.168.1.1");
+      expect(user.id).toBe("cust_123");
+      expect(user.email).toBe("cust@example.com");
+      expect(user.ownerType).toBe("Customer");
+      expect(user.permissions).toEqual(["customer"]);
+    });
+
+    it("should reject customer request when Customer account status is INACTIVE", async () => {
+      const deps = createMockDeps();
+      deps.customerRepo.findById.mockResolvedValue({
+        id: "cust_123",
+        email: "cust@example.com",
+        name: "Customer Test",
+        status: "INACTIVE",
+      });
+      const service = new ApiAuthService(deps);
+
+      const token = signCustomerAccessToken({
+        sub: "cust_123",
+        email: "cust@example.com",
+      });
+
+      await expect(service.authenticateBearer(token, "192.168.1.1")).rejects.toThrow(
+        "Customer account is not active",
       );
     });
   });
