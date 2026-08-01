@@ -548,7 +548,7 @@ export class RateCardRepository {
         data: {
           code,
           name,
-          type: original.type === "DEFAULT" ? "CUSTOM" : original.type,
+          type: original.type,
           status: "DRAFT",
           shippingMethod: original.shippingMethod,
           country: original.country,
@@ -559,11 +559,14 @@ export class RateCardRepository {
           maxWeight: original.maxWeight,
           startDate: original.startDate,
           endDate: original.type === "DEFAULT" ? null : original.endDate,
-          groups: {
-            create: original.groups.map((g) => ({
-              customerGroupId: g.customerGroupId,
-            })),
-          },
+          groups:
+            original.groups.length > 0
+              ? {
+                  create: original.groups.map((g) => ({
+                    customerGroupId: g.customerGroupId,
+                  })),
+                }
+              : undefined,
           items: {
             create: original.items.map((item) => ({
               startWeight: item.startWeight,
