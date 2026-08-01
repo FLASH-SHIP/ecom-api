@@ -1,10 +1,15 @@
 import type {
   FilterTopupHistoryParams,
+  FilterTransactionHistoryParams,
   TopupExchangeRateRepository,
   TopupPaymentMethodRepository,
   TopupTransactionRepository,
 } from "../repositories";
-import { mapTopupPaymentMethodToResponse, mapTopupTransactionToResponse } from "../mappers";
+import {
+  mapTopupPaymentMethodToResponse,
+  mapTopupTransactionToResponse,
+  mapToTransactionHistoryResponse,
+} from "../mappers";
 import { ExternalWalletClient } from "../clients";
 import { generateEntityCode } from "@flash-ship/ecom-lib";
 
@@ -66,6 +71,21 @@ export class TopupTransactionService {
   }
 
   /**
+   * Lấy danh sách lịch sử biến động số dư ví (dành cho bảng TransactionTable.tsx)
+   * - Tự động ánh xạ dữ liệu qua mapper `mapToTransactionHistoryResponse`.
+   * - Trả về `data` danh sách mảng đối tượng DTO và `meta` thông tin phân trang.
+   * 
+   * @param params Bộ lọc truy vấn dữ liệu giao dịch ví
+   */
+  async getTransactionHistoryList(params: FilterTransactionHistoryParams) {
+    const result = await this.transactionRepo.getTransactionHistoryList(params);
+    return {
+      data: result.data.map(mapToTransactionHistoryResponse),
+      meta: result.meta,
+    };
+  }
+
+  /**
    * Khởi tạo yêu cầu nạp tiền mới từ ứng dụng Customer
    * - Tự động sinh mã giao dịch duy nhất (transactionCode)
    * - Tạo bản ghi nạp tiền ở trạng thái Chờ xác nhận (status = 1 WAITING)
@@ -77,6 +97,8 @@ export class TopupTransactionService {
     customerId: string;
     paymentMethodId: number;
     wireAmount: number;
+    currency?: string;
+    rate?: number;
     description?: string;
     wireDate?: Date;
     wireImages?: string[];
@@ -101,14 +123,15 @@ export class TopupTransactionService {
 
     // Sinh mã giao dịch duy nhất dạng W260730...
     const transactionCode = generateEntityCode("W");
-    const currentRate = await this.getLatestExchangeRate();
+    const rateToUse = data.rate !== undefined ? data.rate : await this.getLatestExchangeRate();
 
     const transaction = await this.transactionRepo.createTopupRequest({
       customerId: data.customerId,
       transactionCode,
       paymentMethodId: data.paymentMethodId,
       wireAmount: data.wireAmount,
-      rate: currentRate,
+      currency: data.currency,
+      rate: rateToUse,
       description: data.description,
       wireDate: data.wireDate,
       wireImages: data.wireImages,

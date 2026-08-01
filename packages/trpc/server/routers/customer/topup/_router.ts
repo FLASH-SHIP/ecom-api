@@ -8,6 +8,7 @@ import {
   getLatestExchangeRate,
   getPaymentMethods,
   getTopupHistory,
+  getTransactionHistory,
   getWalletSummary,
   updateTopupRequest,
 } from "./procedures/topup.handler";
@@ -18,6 +19,7 @@ export const customerTopupRouter = router({
   getLatestExchangeRate,
   getHistory: getTopupHistory,
   getTopupHistory,
+  getTransactionHistory,
   create: createTopupRequest,
   createTopupRequest,
   update: updateTopupRequest,

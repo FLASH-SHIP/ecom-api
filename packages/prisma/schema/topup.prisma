@@ -61,15 +61,15 @@ model TopupTransaction {
   submissionDate      DateTime? @map("submission_date")
   wireDate            DateTime? @map("wire_date")
   paymentMethodId     Int?      @map("payment_method")
-  wireAmount          Decimal?  @map("wire_amount") @db.Decimal(12, 2)
-  wireAmountApprove   Decimal?  @map("wire_amount_approve") @db.Decimal(12, 2)
-  rate                Decimal?  @map("rate") @db.Decimal(12, 2)
+  wireAmount          Decimal?  @default(0) @map("wire_amount") @db.Decimal(12, 2)
+  wireAmountApprove   Decimal?  @default(0) @map("wire_amount_approve") @db.Decimal(12, 2)
+  rate                Decimal?  @default(0) @map("rate") @db.Decimal(12, 2)
   description         String?   @db.VarChar(500)
   orderId             String?   @map("order_id") @db.Uuid
   orderCode           String?   @map("order_code") @db.VarChar(255)
-  accountBalanceBefore Decimal   @map("account_balance_before") @db.Decimal(12, 2)
-  amountChange        Decimal   @map("amount_change") @db.Decimal(12, 2)
-  accountBalanceAfter Decimal   @map("account_balance_after") @db.Decimal(12, 2)
+  accountBalanceBefore Decimal   @default(0) @map("account_balance_before") @db.Decimal(12, 2)
+  amountChange        Decimal   @default(0) @map("amount_change") @db.Decimal(12, 2)
+  accountBalanceAfter Decimal   @default(0) @map("account_balance_after") @db.Decimal(12, 2)
   status              Int       @default(1)
   createdBy           String?   @map("created_by") @db.Uuid
   updatedBy           String?   @map("updated_by") @db.Uuid
@@ -106,7 +106,7 @@ model TopupTransactionHistory {
   id                 Int              @id @default(autoincrement())
   actionName         String           @map("action_name") @db.VarChar(255)
   topupTransactionId Int              @map("topup_transaction_id")
-  wireAmountApproved Decimal?         @map("wire_amount_approved") @db.Decimal(12, 2)
+  wireAmountApproved Decimal?         @default(0) @map("wire_amount_approved") @db.Decimal(12, 2)
   status             Int?
   createdBy          String?          @map("created_by") @db.Uuid
   updatedBy          String?          @map("updated_by") @db.Uuid
