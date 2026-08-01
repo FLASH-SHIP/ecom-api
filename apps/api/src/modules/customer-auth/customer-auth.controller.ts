@@ -1,4 +1,5 @@
 import type { CustomerTokenPayload } from "@ecom/features/customer/services/CustomerTokenService";
+import { CustomerTransformer } from "@ecom/features/customer/transformers/CustomerTransformer";
 import {
   getCustomerAuthService,
   getCustomerService,
@@ -57,7 +58,7 @@ export class CustomerAuthController {
       throw ErrorWithCode.Factory.Forbidden("Account is not active");
     }
     return {
-      data: customer,
+      data: new CustomerTransformer().transformItem(customer),
     };
   }
 
@@ -104,7 +105,7 @@ export class CustomerAuthController {
     };
     return {
       user,
-      customer,
+      customer: new CustomerTransformer().transformItem(customer),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       expiresIn: AUTH.ACCESS_TOKEN_EXPIRES_IN_SEC,
@@ -177,7 +178,7 @@ export class CustomerAuthController {
       };
       return {
         user,
-        customer: validatedCustomer,
+        customer: new CustomerTransformer().transformItem(validatedCustomer),
         accessToken: mobileTokens.accessToken,
         refreshToken: mobileTokens.refreshToken,
         familyId: mobileTokens.familyId,
@@ -199,7 +200,7 @@ export class CustomerAuthController {
     };
     return {
       user,
-      customer: result.customer,
+      customer: new CustomerTransformer().transformItem(result.customer),
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
       expiresIn: AUTH.ACCESS_TOKEN_EXPIRES_IN_SEC,
@@ -268,8 +269,10 @@ export class CustomerAuthController {
       description: body.description ?? undefined,
     });
 
+    const updatedCustomer = await customerService.getCustomer(payload.sub);
+
     return {
-      data: result,
+      data: new CustomerTransformer().transformItem(updatedCustomer ?? result),
     };
   }
 
