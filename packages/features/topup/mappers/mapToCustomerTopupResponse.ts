@@ -57,6 +57,10 @@ export function mapTopupTransactionToResponse(item: any) {
     accountBalanceBefore: Number(item.accountBalanceBefore ?? 0),
     amountChange: Number(item.amountChange ?? 0),
     accountBalanceAfter: Number(item.accountBalanceAfter ?? 0),
+    customerId: item.customerId,
+    customerCode: item.customer?.customerCode || item.customer?.username || item.customerId,
+    customerName: item.customer?.name || item.customer?.email || item.customerId,
+    customerEmail: item.customer?.email || "",
     wireImages: item.wireImages
       ? item.wireImages.map((img: any) => buildAssetUrl(img.imageUrl))
       : [],

@@ -1,4 +1,7 @@
 import { getTopupTransactionService } from "@ecom/features/di/containers/TopupService";
+import { TopupStatus } from "@flash-ship/ecom-types";
+import { format } from "date-fns";
+import ExcelJS from "exceljs";
 import { z } from "zod";
 import { authedProcedure } from "../../../../trpc";
 
@@ -28,12 +31,18 @@ export const getTopupHistory = authedProcedure
         status: z.string().optional(),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
+        customerId: z.string().optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(["asc", "desc"]).optional(),
       })
       .optional(),
   )
   .query(async ({ ctx, input }) => {
+    const isCustomerUser = !ctx.user.permissions || ctx.user.permissions.length === 0;
+    const targetCustomerId = isCustomerUser ? ctx.user.id : input?.customerId;
+
     return getTopupTransactionService().getTopupHistory({
-      customerId: ctx.user.id,
+      customerId: targetCustomerId,
       page: input?.page,
       pageSize: input?.pageSize,
       search: input?.search,
@@ -41,6 +50,8 @@ export const getTopupHistory = authedProcedure
       status: input?.status,
       dateFrom: input?.dateFrom ? new Date(input.dateFrom) : undefined,
       dateTo: input?.dateTo ? new Date(input.dateTo) : undefined,
+      sortBy: input?.sortBy,
+      sortOrder: input?.sortOrder,
     });
   });
 
@@ -86,7 +97,208 @@ export const updateTopupRequest = authedProcedure
   });
 
 export const cancelTopupRequest = authedProcedure
+  .input(z.object({ id: z.number().int().positive(), reason: z.string().optional() }))
+  .mutation(async ({ ctx, input }) => {
+    const isCustomerUser = !ctx.user.permissions || ctx.user.permissions.length === 0;
+    const targetCustomerId = isCustomerUser ? ctx.user.id : undefined;
+    return getTopupTransactionService().cancelTopupRequest(
+      input.id,
+      targetCustomerId,
+      ctx.user.id,
+      input.reason,
+    );
+  });
+
+export const adjustTopupRequest = authedProcedure
+  .input(
+    z.object({
+      id: z.number().int().positive(),
+      wireAmountApproved: z.number().positive(),
+      wireDate: z.string().optional(),
+      wireImages: z.array(z.string()).optional(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    return getTopupTransactionService().adjustTopupRequest(input.id, ctx.user.id, {
+      wireAmountApproved: input.wireAmountApproved,
+      wireDate: input.wireDate ? new Date(input.wireDate) : undefined,
+      wireImages: input.wireImages,
+    });
+  });
+
+export const approveTopupRequest = authedProcedure
   .input(z.object({ id: z.number().int().positive() }))
   .mutation(async ({ ctx, input }) => {
-    return getTopupTransactionService().cancelTopupRequest(input.id, ctx.user.id);
+    return getTopupTransactionService().approveTopupRequest(input.id, ctx.user.id);
+  });
+
+export const exportExcel = authedProcedure
+  .input(
+    z
+      .object({
+        search: z.string().optional(),
+        paymentMethodId: z.number().int().positive().optional(),
+        status: z.string().optional(),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+        customerId: z.string().optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.enum(["asc", "desc"]).optional(),
+        locale: z.string().optional(),
+      })
+      .optional(),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const isCustomerUser = !ctx.user.permissions || ctx.user.permissions.length === 0;
+    const targetCustomerId = isCustomerUser ? ctx.user.id : input?.customerId;
+
+    const historyResult = await getTopupTransactionService().getTopupHistory({
+      customerId: targetCustomerId,
+      page: 1,
+      pageSize: 5000,
+      search: input?.search,
+      paymentMethodId: input?.paymentMethodId,
+      status: input?.status,
+      dateFrom: input?.dateFrom ? new Date(input.dateFrom) : undefined,
+      dateTo: input?.dateTo ? new Date(input.dateTo) : undefined,
+      sortBy: input?.sortBy,
+      sortOrder: input?.sortOrder,
+    });
+
+    const items = historyResult.data || [];
+    const isVi = input?.locale === "vi";
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Topup Transactions");
+
+    worksheet.columns = [
+      { header: isVi ? "STT" : "No", key: "stt", width: 8 },
+      { header: isVi ? "Mã giao dịch" : "Transaction Code", key: "transactionCode", width: 22 },
+      { header: isVi ? "Mã khách hàng" : "Customer Code", key: "customerCode", width: 18 },
+      { header: isVi ? "Tên khách hàng" : "Customer Name", key: "customerName", width: 26 },
+      { header: isVi ? "Phương thức thanh toán" : "Payment Method", key: "paymentMethod", width: 24 },
+      { header: isVi ? "Số tiền gửi ($)" : "Wire Amount ($)", key: "wireAmount", width: 16 },
+      { header: isVi ? "Số tiền duyệt ($)" : "Approved Amount ($)", key: "wireAmountApprove", width: 18 },
+      { header: isVi ? "Ngày gửi xác nhận" : "Submission Date", key: "submissionDate", width: 22 },
+      { header: isVi ? "Ngày chuyển khoản" : "Wire Date", key: "wireDate", width: 18 },
+      { header: isVi ? "Trạng thái" : "Status", key: "status", width: 16 },
+      { header: isVi ? "Chứng từ (Receipt Proof)" : "Receipt Proof", key: "proofUrls", width: 55 },
+      { header: isVi ? "Ghi chú" : "Description", key: "description", width: 30 },
+    ];
+
+    const thinBorder: Partial<ExcelJS.Borders> = {
+      top: { style: "thin", color: { argb: "FFD3D3D3" } },
+      left: { style: "thin", color: { argb: "FFD3D3D3" } },
+      bottom: { style: "thin", color: { argb: "FFD3D3D3" } },
+      right: { style: "thin", color: { argb: "FFD3D3D3" } },
+    };
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.height = 24;
+
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "CFFEF9" },
+      };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "left",
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: "FF232323" },
+        size: 11,
+        name: "Calibri",
+      };
+      cell.border = thinBorder;
+    });
+
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+    items.forEach((item: any, index: number) => {
+      const st = item.status;
+      let statusText = isVi ? "Chờ xác nhận" : "Waiting";
+      if (st === TopupStatus.CONFIRMED || st === 2) {
+        statusText = isVi ? "Đã xác nhận" : "Confirmed";
+      } else if (st === TopupStatus.REJECT || st === 3) {
+        statusText = isVi ? "Từ chối" : "Rejected";
+      }
+
+      // Approved Amount calculation logic
+      const rawWire = Number(item.wireAmount ?? item.wire_amount ?? 0);
+      const rawApprove = Number(item.wireAmountApprove ?? item.wire_amount_approve ?? item.wireAmountApproved ?? 0);
+
+      let calculatedApproved = 0;
+      if (st === TopupStatus.CONFIRMED || st === 2) {
+        calculatedApproved = rawApprove > 0 ? rawApprove : rawWire;
+      } else if (st === TopupStatus.WAITING || st === 1) {
+        calculatedApproved = rawApprove > 0 ? rawApprove : 0;
+      } else {
+        calculatedApproved = 0;
+      }
+
+      // Multi-line receipt proof URLs separated by \n
+      const imgs = item.wireImages || item.wire_images || [];
+      const proofUrlsStr = imgs
+        .map((img: any) => {
+          const url = typeof img === "string" ? img : img.imageUrl || img.url || "";
+          if (!url) return "";
+          if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+            return url;
+          }
+          return `${apiBase}${url.startsWith("/") ? "" : "/"}${url}`;
+        })
+        .filter(Boolean)
+        .join("\n");
+
+      const createdDateStr = item.createdAt || item.submissionDate || item.created_at || "";
+      const formattedSubmission = createdDateStr
+        ? format(new Date(createdDateStr), "dd/MM/yyyy HH:mm:ss")
+        : "";
+
+      const wireDateStr = item.wireDate || item.wire_date || "";
+      const formattedWire = wireDateStr
+        ? format(new Date(wireDateStr), "dd/MM/yyyy")
+        : "";
+
+      const pmName = typeof item.paymentMethod === "string"
+        ? item.paymentMethod
+        : item.paymentMethodName || item.paymentMethod?.name || "";
+
+      const row = worksheet.addRow({
+        stt: index + 1,
+        transactionCode: item.transactionCode || item.transaction_code || "",
+        customerCode: item.customer?.customerCode || item.customerCode || "",
+        customerName: item.customer?.name || item.customerName || "",
+        paymentMethod: pmName,
+        wireAmount: Number(rawWire.toFixed(2)),
+        wireAmountApprove: Number(calculatedApproved.toFixed(2)),
+        submissionDate: formattedSubmission,
+        wireDate: formattedWire,
+        status: statusText,
+        proofUrls: proofUrlsStr,
+        description: item.description || "",
+      });
+
+      row.getCell("stt").alignment = { vertical: "middle", horizontal: "center" };
+      row.getCell("wireAmount").numFmt = "#,##0.00";
+      row.getCell("wireAmountApprove").numFmt = "#,##0.00";
+
+      row.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      row.font = { size: 11, name: "Calibri" };
+      row.eachCell((cell) => {
+        cell.border = thinBorder;
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
+    const fileName = `Topup_Transactions_${format(new Date(), "yyyyMMdd_HHmmss")}.xlsx`;
+
+    return {
+      filename: fileName,
+      fileData: base64,
+    };
   });

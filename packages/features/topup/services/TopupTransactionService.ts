@@ -115,10 +115,34 @@ export class TopupTransactionService {
   }
 
   /**
-   * Hủy yêu cầu nạp tiền từ phía khách hàng (chuyển status = 3 CANCELLED)
+   * Hủy / từ chối yêu cầu nạp tiền (chuyển status = 3 CANCELLED)
    */
-  async cancelTopupRequest(id: number, customerId: string) {
-    const cancelled = await this.transactionRepo.cancelTopupRequest(id, customerId);
+  async cancelTopupRequest(id: number, customerId?: string, actorId?: string, reason?: string) {
+    const cancelled = await this.transactionRepo.cancelTopupRequest(id, customerId, actorId, reason);
     return mapTopupTransactionToResponse(cancelled);
+  }
+
+  /**
+   * Điều chỉnh thông tin giao dịch nạp tiền (Dành cho Admin)
+   */
+  async adjustTopupRequest(
+    id: number,
+    actorId: string,
+    data: {
+      wireAmountApproved: number;
+      wireDate?: Date;
+      wireImages?: string[];
+    },
+  ) {
+    const adjusted = await this.transactionRepo.adjustTopupRequest(id, actorId, data);
+    return mapTopupTransactionToResponse(adjusted);
+  }
+
+  /**
+   * Phê duyệt giao dịch nạp tiền (Dành cho Admin)
+   */
+  async approveTopupRequest(id: number, actorId: string) {
+    const approved = await this.transactionRepo.approveTopupRequest(id, actorId);
+    return mapTopupTransactionToResponse(approved);
   }
 }
