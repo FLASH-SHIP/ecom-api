@@ -199,4 +199,31 @@ export class TopupTransactionService {
     const approved = await this.transactionRepo.approveTopupRequest(id, actorId);
     return mapTopupTransactionToResponse(approved);
   }
+
+  /**
+   * Trừ số dư ví khách hàng khi thanh toán đơn hàng thành công (`payOrderWithWallet`)
+   * - Kiểm tra tính hợp lệ của tham số đầu vào (`amount > 0`, `orderId`, `orderCode`).
+   * - Ủy thác xử lý quy trình 5 bước cho Repository `payOrderWithWallet`.
+   * - Ánh xạ đối tượng giao dịch trả về cho Client thông qua `mapTopupTransactionToResponse`.
+   *
+   * @param data Tham số thanh toán đơn hàng (orderId, orderCode, amount, customerId, actorId, description)
+   */
+  async payOrderWithWallet(data: {
+    orderId: string;
+    orderCode: string;
+    amount: number;
+    customerId: string;
+    actorId?: string;
+    description?: string;
+  }) {
+    if (!data.amount || data.amount <= 0) {
+      throw new Error("Số tiền thanh toán đơn hàng phải lớn hơn 0.");
+    }
+    if (!data.orderId || !data.orderCode) {
+      throw new Error("Vui lòng cung cấp đầy đủ mã định danh đơn hàng (orderId, orderCode).");
+    }
+
+    const transaction = await this.transactionRepo.payOrderWithWallet(data);
+    return mapTopupTransactionToResponse(transaction);
+  }
 }
