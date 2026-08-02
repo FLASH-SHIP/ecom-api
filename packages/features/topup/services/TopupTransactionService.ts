@@ -76,7 +76,7 @@ export class TopupTransactionService {
   ) {
     const result = await this.transactionRepo.getTransactionHistoryList(params);
     return {
-      data: result.data.map((item) => mapToTransactionHistoryResponse(item, locale)),
+      data: (result.data || []).map((item: any) => mapToTransactionHistoryResponse(item, locale)),
       meta: result.meta,
     };
   }
