@@ -449,6 +449,43 @@ describe("CustomerOrderController", () => {
       );
     });
 
+    it("should fail validation with 'không được để trống' message when senderCountry is empty or missing", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const senderCountryError = errors.find((e) => e.property === "senderCountry");
+
+      expect(senderCountryError).toBeDefined();
+      expect(Object.values(senderCountryError?.constraints || {})).toContain(
+        "Quốc gia người gửi (senderCountry) không được để trống",
+      );
+      expect(Object.values(senderCountryError?.constraints || {})).not.toContain(
+        "Quốc gia người gửi (senderCountry) chưa được hỗ trợ",
+      );
+    });
+
     it("should fail validation with exact message when sellerOrderId is empty or missing", async () => {
       const dto = plainToInstance(CreateOrderDto, {
         shippingMethod: "EXPRESS",
@@ -637,6 +674,72 @@ describe("CustomerOrderController", () => {
       );
     });
 
+    it("should pass DTO validation when receiverCountry is a No-Zipcode country (e.g. HK) and receiverZipCode is empty", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "SELLER-HK-123",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient HK",
+        receiverCity: "Hong Kong",
+        receiverState: "HK",
+        receiverAddress1: "Central Tower 8",
+        receiverCountry: "HK",
+        receiverZipCode: "",
+        detailDescription: "Fashion Apparel",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const zipErr = errors.find((e) => e.property === "receiverZipCode");
+      expect(zipErr).toBeUndefined();
+    });
+
+    it("should fail DTO validation when receiverZipCode is invalid format for specified country", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "SELLER-US-ERR",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient US",
+        receiverCity: "New York",
+        receiverState: "NY",
+        receiverAddress1: "5th Avenue",
+        receiverCountry: "US",
+        receiverZipCode: "123", // invalid 3 digits for US
+        detailDescription: "Fashion Apparel",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const zipErr = errors.find((e) => e.property === "receiverZipCode");
+
+      expect(zipErr).toBeDefined();
+      expect(Object.values(zipErr?.constraints || {}).join(" ")).toContain(
+        "Mã bưu chính người nhận (receiverZipCode) không đúng định dạng",
+      );
+    });
+
     it("should pass DTO validation when detailDescription and declaredValue are omitted", async () => {
       const dto = plainToInstance(CreateOrderDto, {
         shippingMethod: "EXPRESS",
@@ -671,6 +774,84 @@ describe("CustomerOrderController", () => {
 
       const errors = await validate(dto, { always: true, groups: ["create"] });
       expect(errors).toHaveLength(0);
+    });
+
+    it("should fail DTO validation when product value is null, missing, or <= 0", async () => {
+      const dtoNullValue = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "SELLER-123",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        products: [
+          {
+            description: "Ao thoi trang Cotton",
+            quantity: 2,
+            value: null as unknown as number,
+            originCountry: "VN",
+          },
+        ],
+      });
+
+      const errorsNull = await validate(dtoNullValue, { always: true, groups: ["create"] });
+      const productErrNull = errorsNull.find((e) => e.property === "products");
+      expect(productErrNull).toBeDefined();
+
+      const dtoZeroValue = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "SELLER-123",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        products: [
+          {
+            description: "Ao thoi trang Cotton",
+            quantity: 2,
+            value: 0,
+            originCountry: "VN",
+          },
+        ],
+      });
+
+      const errorsZero = await validate(dtoZeroValue, { always: true, groups: ["create"] });
+      const productErrZero = errorsZero.find((e) => e.property === "products");
+      expect(productErrZero).toBeDefined();
+      const childErrZero = productErrZero?.children?.[0]?.children?.find(
+        (c) => c.property === "value",
+      );
+      expect(Object.values(childErrZero?.constraints || {})).toContain(
+        "Giá trị sản phẩm (value) phải lớn hơn 0",
+      );
     });
   });
 

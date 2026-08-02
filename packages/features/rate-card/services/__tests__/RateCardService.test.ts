@@ -1,4 +1,4 @@
-import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
+import { ErrorCode } from "@flash-ship/ecom-lib";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RateCardRepository } from "../../repositories/RateCardRepository";
 import { RateCardService } from "../RateCardService";
@@ -8,14 +8,14 @@ vi.mock("@flash-ship/ecom-lib/redis", () => {
   return {
     RedisCache: class {
       private prefix: string;
-      private store: Record<string, any> = {};
+      private store: Record<string, unknown> = {};
       constructor(prefix: string) {
         this.prefix = prefix;
       }
       async get(key: string) {
         return this.store[key];
       }
-      async set(key: string, data: any) {
+      async set(key: string, data: unknown) {
         this.store[key] = data;
       }
       async invalidate(key: string) {
@@ -27,7 +27,7 @@ vi.mock("@flash-ship/ecom-lib/redis", () => {
 });
 
 describe("RateCardService", () => {
-  let rateCardRepo: any;
+  let rateCardRepo: Record<string, ReturnType<typeof vi.fn>>;
   let service: RateCardService;
 
   // Mock data setup
@@ -94,7 +94,7 @@ describe("RateCardService", () => {
         shippingMethod: "EPACKET",
         country: "US",
         weight: 0.08,
-        customerId: 1,
+        customerId: "1",
       });
 
       expect(rateCardRepo.findActiveDefault).toHaveBeenCalled();
@@ -111,7 +111,7 @@ describe("RateCardService", () => {
         shippingMethod: "EXPRESS",
         country: "US",
         weight: 1.12, // rounded up to 1.50kg slab
-        customerId: 1,
+        customerId: "1",
       });
 
       expect(rateCardRepo.findActiveByGroup).toHaveBeenCalledWith(
@@ -132,7 +132,7 @@ describe("RateCardService", () => {
         shippingMethod: "EPACKET",
         country: "US",
         weight: 0.02, // Less than minWeight (0.05kg)
-        customerId: 1,
+        customerId: "1",
       });
 
       // 0.02kg is rounded up to 0.05kg (step 0.05). Since it matches minWeight, RW is 0.05kg -> amount 3.50
@@ -147,7 +147,7 @@ describe("RateCardService", () => {
         shippingMethod: "EXPRESS",
         country: "US",
         weight: 0.1, // extremely light, less than minWeight
-        customerId: 1,
+        customerId: "1",
       });
 
       // 0.1kg is rounded to 0.5kg (step 0.5). Enforced minimum weight RW = 0.5kg -> amount 12.0
@@ -162,7 +162,7 @@ describe("RateCardService", () => {
         shippingMethod: "EPACKET",
         country: "US",
         weight: 6.42, // rounded up to 6.45kg
-        customerId: 1,
+        customerId: "1",
       });
 
       // 6.45 * 9.5 = 61.275 -> 61.28
@@ -178,7 +178,7 @@ describe("RateCardService", () => {
           shippingMethod: "EPACKET",
           country: "US",
           weight: 1.0,
-          customerId: 1,
+          customerId: "1",
         }),
       ).rejects.toThrowError(
         expect.objectContaining({
@@ -234,6 +234,17 @@ describe("RateCardService", () => {
         expect.objectContaining({
           code: ErrorCode.RateCardValidationError,
         }),
+      );
+    });
+
+    it("should format RANGE_PER_KG monotonicity error message with unit price and total cost", () => {
+      const slabs = [
+        { startWeight: 0.0, endWeight: 5.0, rateType: "RANGE_PER_KG" as const, amount: 2.0 },
+        { startWeight: 5.0, endWeight: 10.0, rateType: "RANGE_PER_KG" as const, amount: 0.0 },
+      ];
+
+      expect(() => service.validateSlabs(0.0, 10.0, slabs)).toThrowError(
+        "Giá cước nấc [5 -> 10kg] (0.00$/kg (tổng cước 0.00$)) không được nhỏ hơn giá cước nấc trước [0 -> 5kg] (2.00$/kg (tổng cước 10.00$)) để đảm bảo tính đơn điệu tăng dần.",
       );
     });
 

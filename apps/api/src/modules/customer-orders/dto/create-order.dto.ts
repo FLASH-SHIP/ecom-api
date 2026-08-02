@@ -1,6 +1,11 @@
 import { ShippingMethod, ShippingOrigin } from "@ecom/prisma";
 import {
-  ALLOWED_SENDER_COUNTRIES,
+  getPostalCodeRuleInfo,
+  isNoZipcodeCountry,
+  validatePostalCode,
+} from "@flash-ship/ecom-lib";
+import {
+  isAllowedSenderCountry,
   MAX_DECLARED_WEIGHT_GRAMS,
   MAX_DIMENSION_CM,
   PARCEL_VALIDATION_MESSAGES,
@@ -15,7 +20,6 @@ import {
   ArrayMinSize,
   IsEmail,
   IsEnum,
-  IsIn,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -25,8 +29,44 @@ import {
   Max,
   MaxLength,
   Min,
+  Validate,
+  ValidateIf,
   ValidateNested,
+  type ValidationArguments,
+  ValidatorConstraint,
+  type ValidatorConstraintInterface,
 } from "class-validator";
+
+@ValidatorConstraint({ name: "isAllowedSenderCountry", async: false })
+export class IsAllowedSenderCountryConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown) {
+    if (value === undefined || value === null || value === "") return true;
+    return typeof value === "string" && isAllowedSenderCountry(value);
+  }
+
+  defaultMessage() {
+    return SENDER_COUNTRY_VALIDATION_MESSAGE;
+  }
+}
+
+@ValidatorConstraint({ name: "isPostalCodeValid", async: false })
+export class IsPostalCodeValidConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown, args: ValidationArguments) {
+    const obj = args.object as { receiverCountry?: string; senderCountry?: string };
+    const country = obj.receiverCountry || obj.senderCountry;
+    return validatePostalCode(country, typeof value === "string" ? value : String(value || ""));
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    const obj = args.object as { receiverCountry?: string; senderCountry?: string };
+    const country = obj.receiverCountry || obj.senderCountry;
+    const ruleInfo = getPostalCodeRuleInfo(country);
+    if (!ruleInfo || ruleInfo.isOptional) {
+      return "Mã bưu chính không hợp lệ";
+    }
+    return `Mã bưu chính người nhận (receiverZipCode) không đúng định dạng cho quốc gia ${country || ""}. ${ruleInfo.description}`;
+  }
+}
 
 export class OrderProductDto {
   @ApiProperty({
@@ -54,10 +94,14 @@ export class OrderProductDto {
     type: () => Number,
     description: "Item declared unit value (USD)",
     example: 19.99,
-    minimum: 0,
+    minimum: 0.01,
   })
-  @IsNumber({}, { always: true })
-  @Min(0, { always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Giá trị sản phẩm (value) không được để trống",
+  })
+  @IsNumber({}, { always: true, message: "Giá trị sản phẩm (value) phải là số" })
+  @Min(0.01, { always: true, message: "Giá trị sản phẩm (value) phải lớn hơn 0" })
   value!: number;
 
   @ApiPropertyOptional({
@@ -111,7 +155,8 @@ export class CreateOrderDto {
   })
   @IsEnum(ShippingMethod, {
     always: true,
-    message: 'Phương thức vận chuyển (shippingMethod) không hợp lệ, chỉ chấp nhận "EXPRESS" hoặc "EPACKET"',
+    message:
+      'Phương thức vận chuyển (shippingMethod) không hợp lệ, chỉ chấp nhận "EXPRESS" hoặc "EPACKET"',
   })
   shippingMethod!: ShippingMethod;
 
@@ -206,16 +251,15 @@ export class CreateOrderDto {
     example: "VN",
     description: "Sender country 2-letter code (currently only 'VN' is supported)",
   })
-  @Transform(({ value }: { value: unknown }) => (typeof value === "string" ? value.toUpperCase().trim() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === "string" ? value.toUpperCase().trim() : value,
+  )
   @IsString({ always: true })
   @IsNotEmpty({
     always: true,
     message: "Quốc gia người gửi (senderCountry) không được để trống",
   })
-  @IsIn(ALLOWED_SENDER_COUNTRIES as unknown as readonly string[], {
-    always: true,
-    message: SENDER_COUNTRY_VALIDATION_MESSAGE,
-  })
+  @Validate(IsAllowedSenderCountryConstraint, { always: true })
   senderCountry!: string;
 
   @ApiPropertyOptional({
@@ -279,7 +323,9 @@ export class CreateOrderDto {
     description: "Receiver contact phone number",
     nullable: true,
   })
-  @Transform(({ value }: { value: unknown }) => (typeof value === "string" && value.trim() === "" ? null : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === "string" && value.trim() === "" ? null : value,
+  )
   @IsOptional({ always: true })
   @IsString({ always: true })
   @Matches(PHONE_REGEX, {
@@ -346,7 +392,9 @@ export class CreateOrderDto {
     example: "US",
     description: "Receiver destination country 2-letter ISO code",
   })
-  @Transform(({ value }: { value: unknown }) => (typeof value === "string" ? value.toUpperCase().trim() : value))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === "string" ? value.toUpperCase().trim() : value,
+  )
   @IsString({ always: true })
   @IsNotEmpty({
     always: true,
@@ -356,17 +404,20 @@ export class CreateOrderDto {
 
   @ApiProperty({ type: () => String, example: "90001", description: "Receiver postal/zip code" })
   @IsString({ always: true })
+  @ValidateIf((o: CreateOrderDto) => !isNoZipcodeCountry(o.receiverCountry))
   @IsNotEmpty({
     always: true,
     message: "Mã bưu chính người nhận (receiverZipCode) không được để trống",
   })
+  @Validate(IsPostalCodeValidConstraint, { always: true })
   receiverZipCode!: string;
 
   // Cargo Info
   @ApiPropertyOptional({
     type: () => String,
     example: "Apparel, Cotton T-Shirts",
-    description: "Detailed manifest cargo description (optional, max 200 chars, auto-generated from products if missing)",
+    description:
+      "Detailed manifest cargo description (optional, max 200 chars, auto-generated from products if missing)",
     nullable: true,
   })
   @IsOptional({ always: true })
@@ -384,7 +435,10 @@ export class CreateOrderDto {
     description: "Declared total gross weight in grams",
   })
   @IsInt({ always: true, message: "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương" })
-  @Min(1, { always: true, message: "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương" })
+  @Min(1, {
+    always: true,
+    message: "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương",
+  })
   @Max(MAX_DECLARED_WEIGHT_GRAMS, {
     always: true,
     message: PARCEL_VALIDATION_MESSAGES.WEIGHT_MAX,
@@ -437,7 +491,8 @@ export class CreateOrderDto {
     type: () => Number,
     example: 39.98,
     minimum: 0,
-    description: "Total declared customs value in USD (optional, auto-calculated from products if missing)",
+    description:
+      "Total declared customs value in USD (optional, auto-calculated from products if missing)",
     nullable: true,
   })
   @IsOptional({ always: true })
@@ -506,7 +561,8 @@ export class EstimateFreightDto {
   })
   @IsEnum(ShippingMethod, {
     always: true,
-    message: 'Phương thức vận chuyển (shippingMethod) không hợp lệ, chỉ chấp nhận "EXPRESS" hoặc "EPACKET"',
+    message:
+      'Phương thức vận chuyển (shippingMethod) không hợp lệ, chỉ chấp nhận "EXPRESS" hoặc "EPACKET"',
   })
   shippingMethod!: ShippingMethod;
 

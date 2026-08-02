@@ -485,25 +485,12 @@ export const assignGroups = authedProcedure
       });
     }
 
-    if (card.status === "PUBLISHED" && input.customerGroupIds.length > 0) {
-      const overlaps = await rateRepo.findOverlappingRateCards({
-        excludeId: card.id,
-        type: card.type,
-        shippingMethod: card.shippingMethod,
-        country: card.country,
-        origin: card.origin,
-        customerGroupIds: input.customerGroupIds,
-        startDate: card.startDate,
-        endDate: card.endDate,
+    if (card.status !== "DRAFT" && card.status !== "REJECTED") {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Chỉ có thể gán nhóm khách hàng khi bảng giá ở trạng thái Bản nháp (DRAFT) hoặc Từ chối (REJECTED).",
       });
-
-      if (overlaps.length > 0) {
-        const conflictList = overlaps.map((o) => `"${o.code}"`).join(", ");
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: `Không thể gán nhóm khách hàng này vì trùng lặp khoảng thời gian hiệu lực với bảng giá đang hoạt động: ${conflictList}.`,
-        });
-      }
     }
 
     const updated = await rateRepo.update(input.id, {
