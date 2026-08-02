@@ -18,10 +18,11 @@ export function buildAssetUrl(relativePath?: string | null): string | null {
   }
   const apiDomain =
     process.env.API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
     process.env.PUBLIC_API_URL ||
-    (process.env.NODE_ENV === "production"
-      ? "https://dev-api.ecomexpress.vn"
-      : "http://localhost:4000");
+    process.env.APP_URL ||
+    process.env.API_URL ||
+    "https://dev-api.ecomexpress.vn";
 
   const cleanDomain = apiDomain.replace(/\/$/, "");
   const cleanPath = relativePath.startsWith("/") ? relativePath : `/${relativePath}`;

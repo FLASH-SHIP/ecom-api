@@ -70,10 +70,13 @@ export class TopupTransactionService {
    * 
    * @param params Bộ lọc truy vấn dữ liệu giao dịch ví
    */
-  async getTransactionHistoryList(params: FilterTransactionHistoryParams) {
+  async getTransactionHistoryList(
+    params: FilterTransactionHistoryParams,
+    locale?: string | null,
+  ) {
     const result = await this.transactionRepo.getTransactionHistoryList(params);
     return {
-      data: result.data.map(mapToTransactionHistoryResponse),
+      data: result.data.map((item) => mapToTransactionHistoryResponse(item, locale)),
       meta: result.meta,
     };
   }
