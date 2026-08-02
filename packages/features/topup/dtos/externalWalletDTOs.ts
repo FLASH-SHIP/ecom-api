@@ -31,6 +31,16 @@ export interface BuyerInfo {
   partnerCode: string;
 }
 
+/**
+ * Hằng số mã hệ thống nguồn gửi tới Hệ Thống Ví Độc Lập (Mặc định: "ECOM")
+ */
+export const EXTERNAL_WALLET_FROM_SYSTEM = "ECOM";
+
+/**
+ * Hằng số loại phương thức thanh toán mặc định cho giao dịch Ví (Mặc định: "E_WALLET")
+ */
+export const EXTERNAL_WALLET_PAYMENT_TYPE = "E_WALLET";
+
 export enum ExternalWalletActionType {
   INCREASE = 1, // Cộng tiền
   DECREASE = 2, // Trừ tiền

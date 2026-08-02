@@ -1,14 +1,16 @@
 import crypto from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
-import type {
-  BuyerInfo,
-  ChargingRequest,
-  CreateWalletAccountRequest,
-  ExternalWalletBaseResponse,
-  OrderItemInfo,
-  UpdateCreditLimitRequest,
-  WalletAccountData,
-  WalletAccountInfoRequest,
+import {
+  EXTERNAL_WALLET_FROM_SYSTEM,
+  EXTERNAL_WALLET_PAYMENT_TYPE,
+  type BuyerInfo,
+  type ChargingRequest,
+  type CreateWalletAccountRequest,
+  type ExternalWalletBaseResponse,
+  type OrderItemInfo,
+  type UpdateCreditLimitRequest,
+  type WalletAccountData,
+  type WalletAccountInfoRequest,
 } from "../dtos/externalWalletDTOs";
 
 /**
@@ -185,7 +187,7 @@ export class ExternalWalletClient {
   /**
    * 5.4 POST /payment-api/charging-request
    * Thực hiện nạp hoặc trừ tiền trên tài khoản ví Partner.
-   * Trường `fromSystem` mặc định là "ECOM".
+   * Trường `fromSystem` mặc định là EXTERNAL_WALLET_FROM_SYSTEM ("ECOM").
    */
   async chargingRequest(payload: {
     fromSystem?: string;
@@ -193,9 +195,12 @@ export class ExternalWalletClient {
     orderItem: OrderItemInfo;
   }): Promise<ExternalWalletBaseResponse<any>> {
     const fullPayload: ChargingRequest = {
-      fromSystem: payload.fromSystem ?? "ECOM",
+      fromSystem: payload.fromSystem ?? EXTERNAL_WALLET_FROM_SYSTEM,
       buyerInfo: payload.buyerInfo,
-      orderItem: payload.orderItem,
+      orderItem: {
+        ...payload.orderItem,
+        paymentType: payload.orderItem.paymentType ?? EXTERNAL_WALLET_PAYMENT_TYPE,
+      },
     };
     return this.sendRequest<ExternalWalletBaseResponse<any>>(
       "/payment-api/charging-request",

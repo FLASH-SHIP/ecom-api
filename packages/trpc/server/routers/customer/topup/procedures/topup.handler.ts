@@ -349,3 +349,35 @@ export const exportExcel = authedProcedure
       fileData: base64,
     };
   });
+
+/**
+ * TRPC Procedure: Trừ số dư ví khách hàng khi thanh toán đơn hàng thành công (`payOrderWithWallet`)
+ * - Yêu cầu người dùng đã đăng nhập (`authedProcedure`).
+ * - Input validation qua Zod: orderId (UUID), orderCode (string), amount (positive float transform 2 chữ số thập phân).
+ * - Cưỡng chế gán targetCustomerId từ ctx.user.id nếu không truyền customerId (đảm bảo tính bảo mật Data Isolation).
+ */
+export const payOrderWithWallet = authedProcedure
+  .input(
+    z.object({
+      orderId: z.string().uuid("Mã đơn hàng orderId phải là chuỗi UUID hợp lệ."),
+      orderCode: z.string().min(1, "Mã hiển thị đơn hàng orderCode không được để trống."),
+      amount: z
+        .number()
+        .positive("Số tiền thanh toán phải lớn hơn 0.")
+        .finite("Số tiền không hợp lệ.")
+        .transform((val) => Number(val.toFixed(2))),
+      customerId: z.string().uuid("Mã khách hàng customerId phải là chuỗi UUID hợp lệ.").optional(),
+      description: z.string().optional(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const targetCustomerId = input.customerId || ctx.user.id;
+    return getTopupTransactionService().payOrderWithWallet({
+      orderId: input.orderId,
+      orderCode: input.orderCode,
+      amount: input.amount,
+      customerId: targetCustomerId,
+      actorId: ctx.user.id,
+      description: input.description,
+    });
+  });

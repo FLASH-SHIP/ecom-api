@@ -11,6 +11,7 @@ import {
   getTransactionHistory,
   getWalletSummary,
   updateTopupRequest,
+  payOrderWithWallet,
 } from "./procedures/topup.handler";
 
 export const customerTopupRouter = router({
@@ -30,5 +31,6 @@ export const customerTopupRouter = router({
   adjustTopupRequest,
   approve: approveTopupRequest,
   approveTopupRequest,
+  payOrderWithWallet,
   exportExcel,
 });
