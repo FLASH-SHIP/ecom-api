@@ -436,9 +436,20 @@ export class RateCardService {
     if (currentMinCost.lt(prevMaxCost)) {
       const prevLabel = `[${prev.startWeight} -> ${prev.endWeight}kg]`;
       const currentLabel = `[${current.startWeight} -> ${current.endWeight}kg]`;
+
+      const prevCostStr =
+        prev.rateType === "RANGE_PER_KG"
+          ? `${prevAmount.toFixed(2)}$/kg (tổng cước ${prevMaxCost.toFixed(2)}$)`
+          : `${prevAmount.toFixed(2)}$`;
+
+      const currentCostStr =
+        current.rateType === "RANGE_PER_KG"
+          ? `${currentAmount.toFixed(2)}$/kg (tổng cước ${currentMinCost.toFixed(2)}$)`
+          : `${currentAmount.toFixed(2)}$`;
+
       throw new ErrorWithCode(
         ErrorCode.RateCardValidationError,
-        `Giá cước nấc ${currentLabel} (${currentMinCost.toFixed(2)}$) không được nhỏ hơn giá cước nấc trước ${prevLabel} (${prevMaxCost.toFixed(2)}$) để đảm bảo tính đơn điệu tăng dần.`,
+        `Giá cước nấc ${currentLabel} (${currentCostStr}) không được nhỏ hơn giá cước nấc trước ${prevLabel} (${prevCostStr}) để đảm bảo tính đơn điệu tăng dần.`,
         422,
       );
     }

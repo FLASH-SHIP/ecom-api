@@ -58,7 +58,7 @@ const importOrderItemSchema = z.object({
   receiverAddress1: z.string().min(1),
   receiverAddress2: z.string().optional().nullable(),
   receiverCountry: z.string().min(2).max(10),
-  receiverZipCode: z.string().min(1),
+  receiverZipCode: z.string().or(z.literal("")).optional().nullable(),
 
   detailDescription: z
     .string()

@@ -9,6 +9,7 @@ import {
   type ShippingMethod,
   type ShippingOrigin,
 } from "@ecom/prisma";
+import { formatPostalCode, isNoZipcodeCountry, validatePostalCode } from "@flash-ship/ecom-lib";
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import {
@@ -70,7 +71,7 @@ export interface CreateOrderParams {
   receiverAddress1: string;
   receiverAddress2?: string | null;
   receiverCountry: string;
-  receiverZipCode: string;
+  receiverZipCode?: string | null;
 
   // Cargo info
   detailDescription?: string | null;
@@ -203,7 +204,14 @@ export class OrderService {
    * Calculates estimated shipping freight cost.
    */
   async calculateOrderFreight(params: CalculateOrderFreightParams) {
-    const { declaredWeight, dimensionLength, dimensionWidth, dimensionHeight, shippingMethod, origin } = params;
+    const {
+      declaredWeight,
+      dimensionLength,
+      dimensionWidth,
+      dimensionHeight,
+      shippingMethod,
+      origin,
+    } = params;
 
     const validMethods: ShippingMethod[] = ["EXPRESS", "EPACKET"];
     if (!shippingMethod || !validMethods.includes(shippingMethod as ShippingMethod)) {
@@ -321,11 +329,7 @@ export class OrderService {
       );
     }
     if (params.dimensionWidth > MAX_DIMENSION_CM) {
-      throw new ErrorWithCode(
-        ErrorCode.ValidationError,
-        PARCEL_VALIDATION_MESSAGES.WIDTH_MAX,
-        400,
-      );
+      throw new ErrorWithCode(ErrorCode.ValidationError, PARCEL_VALIDATION_MESSAGES.WIDTH_MAX, 400);
     }
 
     if (
@@ -364,19 +368,11 @@ export class OrderService {
     }
 
     if (!PHONE_REGEX.test(params.senderPhone.trim())) {
-      throw new ErrorWithCode(
-        ErrorCode.ValidationError,
-        PHONE_VALIDATION_MESSAGES.SENDER,
-        400,
-      );
+      throw new ErrorWithCode(ErrorCode.ValidationError, PHONE_VALIDATION_MESSAGES.SENDER, 400);
     }
 
     if (params.receiverPhone?.trim() && !PHONE_REGEX.test(params.receiverPhone.trim())) {
-      throw new ErrorWithCode(
-        ErrorCode.ValidationError,
-        PHONE_VALIDATION_MESSAGES.RECEIVER,
-        400,
-      );
+      throw new ErrorWithCode(ErrorCode.ValidationError, PHONE_VALIDATION_MESSAGES.RECEIVER, 400);
     }
 
     const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -420,12 +416,16 @@ export class OrderService {
       );
     }
 
-    if (!isAllowedSenderCountry(params.senderCountry)) {
+    if (!params.senderCountry?.trim()) {
       throw new ErrorWithCode(
         ErrorCode.ValidationError,
-        SENDER_COUNTRY_VALIDATION_MESSAGE,
+        "Quốc gia người gửi (senderCountry) không được để trống",
         400,
       );
+    }
+
+    if (!isAllowedSenderCountry(params.senderCountry)) {
+      throw new ErrorWithCode(ErrorCode.ValidationError, SENDER_COUNTRY_VALIDATION_MESSAGE, 400);
     }
 
     if (!params.senderZipCode?.trim()) {
@@ -476,12 +476,22 @@ export class OrderService {
       );
     }
 
-    if (!params.receiverZipCode?.trim()) {
-      throw new ErrorWithCode(
-        ErrorCode.ValidationError,
-        "Mã bưu chính người nhận (receiverZipCode) không được để trống",
-        400,
-      );
+    if (!isNoZipcodeCountry(params.receiverCountry)) {
+      if (!params.receiverZipCode?.trim()) {
+        throw new ErrorWithCode(
+          ErrorCode.ValidationError,
+          "Mã bưu chính người nhận (receiverZipCode) không được để trống",
+          400,
+        );
+      }
+
+      if (!validatePostalCode(params.receiverCountry, params.receiverZipCode)) {
+        throw new ErrorWithCode(
+          ErrorCode.ValidationError,
+          `Mã bưu chính người nhận (receiverZipCode) không đúng định dạng cho quốc gia ${params.receiverCountry}`,
+          400,
+        );
+      }
     }
 
     let finalDetailDescription = params.detailDescription?.trim();
@@ -569,6 +579,18 @@ export class OrderService {
           throw new ErrorWithCode(
             ErrorCode.ValidationError,
             "Số lượng sản phẩm (quantity) phải là số nguyên dương",
+            400,
+          );
+        }
+        if (
+          product.value == null ||
+          typeof product.value !== "number" ||
+          Number.isNaN(product.value) ||
+          product.value <= 0
+        ) {
+          throw new ErrorWithCode(
+            ErrorCode.ValidationError,
+            "Giá trị sản phẩm (value) phải lớn hơn 0",
             400,
           );
         }
@@ -670,7 +692,7 @@ export class OrderService {
       receiverAddress1: params.receiverAddress1,
       receiverAddress2: params.receiverAddress2,
       receiverCountry: params.receiverCountry,
-      receiverZipCode: params.receiverZipCode,
+      receiverZipCode: formatPostalCode(params.receiverCountry, params.receiverZipCode),
 
       detailDescription: finalDetailDescription,
       declaredWeight,
