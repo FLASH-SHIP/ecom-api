@@ -27,15 +27,29 @@ export class ErrorWithCodeExceptionFilter implements ExceptionFilter<ErrorWithCo
       this.logger.warn(`${exception.message} (${exception.code})`);
     }
 
-    // Check if translation exists for the specific error code
-    const messageKey = `errors.${exception.code}`;
-    const translatedMessage = translate(messageKey, locale, exception.meta);
-    const displayMessage = translatedMessage !== messageKey ? translatedMessage : exception.message;
+    // Resolve message: prioritize specific exception.message unless exception.message is an i18n key or empty
+    let displayMessage = exception.message;
+
+    if (displayMessage) {
+      const directKey = displayMessage.startsWith("errors.") ? displayMessage : `errors.${displayMessage}`;
+      const translatedDirect = translate(directKey, locale, exception.meta);
+      if (translatedDirect !== directKey) {
+        displayMessage = translatedDirect;
+      }
+    }
+
+    if (!displayMessage || displayMessage === exception.code) {
+      const codeKey = `errors.${exception.code}`;
+      const translatedCode = translate(codeKey, locale, exception.meta);
+      if (translatedCode !== codeKey) {
+        displayMessage = translatedCode;
+      }
+    }
 
     response.status(status).json({
       statusCode: status,
       error: exception.code || "INTERNAL_SERVER_ERROR",
-      message: displayMessage,
+      message: displayMessage || "An error occurred",
     });
   }
 }

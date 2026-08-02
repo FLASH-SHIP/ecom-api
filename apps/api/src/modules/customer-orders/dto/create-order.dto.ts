@@ -1,14 +1,29 @@
 import { ShippingMethod, ShippingOrigin } from "@ecom/prisma";
+import {
+  ALLOWED_SENDER_COUNTRIES,
+  MAX_DECLARED_WEIGHT_GRAMS,
+  MAX_DIMENSION_CM,
+  PARCEL_VALIDATION_MESSAGES,
+  PHONE_REGEX,
+  PHONE_VALIDATION_MESSAGES,
+  SENDER_COUNTRY_VALIDATION_MESSAGE,
+} from "@flash-ship/ecom-types";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  IsEmail,
   IsEnum,
+  IsIn,
   IsInt,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
+  Max,
+  MaxLength,
   Min,
   ValidateNested,
 } from "class-validator";
@@ -19,12 +34,20 @@ export class OrderProductDto {
     description: "Product description",
     example: "Cotton T-Shirt Black XL",
   })
-  @IsString()
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Tên sản phẩm (description) không được để trống",
+  })
+  @MaxLength(200, {
+    always: true,
+    message: "Tên sản phẩm (description) không được vượt quá 200 ký tự",
+  })
   description!: string;
 
   @ApiProperty({ type: () => Number, description: "Item quantity", example: 2, minimum: 1 })
-  @IsInt()
-  @Min(1)
+  @IsInt({ always: true, message: "Số lượng sản phẩm (quantity) phải là số nguyên dương" })
+  @Min(1, { always: true, message: "Số lượng sản phẩm (quantity) phải là số nguyên dương" })
   quantity!: number;
 
   @ApiProperty({
@@ -33,8 +56,8 @@ export class OrderProductDto {
     example: 19.99,
     minimum: 0,
   })
-  @IsNumber()
-  @Min(0)
+  @IsNumber({}, { always: true })
+  @Min(0, { always: true })
   value!: number;
 
   @ApiPropertyOptional({
@@ -43,19 +66,21 @@ export class OrderProductDto {
     example: "6109.10",
     nullable: true,
   })
-  @IsOptional()
-  @IsString()
+  @IsOptional({ always: true })
+  @IsString({ always: true })
   hsCode?: string | null;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
     description: "Country of origin 2-letter code",
     example: "VN",
-    nullable: true,
   })
-  @IsOptional()
-  @IsString()
-  originCountry?: string | null;
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Xuất xứ sản phẩm (originCountry) không được để trống",
+  })
+  originCountry!: string;
 
   @ApiPropertyOptional({
     type: () => Number,
@@ -63,8 +88,8 @@ export class OrderProductDto {
     example: 250,
     nullable: true,
   })
-  @IsOptional()
-  @IsNumber()
+  @IsOptional({ always: true })
+  @IsNumber({}, { always: true })
   weight?: number | null;
 
   @ApiPropertyOptional({
@@ -73,8 +98,8 @@ export class OrderProductDto {
     example: "TSHIRT-BLK-XL",
     nullable: true,
   })
-  @IsOptional()
-  @IsString()
+  @IsOptional({ always: true })
+  @IsString({ always: true })
   sku?: string | null;
 }
 
@@ -84,27 +109,34 @@ export class CreateOrderDto {
     example: "USPS_FIRST_CLASS",
     description: "Shipping method code",
   })
-  @IsEnum(ShippingMethod)
+  @IsEnum(ShippingMethod, {
+    always: true,
+    message: 'Phương thức vận chuyển (shippingMethod) không hợp lệ, chỉ chấp nhận "EXPRESS" hoặc "EPACKET"',
+  })
   shippingMethod!: ShippingMethod;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     enum: ShippingOrigin,
-    example: "VN",
+    example: "HAN",
     description: "Dispatch origin warehouse location",
   })
-  @IsOptional()
-  @IsEnum(ShippingOrigin)
-  shippingOrigin?: ShippingOrigin;
+  @IsEnum(ShippingOrigin, {
+    always: true,
+    message: 'Mã kho xuất hàng (shippingOrigin) không hợp lệ, chỉ chấp nhận "HAN" hoặc "SGN"',
+  })
+  shippingOrigin!: ShippingOrigin;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
     example: "SELLER-ORDER-9988",
     description: "Seller internal order ID",
-    nullable: true,
   })
-  @IsOptional()
-  @IsString()
-  sellerOrderId?: string | null;
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Mã đơn hàng người bán (sellerOrderId) không được để trống",
+  })
+  sellerOrderId!: string;
 
   @ApiPropertyOptional({
     type: () => Number,
@@ -112,41 +144,51 @@ export class CreateOrderDto {
     default: 1,
     description: "Total number of physical packets",
   })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
+  @IsOptional({ always: true })
+  @IsInt({ always: true })
+  @Min(1, { always: true })
   totalPackets?: number;
 
   // Sender Info
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
     example: "FlashShip Warehouse",
     description: "Sender company or full name",
-    nullable: true,
   })
-  @IsOptional()
-  @IsString()
-  senderName?: string | null;
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Tên người gửi (senderName) không được để trống",
+  })
+  senderName!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
     example: "123 Logistics Way",
     description: "Sender street address",
-    nullable: true,
   })
-  @IsOptional()
-  @IsString()
-  senderAddress?: string | null;
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Địa chỉ người gửi (senderAddress) không được để trống",
+  })
+  senderAddress!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
     example: "+84900000000",
     description: "Sender contact phone number",
-    nullable: true,
   })
-  @IsOptional()
-  @IsString()
-  senderPhone?: string | null;
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Số điện thoại người gửi (senderPhone) không được để trống",
+  })
+  @Matches(PHONE_REGEX, {
+    always: true,
+    message: PHONE_VALIDATION_MESSAGES.SENDER,
+  })
+  senderPhone!: string;
 
   @ApiPropertyOptional({
     type: () => String,
@@ -154,19 +196,27 @@ export class CreateOrderDto {
     description: "Sender email address",
     nullable: true,
   })
-  @IsOptional()
-  @IsString()
+  @IsOptional({ always: true })
+  @IsString({ always: true })
+  @IsEmail({}, { always: true, message: PARCEL_VALIDATION_MESSAGES.EMAIL_SENDER_INVALID })
   senderEmail?: string | null;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
     example: "VN",
-    description: "Sender country 2-letter code",
-    nullable: true,
+    description: "Sender country 2-letter code (currently only 'VN' is supported)",
   })
-  @IsOptional()
-  @IsString()
-  senderCountry?: string | null;
+  @Transform(({ value }: { value: unknown }) => (typeof value === "string" ? value.toUpperCase().trim() : value))
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Quốc gia người gửi (senderCountry) không được để trống",
+  })
+  @IsIn(ALLOWED_SENDER_COUNTRIES as unknown as readonly string[], {
+    always: true,
+    message: SENDER_COUNTRY_VALIDATION_MESSAGE,
+  })
+  senderCountry!: string;
 
   @ApiPropertyOptional({
     type: () => String,
@@ -174,43 +224,53 @@ export class CreateOrderDto {
     description: "Sender state/province",
     nullable: true,
   })
-  @IsOptional()
-  @IsString()
+  @IsOptional({ always: true })
+  @IsString({ always: true })
   senderState?: string | null;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
     example: "Hanoi",
     description: "Sender city",
-    nullable: true,
   })
-  @IsOptional()
-  @IsString()
-  senderCity?: string | null;
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Thành phố người gửi (senderCity) không được để trống",
+  })
+  senderCity!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
     example: "Cầu Giấy",
     description: "Sender ward/district",
-    nullable: true,
   })
-  @IsOptional()
-  @IsString()
-  senderWard?: string | null;
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Phường/Xã người gửi (senderWard) không được để trống",
+  })
+  senderWard!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
     example: "100000",
     description: "Sender postal/zip code",
-    nullable: true,
   })
-  @IsOptional()
-  @IsString()
-  senderZipCode?: string | null;
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Mã bưu chính người gửi (senderZipCode) không được để trống",
+  })
+  senderZipCode!: string;
 
   // Receiver Info
   @ApiProperty({ type: () => String, example: "John Doe", description: "Receiver full name" })
-  @IsString()
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Tên người nhận (receiverName) không được để trống",
+  })
   receiverName!: string;
 
   @ApiPropertyOptional({
@@ -219,8 +279,13 @@ export class CreateOrderDto {
     description: "Receiver contact phone number",
     nullable: true,
   })
-  @IsOptional()
-  @IsString()
+  @Transform(({ value }: { value: unknown }) => (typeof value === "string" && value.trim() === "" ? null : value))
+  @IsOptional({ always: true })
+  @IsString({ always: true })
+  @Matches(PHONE_REGEX, {
+    always: true,
+    message: PHONE_VALIDATION_MESSAGES.RECEIVER,
+  })
   receiverPhone?: string | null;
 
   @ApiPropertyOptional({
@@ -229,12 +294,17 @@ export class CreateOrderDto {
     description: "Receiver email address",
     nullable: true,
   })
-  @IsOptional()
-  @IsString()
+  @IsOptional({ always: true })
+  @IsString({ always: true })
+  @IsEmail({}, { always: true, message: PARCEL_VALIDATION_MESSAGES.EMAIL_RECEIVER_INVALID })
   receiverEmail?: string | null;
 
   @ApiProperty({ type: () => String, example: "Los Angeles", description: "Receiver city" })
-  @IsString()
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Thành phố người nhận (receiverCity) không được để trống",
+  })
   receiverCity!: string;
 
   @ApiProperty({
@@ -242,7 +312,11 @@ export class CreateOrderDto {
     example: "CA",
     description: "Receiver state/province 2-letter code",
   })
-  @IsString()
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Bang/Tỉnh người nhận (receiverState) không được để trống",
+  })
   receiverState!: string;
 
   @ApiProperty({
@@ -250,7 +324,11 @@ export class CreateOrderDto {
     example: "456 Market Street",
     description: "Receiver primary street address",
   })
-  @IsString()
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Địa chỉ người nhận 1 (receiverAddress1) không được để trống",
+  })
   receiverAddress1!: string;
 
   @ApiPropertyOptional({
@@ -259,8 +337,8 @@ export class CreateOrderDto {
     description: "Receiver apartment/suite number",
     nullable: true,
   })
-  @IsOptional()
-  @IsString()
+  @IsOptional({ always: true })
+  @IsString({ always: true })
   receiverAddress2?: string | null;
 
   @ApiProperty({
@@ -268,21 +346,36 @@ export class CreateOrderDto {
     example: "US",
     description: "Receiver destination country 2-letter ISO code",
   })
-  @IsString()
+  @Transform(({ value }: { value: unknown }) => (typeof value === "string" ? value.toUpperCase().trim() : value))
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Quốc gia người nhận (receiverCountry) không được để trống",
+  })
   receiverCountry!: string;
 
   @ApiProperty({ type: () => String, example: "90001", description: "Receiver postal/zip code" })
-  @IsString()
+  @IsString({ always: true })
+  @IsNotEmpty({
+    always: true,
+    message: "Mã bưu chính người nhận (receiverZipCode) không được để trống",
+  })
   receiverZipCode!: string;
 
   // Cargo Info
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: () => String,
     example: "Apparel, Cotton T-Shirts",
-    description: "Detailed manifest cargo description",
+    description: "Detailed manifest cargo description (optional, max 200 chars, auto-generated from products if missing)",
+    nullable: true,
   })
-  @IsString()
-  detailDescription!: string;
+  @IsOptional({ always: true })
+  @IsString({ always: true })
+  @MaxLength(200, {
+    always: true,
+    message: "Mô tả chi tiết hàng hóa (detailDescription) không được vượt quá 200 ký tự",
+  })
+  detailDescription?: string | null;
 
   @ApiProperty({
     type: () => Number,
@@ -290,55 +383,67 @@ export class CreateOrderDto {
     minimum: 1,
     description: "Declared total gross weight in grams",
   })
-  @IsInt()
-  @Min(1)
+  @IsInt({ always: true, message: "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương" })
+  @Min(1, { always: true, message: "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương" })
+  @Max(MAX_DECLARED_WEIGHT_GRAMS, {
+    always: true,
+    message: PARCEL_VALIDATION_MESSAGES.WEIGHT_MAX,
+  })
   declaredWeight!: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => Number,
     example: 20,
     minimum: 1,
     description: "Package length in cm",
-    nullable: true,
   })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  dimensionLength?: number | null;
+  @IsInt({ always: true, message: "Chiều dài (dimensionLength) phải là số nguyên dương" })
+  @Min(1, { always: true, message: "Chiều dài (dimensionLength) phải là số nguyên dương" })
+  @Max(MAX_DIMENSION_CM, {
+    always: true,
+    message: PARCEL_VALIDATION_MESSAGES.LENGTH_MAX,
+  })
+  dimensionLength!: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => Number,
     example: 15,
     minimum: 1,
     description: "Package width in cm",
-    nullable: true,
   })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  dimensionWidth?: number | null;
+  @IsInt({ always: true, message: "Chiều rộng (dimensionWidth) phải là số nguyên dương" })
+  @Min(1, { always: true, message: "Chiều rộng (dimensionWidth) phải là số nguyên dương" })
+  @Max(MAX_DIMENSION_CM, {
+    always: true,
+    message: PARCEL_VALIDATION_MESSAGES.WIDTH_MAX,
+  })
+  dimensionWidth!: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => Number,
     example: 5,
     minimum: 1,
     description: "Package height in cm",
-    nullable: true,
   })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  dimensionHeight?: number | null;
+  @IsInt({ always: true, message: "Chiều cao (dimensionHeight) phải là số nguyên dương" })
+  @Min(1, { always: true, message: "Chiều cao (dimensionHeight) phải là số nguyên dương" })
+  @Max(MAX_DIMENSION_CM, {
+    always: true,
+    message: PARCEL_VALIDATION_MESSAGES.HEIGHT_MAX,
+  })
+  dimensionHeight!: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: () => Number,
     example: 39.98,
     minimum: 0,
-    description: "Total declared customs value in USD",
+    description: "Total declared customs value in USD (optional, auto-calculated from products if missing)",
+    nullable: true,
   })
-  @IsNumber()
-  @Min(0)
-  declaredValue!: number;
+  @IsOptional({ always: true })
+  @IsNumber({}, { always: true, message: "Giá trị khai báo (declaredValue) phải là số" })
+  @Min(0, { always: true, message: "Giá trị khai báo (declaredValue) phải lớn hơn hoặc bằng 0" })
+  declaredValue?: number | null;
 
   @ApiPropertyOptional({
     type: () => Number,
@@ -346,8 +451,8 @@ export class CreateOrderDto {
     description: "Packaging type numeric ID",
     nullable: true,
   })
-  @IsOptional()
-  @IsInt()
+  @IsOptional({ always: true })
+  @IsInt({ always: true })
   packingTypeId?: number | null;
 
   @ApiPropertyOptional({
@@ -356,8 +461,8 @@ export class CreateOrderDto {
     description: "Packaging code identifier",
     nullable: true,
   })
-  @IsOptional()
-  @IsString()
+  @IsOptional({ always: true })
+  @IsString({ always: true })
   packagingCode?: string | null;
 
   @ApiPropertyOptional({
@@ -365,16 +470,16 @@ export class CreateOrderDto {
     example: 1,
     description: "Auto-generate carrier shipping label flag (1=yes, 0=no)",
   })
-  @IsOptional()
-  @IsInt()
+  @IsOptional({ always: true })
+  @IsInt({ always: true })
   isGetLabel?: number;
 
   @ApiPropertyOptional({
     type: () => [OrderProductDto],
     description: "List of itemized products in order",
   })
-  @IsOptional()
-  @ValidateNested({ each: true })
+  @IsOptional({ always: true })
+  @ValidateNested({ each: true, always: true })
   @Type(() => OrderProductDto)
   products?: OrderProductDto[];
 }
@@ -386,10 +491,10 @@ export class CreateBulkOrdersDto {
     type: () => [CreateOrderDto],
     description: "Array of order creation payloads (1-50 orders per request)",
   })
-  @ValidateNested({ each: true })
+  @ValidateNested({ each: true, always: true })
   @Type(() => CreateOrderDto)
-  @ArrayMinSize(1)
-  @ArrayMaxSize(MAX_BULK_ORDER_LIMIT)
+  @ArrayMinSize(1, { always: true })
+  @ArrayMaxSize(MAX_BULK_ORDER_LIMIT, { always: true })
   orders!: CreateOrderDto[];
 }
 
@@ -399,7 +504,10 @@ export class EstimateFreightDto {
     example: "USPS_FIRST_CLASS",
     description: "Shipping method code",
   })
-  @IsEnum(ShippingMethod)
+  @IsEnum(ShippingMethod, {
+    always: true,
+    message: 'Phương thức vận chuyển (shippingMethod) không hợp lệ, chỉ chấp nhận "EXPRESS" hoặc "EPACKET"',
+  })
   shippingMethod!: ShippingMethod;
 
   @ApiPropertyOptional({
@@ -407,8 +515,11 @@ export class EstimateFreightDto {
     example: "VN",
     description: "Dispatch origin warehouse location",
   })
-  @IsOptional()
-  @IsEnum(ShippingOrigin)
+  @IsOptional({ always: true })
+  @IsEnum(ShippingOrigin, {
+    always: true,
+    message: 'Mã kho xuất hàng (shippingOrigin) không hợp lệ, chỉ chấp nhận "HAN" hoặc "SGN"',
+  })
   shippingOrigin?: ShippingOrigin;
 
   @ApiProperty({
@@ -416,7 +527,7 @@ export class EstimateFreightDto {
     example: "US",
     description: "Receiver destination country 2-letter ISO code",
   })
-  @IsString()
+  @IsString({ always: true })
   receiverCountry!: string;
 
   @ApiProperty({
@@ -425,8 +536,8 @@ export class EstimateFreightDto {
     minimum: 1,
     description: "Declared total gross weight in grams",
   })
-  @IsInt()
-  @Min(1)
+  @IsInt({ always: true })
+  @Min(1, { always: true })
   declaredWeight!: number;
 
   @ApiPropertyOptional({
@@ -436,9 +547,9 @@ export class EstimateFreightDto {
     description: "Package length in cm",
     nullable: true,
   })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
+  @IsOptional({ always: true })
+  @IsInt({ always: true })
+  @Min(1, { always: true })
   dimensionLength?: number | null;
 
   @ApiPropertyOptional({
@@ -448,9 +559,9 @@ export class EstimateFreightDto {
     description: "Package width in cm",
     nullable: true,
   })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
+  @IsOptional({ always: true })
+  @IsInt({ always: true })
+  @Min(1, { always: true })
   dimensionWidth?: number | null;
 
   @ApiPropertyOptional({
@@ -460,8 +571,8 @@ export class EstimateFreightDto {
     description: "Package height in cm",
     nullable: true,
   })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
+  @IsOptional({ always: true })
+  @IsInt({ always: true })
+  @Min(1, { always: true })
   dimensionHeight?: number | null;
 }

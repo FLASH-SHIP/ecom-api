@@ -22,6 +22,15 @@ import {
   validateReceiverState,
 } from "@flash-ship/ecom-lib";
 import { RedisCache } from "@flash-ship/ecom-lib/redis";
+import {
+  isAllowedSenderCountry,
+  MAX_DECLARED_WEIGHT_GRAMS,
+  MAX_DIMENSION_CM,
+  PARCEL_VALIDATION_MESSAGES,
+  PHONE_REGEX,
+  PHONE_VALIDATION_MESSAGES,
+  SENDER_COUNTRY_VALIDATION_MESSAGE,
+} from "@flash-ship/ecom-types";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { authedProcedure } from "../../../../trpc";
@@ -116,23 +125,40 @@ export const create = authedProcedure
     z
       .object({
         shippingMethod: shippingMethodSchema,
-        shippingOrigin: shippingOriginSchema.default(ShippingOrigin.HAN),
-        sellerOrderId: z.string().optional().nullable(),
+        shippingOrigin: shippingOriginSchema,
+        sellerOrderId: z.string().min(1, { message: "Mã đơn hàng người bán (sellerOrderId) không được để trống" }),
         importId: z.string().optional().nullable(),
 
-        senderName: z.string().optional().nullable(),
-        senderAddress: z.string().optional().nullable(),
-        senderPhone: z.string().optional().nullable(),
-        senderEmail: z.string().optional().nullable(),
-        senderCountry: z.string().optional().nullable(),
+        senderName: z.string().min(1, { message: "Tên người gửi (senderName) không được để trống" }),
+        senderAddress: z.string().min(1, { message: "Địa chỉ người gửi (senderAddress) không được để trống" }),
+        senderPhone: z
+          .string()
+          .min(1, { message: "Số điện thoại người gửi (senderPhone) không được để trống" })
+          .regex(PHONE_REGEX, {
+            message: PHONE_VALIDATION_MESSAGES.SENDER,
+          }),
+        senderEmail: z.string().email({ message: PARCEL_VALIDATION_MESSAGES.EMAIL_SENDER_INVALID }).or(z.literal("")).optional().nullable(),
+        senderCountry: z
+          .string()
+          .min(1, { message: "Quốc gia người gửi (senderCountry) không được để trống" })
+          .refine(isAllowedSenderCountry, {
+            message: SENDER_COUNTRY_VALIDATION_MESSAGE,
+          }),
         senderState: z.string().optional().nullable(),
-        senderCity: z.string().optional().nullable(),
-        senderWard: z.string().optional().nullable(),
-        senderZipCode: z.string().optional().nullable(),
+        senderCity: z.string().min(1, { message: "Thành phố người gửi (senderCity) không được để trống" }),
+        senderWard: z.string().min(1, { message: "Phường/Xã người gửi (senderWard) không được để trống" }),
+        senderZipCode: z.string().min(1, { message: "Mã bưu chính người gửi (senderZipCode) không được để trống" }),
 
         receiverName: z.string().min(1).max(100),
-        receiverPhone: z.string().optional().nullable(),
-        receiverEmail: z.string().optional().nullable(),
+        receiverPhone: z
+          .string()
+          .regex(PHONE_REGEX, {
+            message: PHONE_VALIDATION_MESSAGES.RECEIVER,
+          })
+          .or(z.literal(""))
+          .optional()
+          .nullable(),
+        receiverEmail: z.string().email({ message: PARCEL_VALIDATION_MESSAGES.EMAIL_RECEIVER_INVALID }).or(z.literal("")).optional().nullable(),
         receiverCity: z.string().min(1),
         receiverState: z.string().min(1),
         receiverAddress1: z.string().min(1).max(150),
@@ -140,22 +166,48 @@ export const create = authedProcedure
         receiverCountry: z.string().min(2).max(10),
         receiverZipCode: z.string().min(1),
 
-        detailDescription: z.string().min(1),
-        declaredWeight: z.number().positive(),
-        dimensionLength: z.number().positive().optional().nullable(),
-        dimensionWidth: z.number().positive().optional().nullable(),
-        dimensionHeight: z.number().positive().optional().nullable(),
-        declaredValue: z.number().positive(),
+        detailDescription: z
+          .string()
+          .max(200, { message: "Mô tả chi tiết hàng hóa (detailDescription) không được vượt quá 200 ký tự" })
+          .optional()
+          .nullable(),
+        declaredWeight: z
+          .number()
+          .int({ message: "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương" })
+          .positive({ message: "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương" })
+          .max(MAX_DECLARED_WEIGHT_GRAMS, { message: PARCEL_VALIDATION_MESSAGES.WEIGHT_MAX }),
+        dimensionLength: z
+          .number()
+          .int({ message: "Chiều dài (dimensionLength) phải là số nguyên dương" })
+          .positive({ message: "Chiều dài (dimensionLength) phải là số nguyên dương" })
+          .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.LENGTH_MAX }),
+        dimensionWidth: z
+          .number()
+          .int({ message: "Chiều rộng (dimensionWidth) phải là số nguyên dương" })
+          .positive({ message: "Chiều rộng (dimensionWidth) phải là số nguyên dương" })
+          .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.WIDTH_MAX }),
+        dimensionHeight: z
+          .number()
+          .int({ message: "Chiều cao (dimensionHeight) phải là số nguyên dương" })
+          .positive({ message: "Chiều cao (dimensionHeight) phải là số nguyên dương" })
+          .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.HEIGHT_MAX }),
+        declaredValue: z.number().min(0).optional().nullable(),
         packingTypeId: z.number().int().positive().optional().nullable(),
         isGetLabel: z.number().int().optional(),
         products: z
           .array(
             z.object({
-              description: z.string().min(1),
-              quantity: z.number().int().positive(),
+              description: z
+                .string()
+                .min(1, { message: "Tên sản phẩm (description) không được để trống" })
+                .max(200, { message: "Tên sản phẩm (description) không được vượt quá 200 ký tự" }),
+              quantity: z
+                .number()
+                .int({ message: "Số lượng sản phẩm (quantity) phải là số nguyên dương" })
+                .positive({ message: "Số lượng sản phẩm (quantity) phải là số nguyên dương" }),
               value: z.number().positive(),
               hsCode: z.string().optional().nullable(),
-              originCountry: z.string().optional().nullable(),
+              originCountry: z.string().min(1, { message: "Xuất xứ sản phẩm (originCountry) không được để trống" }),
               weight: z.number().int().positive().optional().nullable(),
               sku: z.string().optional().nullable(),
             }),

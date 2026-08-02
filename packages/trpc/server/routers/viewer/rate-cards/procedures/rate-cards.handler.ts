@@ -349,6 +349,14 @@ export const submitForReview = authedProcedure
       });
     }
 
+    if (card.type === "CUSTOM" && (!card.groups || card.groups.length === 0)) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Bảng giá cước Tùy chỉnh (CUSTOM) phải được gán ít nhất một nhóm khách hàng trước khi gửi duyệt.",
+      });
+    }
+
     const updated = await rateRepo.update(input.id, { status: "PENDING" });
     await rateService.invalidateRateCardCache(input.id).catch(() => {});
     return updated;

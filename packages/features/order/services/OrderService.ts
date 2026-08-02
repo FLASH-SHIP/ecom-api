@@ -12,6 +12,15 @@ import {
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import {
+  isAllowedSenderCountry,
+  MAX_DECLARED_WEIGHT_GRAMS,
+  MAX_DIMENSION_CM,
+  PARCEL_VALIDATION_MESSAGES,
+  PHONE_REGEX,
+  PHONE_VALIDATION_MESSAGES,
+  SENDER_COUNTRY_VALIDATION_MESSAGE,
+} from "@flash-ship/ecom-types";
+import {
   mapToCustomerOrderDetailResponse,
   mapToCustomerOrderSummaryResponse,
 } from "../mappers/CustomerOrderMapper";
@@ -37,20 +46,20 @@ export interface CalculateOrderFreightParams {
 export interface CreateOrderParams {
   customerId: string;
   shippingMethod: ShippingMethod;
-  shippingOrigin?: ShippingOrigin;
+  shippingOrigin: ShippingOrigin;
   sellerOrderId?: string | null;
   importId?: string | null;
 
   // Sender info
-  senderName?: string | null;
-  senderAddress?: string | null;
-  senderPhone?: string | null;
+  senderName: string;
+  senderPhone: string;
+  senderAddress: string;
   senderEmail?: string | null;
-  senderCountry?: string | null;
+  senderCountry: string;
   senderState?: string | null;
-  senderCity?: string | null;
-  senderWard?: string | null;
-  senderZipCode?: string | null;
+  senderCity: string;
+  senderWard: string;
+  senderZipCode: string;
 
   // Receiver info
   receiverName: string;
@@ -64,12 +73,12 @@ export interface CreateOrderParams {
   receiverZipCode: string;
 
   // Cargo info
-  detailDescription: string;
+  detailDescription?: string | null;
   declaredWeight: number; // in grams
-  dimensionLength?: number | null;
-  dimensionWidth?: number | null;
-  dimensionHeight?: number | null;
-  declaredValue: number;
+  dimensionLength: number;
+  dimensionWidth: number;
+  dimensionHeight: number;
+  declaredValue?: number | null;
   packingTypeId?: number | null;
   packagingCode?: string | null;
   isGetLabel?: number;
@@ -194,7 +203,25 @@ export class OrderService {
    * Calculates estimated shipping freight cost.
    */
   async calculateOrderFreight(params: CalculateOrderFreightParams) {
-    const { declaredWeight, dimensionLength, dimensionWidth, dimensionHeight } = params;
+    const { declaredWeight, dimensionLength, dimensionWidth, dimensionHeight, shippingMethod, origin } = params;
+
+    const validMethods: ShippingMethod[] = ["EXPRESS", "EPACKET"];
+    if (!shippingMethod || !validMethods.includes(shippingMethod as ShippingMethod)) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        'Phương thức vận chuyển (shippingMethod) không hợp lệ, chỉ chấp nhận "EXPRESS" hoặc "EPACKET"',
+        400,
+      );
+    }
+
+    const validOrigins: ShippingOrigin[] = ["HAN", "SGN"];
+    if (origin && !validOrigins.includes(origin as ShippingOrigin)) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        'Mã kho xuất hàng (shippingOrigin) không hợp lệ, chỉ chấp nhận "HAN" hoặc "SGN"',
+        400,
+      );
+    }
 
     // Validate inputs
     if (declaredWeight <= 0) {
@@ -238,15 +265,315 @@ export class OrderService {
     const {
       customerId,
       shippingMethod,
-      shippingOrigin = "HAN",
+      shippingOrigin,
       sellerOrderId,
       declaredWeight,
       dimensionLength,
       dimensionWidth,
       dimensionHeight,
-      declaredValue,
       receiverCountry,
     } = params;
+
+    if (!params.shippingOrigin) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        'Mã kho xuất hàng (shippingOrigin) không được để trống, chỉ chấp nhận "HAN" hoặc "SGN"',
+        400,
+      );
+    }
+
+    if (!params.sellerOrderId?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Mã đơn hàng người bán (sellerOrderId) không được để trống",
+        400,
+      );
+    }
+
+    if (
+      params.dimensionLength == null ||
+      !Number.isInteger(params.dimensionLength) ||
+      params.dimensionLength < 1
+    ) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Chiều dài (dimensionLength) phải là số nguyên dương",
+        400,
+      );
+    }
+    if (params.dimensionLength > MAX_DIMENSION_CM) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        PARCEL_VALIDATION_MESSAGES.LENGTH_MAX,
+        400,
+      );
+    }
+
+    if (
+      params.dimensionWidth == null ||
+      !Number.isInteger(params.dimensionWidth) ||
+      params.dimensionWidth < 1
+    ) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Chiều rộng (dimensionWidth) phải là số nguyên dương",
+        400,
+      );
+    }
+    if (params.dimensionWidth > MAX_DIMENSION_CM) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        PARCEL_VALIDATION_MESSAGES.WIDTH_MAX,
+        400,
+      );
+    }
+
+    if (
+      params.dimensionHeight == null ||
+      !Number.isInteger(params.dimensionHeight) ||
+      params.dimensionHeight < 1
+    ) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Chiều cao (dimensionHeight) phải là số nguyên dương",
+        400,
+      );
+    }
+    if (params.dimensionHeight > MAX_DIMENSION_CM) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        PARCEL_VALIDATION_MESSAGES.HEIGHT_MAX,
+        400,
+      );
+    }
+
+    if (!params.senderName?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Tên người gửi (senderName) không được để trống",
+        400,
+      );
+    }
+
+    if (!params.senderPhone?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Số điện thoại người gửi (senderPhone) không được để trống",
+        400,
+      );
+    }
+
+    if (!PHONE_REGEX.test(params.senderPhone.trim())) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        PHONE_VALIDATION_MESSAGES.SENDER,
+        400,
+      );
+    }
+
+    if (params.receiverPhone?.trim() && !PHONE_REGEX.test(params.receiverPhone.trim())) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        PHONE_VALIDATION_MESSAGES.RECEIVER,
+        400,
+      );
+    }
+
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (params.senderEmail?.trim() && !EMAIL_REGEX.test(params.senderEmail.trim())) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        PARCEL_VALIDATION_MESSAGES.EMAIL_SENDER_INVALID,
+        400,
+      );
+    }
+
+    if (params.receiverEmail?.trim() && !EMAIL_REGEX.test(params.receiverEmail.trim())) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        PARCEL_VALIDATION_MESSAGES.EMAIL_RECEIVER_INVALID,
+        400,
+      );
+    }
+
+    if (!params.senderAddress?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Địa chỉ người gửi (senderAddress) không được để trống",
+        400,
+      );
+    }
+
+    if (!params.senderCity?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Thành phố người gửi (senderCity) không được để trống",
+        400,
+      );
+    }
+
+    if (!params.senderWard?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Phường/Xã người gửi (senderWard) không được để trống",
+        400,
+      );
+    }
+
+    if (!isAllowedSenderCountry(params.senderCountry)) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        SENDER_COUNTRY_VALIDATION_MESSAGE,
+        400,
+      );
+    }
+
+    if (!params.senderZipCode?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Mã bưu chính người gửi (senderZipCode) không được để trống",
+        400,
+      );
+    }
+
+    if (!params.receiverName?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Tên người nhận (receiverName) không được để trống",
+        400,
+      );
+    }
+
+    if (!params.receiverAddress1?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Địa chỉ người nhận 1 (receiverAddress1) không được để trống",
+        400,
+      );
+    }
+
+    if (!params.receiverCity?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Thành phố người nhận (receiverCity) không được để trống",
+        400,
+      );
+    }
+
+    if (!params.receiverState?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Bang/Tỉnh người nhận (receiverState) không được để trống",
+        400,
+      );
+    }
+
+    if (!params.receiverCountry?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Quốc gia người nhận (receiverCountry) không được để trống",
+        400,
+      );
+    }
+
+    if (!params.receiverZipCode?.trim()) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Mã bưu chính người nhận (receiverZipCode) không được để trống",
+        400,
+      );
+    }
+
+    let finalDetailDescription = params.detailDescription?.trim();
+    if (finalDetailDescription && finalDetailDescription.length > 200) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Mô tả chi tiết hàng hóa (detailDescription) không được vượt quá 200 ký tự",
+        400,
+      );
+    }
+
+    if (!finalDetailDescription && params.products && params.products.length > 0) {
+      const uniqueDescriptions = Array.from(
+        new Set(
+          params.products
+            .map((p) => p.description?.trim())
+            .filter((desc): desc is string => Boolean(desc)),
+        ),
+      );
+      finalDetailDescription = uniqueDescriptions.join(", ").slice(0, 200);
+    }
+
+    if (!finalDetailDescription) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Mô tả chi tiết hàng hóa (detailDescription) không được để trống hoặc phải có danh sách sản phẩm (products)",
+        400,
+      );
+    }
+
+    if (
+      params.declaredWeight == null ||
+      !Number.isInteger(params.declaredWeight) ||
+      params.declaredWeight < 1
+    ) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương",
+        400,
+      );
+    }
+    if (params.declaredWeight > MAX_DECLARED_WEIGHT_GRAMS) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        PARCEL_VALIDATION_MESSAGES.WEIGHT_MAX,
+        400,
+      );
+    }
+
+    let finalDeclaredValue = params.declaredValue;
+    if (
+      (finalDeclaredValue == null || Number.isNaN(finalDeclaredValue)) &&
+      params.products &&
+      params.products.length > 0
+    ) {
+      const rawTotal = params.products.reduce(
+        (sum, p) => sum + (p.quantity || 1) * (p.value || 0),
+        0,
+      );
+      finalDeclaredValue = Math.round(rawTotal * 100) / 100;
+    }
+
+    if (finalDeclaredValue == null || finalDeclaredValue < 0) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        "Giá trị khai báo (declaredValue) không được để trống và phải lớn hơn hoặc bằng 0",
+        400,
+      );
+    }
+
+    if (params.products && params.products.length > 0) {
+      for (const product of params.products) {
+        if (product.description && product.description.trim().length > 200) {
+          throw new ErrorWithCode(
+            ErrorCode.ValidationError,
+            "Tên sản phẩm (description) không được vượt quá 200 ký tự",
+            400,
+          );
+        }
+        if (
+          product.quantity == null ||
+          !Number.isInteger(product.quantity) ||
+          product.quantity < 1
+        ) {
+          throw new ErrorWithCode(
+            ErrorCode.ValidationError,
+            "Số lượng sản phẩm (quantity) phải là số nguyên dương",
+            400,
+          );
+        }
+      }
+    }
 
     // 1. Calculate shipping fees
     const pricing = await this.calculateOrderFreight({
@@ -329,7 +656,7 @@ export class OrderService {
       senderAddress: params.senderAddress,
       senderPhone: params.senderPhone,
       senderEmail: params.senderEmail,
-      senderCountry: params.senderCountry,
+      senderCountry: params.senderCountry.toUpperCase().trim(),
       senderState: params.senderState,
       senderCity: params.senderCity,
       senderWard: params.senderWard,
@@ -345,13 +672,13 @@ export class OrderService {
       receiverCountry: params.receiverCountry,
       receiverZipCode: params.receiverZipCode,
 
-      detailDescription: params.detailDescription,
+      detailDescription: finalDetailDescription,
       declaredWeight,
       dimensionText,
       dimensionLength: dimensionLength ?? null,
       dimensionWidth: dimensionWidth ?? null,
       dimensionHeight: dimensionHeight ?? null,
-      declaredValue,
+      declaredValue: finalDeclaredValue,
       packingTypeId: params.packingTypeId ?? null,
       packagingCode: params.packagingCode,
 
