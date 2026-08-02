@@ -216,6 +216,9 @@ export class TopupTransactionService {
     actorId?: string;
     description?: string;
   }) {
+    if (!data.customerId) {
+      throw new Error("Mã khách hàng customerId không được để trống.");
+    }
     if (!data.amount || data.amount <= 0) {
       throw new Error("Số tiền thanh toán đơn hàng phải lớn hơn 0.");
     }
