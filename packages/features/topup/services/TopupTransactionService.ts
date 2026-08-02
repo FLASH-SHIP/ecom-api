@@ -25,21 +25,14 @@ export class TopupTransactionService {
 
   /**
    * Lấy thông tin tổng quan Ví của khách hàng (Số dư thực tế & Tiền chờ xác nhận)
-   * - Lấy số dư khả dụng thực tế bằng cách gọi sang API Hệ Thống Ví Độc Lập (/payment-api/account/info)
-   * - Fallback về số dư tính toán nội bộ nếu Hệ Thống Ví Độc Lập gián đoạn
+   * - Ưu tiên lấy số dư ví thực tế bằng cách gọi sang API Hệ Thống Ví Độc Lập (/payment-api/account/info)
+   * - Dự phòng (Fallback) về số dư giao dịch đã xác nhận gần nhất trong DB Local nếu hệ thống ví gặp sự cố
+   * - Tính tổng wireAmount các giao dịch đang ở trạng thái Chờ xác nhận (status = TopupStatus.WAITING)
+   *
+   * @param customerId ID khách hàng
    */
   async getWalletSummary(customerId: string) {
-    const summary = await this.transactionRepo.getWalletSummary(customerId);
-    try {
-      const walletClient = new ExternalWalletClient();
-      const extWallet = await walletClient.getAccountInfo({ partnerId: customerId });
-      if (extWallet?.data?.accountBalance !== undefined && extWallet?.data?.accountBalance !== null) {
-        summary.accountBalance = Number(extWallet.data.accountBalance);
-      }
-    } catch (err) {
-      // Dự phòng về số dư nội bộ nếu hệ thống ví độc lập không phản hồi
-    }
-    return summary;
+    return this.transactionRepo.getWalletSummary(customerId);
   }
 
   /**

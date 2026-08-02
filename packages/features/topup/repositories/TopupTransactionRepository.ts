@@ -41,6 +41,8 @@ export interface FilterTransactionHistoryParams {
   search?: string;
   /** Loại giao dịch (PAID, ADDED_FUNDS, CANCELED, REFUNDED, ADJUST_BALANCE_INCREASE, ADJUST_BALANCE_DECREASE) */
   topupType?: string;
+  /** Trạng thái giao dịch (Mặc định: 2 = TopupStatus.CONFIRMED - Chỉ lấy các giao dịch đã phê duyệt) */
+  status?: number;
   /** Ngày bắt đầu lọc giao dịch */
   dateFrom?: Date;
   /** Ngày kết thúc lọc giao dịch */
@@ -74,30 +76,55 @@ export class TopupTransactionRepository {
 
   /**
    * Lấy tổng quan số dư ví tài khoản của khách hàng
-   * 1. accountBalance: Số dư ví khả dụng hiện tại (Lấy từ giao dịch Đã duyệt gần nhất status = TopupStatus.CONFIRMED, hoặc 0.00)
+   * 1. accountBalance: Số dư ví từ Hệ Thống Ví Độc Lập qua endpoint /payment-api/account/info.
+   *    (Fallback: Dự phòng lấy từ giao dịch Đã duyệt gần nhất status = TopupStatus.CONFIRMED trong DB Local nếu API ví gặp sự cố)
    * 2. waitingConfirmTopup: Tổng số tiền nạp đang chờ duyệt (Tổng wireAmount của các giao dịch status = TopupStatus.WAITING)
    *
    * @param customerId ID khách hàng cần truy vấn
    * @returns Đối tượng chứa số dư ví khả dụng và tổng tiền chờ duyệt
    */
   async getWalletSummary(customerId: string) {
-    // 1. Lấy giao dịch đã xác nhận (status = TopupStatus.CONFIRMED) gần nhất để tính số dư khả dụng
-    const latestTx = await this.prisma.topupTransaction.findFirst({
-      where: {
-        customerId,
-        status: TopupStatus.CONFIRMED, // 2 = Confirmed / Approved
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      select: {
-        accountBalanceAfter: true,
-      },
-    });
+    // 1. Lấy số dư ví từ hệ thống ví độc lập qua endpoint /payment-api/account/info
+    let accountBalance = 0.0;
 
-    const accountBalance = latestTx?.accountBalanceAfter
-      ? Number(latestTx.accountBalanceAfter)
-      : 0.0;
+    try {
+      const walletClient = new ExternalWalletClient();
+      const accountInfoRes = await walletClient.getAccountInfo({ partnerId: customerId });
+      const resData = (accountInfoRes as any)?.data;
+      const rawBal = resData?.accountBalance ?? 0;
+      if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+        accountBalance = Number(rawBal);
+      } else {
+        // Fallback: Lấy giao dịch đã xác nhận (status = TopupStatus.CONFIRMED) gần nhất từ DB Local
+        const latestTx = await this.prisma.topupTransaction.findFirst({
+          where: {
+            customerId,
+            status: TopupStatus.CONFIRMED,
+          },
+          orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+          select: { accountBalanceAfter: true },
+        });
+
+        accountBalance = latestTx?.accountBalanceAfter
+          ? Number(latestTx.accountBalanceAfter)
+          : 0.0;
+      }
+    } catch {
+      // Fallback dự phòng an toàn khi API Hệ Thống Ví Độc Lập chưa khởi tạo tài khoản hoặc lỗi mạng:
+      // Lấy từ bản ghi CONFIRMED mới nhất trong DB Local
+      const latestTx = await this.prisma.topupTransaction.findFirst({
+        where: {
+          customerId,
+          status: TopupStatus.CONFIRMED,
+        },
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        select: { accountBalanceAfter: true },
+      });
+
+      accountBalance = latestTx?.accountBalanceAfter
+        ? Number(latestTx.accountBalanceAfter)
+        : 0.0;
+    }
 
     // 2. Tính tổng tiền các giao dịch đang ở trạng thái Chờ xác nhận (status = TopupStatus.WAITING)
     const waitingAggregate = await this.prisma.topupTransaction.aggregate({
@@ -289,6 +316,7 @@ export class TopupTransactionRepository {
     // 3. Xây dựng câu điều kiện Prisma `where`
     const where: Prisma.TopupTransactionWhereInput = {
       customerId: params.customerId, // Bảo mật cách ly dữ liệu theo customerId của user đang đăng nhập
+      status: TopupStatus.CONFIRMED, // Mặc định chỉ truy vấn các giao dịch đã Phê Duyệt (status = 2 = CONFIRMED)
     };
 
     // Lọc theo thời gian tạo giao dịch
@@ -411,7 +439,7 @@ export class TopupTransactionRepository {
           wireDate: data.wireDate ?? new Date(),
           paymentMethod: data.paymentMethodId ? { connect: { id: data.paymentMethodId } } : undefined,
           wireAmount: new Prisma.Decimal(data.wireAmount),
-          rate: data.rate ? new Prisma.Decimal(data.rate) : null,
+          rate: data.rate !== undefined && data.rate !== null ? new Prisma.Decimal(data.rate) : new Prisma.Decimal(0),
           description: data.description ?? null,
           status: TopupStatus.WAITING, // 1 = WAITING (Chờ xác nhận)
           createdBy: data.customerId,
@@ -639,6 +667,7 @@ export class TopupTransactionRepository {
         data: {
           actionName: "Điều chỉnh balance",
           topupTransactionId: updated.id,
+          wireAmountApproved: new Prisma.Decimal(data.wireAmountApproved),
           status: updated.status,
           createdBy: actorId,
         },
@@ -789,6 +818,7 @@ export class TopupTransactionRepository {
         data: {
           actionName: "Xác nhận giao dịch thanh toán",
           topupTransactionId: id,
+          wireAmountApproved: new Prisma.Decimal(approvedAmount),
           status: TopupStatus.CONFIRMED,
           createdBy: actorId,
         },
