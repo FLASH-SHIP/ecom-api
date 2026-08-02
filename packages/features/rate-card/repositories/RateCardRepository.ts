@@ -727,6 +727,10 @@ export class RateCardRepository {
       endDate,
     } = params;
 
+    if (type === "DEFAULT") {
+      return [];
+    }
+
     if (type === "CUSTOM" && customerGroupIds.length === 0) {
       return [];
     }

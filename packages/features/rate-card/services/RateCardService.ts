@@ -1,4 +1,4 @@
-import type { RateCardType, RateItemType, ShippingMethod } from "@ecom/prisma";
+import type { RateCardType, RateItemType, ShippingMethod, ShippingOrigin } from "@ecom/prisma";
 import { Prisma } from "@ecom/prisma";
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
@@ -199,6 +199,24 @@ export class RateCardService {
       customerId,
       calculationDate = new Date(),
     } = params;
+
+    const validMethods: ShippingMethod[] = ["EXPRESS", "EPACKET"];
+    if (!shippingMethod || !validMethods.includes(shippingMethod as ShippingMethod)) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        'Phương thức vận chuyển (shippingMethod) không hợp lệ, chỉ chấp nhận "EXPRESS" hoặc "EPACKET"',
+        400,
+      );
+    }
+
+    const validOrigins: ShippingOrigin[] = ["HAN", "SGN"];
+    if (origin && !validOrigins.includes(origin as ShippingOrigin)) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        'Mã kho xuất hàng (shippingOrigin) không hợp lệ, chỉ chấp nhận "HAN" hoặc "SGN"',
+        400,
+      );
+    }
 
     // Resolve Customer Group
     const groupId = await this.deps.rateCardRepo.findCustomerGroupIdByCustomerId(customerId);
@@ -433,6 +451,12 @@ export class RateCardService {
     const card = await this.deps.rateCardRepo.findById(rateCardId);
     if (!card) {
       throw new ErrorWithCode(ErrorCode.RateCardNotFound, "Bảng giá không tồn tại.", 404);
+    }
+
+    // Default rate cards automatically replace previous active default rate cards upon approval.
+    // Overlap constraint checks only apply to CUSTOM rate cards for the same customer groups.
+    if (card.type === "DEFAULT") {
+      return;
     }
 
     const groupIds = card.groups.map((g) => g.customerGroupId);

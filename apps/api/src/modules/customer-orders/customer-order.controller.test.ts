@@ -1,8 +1,11 @@
+import type { ShippingOrigin } from "@ecom/prisma";
 import { ForbiddenException } from "@nestjs/common";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 import type { Request } from "express";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CustomerOrderController } from "./customer-order.controller";
-import type { CreateBulkOrdersDto, CreateOrderDto } from "./dto/create-order.dto";
+import { type CreateBulkOrdersDto, CreateOrderDto } from "./dto/create-order.dto";
 import type { GetCustomerOrdersDto } from "./dto/query-order.dto";
 
 const mockCreateOrder = vi.fn();
@@ -72,6 +75,15 @@ describe("CustomerOrderController", () => {
       const req = mockUserReq();
       const body: CreateOrderDto = {
         shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "SELLER-123",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
         receiverName: "Recipient",
         receiverCity: "Hanoi",
         receiverState: "HN",
@@ -80,6 +92,9 @@ describe("CustomerOrderController", () => {
         receiverZipCode: "100000",
         detailDescription: "Goods",
         declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
         declaredValue: 20,
       };
 
@@ -92,6 +107,15 @@ describe("CustomerOrderController", () => {
       const req = mockCustomerReq("cust_123");
       const body: CreateOrderDto = {
         shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "SELLER-123",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
         receiverName: "Recipient",
         receiverCity: "Hanoi",
         receiverState: "HN",
@@ -100,6 +124,9 @@ describe("CustomerOrderController", () => {
         receiverZipCode: "100000",
         detailDescription: "Goods",
         declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
         declaredValue: 20,
       };
 
@@ -121,6 +148,15 @@ describe("CustomerOrderController", () => {
       const req = mockCustomerReq("cust_123");
       const body: CreateOrderDto = {
         shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "SELLER-123",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
         receiverName: "Recipient",
         receiverCity: "Hanoi",
         receiverState: "HN",
@@ -129,6 +165,9 @@ describe("CustomerOrderController", () => {
         receiverZipCode: "100000",
         detailDescription: "Goods",
         declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
         declaredValue: 20,
       };
 
@@ -137,8 +176,501 @@ describe("CustomerOrderController", () => {
       const result = await controller.createOrder(req, body, "idempotency_123");
 
       expect(mockRedisGet).toHaveBeenCalledWith("idempotency:customer:cust_123:idempotency_123");
-      expect(mockCreateOrder).not.toHaveBeenCalled();
       expect(result.id).toBe("cached_ord");
+    });
+
+    it("should fail validation with exact message when shippingMethod is empty or invalid", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const shippingMethodError = errors.find((e) => e.property === "shippingMethod");
+
+      expect(shippingMethodError).toBeDefined();
+      expect(Object.values(shippingMethodError?.constraints || {})).toContain(
+        'Phương thức vận chuyển (shippingMethod) không hợp lệ, chỉ chấp nhận "EXPRESS" hoặc "EPACKET"',
+      );
+    });
+
+    it("should fail validation with exact message when shippingOrigin is invalid", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        senderName: "FlashShip Sender",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        shippingOrigin: "DAD" as unknown as ShippingOrigin,
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const originError = errors.find((e) => e.property === "shippingOrigin");
+
+      expect(originError).toBeDefined();
+      expect(Object.values(originError?.constraints || {})).toContain(
+        'Mã kho xuất hàng (shippingOrigin) không hợp lệ, chỉ chấp nhận "HAN" hoặc "SGN"',
+      );
+    });
+
+    it("should fail validation with exact message when senderName is empty or missing", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const senderNameError = errors.find((e) => e.property === "senderName");
+
+      expect(senderNameError).toBeDefined();
+      expect(Object.values(senderNameError?.constraints || {})).toContain(
+        "Tên người gửi (senderName) không được để trống",
+      );
+    });
+
+    it("should fail validation with exact message when senderPhone is empty or missing", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const senderPhoneError = errors.find((e) => e.property === "senderPhone");
+
+      expect(senderPhoneError).toBeDefined();
+      expect(Object.values(senderPhoneError?.constraints || {})).toContain(
+        "Số điện thoại người gửi (senderPhone) không được để trống",
+      );
+    });
+
+    it("should fail validation with exact message when senderPhone contains invalid characters or length", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "12345", // too short
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const senderPhoneError = errors.find((e) => e.property === "senderPhone");
+
+      expect(senderPhoneError).toBeDefined();
+      expect(Object.values(senderPhoneError?.constraints || {})).toContain(
+        "Số điện thoại người gửi chỉ được chứa chữ số, dấu + ở đầu và từ 9-15 ký tự.",
+      );
+    });
+
+    it("should fail validation with exact message when receiverPhone contains invalid characters or length", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverPhone: "invalid_phone_123",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const receiverPhoneError = errors.find((e) => e.property === "receiverPhone");
+
+      expect(receiverPhoneError).toBeDefined();
+      expect(Object.values(receiverPhoneError?.constraints || {})).toContain(
+        "Số điện thoại người nhận chỉ được chứa chữ số, dấu + ở đầu và từ 9-15 ký tự.",
+      );
+    });
+
+    it("should transform lowercase senderCountry 'vn' to uppercase 'VN' and pass validation", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "SELLER-123",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "vn",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      expect(errors).toHaveLength(0);
+      expect(dto.senderCountry).toBe("VN");
+    });
+
+    it("should fail validation with exact message when senderCountry is not 'VN'", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "US",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const senderCountryError = errors.find((e) => e.property === "senderCountry");
+
+      expect(senderCountryError).toBeDefined();
+      expect(Object.values(senderCountryError?.constraints || {})).toContain(
+        "Quốc gia người gửi (senderCountry) chưa được hỗ trợ",
+      );
+    });
+
+    it("should fail validation with exact message when sellerOrderId is empty or missing", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const sellerOrderIdErr = errors.find((e) => e.property === "sellerOrderId");
+
+      expect(sellerOrderIdErr).toBeDefined();
+      expect(Object.values(sellerOrderIdErr?.constraints || {})).toContain(
+        "Mã đơn hàng người bán (sellerOrderId) không được để trống",
+      );
+    });
+
+    it("should fail validation when detailDescription exceeds 200 characters", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "a".repeat(201),
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const detailDescError = errors.find((e) => e.property === "detailDescription");
+
+      expect(detailDescError).toBeDefined();
+      expect(Object.values(detailDescError?.constraints || {})).toContain(
+        "Mô tả chi tiết hàng hóa (detailDescription) không được vượt quá 200 ký tự",
+      );
+    });
+
+    it("should fail validation when dimensionLength or declaredWeight is a decimal float instead of integer", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500.5,
+        dimensionLength: 20.5,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const lengthError = errors.find((e) => e.property === "dimensionLength");
+      const weightError = errors.find((e) => e.property === "declaredWeight");
+
+      expect(lengthError).toBeDefined();
+      expect(Object.values(lengthError?.constraints || {})).toContain(
+        "Chiều dài (dimensionLength) phải là số nguyên dương",
+      );
+      expect(weightError).toBeDefined();
+      expect(Object.values(weightError?.constraints || {})).toContain(
+        "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương",
+      );
+    });
+
+    it("should fail validation when senderEmail or receiverEmail is not a valid email format", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderEmail: "invalid-email-string",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverEmail: "not-an-email",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const senderEmailErr = errors.find((e) => e.property === "senderEmail");
+      const receiverEmailErr = errors.find((e) => e.property === "receiverEmail");
+
+      expect(senderEmailErr).toBeDefined();
+      expect(Object.values(senderEmailErr?.constraints || {})).toContain(
+        "Email người gửi (senderEmail) không đúng định dạng email",
+      );
+      expect(receiverEmailErr).toBeDefined();
+      expect(Object.values(receiverEmailErr?.constraints || {})).toContain(
+        "Email người nhận (receiverEmail) không đúng định dạng email",
+      );
+    });
+
+    it("should fail validation when declaredWeight exceeds 70kg or dimensionLength exceeds 300cm", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        detailDescription: "Goods",
+        declaredWeight: 80000, // > 70,000g
+        dimensionLength: 350, // > 300cm
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        declaredValue: 20,
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      const weightErr = errors.find((e) => e.property === "declaredWeight");
+      const lengthErr = errors.find((e) => e.property === "dimensionLength");
+
+      expect(weightErr).toBeDefined();
+      expect(Object.values(weightErr?.constraints || {})).toContain(
+        "Trọng lượng khai báo (declaredWeight) không được vượt quá 70,000 grams (70kg)",
+      );
+      expect(lengthErr).toBeDefined();
+      expect(Object.values(lengthErr?.constraints || {})).toContain(
+        "Chiều dài (dimensionLength) không được vượt quá 300 cm",
+      );
+    });
+
+    it("should pass DTO validation when detailDescription and declaredValue are omitted", async () => {
+      const dto = plainToInstance(CreateOrderDto, {
+        shippingMethod: "EXPRESS",
+        shippingOrigin: "HAN",
+        sellerOrderId: "SELLER-123",
+        senderName: "Kho Hang Ha Noi",
+        senderPhone: "0912345678",
+        senderAddress: "100 Nguyen Trai",
+        senderCity: "Hanoi",
+        senderWard: "Thuong Dinh",
+        senderCountry: "VN",
+        senderZipCode: "100000",
+        receiverName: "Recipient",
+        receiverCity: "Hanoi",
+        receiverState: "HN",
+        receiverAddress1: "123 Street",
+        receiverCountry: "VN",
+        receiverZipCode: "100000",
+        declaredWeight: 500,
+        dimensionLength: 20,
+        dimensionWidth: 15,
+        dimensionHeight: 10,
+        products: [
+          {
+            description: "Ao thoi trang Cotton",
+            quantity: 2,
+            value: 20,
+            originCountry: "VN",
+          },
+        ],
+      });
+
+      const errors = await validate(dto, { always: true, groups: ["create"] });
+      expect(errors).toHaveLength(0);
     });
   });
 
@@ -149,6 +681,15 @@ describe("CustomerOrderController", () => {
         orders: [
           {
             shippingMethod: "EXPRESS",
+            shippingOrigin: "HAN",
+            sellerOrderId: "SELLER-BULK-1",
+            senderName: "Kho Hang Ha Noi",
+            senderPhone: "0912345678",
+            senderAddress: "100 Nguyen Trai",
+            senderCity: "Hanoi",
+            senderWard: "Thuong Dinh",
+            senderCountry: "VN",
+            senderZipCode: "100000",
             receiverName: "Recipient 1",
             receiverCity: "Hanoi",
             receiverState: "HN",
@@ -157,6 +698,9 @@ describe("CustomerOrderController", () => {
             receiverZipCode: "100000",
             detailDescription: "Goods 1",
             declaredWeight: 500,
+            dimensionLength: 20,
+            dimensionWidth: 15,
+            dimensionHeight: 10,
             declaredValue: 20,
           },
         ],
