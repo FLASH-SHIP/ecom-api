@@ -75,22 +75,27 @@ export const getTransactionHistory = authedProcedure
         dateTo: z.string().optional(),
         sortBy: z.string().optional().default("updatedAt"),
         sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+        locale: z.string().optional(),
       })
       .optional(),
   )
   .query(async ({ ctx, input }) => {
-    return getTopupTransactionService().getTransactionHistoryList({
-      customerId: ctx.user.id,
-      page: input?.page,
-      pageSize: input?.pageSize,
-      search: input?.search,
-      topupType: input?.topupType,
-      status: input?.status,
-      dateFrom: input?.dateFrom ? new Date(input.dateFrom) : undefined,
-      dateTo: input?.dateTo ? new Date(input.dateTo) : undefined,
-      sortBy: input?.sortBy,
-      sortOrder: input?.sortOrder,
-    });
+    const reqLocale = ctx.locale || input?.locale || "en";
+    return getTopupTransactionService().getTransactionHistoryList(
+      {
+        customerId: ctx.user.id,
+        page: input?.page,
+        pageSize: input?.pageSize,
+        search: input?.search,
+        topupType: input?.topupType,
+        status: input?.status,
+        dateFrom: input?.dateFrom ? new Date(input.dateFrom) : undefined,
+        dateTo: input?.dateTo ? new Date(input.dateTo) : undefined,
+        sortBy: input?.sortBy,
+        sortOrder: input?.sortOrder,
+      },
+      reqLocale,
+    );
   });
 
 export const createTopupRequest = authedProcedure
@@ -185,6 +190,8 @@ export const exportExcel = authedProcedure
   .input(
     z
       .object({
+        page: z.number().int().positive().optional().default(1),
+        pageSize: z.number().int().positive().optional().default(10),
         search: z.string().optional(),
         paymentMethodId: z.number().int().positive().optional(),
         status: z.string().optional(),
@@ -203,8 +210,8 @@ export const exportExcel = authedProcedure
 
     const historyResult = await getTopupTransactionService().getTopupHistory({
       customerId: targetCustomerId,
-      page: 1,
-      pageSize: 5000,
+      page: input?.page ?? 1,
+      pageSize: input?.pageSize ?? 10,
       search: input?.search,
       paymentMethodId: input?.paymentMethodId,
       status: input?.status,
@@ -264,7 +271,13 @@ export const exportExcel = authedProcedure
       cell.border = thinBorder;
     });
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    const apiBase =
+      process.env.API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      process.env.PUBLIC_API_URL ||
+      process.env.APP_URL ||
+      process.env.API_URL ||
+      "https://dev-api.ecomexpress.vn";
 
     items.forEach((item: any, index: number) => {
       const st = item.status;
@@ -379,4 +392,156 @@ export const payOrderWithWallet = authedProcedure
       actorId: ctx.user.id,
       description: input.description,
     });
+  });
+
+export const exportTransactionExcel = authedProcedure
+  .input(
+    z
+      .object({
+        page: z.number().int().positive().optional().default(1),
+        pageSize: z.number().int().positive().optional().default(10),
+        search: z.string().optional(),
+        topupType: z.string().optional(),
+        status: z.number().int().optional().default(TopupStatus.CONFIRMED),
+        dateFrom: z.string().optional(),
+        dateTo: z.string().optional(),
+        customerId: z.string().optional(),
+        sortBy: z.string().optional().default("updatedAt"),
+        sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+        locale: z.string().optional(),
+      })
+      .optional(),
+  )
+  .mutation(async ({ ctx, input }) => {
+    const isCustomerUser = !ctx.user.permissions || ctx.user.permissions.length === 0;
+    const targetCustomerId = isCustomerUser ? ctx.user.id : (input?.customerId || ctx.user.id);
+    const reqLocale = ctx.locale || input?.locale || "en";
+
+    const result = await getTopupTransactionService().getTransactionHistoryList(
+      {
+        customerId: targetCustomerId,
+        page: input?.page ?? 1,
+        pageSize: input?.pageSize ?? 10,
+        search: input?.search,
+        topupType: input?.topupType,
+        status: input?.status ?? TopupStatus.CONFIRMED,
+        dateFrom: input?.dateFrom ? new Date(input.dateFrom) : undefined,
+        dateTo: input?.dateTo ? new Date(input.dateTo) : undefined,
+        sortBy: input?.sortBy,
+        sortOrder: input?.sortOrder,
+      },
+      reqLocale,
+    );
+
+    const items = result.data || [];
+    const isVi = input?.locale === "vi";
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Wallet Transactions");
+
+    worksheet.columns = [
+      { header: isVi ? "STT" : "No", key: "stt", width: 8 },
+      { header: isVi ? "Ngày" : "Date", key: "date", width: 22 },
+      { header: isVi ? "Mã đơn hàng" : "Order code", key: "orderCode", width: 20 },
+      { header: isVi ? "Order ID" : "Order ID", key: "orderId", width: 22 },
+      { header: isVi ? "Loại giao dịch" : "Transaction type", key: "topupType", width: 24 },
+      { header: isVi ? "Số dư trước ($)" : "Initial amount ($)", key: "initialAmount", width: 18 },
+      { header: isVi ? "Biến động ($)" : "Amount ($)", key: "amount", width: 18 },
+      { header: isVi ? "Số dư sau ($)" : "Final amount ($)", key: "finalAmount", width: 18 },
+      { header: isVi ? "Mô tả" : "Description", key: "description", width: 35 },
+    ];
+
+    const thinBorder: Partial<ExcelJS.Borders> = {
+      top: { style: "thin", color: { argb: "FFD3D3D3" } },
+      left: { style: "thin", color: { argb: "FFD3D3D3" } },
+      bottom: { style: "thin", color: { argb: "FFD3D3D3" } },
+      right: { style: "thin", color: { argb: "FFD3D3D3" } },
+    };
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.height = 24;
+
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "CFFEF9" },
+      };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "left",
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: "FF232323" },
+        size: 11,
+        name: "Calibri",
+      };
+      cell.border = thinBorder;
+    });
+
+    items.forEach((item: any, index: number) => {
+      const createdDateStr = item.submissionDate || item.updatedAt || item.createdAt || "";
+      const formattedDate = createdDateStr
+        ? format(new Date(createdDateStr), "dd/MM/yyyy HH:mm:ss")
+        : "-";
+
+      let typeText = String(item.topupType || "");
+      switch (item.topupType) {
+        case "PAID":
+          typeText = isVi ? "Thanh toán đơn hàng" : "Paid";
+          break;
+        case "ADDED_FUNDS":
+          typeText = isVi ? "Nạp tiền vào ví" : "Added Funds";
+          break;
+        case "CANCELED":
+          typeText = isVi ? "Hủy giao dịch" : "Canceled";
+          break;
+        case "REFUNDED":
+          typeText = isVi ? "Hoàn tiền" : "Refunded";
+          break;
+        case "ADJUST_BALANCE_INCREASE":
+          typeText = isVi ? "Điều chỉnh tăng số dư" : "Adjust Balance Increase";
+          break;
+        case "ADJUST_BALANCE_DECREASE":
+          typeText = isVi ? "Điều chỉnh giảm số dư" : "Adjust Balance Decrease";
+          break;
+      }
+
+      const initialBal = Number(item.accountBalanceBefore ?? 0);
+      const amtChange = Number(item.amountChange ?? 0);
+      const finalBal = Number(item.accountBalanceAfter ?? 0);
+
+      const row = worksheet.addRow({
+        stt: index + 1,
+        date: formattedDate,
+        orderCode: item.orderCode || "-",
+        orderId: item.orderId || "-",
+        topupType: typeText,
+        initialAmount: Number(initialBal.toFixed(2)),
+        amount: Number(amtChange.toFixed(2)),
+        finalAmount: Number(finalBal.toFixed(2)),
+        description: item.description || "-",
+      });
+
+      row.getCell("stt").alignment = { vertical: "middle", horizontal: "center" };
+      row.getCell("initialAmount").numFmt = "#,##0.00";
+      row.getCell("amount").numFmt = "#,##0.00";
+      row.getCell("finalAmount").numFmt = "#,##0.00";
+
+      row.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      row.font = { size: 11, name: "Calibri" };
+      row.eachCell((cell) => {
+        cell.border = thinBorder;
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
+    const fileName = `Wallet_Transactions_${format(new Date(), "yyyyMMdd_HHmmss")}.xlsx`;
+
+    return {
+      filename: fileName,
+      fileData: base64,
+    };
   });

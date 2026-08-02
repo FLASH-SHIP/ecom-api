@@ -5,6 +5,7 @@ import {
   cancelTopupRequest,
   createTopupRequest,
   exportExcel,
+  exportTransactionExcel,
   getLatestExchangeRate,
   getPaymentMethods,
   getTopupHistory,
@@ -33,4 +34,5 @@ export const customerTopupRouter = router({
   approveTopupRequest,
   payOrderWithWallet,
   exportExcel,
+  exportTransactionExcel,
 });
