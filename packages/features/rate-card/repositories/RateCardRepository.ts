@@ -67,6 +67,157 @@ function mapRateCardToDTO<T>(card: T): T {
   return res as T;
 }
 
+type FindManyOptions = {
+  id?: number;
+  code?: string;
+  type?: RateCardType;
+  status?: ContentStatus;
+  shippingMethod?: ShippingMethod;
+  country?: string;
+  origin?: string;
+  search?: string;
+  name?: string;
+  startDate?: Date;
+  startDateGte?: Date;
+  startDateLte?: Date;
+  endDate?: Date;
+  endDateGte?: Date;
+  endDateLte?: Date;
+  customerGroupId?: number;
+};
+
+function buildRateCardFindManyWhere(options: FindManyOptions) {
+  const {
+    id,
+    code,
+    type,
+    status,
+    shippingMethod,
+    country,
+    origin,
+    name,
+    startDate,
+    startDateGte,
+    startDateLte,
+    endDate,
+    endDateGte,
+    endDateLte,
+    customerGroupId,
+    search,
+  } = options;
+
+  const exactFields = { id, type, status, shippingMethod, country, origin };
+  const conditions: Record<string, unknown>[] = Object.entries(exactFields)
+    .filter(([, val]) => val !== undefined)
+    .map(([key, val]) => ({ [key]: val }));
+
+  if (code) conditions.push({ code: { contains: code, mode: "insensitive" as const } });
+  if (name) conditions.push({ name: { contains: name, mode: "insensitive" as const } });
+
+  const startGte = startDateGte ?? startDate;
+  if (startGte || startDateLte) {
+    conditions.push({
+      startDate: {
+        ...(startGte && { gte: startGte }),
+        ...(startDateLte && { lte: startDateLte }),
+      },
+    });
+  }
+
+  const endLte = endDateLte ?? endDate;
+  if (endDateGte || endLte) {
+    conditions.push({
+      endDate: {
+        ...(endDateGte && { gte: endDateGte }),
+        ...(endLte && { lte: endLte }),
+      },
+    });
+  }
+
+  if (customerGroupId) {
+    conditions.push({ groups: { some: { customerGroupId } } });
+  }
+
+  if (search?.trim()) {
+    const q = search.trim();
+    conditions.push({
+      OR: [
+        { code: { contains: q, mode: "insensitive" as const } },
+        { name: { contains: q, mode: "insensitive" as const } },
+      ],
+    });
+  }
+
+  return conditions.length > 0 ? { AND: conditions } : {};
+}
+
+type PublishedCardScopeItem = {
+  id: number;
+  type: RateCardType;
+  shippingMethod: ShippingMethod;
+  country: string;
+  origin: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  createdAt: Date;
+  groups: { customerGroupId: number }[];
+};
+
+function groupPublishedCardsByScope(cards: PublishedCardScopeItem[]) {
+  const groups = new Map<string, PublishedCardScopeItem[]>();
+  for (const card of cards) {
+    if (card.type === "DEFAULT") {
+      const key = `DEFAULT:${card.shippingMethod}:${card.country}:${card.origin ?? ""}`;
+      const group = groups.get(key) ?? [];
+      group.push(card);
+      groups.set(key, group);
+    } else if (card.type === "CUSTOM" && card.groups.length > 0) {
+      for (const g of card.groups) {
+        const key = `CUSTOM:${g.customerGroupId}:${card.shippingMethod}:${card.country}:${card.origin ?? ""}`;
+        const group = groups.get(key) ?? [];
+        group.push(card);
+        groups.set(key, group);
+      }
+    }
+  }
+  return groups;
+}
+
+function findSupersededInGroup(cards: PublishedCardScopeItem[], now: Date): number[] {
+  const effective = cards.filter(
+    (c) =>
+      (c.startDate === null || new Date(c.startDate) <= now) &&
+      (c.endDate === null || new Date(c.endDate) >= now),
+  );
+
+  if (effective.length <= 1) return [];
+
+  effective.sort((a, b) => {
+    const timeA = (a.startDate ?? a.createdAt).getTime();
+    const timeB = (b.startDate ?? b.createdAt).getTime();
+    if (timeB !== timeA) return timeB - timeA;
+    const createdA = a.createdAt.getTime();
+    const createdB = b.createdAt.getTime();
+    if (createdB !== createdA) return createdB - createdA;
+    return b.id - a.id;
+  });
+
+  return effective.slice(1).map((c) => c.id);
+}
+
+function buildGroupCondition(type?: RateCardType, customerGroupIds: number[] = []) {
+  if (type === "CUSTOM") {
+    return { groups: { some: { customerGroupId: { in: customerGroupIds } } } };
+  }
+  if (type === "DEFAULT") {
+    return { groups: { none: {} } };
+  }
+  if (customerGroupIds.length > 0) {
+    return { groups: { some: { customerGroupId: { in: customerGroupIds } } } };
+  }
+  return {};
+}
+
 export class RateCardRepository {
   private prisma: PrismaClient;
 
@@ -180,7 +331,7 @@ export class RateCardRepository {
           ],
         },
         select: selectFields,
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ startDate: "desc" }, { createdAt: "desc" }, { id: "desc" }],
       });
       if (card) return mapRateCardToDTO(card);
     }
@@ -203,7 +354,7 @@ export class RateCardRepository {
         ],
       },
       select: selectFields,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ startDate: "desc" }, { createdAt: "desc" }, { id: "desc" }],
     });
     return mapRateCardToDTO(card);
   }
@@ -257,7 +408,7 @@ export class RateCardRepository {
           ],
         },
         select: selectFields,
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ startDate: "desc" }, { createdAt: "desc" }, { id: "desc" }],
       });
       if (card) return mapRateCardToDTO(card);
     }
@@ -280,7 +431,7 @@ export class RateCardRepository {
         ],
       },
       select: selectFields,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ startDate: "desc" }, { createdAt: "desc" }, { id: "desc" }],
     });
     return mapRateCardToDTO(card);
   }
@@ -296,7 +447,11 @@ export class RateCardRepository {
     search?: string;
     name?: string;
     startDate?: Date;
+    startDateGte?: Date;
+    startDateLte?: Date;
     endDate?: Date;
+    endDateGte?: Date;
+    endDateLte?: Date;
     customerGroupId?: number;
     page?: number;
     perPage?: number;
@@ -312,61 +467,16 @@ export class RateCardRepository {
       | "endDate";
     sortOrder?: "asc" | "desc";
   }) {
-    const {
-      id,
-      code,
-      type,
-      status,
-      shippingMethod,
-      country,
-      origin,
-      search,
-      name,
-      startDate,
-      endDate,
-      customerGroupId,
-      sortBy = "createdAt",
-      sortOrder = "desc",
-    } = options;
-
+    const { sortBy = "createdAt", sortOrder = "desc" } = options;
     const { page, perPage, skip } = normalizePagination(options);
-
-    const conditions: Record<string, unknown>[] = [];
-
-    if (id) conditions.push({ id });
-    if (code) conditions.push({ code: { contains: code, mode: "insensitive" as const } });
-    if (type) conditions.push({ type });
-    if (status) conditions.push({ status });
-    if (shippingMethod) conditions.push({ shippingMethod });
-    if (country) conditions.push({ country });
-    if (origin) conditions.push({ origin });
-    if (name) conditions.push({ name: { contains: name, mode: "insensitive" as const } });
-    if (startDate) conditions.push({ startDate: { gte: startDate } });
-    if (endDate) conditions.push({ endDate: { lte: endDate } });
-    if (customerGroupId) {
-      conditions.push({
-        groups: {
-          some: {
-            customerGroupId,
-          },
-        },
-      });
-    }
-
-    if (search?.trim()) {
-      conditions.push({
-        OR: [
-          { code: { contains: search.trim(), mode: "insensitive" as const } },
-          { name: { contains: search.trim(), mode: "insensitive" as const } },
-        ],
-      });
-    }
-
-    const where = conditions.length > 0 ? { AND: conditions } : {};
+    const where = buildRateCardFindManyWhere(options);
 
     const [items, total] = await Promise.all([
       this.prisma.rateCard.findMany({
         where,
+        skip,
+        take: perPage,
+        orderBy: { [sortBy]: sortOrder },
         select: {
           id: true,
           code: true,
@@ -393,9 +503,6 @@ export class RateCardRepository {
             },
           },
         },
-        orderBy: { [sortBy]: sortOrder },
-        skip,
-        take: perPage,
       }),
       this.prisma.rateCard.count({ where }),
     ]);
@@ -649,6 +756,101 @@ export class RateCardRepository {
     });
   }
 
+  /**
+   * Scans all PUBLISHED rate cards (both DEFAULT and CUSTOM) and archives those that:
+   * 1. Have expired (endDate < now).
+   * 2. Have been superseded by a newer effective rate card for the same target scope.
+   */
+  async archiveSupersededDefaultRateCards(now: Date = new Date()): Promise<{
+    archivedCount: number;
+    archivedIds: number[];
+  }> {
+    const publishedCards = await this.prisma.rateCard.findMany({
+      where: {
+        status: "PUBLISHED" as ContentStatus,
+      },
+      select: {
+        id: true,
+        type: true,
+        shippingMethod: true,
+        country: true,
+        origin: true,
+        startDate: true,
+        endDate: true,
+        createdAt: true,
+        groups: {
+          select: {
+            customerGroupId: true,
+          },
+        },
+      },
+    });
+
+    if (publishedCards.length === 0) {
+      return { archivedCount: 0, archivedIds: [] };
+    }
+
+    const idsToArchiveSet = new Set<number>();
+
+    for (const card of publishedCards) {
+      if (card.endDate && new Date(card.endDate) < now) {
+        idsToArchiveSet.add(card.id);
+      }
+    }
+
+    const groups = groupPublishedCardsByScope(publishedCards);
+    for (const [, cards] of groups) {
+      for (const id of findSupersededInGroup(cards, now)) {
+        idsToArchiveSet.add(id);
+      }
+    }
+
+    const idsToArchive = Array.from(idsToArchiveSet);
+
+    if (idsToArchive.length === 0) {
+      return { archivedCount: 0, archivedIds: [] };
+    }
+
+    await this.prisma.rateCard.updateMany({
+      where: {
+        id: { in: idsToArchive },
+      },
+      data: {
+        status: "ARCHIVED" as ContentStatus,
+      },
+    });
+
+    await this.writeAutoArchiveAuditLogs(idsToArchive, now);
+
+    return {
+      archivedCount: idsToArchive.length,
+      archivedIds: idsToArchive,
+    };
+  }
+
+  private async writeAutoArchiveAuditLogs(idsToArchive: number[], now: Date) {
+    try {
+      await this.prisma.auditLog.createMany({
+        data: idsToArchive.map((cardId) => ({
+          userId: null,
+          action: "AUTO_ARCHIVE_SUPERSEDED",
+          module: "rateCards",
+          entityId: String(cardId),
+          entityType: "RateCard",
+          oldValues: { status: "PUBLISHED" },
+          newValues: { status: "ARCHIVED" },
+          metadata: {
+            source: "cronjob",
+            reason: "Superseded or expired rate card moved to ARCHIVED",
+            processedAt: now.toISOString(),
+          },
+        })),
+      });
+    } catch (err) {
+      console.error("Failed to write audit logs for auto-archived rate cards", err);
+    }
+  }
+
   // Slabs bulk replacement within a transaction
   async replaceSlabs(
     rateCardId: number,
@@ -736,15 +938,7 @@ export class RateCardRepository {
     }
 
     const typeCondition = type ? { type } : {};
-
-    const groupCondition =
-      type === "CUSTOM"
-        ? { groups: { some: { customerGroupId: { in: customerGroupIds } } } }
-        : type === "DEFAULT"
-          ? { groups: { none: {} } }
-          : customerGroupIds.length > 0
-            ? { groups: { some: { customerGroupId: { in: customerGroupIds } } } }
-            : {};
+    const groupCondition = buildGroupCondition(type, customerGroupIds);
 
     const startLimit = startDate ?? new Date(0);
     const endLimit = endDate ?? new Date(253402300799000);
