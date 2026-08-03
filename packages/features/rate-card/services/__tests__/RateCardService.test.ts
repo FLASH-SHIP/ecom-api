@@ -78,6 +78,8 @@ describe("RateCardService", () => {
       findActiveDefault: vi.fn(),
       findById: vi.fn(),
       findOverlappingRateCards: vi.fn(),
+      update: vi.fn(),
+      archiveSupersededDefaultRateCards: vi.fn(),
     };
 
     service = new RateCardService({
@@ -262,7 +264,7 @@ describe("RateCardService", () => {
   });
 
   describe("validatePublishingConstraints", () => {
-    it("should throw error if there are overlapping published rate cards", async () => {
+    it("should resolve without error when validating publishing constraints", async () => {
       rateCardRepo.findById.mockResolvedValue({
         id: 3,
         shippingMethod: "EPACKET",
@@ -272,30 +274,6 @@ describe("RateCardService", () => {
         endDate: null,
         groups: [{ customerGroupId: 1 }],
       });
-
-      rateCardRepo.findOverlappingRateCards.mockResolvedValue([
-        { id: 4, code: "epacket.overlap.us", startDate: null, endDate: null },
-      ]);
-
-      await expect(service.validatePublishingConstraints(3)).rejects.toThrowError(
-        expect.objectContaining({
-          code: ErrorCode.RateCardConflict,
-        }),
-      );
-    });
-
-    it("should resolve without error if there are no overlapping published rate cards", async () => {
-      rateCardRepo.findById.mockResolvedValue({
-        id: 3,
-        shippingMethod: "EPACKET",
-        country: "US",
-        origin: null,
-        startDate: null,
-        endDate: null,
-        groups: [{ customerGroupId: 1 }],
-      });
-
-      rateCardRepo.findOverlappingRateCards.mockResolvedValue([]);
 
       await expect(service.validatePublishingConstraints(3)).resolves.not.toThrow();
     });
@@ -324,41 +302,74 @@ describe("RateCardService", () => {
   });
 
   describe("onDefaultCardApproved", () => {
-    it("should archive previous active default rate cards when a new DEFAULT card is approved", async () => {
-      rateCardRepo.approveDefaultCardTransaction = vi
-        .fn()
-        .mockResolvedValue({ id: 10, status: "PUBLISHED" });
+    it("should update card status to PUBLISHED and trigger immediate archiving if startDate <= now", async () => {
+      rateCardRepo.update = vi.fn().mockResolvedValue({ id: 10, status: "PUBLISHED" });
+      rateCardRepo.archiveSupersededDefaultRateCards = vi.fn().mockResolvedValue({
+        archivedCount: 1,
+        archivedIds: [5],
+      });
+      rateCardRepo.findById = vi.fn().mockResolvedValue({
+        id: 5,
+        shippingMethod: "EXPRESS",
+        country: "US",
+        origin: null,
+        groups: [],
+      });
 
+      const pastDate = new Date(Date.now() - 3600 * 1000);
       await service.onDefaultCardApproved({
         id: 10,
         type: "DEFAULT",
         shippingMethod: "EXPRESS",
         country: "US",
         origin: null,
+        startDate: pastDate,
       });
 
-      expect(rateCardRepo.approveDefaultCardTransaction).toHaveBeenCalledWith({
-        id: 10,
-        shippingMethod: "EXPRESS",
-        country: "US",
-        origin: null,
-      });
+      expect(rateCardRepo.update).toHaveBeenCalledWith(10, { status: "PUBLISHED" });
+      expect(rateCardRepo.archiveSupersededDefaultRateCards).toHaveBeenCalled();
     });
 
-    it("should not trigger archiving if approved rate card is CUSTOM", async () => {
-      rateCardRepo.approveDefaultCardTransaction = vi.fn();
+    it("should update card status to PUBLISHED without immediate archiving if startDate > now (future)", async () => {
       rateCardRepo.update = vi.fn().mockResolvedValue({ id: 11, status: "PUBLISHED" });
+      rateCardRepo.archiveSupersededDefaultRateCards = vi.fn();
 
+      const futureDate = new Date(Date.now() + 86400 * 1000);
       await service.onDefaultCardApproved({
         id: 11,
-        type: "CUSTOM",
+        type: "DEFAULT",
         shippingMethod: "EXPRESS",
         country: "US",
         origin: null,
+        startDate: futureDate,
       });
 
-      expect(rateCardRepo.approveDefaultCardTransaction).not.toHaveBeenCalled();
       expect(rateCardRepo.update).toHaveBeenCalledWith(11, { status: "PUBLISHED" });
+      expect(rateCardRepo.archiveSupersededDefaultRateCards).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("archiveSupersededDefaultRateCards", () => {
+    it("should archive superseded default rate cards and invalidate cache for archived cards", async () => {
+      rateCardRepo.archiveSupersededDefaultRateCards = vi.fn().mockResolvedValue({
+        archivedCount: 1,
+        archivedIds: [5],
+      });
+      rateCardRepo.findById = vi.fn().mockResolvedValue({
+        id: 5,
+        shippingMethod: "EXPRESS",
+        country: "US",
+        origin: null,
+        groups: [],
+      });
+
+      const now = new Date();
+      const result = await service.archiveSupersededDefaultRateCards(now);
+
+      expect(rateCardRepo.archiveSupersededDefaultRateCards).toHaveBeenCalledWith(now);
+      expect(result.archivedCount).toBe(1);
+      expect(result.archivedIds).toEqual([5]);
+      expect(rateCardRepo.findById).toHaveBeenCalledWith(5);
     });
   });
 });

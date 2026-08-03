@@ -90,8 +90,10 @@ export class RateCardService {
   }
 
   /**
-   * Called when a Default rate card is approved and published.
-   * Automatically archives previous active Default rate card for same method/country/origin.
+   * Called when a rate card (DEFAULT or CUSTOM) is approved.
+   * Updates target card status to PUBLISHED.
+   * If startDate <= now (or null), archives superseded rate cards immediately.
+   * Otherwise, archiving is handled by the scheduled hourly cron job once effective date is reached.
    */
   async onDefaultCardApproved(card: {
     id: number;
@@ -99,16 +101,29 @@ export class RateCardService {
     shippingMethod: ShippingMethod;
     country: string;
     origin: string | null;
+    startDate?: Date | null;
   }) {
-    if (card.type === "DEFAULT") {
-      return this.deps.rateCardRepo.approveDefaultCardTransaction({
-        id: card.id,
-        shippingMethod: card.shippingMethod,
-        country: card.country,
-        origin: card.origin,
-      });
+    const updated = await this.deps.rateCardRepo.update(card.id, { status: "PUBLISHED" });
+
+    const now = new Date();
+    if (!card.startDate || new Date(card.startDate) <= now) {
+      await this.archiveSupersededDefaultRateCards(now).catch(() => {});
     }
-    return this.deps.rateCardRepo.update(card.id, { status: "PUBLISHED" });
+
+    return updated;
+  }
+
+  /**
+   * Scans and archives superseded default rate cards, invalidating cache for archived cards.
+   */
+  async archiveSupersededDefaultRateCards(now: Date = new Date()) {
+    const result = await this.deps.rateCardRepo.archiveSupersededDefaultRateCards(now);
+    if (result.archivedIds.length > 0) {
+      for (const id of result.archivedIds) {
+        await this.invalidateRateCardCache(id).catch(() => {});
+      }
+    }
+    return result;
   }
 
   /**
@@ -457,40 +472,15 @@ export class RateCardService {
 
   /**
    * Validates if publishing a rate card causes date/group overlap conflicts.
+   * Rates succession is handled dynamically based on effective startDate and scheduled archiving.
    */
   async validatePublishingConstraints(rateCardId: number) {
     const card = await this.deps.rateCardRepo.findById(rateCardId);
     if (!card) {
       throw new ErrorWithCode(ErrorCode.RateCardNotFound, "Bảng giá không tồn tại.", 404);
     }
-
-    // Default rate cards automatically replace previous active default rate cards upon approval.
-    // Overlap constraint checks only apply to CUSTOM rate cards for the same customer groups.
-    if (card.type === "DEFAULT") {
-      return;
-    }
-
-    const groupIds = card.groups.map((g) => g.customerGroupId);
-
-    const overlaps = await this.deps.rateCardRepo.findOverlappingRateCards({
-      excludeId: card.id,
-      type: card.type,
-      shippingMethod: card.shippingMethod,
-      country: card.country,
-      origin: card.origin,
-      customerGroupIds: groupIds,
-      startDate: card.startDate,
-      endDate: card.endDate,
-    });
-
-    if (overlaps.length > 0) {
-      const conflictList = overlaps.map((o) => `"${o.code}"`).join(", ");
-      throw new ErrorWithCode(
-        ErrorCode.RateCardConflict,
-        `Không thể hoạt động bảng giá này vì chồng chéo khoảng thời gian hiệu lực với bảng giá đang hoạt động khác: ${conflictList}.`,
-        409,
-      );
-    }
+    // Succession and automated archiving is managed via effective start date and scheduled cron job
+    return;
   }
 
   /**

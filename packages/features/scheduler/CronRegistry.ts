@@ -52,6 +52,18 @@ export function getCronJobs(): CronJobDefinition[] {
       },
     },
     {
+      name: "ratecard.default.archive_superseded",
+      cron: "0 * * * *",
+      description: "Scan and archive superseded default rate cards when a newer default rate card becomes effective",
+      enabled: true,
+      handler: async () => {
+        const { archiveSupersededDefaultRateCards } = await import(
+          "@ecom/features/scheduler/services/RateCardScheduler"
+        );
+        await archiveSupersededDefaultRateCards();
+      },
+    },
+    {
       name: "analytics.aggregate",
       cron: "0 1 * * *",
       description: "Aggregate daily analytics data",

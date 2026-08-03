@@ -114,7 +114,11 @@ export const list = authedProcedure
         search: z.string().optional(),
         name: z.string().optional(),
         startDate: z.coerce.date().optional(),
+        startDateGte: z.coerce.date().optional(),
+        startDateLte: z.coerce.date().optional(),
         endDate: z.coerce.date().optional(),
+        endDateGte: z.coerce.date().optional(),
+        endDateLte: z.coerce.date().optional(),
         customerGroupId: z.number().int().positive().optional(),
         page: z.number().int().positive().default(1),
         perPage: z.number().int().positive().max(500).default(20),
@@ -393,6 +397,7 @@ export const approve = authedProcedure
       shippingMethod: card.shippingMethod,
       country: card.country,
       origin: card.origin,
+      startDate: card.startDate,
     });
 
     await rateService.invalidateRateCardCache(input.id).catch(() => {});
