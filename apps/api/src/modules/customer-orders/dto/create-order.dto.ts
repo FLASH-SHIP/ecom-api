@@ -24,6 +24,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   Matches,
   Max,
@@ -451,8 +452,8 @@ export class CreateOrderDto {
     minimum: 1,
     description: "Package length in cm",
   })
-  @IsInt({ always: true, message: "Chiều dài (dimensionLength) phải là số nguyên dương" })
-  @Min(1, { always: true, message: "Chiều dài (dimensionLength) phải là số nguyên dương" })
+  @IsNumber({}, { always: true, message: "Chiều dài (dimensionLength) phải là số dương" })
+  @IsPositive({ always: true, message: "Chiều dài (dimensionLength) phải là số dương" })
   @Max(MAX_DIMENSION_CM, {
     always: true,
     message: PARCEL_VALIDATION_MESSAGES.LENGTH_MAX,
@@ -465,8 +466,8 @@ export class CreateOrderDto {
     minimum: 1,
     description: "Package width in cm",
   })
-  @IsInt({ always: true, message: "Chiều rộng (dimensionWidth) phải là số nguyên dương" })
-  @Min(1, { always: true, message: "Chiều rộng (dimensionWidth) phải là số nguyên dương" })
+  @IsNumber({}, { always: true, message: "Chiều rộng (dimensionWidth) phải là số dương" })
+  @IsPositive({ always: true, message: "Chiều rộng (dimensionWidth) phải là số dương" })
   @Max(MAX_DIMENSION_CM, {
     always: true,
     message: PARCEL_VALIDATION_MESSAGES.WIDTH_MAX,
@@ -479,8 +480,8 @@ export class CreateOrderDto {
     minimum: 1,
     description: "Package height in cm",
   })
-  @IsInt({ always: true, message: "Chiều cao (dimensionHeight) phải là số nguyên dương" })
-  @Min(1, { always: true, message: "Chiều cao (dimensionHeight) phải là số nguyên dương" })
+  @IsNumber({}, { always: true, message: "Chiều cao (dimensionHeight) phải là số dương" })
+  @IsPositive({ always: true, message: "Chiều cao (dimensionHeight) phải là số dương" })
   @Max(MAX_DIMENSION_CM, {
     always: true,
     message: PARCEL_VALIDATION_MESSAGES.HEIGHT_MAX,

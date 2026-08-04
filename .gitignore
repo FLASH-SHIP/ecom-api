@@ -47,6 +47,10 @@ playwright-report/
 test-results/
 blob-report/
 
+# Uploads
+apps/api/public/upload/
+public/upload/
+
 # Documentation
 docs/
 logs/

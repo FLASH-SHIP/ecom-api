@@ -8,7 +8,7 @@ export const listPackages = authedProcedure.query(async ({ ctx }) => {
 
 const packageInputSchema = z.object({
   label: z.string().nullish(),
-  packageName: z.string().min(1),
+  packageName: z.string().min(1).max(50),
   packingTypeId: z.number().int().positive(),
   length: z.number().positive().nullish(),
   width: z.number().positive().nullish(),
