@@ -584,10 +584,7 @@ describe("CustomerOrderController", () => {
       const lengthError = errors.find((e) => e.property === "dimensionLength");
       const weightError = errors.find((e) => e.property === "declaredWeight");
 
-      expect(lengthError).toBeDefined();
-      expect(Object.values(lengthError?.constraints || {})).toContain(
-        "Chiều dài (dimensionLength) phải là số nguyên dương",
-      );
+      expect(lengthError).toBeUndefined();
       expect(weightError).toBeDefined();
       expect(Object.values(weightError?.constraints || {})).toContain(
         "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương",

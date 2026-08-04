@@ -9,7 +9,7 @@ import {
   type ShippingMethod,
   type ShippingOrigin,
 } from "@ecom/prisma";
-import { formatPostalCode, isNoZipcodeCountry, validatePostalCode } from "@flash-ship/ecom-lib";
+import { formatPostalCode, isAsciiLatinOnly, isNoZipcodeCountry, validatePostalCode } from "@flash-ship/ecom-lib";
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import {
@@ -300,12 +300,13 @@ export class OrderService {
 
     if (
       params.dimensionLength == null ||
-      !Number.isInteger(params.dimensionLength) ||
-      params.dimensionLength < 1
+      typeof params.dimensionLength !== "number" ||
+      Number.isNaN(params.dimensionLength) ||
+      params.dimensionLength <= 0
     ) {
       throw new ErrorWithCode(
         ErrorCode.ValidationError,
-        "Chiều dài (dimensionLength) phải là số nguyên dương",
+        "Chiều dài (dimensionLength) phải là số dương",
         400,
       );
     }
@@ -319,12 +320,13 @@ export class OrderService {
 
     if (
       params.dimensionWidth == null ||
-      !Number.isInteger(params.dimensionWidth) ||
-      params.dimensionWidth < 1
+      typeof params.dimensionWidth !== "number" ||
+      Number.isNaN(params.dimensionWidth) ||
+      params.dimensionWidth <= 0
     ) {
       throw new ErrorWithCode(
         ErrorCode.ValidationError,
-        "Chiều rộng (dimensionWidth) phải là số nguyên dương",
+        "Chiều rộng (dimensionWidth) phải là số dương",
         400,
       );
     }
@@ -334,12 +336,13 @@ export class OrderService {
 
     if (
       params.dimensionHeight == null ||
-      !Number.isInteger(params.dimensionHeight) ||
-      params.dimensionHeight < 1
+      typeof params.dimensionHeight !== "number" ||
+      Number.isNaN(params.dimensionHeight) ||
+      params.dimensionHeight <= 0
     ) {
       throw new ErrorWithCode(
         ErrorCode.ValidationError,
-        "Chiều cao (dimensionHeight) phải là số nguyên dương",
+        "Chiều cao (dimensionHeight) phải là số dương",
         400,
       );
     }
@@ -564,10 +567,24 @@ export class OrderService {
 
     if (params.products && params.products.length > 0) {
       for (const product of params.products) {
-        if (product.description && product.description.trim().length > 200) {
+        if (!product.description || !product.description.trim()) {
+          throw new ErrorWithCode(
+            ErrorCode.ValidationError,
+            "Tên sản phẩm (description) không được để trống",
+            400,
+          );
+        }
+        if (product.description.trim().length > 200) {
           throw new ErrorWithCode(
             ErrorCode.ValidationError,
             "Tên sản phẩm (description) không được vượt quá 200 ký tự",
+            400,
+          );
+        }
+        if (!isAsciiLatinOnly(product.description.trim())) {
+          throw new ErrorWithCode(
+            ErrorCode.ValidationError,
+            "Tên sản phẩm (description) phải là Tiếng Anh / Ký tự Latin không dấu",
             400,
           );
         }
