@@ -557,10 +557,10 @@ export class OrderService {
       finalDeclaredValue = Math.round(rawTotal * 100) / 100;
     }
 
-    if (finalDeclaredValue == null || finalDeclaredValue < 0) {
+    if (finalDeclaredValue == null || finalDeclaredValue < 0 || finalDeclaredValue > 9999999999.99) {
       throw new ErrorWithCode(
         ErrorCode.ValidationError,
-        "Giá trị khai báo (declaredValue) không được để trống và phải lớn hơn hoặc bằng 0",
+        "Giá trị khai báo (declaredValue) phải lớn hơn hoặc bằng 0 và không vượt quá 9,999,999,999.99 USD",
         400,
       );
     }
@@ -603,11 +603,12 @@ export class OrderService {
           product.value == null ||
           typeof product.value !== "number" ||
           Number.isNaN(product.value) ||
-          product.value <= 0
+          product.value <= 0 ||
+          product.value > 9999999999.99
         ) {
           throw new ErrorWithCode(
             ErrorCode.ValidationError,
-            "Giá trị sản phẩm (value) phải lớn hơn 0",
+            "Giá trị sản phẩm (value) phải lớn hơn 0 và không vượt quá 9,999,999,999.99 USD",
             400,
           );
         }
