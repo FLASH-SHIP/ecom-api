@@ -102,6 +102,7 @@ export class CustomerAuthController {
       email: customer.email,
       name: customer.name || customer.email,
       tokenVersion: (customer as { tokenVersion?: number }).tokenVersion ?? 1,
+      isTermsAccepted: (customer as { isTermsAccepted?: boolean }).isTermsAccepted ?? false,
     };
     return {
       user,
@@ -134,6 +135,7 @@ export class CustomerAuthController {
       email: customer.email,
       name: customer.name || customer.email,
       tokenVersion: (customer as { tokenVersion?: number }).tokenVersion ?? 1,
+      isTermsAccepted: (customer as { isTermsAccepted?: boolean }).isTermsAccepted ?? false,
     };
     return {
       user,

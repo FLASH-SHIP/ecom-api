@@ -1,5 +1,6 @@
 import { router } from "../../../trpc";
 import {
+  acceptTerms,
   changePassword,
   checkUsername,
   forgotPassword,
@@ -18,6 +19,7 @@ import {
 export const customerAuthRouter = router({
   sendVerificationCode,
   register,
+  acceptTerms,
   socialLogin,
   login,
   refreshToken,

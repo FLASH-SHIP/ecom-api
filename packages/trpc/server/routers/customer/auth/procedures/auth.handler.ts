@@ -39,6 +39,17 @@ export const register = publicProcedure
     return { customer, ...tokens };
   });
 
+export const acceptTerms = publicProcedure
+  .input(
+    z.object({
+      customerId: z.string().uuid(),
+    }),
+  )
+  .mutation(async ({ input }) => {
+    const authService = getCustomerAuthService();
+    return authService.acceptTerms(input.customerId);
+  });
+
 export const socialLogin = publicProcedure
   .use(rateLimiters.auth)
   .input(

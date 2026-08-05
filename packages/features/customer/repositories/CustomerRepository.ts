@@ -73,6 +73,7 @@ export class CustomerRepository {
         customerCode: true,
         email: true,
         username: true,
+        isTermsAccepted: true,
         usernameChangeCount: true,
         usernameChangedAt: true,
         name: true,
@@ -137,6 +138,7 @@ export class CustomerRepository {
         customerCode: true,
         email: true,
         username: true,
+        isTermsAccepted: true,
         name: true,
         status: true,
       },
@@ -226,10 +228,19 @@ export class CustomerRepository {
         customerCode: true,
         email: true,
         username: true,
+        isTermsAccepted: true,
         name: true,
         avatarUrl: true,
         status: true,
       },
+    });
+  }
+
+  async updateTermsAccepted(id: string, isTermsAccepted = true) {
+    return this.prisma.customer.update({
+      where: { id },
+      data: { isTermsAccepted },
+      select: { id: true, email: true, isTermsAccepted: true },
     });
   }
 

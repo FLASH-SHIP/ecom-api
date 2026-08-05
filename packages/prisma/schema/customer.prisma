@@ -26,6 +26,7 @@ model Customer {
   tokenVersion        Int            @default(1)
   status              CustomerStatus @default(ACTIVE)
   emailVerified       DateTime?
+  isTermsAccepted     Boolean        @default(false) @map("is_terms_accepted")
   lastLoginAt         DateTime?
   dob                 DateTime?      @db.Date
   gender              String?

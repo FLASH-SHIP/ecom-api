@@ -74,8 +74,8 @@ export class CustomerAuthService {
     const latestCode = await this.deps.customerRepo.findLatestPendingVerificationCode(email);
     if (latestCode) {
       const timeSinceCreation = Date.now() - latestCode.createdAt.getTime();
-      if (timeSinceCreation < 120 * 1000) {
-        const remainingSeconds = Math.ceil((120 * 1000 - timeSinceCreation) / 1000);
+      if (timeSinceCreation < 60 * 1000) {
+        const remainingSeconds = Math.ceil((60 * 1000 - timeSinceCreation) / 1000);
         throw new ErrorWithCode(
           ErrorCode.VerificationCodeRateLimited,
           "errors.VERIFICATION_CODE_RATE_LIMITED",
@@ -208,6 +208,16 @@ export class CustomerAuthService {
     return result;
   }
 
+  async acceptTerms(customerId: string) {
+    const customer = await this.deps.customerRepo.findById(customerId);
+    if (!customer) {
+      throw new ErrorWithCode(ErrorCode.UserNotFound, "errors.CUSTOMER_NOT_FOUND", 404);
+    }
+    await this.deps.customerRepo.updateTermsAccepted(customerId, true);
+    log.info("Customer accepted terms & conditions", { customerId });
+    return { success: true, customerId };
+  }
+
   async socialLogin(data: {
     provider: string;
     providerId: string;
@@ -226,6 +236,10 @@ export class CustomerAuthService {
         name: data.name,
       });
       isNewCustomer = true;
+    }
+
+    if (!customer) {
+      throw ErrorWithCode.Factory.Internal("Failed to create customer account during social login");
     }
 
     await this.deps.customerRepo.ensureSocialAccount({
