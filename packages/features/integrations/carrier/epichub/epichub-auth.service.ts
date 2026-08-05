@@ -1,3 +1,5 @@
+import { ErrorCode } from '@flash-ship/ecom-lib/errorCodes';
+import { ErrorWithCode } from '@flash-ship/ecom-lib/errors';
 import { getRedisClient } from '@flash-ship/ecom-lib/redis';
 import type { EpicHubEnvelope, EpicHubTokenResult } from './dtos/epichub.dto';
 import { resolvePartnerConfig } from '../../shared/partner-config-crypto';
@@ -167,7 +169,18 @@ export class EpicHubAuthService {
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
-      throw new Error(`[EpicHubAuthService] Failed to authenticate with EpicHub (${res.status}): ${errText}`);
+      if (res.status === 400 || res.status === 401) {
+        throw new ErrorWithCode(
+          ErrorCode.ValidationError,
+          `Xác thực đối tác EpicHub thất bại (${res.status}): Vui lòng kiểm tra lại cấu hình EPICHUB_USERNAME và EPICHUB_PASSWORD trong biến môi trường hệ thống`,
+          400,
+        );
+      }
+      throw new ErrorWithCode(
+        ErrorCode.InternalError,
+        `[EpicHubAuthService] Failed to authenticate with EpicHub (${res.status}): ${errText}`,
+        500,
+      );
     }
 
     const json = (await res.json()) as EpicHubEnvelope<EpicHubTokenResult>;

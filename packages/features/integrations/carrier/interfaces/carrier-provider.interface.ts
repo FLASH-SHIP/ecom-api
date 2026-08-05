@@ -104,6 +104,7 @@ export interface AddressAmbiguousResult {
     shipFrom: AddressCandidate[];
     shipTo: AddressCandidate[];
   };
+  rawEnvelope?: unknown;
 }
 
 export interface LabelPackageResult {
@@ -127,6 +128,7 @@ export interface CreateLabelSuccessResult {
   };
   totalBillingWeight: PackageWeightInfo;
   packageResults: LabelPackageResult[];
+  rawEnvelope?: unknown;
 }
 
 export type CreateLabelResultDto = CreateLabelSuccessResult | AddressAmbiguousResult;
@@ -164,8 +166,10 @@ export interface TrackingResultDto {
 
 export interface VoidResultDto {
   voidedTrackingNumber: string;
+  voidFeePercent?: number;
   success: boolean;
   message?: string;
+  rawEnvelope?: unknown;
 }
 
 export interface BalanceResultDto {

@@ -88,6 +88,8 @@ export interface UpdateOrderInput {
   importCustomsStatus?: CustomsStatus;
   paymentStatus?: PaymentStatus;
   trackingNumber?: string | null;
+  carrierCode?: string | null;
+  labelUrl?: string | null;
   actualWeight?: Prisma.Decimal | number | null;
   volumeWeight?: Prisma.Decimal | number | null;
   chargeableWeight?: Prisma.Decimal | number | null;
@@ -139,6 +141,8 @@ export class OrderRepository {
         shippingOrigin: true,
         sellerOrderId: true,
         trackingNumber: true,
+        carrierCode: true,
+        labelUrl: true,
         senderName: true,
         senderAddress: true,
         senderPhone: true,
@@ -342,6 +346,7 @@ export class OrderRepository {
           shippingMethod: true,
           shippingOrigin: true,
           sellerOrderId: true,
+          trackingNumber: true,
           ecomTrackingNumber: true,
           receiverName: true,
           receiverPhone: true,

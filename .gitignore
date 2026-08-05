@@ -50,6 +50,12 @@ blob-report/
 # Uploads
 apps/api/public/upload/
 public/upload/
+uploads/
+apps/api/uploads/
+
+# Yalc
+.yalc/
+yalc.lock
 
 # Documentation
 docs/

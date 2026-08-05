@@ -1,11 +1,11 @@
 import crypto from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
 import {
-  EXTERNAL_WALLET_FROM_SYSTEM,
-  EXTERNAL_WALLET_PAYMENT_TYPE,
   type BuyerInfo,
   type ChargingRequest,
   type CreateWalletAccountRequest,
+  EXTERNAL_WALLET_FROM_SYSTEM,
+  EXTERNAL_WALLET_PAYMENT_TYPE,
   type ExternalWalletBaseResponse,
   type OrderItemInfo,
   type UpdateCreditLimitRequest,
@@ -52,13 +52,53 @@ export class ExternalWalletClient {
     this.secretKey = process.env.EXTERNAL_WALLET_SECRET_KEY || "";
   }
 
+  private parseHttpError(response: Response, responseText: string): Error {
+    let parsedErrorMsg = responseText;
+    try {
+      const parsed = JSON.parse(responseText);
+      parsedErrorMsg = parsed.message || parsed.msg || parsed.error || responseText;
+    } catch {
+      // Giữ nguyên response text nếu không phải JSON
+    }
+    return new Error(`Hệ Thống Ví Độc Lập [HTTP ${response.status}]: ${parsedErrorMsg || response.statusText}`);
+  }
+
+  private validateBusinessResponse(
+    data: unknown,
+    targetUrl: string,
+    rawBody: string,
+    headers: Record<string, string>,
+    responseText: string,
+  ): void {
+    if (!data || typeof data !== "object") return;
+
+    const resObj = data as Record<string, unknown>;
+    const validCodes = new Set([0, 200, "00", "200", "FLS_200"]);
+    const isFailedSuccess = resObj.success === false;
+    const isInvalidCode = resObj.code !== undefined && !validCodes.has(resObj.code as string | number);
+
+    if (isFailedSuccess || isInvalidCode) {
+      const errorMsg =
+        resObj.message || resObj.msg || resObj.err || resObj.error || JSON.stringify(data);
+
+      const fullBizError = `Hệ Thống Ví Độc Lập: ${errorMsg}`;
+      this.logger.error(fullBizError, {
+        targetUrl,
+        rawBody,
+        headers,
+        responseText,
+      });
+      throw new Error(fullBizError);
+    }
+  }
+
   /**
    * Phương thức Base xử lý gửi POST request dùng chung cho tất cả 4 Endpoints của Hệ Thống Ví Độc Lập.
    * - Tự động đính kèm các Request Headers bắt buộc: `X-Timestamp`, `X-Signature`, `Content-Type`.
    * - Giữ nguyên `partnerId` dạng chuỗi (UUID String) để gửi sang Hệ Thống Ví Độc Lập.
    * - Tự động bóc tách và ném lỗi tập trung (throw Error) nếu gặp lỗi HTTP (4xx, 5xx) hoặc lỗi nghiệp vụ (code != 200 / success == false).
    */
-  private async sendRequest<T>(endpoint: string, payload: Record<string, any>): Promise<T> {
+  private async sendRequest<T>(endpoint: string, payload: unknown): Promise<T> {
     const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
     const targetUrl = `${this.baseUrl}${cleanEndpoint}`;
 
@@ -82,8 +122,8 @@ export class ExternalWalletClient {
         headers,
         body: rawBody,
       });
-    } catch (netErr: any) {
-      const netMsg = netErr?.message || String(netErr);
+    } catch (netErr: unknown) {
+      const netMsg = (netErr as Error)?.message || String(netErr);
       this.logger.error(`Connection to External Wallet API failed (${targetUrl}): ${netMsg}`);
       throw new Error(`Kết nối đến Hệ Thống Ví Độc Lập thất bại (${targetUrl}): ${netMsg}`);
     }
@@ -91,22 +131,14 @@ export class ExternalWalletClient {
     const responseText = await response.text();
 
     if (!response.ok) {
-      let parsedErrorMsg = responseText;
-      try {
-        const parsed = JSON.parse(responseText);
-        parsedErrorMsg = parsed.message || parsed.msg || parsed.error || responseText;
-      } catch {
-        // Giữ nguyên response text nếu không phải JSON
-      }
-
-      const fullError = `Hệ Thống Ví Độc Lập [HTTP ${response.status}]: ${parsedErrorMsg || response.statusText}`;
-      this.logger.error(fullError, {
+      const fullError = this.parseHttpError(response, responseText);
+      this.logger.error(fullError.message, {
         targetUrl,
         rawBody,
         headers,
         responseText,
       });
-      throw new Error(fullError);
+      throw fullError;
     }
 
     let data: T;
@@ -116,31 +148,7 @@ export class ExternalWalletClient {
       data = responseText as unknown as T;
     }
 
-    const resObj = data as any;
-    if (resObj && typeof resObj === "object") {
-      const isFailedSuccess = resObj.success === false;
-      const isInvalidCode =
-        resObj.code !== undefined &&
-        resObj.code !== 0 &&
-        resObj.code !== 200 &&
-        resObj.code !== "00" &&
-        resObj.code !== "200" &&
-        resObj.code !== "FLS_200";
-
-      if (isFailedSuccess || isInvalidCode) {
-        const errorMsg =
-          resObj.message || resObj.msg || resObj.err || resObj.error || JSON.stringify(data);
-
-        const fullBizError = `Hệ Thống Ví Độc Lập: ${errorMsg}`;
-        this.logger.error(fullBizError, {
-          targetUrl,
-          rawBody,
-          headers,
-          responseText,
-        });
-        throw new Error(fullBizError);
-      }
-    }
+    this.validateBusinessResponse(data, targetUrl, rawBody, headers, responseText);
 
     return data;
   }
@@ -193,7 +201,7 @@ export class ExternalWalletClient {
     fromSystem?: string;
     buyerInfo: BuyerInfo;
     orderItem: OrderItemInfo;
-  }): Promise<ExternalWalletBaseResponse<any>> {
+  }): Promise<ExternalWalletBaseResponse<Record<string, unknown>>> {
     const fullPayload: ChargingRequest = {
       fromSystem: payload.fromSystem ?? EXTERNAL_WALLET_FROM_SYSTEM,
       buyerInfo: payload.buyerInfo,
@@ -202,7 +210,7 @@ export class ExternalWalletClient {
         paymentType: payload.orderItem.paymentType ?? EXTERNAL_WALLET_PAYMENT_TYPE,
       },
     };
-    return this.sendRequest<ExternalWalletBaseResponse<any>>(
+    return this.sendRequest<ExternalWalletBaseResponse<Record<string, unknown>>>(
       "/payment-api/charging-request",
       fullPayload,
     );

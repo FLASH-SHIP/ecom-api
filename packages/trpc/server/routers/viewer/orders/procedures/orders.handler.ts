@@ -129,7 +129,7 @@ export const get = authedProcedure
     });
 
     // Cache the result
-    await orderCache.set(input.id, result as any);
+    await orderCache.set(input.id, result as unknown as CachedOrder);
 
     return result;
   });
@@ -209,6 +209,42 @@ export const recalculate = authedProcedure
     const service = getOrderService();
     const operatorId = ctx.user?.email || ctx.user?.id?.toString() || "admin";
     const res = await service.recalculateOrderFees(input.id, operatorId, input.forceRefresh);
+
+    // Invalidate Cache
+    await orderCache.invalidate(input.id);
+
+    return res;
+  });
+
+// 6. Purchase order label (Admin only)
+export const purchaseLabel = authedProcedure
+  .use(requirePermission(Permissions.ORDERS_PURCHASE_LABEL))
+  .input(z.object({ id: z.string().min(1) }))
+  .mutation(async ({ input, ctx }) => {
+    const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
+    const operatorId = ctx.user?.email || ctx.user?.id?.toString() || "admin";
+    const res = await getOrderLabelService().purchaseLabel({
+      orderId: input.id,
+      operatorId,
+    });
+
+    // Invalidate Cache
+    await orderCache.invalidate(input.id);
+
+    return res;
+  });
+
+// 7. Void / Cancel order label (Admin only)
+export const voidLabel = authedProcedure
+  .use(requirePermission(Permissions.ORDERS_VOID_LABEL))
+  .input(z.object({ id: z.string().min(1) }))
+  .mutation(async ({ input, ctx }) => {
+    const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
+    const operatorId = ctx.user?.email || ctx.user?.id?.toString() || "admin";
+    const res = await getOrderLabelService().voidLabel({
+      orderId: input.id,
+      operatorId,
+    });
 
     // Invalidate Cache
     await orderCache.invalidate(input.id);

@@ -13,6 +13,9 @@ export interface IStorageAdapter {
   /** Check if a file exists */
   exists(fileUrl: string): Promise<boolean>;
 
+  /** Read a file buffer by its URL or path */
+  read(fileUrl: string): Promise<Buffer>;
+
   /** Get the disk name (e.g., "local", "s3") */
   getDiskName(): string;
 }

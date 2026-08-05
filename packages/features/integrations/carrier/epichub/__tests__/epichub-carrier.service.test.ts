@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AddressInfo, CreateLabelDto, PriceInquiryDto } from '../interfaces/carrier-provider.interface';
+import { decryptSecret, encryptSecret, resolvePartnerConfig } from '../../../shared/partner-config-crypto';
+import { PartnerProviderRegistry } from '../../../shared/partner-provider-registry';
+import type { AddressInfo, CreateLabelDto, PriceInquiryDto } from '../../interfaces/carrier-provider.interface';
+import { EPICHUB_DEFAULT_SERVICE_CODE } from '../dtos/epichub.dto';
 import { EpicHubAuthService } from '../epichub-auth.service';
 import { EpicHubCarrierService } from '../epichub-carrier.service';
 import { EpicHubHttpClient } from '../epichub-http-client';
-import { PartnerProviderRegistry } from '../../../shared/partner-provider-registry';
-import { decryptSecret, encryptSecret, resolvePartnerConfig } from '../../../shared/partner-config-crypto';
 
 // Mock @flash-ship/ecom-lib/redis
 const mockRedis = {
@@ -187,7 +188,7 @@ describe('EpicHub Integration Unit Tests', () => {
 
       const createLabelDto: CreateLabelDto = {
         requestId: 'req_dom_001',
-        serviceCode: '03',
+        serviceCode: EPICHUB_DEFAULT_SERVICE_CODE,
         shipFrom: dummyAddress,
         shipTo: dummyAddress,
         packages: [
@@ -254,8 +255,8 @@ describe('EpicHub Integration Unit Tests', () => {
       const result = await carrierService.createLabel(createLabelDto);
       expect(result.isAmbiguous).toBe(false);
       if (!result.isAmbiguous) {
-        expect(result.shipmentIdentificationNumber).toBe('1ZX2402221150301923678045');
-        expect(result.packageResults[0].trackingNumber).toBe('1ZX2402221150301923678045');
+        expect("shipmentIdentificationNumber" in result ? result.shipmentIdentificationNumber : undefined).toBe('1ZX2402221150301923678045');
+        expect("packageResults" in result ? result.packageResults[0].trackingNumber : undefined).toBe('1ZX2402221150301923678045');
       }
     });
 
@@ -303,6 +304,38 @@ describe('EpicHub Integration Unit Tests', () => {
       const voidRes = await carrierService.voidLabel('1ZX2402221150301923678045');
       expect(voidRes.success).toBe(true);
       expect(voidRes.voidedTrackingNumber).toBe('1ZX2402221150301923678045');
+    });
+
+    it('should retry automatically on transient 503 error and succeed on 2nd attempt', async () => {
+      mockRedis.get.mockResolvedValue('valid-token');
+
+      const mockVoidResponse = {
+        ResponseStatus: { Code: 200, Description: 'Success', Error: null, Message: null },
+        ResponseResults: { VoidedTrackingNumber: '1ZX2402221150301923678045' },
+      };
+
+      // First call fails with 503, second call succeeds with 200
+      (global.fetch as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 503,
+          statusText: 'Service Unavailable',
+          text: async () => 'HTTP 503 Service Unavailable',
+          json: async () => ({}),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: async () => mockVoidResponse,
+        });
+
+      const authService = new EpicHubAuthService(dummyConfig);
+      const httpClient = new EpicHubHttpClient(dummyConfig.baseUrl, authService);
+      const carrierService = new EpicHubCarrierService(httpClient);
+
+      const voidRes = await carrierService.voidLabel('1ZX2402221150301923678045');
+      expect(voidRes.success).toBe(true);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
     });
   });
 

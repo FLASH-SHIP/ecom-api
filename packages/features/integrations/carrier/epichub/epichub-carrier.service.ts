@@ -23,7 +23,39 @@ import type {
   EpicHubPrintLabelResult,
   EpicHubVoidResult,
 } from './dtos/epichub.dto';
+import { sanitizeEpicHubPayload } from './dtos/epichub.dto';
 import type { EpicHubHttpClient } from './epichub-http-client';
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: { retries?: number; delayMs?: number; actionName?: string } = {},
+): Promise<T> {
+  const maxRetries = options.retries ?? 3;
+  const initialDelay = options.delayMs ?? 500;
+  const actionName = options.actionName || 'Carrier Operation';
+
+  let attempt = 0;
+  while (true) {
+    attempt++;
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const errMsg = (err as Error)?.message || String(err);
+      const isTransientError =
+        /502|503|504|429|ECONNRESET|ETIMEDOUT|fetch failed|timeout/i.test(errMsg);
+
+      if (!isTransientError || attempt > maxRetries) {
+        throw err;
+      }
+
+      const backoffMs = initialDelay * 2 ** (attempt - 1) + Math.random() * 200;
+      console.warn(
+        `[EpicHubCarrierService] Warning: ${actionName} failed with transient error (${errMsg}). Retrying attempt ${attempt}/${maxRetries} in ${Math.round(backoffMs)}ms...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
+  }
+}
 
 export class EpicHubCarrierService implements ICarrierProvider {
   public readonly code = 'EPICHUB';
@@ -44,11 +76,14 @@ export class EpicHubCarrierService implements ICarrierProvider {
   }
 
   private mapAddressToEpicHubParty(address: AddressInfo): EpicHubParty {
+    const rawDigits = (address.phone || "").replace(/[^0-9]/g, "");
+    const cleanPhone = rawDigits.length >= 10 ? rawDigits.slice(-10) : "2133730000";
+
     return {
-      Name: address.name,
-      AttentionName: address.attentionName || address.name,
-      Phone: address.phone,
-      EmailAddress: address.email,
+      Name: address.name || 'Sender Test',
+      AttentionName: address.attentionName || address.name || 'Sender Test',
+      Phone: cleanPhone,
+      EmailAddress: address.email || 'sender@example.com',
       Address: {
         AddressLine1: address.addressLine1,
         AddressLine2: address.addressLine2 || '',
@@ -116,11 +151,11 @@ export class EpicHubCarrierService implements ICarrierProvider {
   }
 
   /**
-   * Create Shipping Label (Domestic US, International CA/PR, KR -> US).
-   * Handles Status 202 Address Ambiguous Candidates.
+  /**
+   * Helper to build EpicHubCreateLabelPayload from CreateLabelDto.
    */
-  public async createLabel(dto: CreateLabelDto): Promise<CreateLabelResultDto> {
-    const payload: EpicHubCreateLabelPayload = {
+  private mapCreateLabelPayload(dto: CreateLabelDto): EpicHubCreateLabelPayload {
+    return {
       RequestId: dto.requestId,
       ShipmentDescription: dto.shipmentDescription || 'Ecom Express Shipping',
       ServiceCode: dto.serviceCode,
@@ -163,48 +198,64 @@ export class EpicHubCarrierService implements ICarrierProvider {
           : undefined,
       })),
     };
+  }
 
-    const { envelope } = await this.httpClient.request<EpicHubCreateLabelResult | EpicHubCandidatesResult>('v2/shipments/label-request', {
-      method: 'POST',
-      body: payload,
-    });
+  /**
+   * Helper to map Status 202 Address Ambiguous response.
+   */
+  private mapAmbiguousResult(candidateResult?: EpicHubCandidatesResult, message?: string | null, rawEnvelope?: unknown): AddressAmbiguousResult {
+    const candidates = candidateResult?.Candidates || { ShipFrom: [], ShipTo: [] };
+    return {
+      isAmbiguous: true,
+      message: message || 'The address is ambiguous. Select a candidate for it.',
+      candidates: {
+        shipFrom: (candidates.ShipFrom || []).map((c) => ({
+          addressLine1: c.AddressLine1,
+          addressLine2: c.AddressLine2,
+          city: c.City,
+          stateCode: c.StateCode,
+          postalCode: c.PostalCode,
+          countryCode: c.CountryCode,
+        })),
+        shipTo: (candidates.ShipTo || []).map((c) => ({
+          addressLine1: c.AddressLine1,
+          addressLine2: c.AddressLine2,
+          city: c.City,
+          stateCode: c.StateCode,
+          postalCode: c.PostalCode,
+          countryCode: c.CountryCode,
+        })),
+      },
+      rawEnvelope,
+    };
+  }
+
+  /**
+   * Create Shipping Label (Domestic US, International CA/PR, KR -> US).
+   * Handles Status 202 Address Ambiguous Candidates.
+   */
+  public async createLabel(dto: CreateLabelDto): Promise<CreateLabelResultDto> {
+    const payload = this.mapCreateLabelPayload(dto);
+    const sanitizedPayload = sanitizeEpicHubPayload(payload);
+    console.log("[EpicHub FULL Payload]", JSON.stringify(sanitizedPayload, null, 2));
+
+    const { envelope } = await withRetry(
+      () =>
+        this.httpClient.request<EpicHubCreateLabelResult | EpicHubCandidatesResult>('v2/shipments/label-request', {
+          method: 'POST',
+          body: sanitizedPayload,
+        }),
+      { retries: 3, delayMs: 500, actionName: 'createLabel' },
+    );
 
     if (!envelope) {
       throw new Error('[EpicHubCarrierService] Empty response envelope from label creation');
     }
 
-    // Handle Status 202 Accepted (Address Ambiguous Candidates)
     if (envelope.ResponseStatus.Code === 202) {
-      const candidateResult = envelope.ResponseResults as EpicHubCandidatesResult;
-      const candidates = candidateResult?.Candidates || { ShipFrom: [], ShipTo: [] };
-
-      const ambiguousResult: AddressAmbiguousResult = {
-        isAmbiguous: true,
-        message: envelope.ResponseStatus.Message || 'The address is ambiguous. Select a candidate for it.',
-        candidates: {
-          shipFrom: (candidates.ShipFrom || []).map((c) => ({
-            addressLine1: c.AddressLine1,
-            addressLine2: c.AddressLine2,
-            city: c.City,
-            stateCode: c.StateCode,
-            postalCode: c.PostalCode,
-            countryCode: c.CountryCode,
-          })),
-          shipTo: (candidates.ShipTo || []).map((c) => ({
-            addressLine1: c.AddressLine1,
-            addressLine2: c.AddressLine2,
-            city: c.City,
-            stateCode: c.StateCode,
-            postalCode: c.PostalCode,
-            countryCode: c.CountryCode,
-          })),
-        },
-      };
-
-      return ambiguousResult;
+      return this.mapAmbiguousResult(envelope.ResponseResults as EpicHubCandidatesResult, envelope.ResponseStatus.Message, envelope);
     }
 
-    // Handle Status 200 Success
     const successResult = envelope.ResponseResults as EpicHubCreateLabelResult;
     return {
       isAmbiguous: false,
@@ -231,6 +282,7 @@ export class EpicHubCarrierService implements ICarrierProvider {
           currencyCode: p.Charge?.CurrencyCode || 'USD',
         },
       })),
+      rawEnvelope: envelope,
     };
   }
 
@@ -326,18 +378,25 @@ export class EpicHubCarrierService implements ICarrierProvider {
    * Void / Cancel Label.
    */
   public async voidLabel(trackingNumber: string): Promise<VoidResultDto> {
-    const { envelope } = await this.httpClient.request<EpicHubVoidResult>('v2/shipments/void', {
-      method: 'PUT',
-      body: {
-        TrackingNumber: trackingNumber,
-      },
-    });
+    const { envelope } = await withRetry(
+      () =>
+        this.httpClient.request<EpicHubVoidResult>('v2/shipments/void', {
+          method: 'PUT',
+          body: {
+            TrackingNumber: trackingNumber,
+          },
+        }),
+      { retries: 3, delayMs: 500, actionName: 'voidLabel' },
+    );
 
     const voidedTracking = envelope?.ResponseResults?.VoidedTrackingNumber;
+    const voidFeePercent = envelope?.ResponseResults?.voidFeePercent;
     return {
       voidedTrackingNumber: voidedTracking || trackingNumber,
+      voidFeePercent: typeof voidFeePercent === "number" ? voidFeePercent : 0,
       success: true,
       message: envelope?.ResponseStatus?.Message || 'Label voided successfully',
+      rawEnvelope: envelope,
     };
   }
 
