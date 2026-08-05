@@ -16,6 +16,7 @@ import { SeedService } from "./common/seed/seed.service";
 import { RedisThrottlerStorage } from "./common/throttler/redis-throttler-storage.service";
 import { IsUniqueConstraint } from "./common/validators/is-unique.validator";
 import { validate } from "./env";
+import { AdminCarrierModule } from "./modules/admin-carriers/admin-carrier.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { BlogModule } from "./modules/blog/blog.module";
 import { CommentsModule } from "./modules/comments/comments.module";
@@ -66,6 +67,7 @@ import { UsersModule } from "./modules/users/users.module";
     CustomerOrderModule,
     CustomerWebhookModule,
     NotificationModule,
+    AdminCarrierModule,
   ],
   providers: [
     {

@@ -128,6 +128,28 @@ export class S3StorageAdapter implements IStorageAdapter {
     }
   }
 
+  async read(fileUrl: string): Promise<Buffer> {
+    const key = this.extractKey(fileUrl);
+    if (!key) {
+      throw new Error(`Invalid file URL: ${fileUrl}`);
+    }
+
+    const sdk = loadS3SDK();
+    const response = (await this.client?.send(
+      new sdk.GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      }),
+    )) as { Body?: { transformToByteArray(): Promise<Uint8Array> } };
+
+    if (!response?.Body) {
+      throw new Error(`S3StorageAdapter: Object body is empty for key ${key}`);
+    }
+
+    const byteArray = await response.Body.transformToByteArray();
+    return Buffer.from(byteArray);
+  }
+
   getDiskName(): string {
     return "s3";
   }

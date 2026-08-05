@@ -20,6 +20,21 @@ enum OrderStatus {
   OUT_FOR_DELIVERY
   DELIVERY
   DELIVERED
+  DELIVERY_FAILED
+  CUSTOMS_HOLD
+  RETURN_TO_SENDER
+  RETURNED
+  CANCELLED
+  EXCEPTION
+}
+
+enum GroupOrderStatus {
+  LABEL_NOT_CREATED
+  LABEL_CREATED
+  WE_HAVE_YOUR_PACKAGE
+  ON_THE_WAY
+  OUT_FOR_DELIVERY
+  DELIVERED
   CANCELLED
   EXCEPTION
 }
@@ -124,6 +139,8 @@ model Order {
   boxId               String?                   @map("box_id")
   port                String?                   @map("port")
   isGetLabel          Int                       @default(0) @map("is_get_label") // 0 or 1
+  carrierCode         String?                   @map("carrier_code")
+  labelUrl            String?                   @map("label_url") @db.Text
   partners            OrderPartner[]
   activityLogs        OrderActivityLog[]
   trackingCheckpoints OrderTrackingCheckpoint[]

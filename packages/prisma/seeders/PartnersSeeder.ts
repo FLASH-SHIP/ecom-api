@@ -54,6 +54,18 @@ export const PartnersSeeder: Seeder = {
           endpoint: "https://api-sandbox.ups.com/v1",
         },
       },
+      {
+        code: "EPICHUB",
+        name: "EpicHub / Clutch Shipper",
+        contactName: "EpicHub Support",
+        contactEmail: "support@clutchshipper.com",
+        contactPhone: "+18005550199",
+        status: "ACTIVE" as const,
+        description: "Đối tác cấp mã vận đơn và tem nhãn Last Mile (UPS Ground / ePacket)",
+        apiConfig: {
+          endpoint: "https://clutchshipper.com/api",
+        },
+      },
     ];
 
     // Seed partners
@@ -113,6 +125,13 @@ export const PartnersSeeder: Seeder = {
         code: "sbp_pickup",
         name: "SBP Domestic Pickup",
         type: "PICKUP" as const,
+        isActive: true,
+      },
+      {
+        partnerCode: "EPICHUB",
+        code: "USPS_GDE_GA",
+        name: "EpicHub USPS GDE Ground Advantage",
+        type: "LASTMILE" as const,
         isActive: true,
       },
     ];

@@ -78,7 +78,14 @@ export class EpicHubHttpClient extends BasePartnerHttpClient {
     }
 
     // Handle 4xx / 5xx error responses
-    const errMsg = json.ResponseStatus?.Message || json.ResponseStatus?.Error || `EpicHub API Error (Status ${json.ResponseStatus?.Code || res.status})`;
+    const statusCode = json.ResponseStatus?.Code || res.status;
+    const rawMsg = json.ResponseStatus?.Message || json.ResponseStatus?.Error || `EpicHub API Error (Status ${statusCode})`;
+    
+    let errMsg = rawMsg;
+    if (statusCode === 400) {
+      errMsg = `EpicHub từ chối yêu cầu (HTTP 400): ${rawMsg}. Vui lòng kiểm tra lại số dư tài khoản EpicHub hoặc thông tin địa chỉ người nhận.`;
+    }
+    
     throw new Error(`[EpicHubHttpClient] ${errMsg}`);
   }
 }

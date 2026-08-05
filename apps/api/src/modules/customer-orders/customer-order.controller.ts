@@ -298,4 +298,20 @@ export class CustomerOrderController {
     const customerId = this.validateCustomer(req);
     return getOrderService().cancelCustomerOrder(customerId, id, body.reason);
   }
+
+  @Post(":id/purchase-label")
+  @ApiOperation({ summary: "Purchase / Generate shipping label for an order" })
+  @ApiParam({ name: "id", description: "Order ID, Ecom Order Code, or Seller Order ID" })
+  @ApiResponse({
+    status: 200,
+    description: "Shipping label purchased successfully or address candidates returned",
+  })
+  async purchaseLabel(@Req() req: Request, @Param("id") id: string) {
+    const customerId = this.validateCustomer(req);
+    const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
+    return getOrderLabelService().purchaseLabel({
+      orderId: id,
+      customerId,
+    });
+  }
 }

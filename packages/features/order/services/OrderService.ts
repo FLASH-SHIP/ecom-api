@@ -801,6 +801,23 @@ export class OrderService {
         console.error("Failed to emit order.created event:", err);
       });
 
+    // If customer checked isGetLabel (1), trigger label purchase via OrderLabelService
+    if (isGetLabelChecked) {
+      try {
+        const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
+        const purchased = await getOrderLabelService().purchaseLabel({
+          orderId: result.id,
+          customerId,
+        });
+        return {
+          ...result,
+          ...purchased,
+        };
+      } catch (labelErr) {
+        console.error(`[OrderService] Automatic label purchase failed for order ${result.id}:`, labelErr);
+      }
+    }
+
     return result;
   }
 

@@ -119,6 +119,12 @@ export const apiEnvSchema = z.object({
   // External Wallet Configuration
   EXTERNAL_WALLET_API_BASE_URL: z.string().default("https://dev-api.ecomexpress.vn"),
   EXTERNAL_WALLET_SECRET_KEY: z.string().default(""),
+
+  // Carrier Partner Integrations (EpicHub)
+  EPICHUB_BASE_URL: z.string().url().default("https://clutchshipper.com/api"),
+  EPICHUB_USERNAME: z.string().optional(),
+  EPICHUB_PASSWORD: z.string().optional(),
+  EPICHUB_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(41400),
 });
 
 export type ApiEnv = z.infer<typeof apiEnvSchema>;

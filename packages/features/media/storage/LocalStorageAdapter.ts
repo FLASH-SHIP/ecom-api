@@ -20,23 +20,30 @@ export class LocalStorageAdapter implements IStorageAdapter {
     const now = new Date();
     const year = now.getFullYear().toString();
     const month = (now.getMonth() + 1).toString().padStart(2, "0");
-    const dirPath = join(this.basePath, year, month);
+
+    // Extract subdirectories from fileName if present (e.g. "labels/EC123_456.pdf")
+    const pathParts = fileName.split("/").filter((p) => p !== ".." && p !== ".");
+    const actualFileName = pathParts.pop() || fileName;
+    const subDirs = pathParts.length > 0 ? join(...pathParts) : "";
+
+    const dirPath = join(this.basePath, year, month, subDirs);
 
     if (!existsSync(dirPath)) {
       mkdirSync(dirPath, { recursive: true });
     }
 
     // Generate unique filename to avoid collisions
-    const uniqueName = `${Date.now()}-${fileName}`;
+    const uniqueName = `${Date.now()}-${actualFileName}`;
     const filePath = join(dirPath, uniqueName);
 
     writeFileSync(filePath, file);
 
-    return `${this.baseUrl}/${year}/${month}/${uniqueName}`;
+    const relativeSubPath = subDirs ? `${subDirs}/` : "";
+    return `${this.baseUrl}/${year}/${month}/${relativeSubPath}${uniqueName}`;
   }
 
   async delete(fileUrl: string): Promise<void> {
-    const relativePath = fileUrl.replace(this.baseUrl, "");
+    const relativePath = fileUrl.replace(this.baseUrl, "").replace(/^\/+/, "");
     const filePath = join(this.basePath, relativePath);
 
     if (existsSync(filePath)) {
@@ -45,9 +52,21 @@ export class LocalStorageAdapter implements IStorageAdapter {
   }
 
   async exists(fileUrl: string): Promise<boolean> {
-    const relativePath = fileUrl.replace(this.baseUrl, "");
+    const relativePath = fileUrl.replace(this.baseUrl, "").replace(/^\/+/, "");
     const filePath = join(this.basePath, relativePath);
     return existsSync(filePath);
+  }
+
+  async read(fileUrl: string): Promise<Buffer> {
+    const relativePath = fileUrl.replace(this.baseUrl, "").replace(/^\/+/, "");
+    const filePath = join(this.basePath, relativePath);
+
+    if (!existsSync(filePath)) {
+      throw new Error(`File not found at ${fileUrl}`);
+    }
+
+    const { readFileSync } = await import("node:fs");
+    return readFileSync(filePath);
   }
 
   getDiskName(): string {

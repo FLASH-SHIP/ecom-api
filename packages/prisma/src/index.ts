@@ -82,6 +82,8 @@ const basePrisma =
 
 const AUDIT_EXEMPT_MODELS = [
   "AuditLog",
+  "PartnerAuditLog",
+  "OrderActivityLog",
   "RequestLog",
   "OutboxEvent",
   "Session",
@@ -120,22 +122,17 @@ const SENSITIVE_FIELDS = [
 
 function sanitizeAuditValues(value: unknown): unknown {
   if (value === null || value === undefined) return value;
-  if (Array.isArray(value)) {
-    return value.map(sanitizeAuditValues);
-  }
-  if (typeof value === "object") {
-    const obj = value as Record<string, unknown>;
-    const sanitized: Record<string, unknown> = {};
-    for (const key of Object.keys(obj)) {
+  try {
+    const jsonString = JSON.stringify(value, (key, val) => {
       if (SENSITIVE_FIELDS.includes(key)) {
-        sanitized[key] = "[REDACTED]";
-      } else {
-        sanitized[key] = sanitizeAuditValues(obj[key]);
+        return "[REDACTED]";
       }
-    }
-    return sanitized;
+      return val;
+    });
+    return JSON.parse(jsonString);
+  } catch {
+    return null;
   }
-  return value;
 }
 
 const getPrismaDelegateName = (modelName: string) => {

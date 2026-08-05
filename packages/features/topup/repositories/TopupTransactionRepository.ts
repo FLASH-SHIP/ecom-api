@@ -1,11 +1,11 @@
-import { Prisma, TopupType, type PrismaClient } from "@ecom/prisma";
-import { TopupStatus } from "@flash-ship/ecom-types";
+import { Prisma, type PrismaClient, TopupType } from "@ecom/prisma";
 import { generateEntityCode } from "@flash-ship/ecom-lib";
+import { TopupStatus } from "@flash-ship/ecom-types";
 import { ExternalWalletClient } from "../clients";
 import {
-  ExternalWalletActionType,
   EXTERNAL_WALLET_FROM_SYSTEM,
   EXTERNAL_WALLET_PAYMENT_TYPE,
+  ExternalWalletActionType,
 } from "../dtos/externalWalletDTOs";
 
 /**
@@ -96,9 +96,9 @@ export class TopupTransactionRepository {
     try {
       const walletClient = new ExternalWalletClient();
       const accountInfoRes = await walletClient.getAccountInfo({ partnerId: customerId });
-      const resData = (accountInfoRes as any)?.data;
+      const resData = (accountInfoRes as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
       const rawBal = resData?.accountBalance ?? 0;
-      if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+      if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
         accountBalance = Number(rawBal);
       } else {
         // Fallback: Lấy giao dịch đã xác nhận (status = TopupStatus.CONFIRMED) gần nhất từ DB Local
@@ -153,45 +153,27 @@ export class TopupTransactionRepository {
     };
   }
 
-  /**
-   * Lấy danh sách lịch sử nạp tiền có phân trang và bộ lọc
-   * - Mặc định nếu không truyền dateFrom & dateTo: Lấy tự động khoảng 7 ngày gần nhất
-   * - Phân trang mặc định: page = 1, pageSize = 10
-   *
-   * @param params Đối tượng chứa bộ lọc và tham số phân trang
-   * @returns Danh sách bản ghi và thông tin phân trang (total, page, totalPages)
-   */
-  async getTopupHistory(params: FilterTopupHistoryParams) {
-    const page = params.page && params.page > 0 ? params.page : 1;
-    const pageSize = params.pageSize && params.pageSize > 0 ? params.pageSize : 10;
-    const skip = (page - 1) * pageSize;
+  private resolveDefaultDateRange(dateFrom?: Date, dateTo?: Date) {
+    if (dateFrom || dateTo) return { fromDate: dateFrom, toDate: dateTo };
+    const now = new Date();
+    const toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    return { fromDate: sevenDaysAgo, toDate };
+  }
 
-    // Thiết lập khoảng thời gian 7 ngày mặc định nếu người dùng không chọn ngày
-    let fromDate = params.dateFrom;
-    let toDate = params.dateTo;
-
-    if (!fromDate && !toDate) {
-      const now = new Date();
-      toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-      const sevenDaysAgo = new Date(now);
-      sevenDaysAgo.setDate(now.getDate() - 6);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
-      fromDate = sevenDaysAgo;
-    }
-
+  private buildTopupHistoryWhere(params: FilterTopupHistoryParams): Prisma.TopupTransactionWhereInput {
+    const { fromDate, toDate } = this.resolveDefaultDateRange(params.dateFrom, params.dateTo);
     const where: Prisma.TopupTransactionWhereInput = {};
 
-    // Lọc theo khách hàng nếu được cung cấp (Cách ly dữ liệu người dùng)
     if (params.customerId) {
       where.customerId = params.customerId;
     }
 
-    // Lọc theo khoảng thời gian tạo giao dịch (createdAt)
     if (fromDate || toDate) {
       where.createdAt = {};
-      if (fromDate) {
-        where.createdAt.gte = fromDate;
-      }
+      if (fromDate) where.createdAt.gte = fromDate;
       if (toDate) {
         const endOfToDate = new Date(toDate);
         endOfToDate.setHours(23, 59, 59, 999);
@@ -199,7 +181,6 @@ export class TopupTransactionRepository {
       }
     }
 
-    // Lọc theo trạng thái giao dịch (status enum: 1 = Waiting, 2 = Confirmed, 3 = Reject)
     if (params.status && params.status !== "ALL") {
       const statusNum = Number.parseInt(params.status, 10);
       if (!Number.isNaN(statusNum)) {
@@ -207,12 +188,10 @@ export class TopupTransactionRepository {
       }
     }
 
-    // Lọc theo phương thức thanh toán
     if (params.paymentMethodId) {
       where.paymentMethodId = params.paymentMethodId;
     }
 
-    // Tìm kiếm theo từ khóa (Mã giao dịch, Mã đơn hàng, Nội dung ghi chú)
     if (params.search && params.search.trim() !== "") {
       const searchStr = params.search.trim();
       where.OR = [
@@ -222,43 +201,37 @@ export class TopupTransactionRepository {
       ];
     }
 
-    // Xử lý động tiêu chí sắp xếp (Sorting)
-    let orderBy: Prisma.TopupTransactionOrderByWithRelationInput = { createdAt: "desc" };
+    return where;
+  }
 
-    if (params.sortBy) {
-      const order = params.sortOrder === "asc" ? "asc" : "desc";
-      switch (params.sortBy) {
-        case "transactionCode":
-          orderBy = { transactionCode: order };
-          break;
-        case "submissionDate":
-        case "createdAt":
-          orderBy = { createdAt: order };
-          break;
-        case "wireDate":
-          orderBy = { wireDate: order };
-          break;
-        case "wireAmount":
-          orderBy = { wireAmount: order };
-          break;
-        case "wireAmountApprove":
-          orderBy = { wireAmountApprove: order };
-          break;
-        case "customerCode":
-          orderBy = { customer: { customerCode: order } };
-          break;
-        case "customerName":
-          orderBy = { customer: { name: order } };
-          break;
-        case "status":
-          orderBy = { status: order };
-          break;
-        default:
-          orderBy = { createdAt: "desc" };
-      }
-    }
+  private buildTopupHistoryOrderBy(params: FilterTopupHistoryParams): Prisma.TopupTransactionOrderByWithRelationInput {
+    if (!params.sortBy) return { createdAt: "desc" };
+    const order = params.sortOrder === "asc" ? "asc" : "desc";
+    const sortMap: Record<string, Prisma.TopupTransactionOrderByWithRelationInput> = {
+      transactionCode: { transactionCode: order },
+      submissionDate: { createdAt: order },
+      createdAt: { createdAt: order },
+      wireDate: { wireDate: order },
+      wireAmount: { wireAmount: order },
+      wireAmountApprove: { wireAmountApprove: order },
+      customerCode: { customer: { customerCode: order } },
+      customerName: { customer: { name: order } },
+      status: { status: order },
+    };
+    return sortMap[params.sortBy] || { createdAt: "desc" };
+  }
 
-    // Thực hiện truy vấn danh sách và tổng số lượng bản ghi song song
+  /**
+   * Lấy danh sách lịch sử nạp tiền có phân trang và bộ lọc
+   */
+  async getTopupHistory(params: FilterTopupHistoryParams) {
+    const page = params.page && params.page > 0 ? params.page : 1;
+    const pageSize = params.pageSize && params.pageSize > 0 ? params.pageSize : 10;
+    const skip = (page - 1) * pageSize;
+
+    const where = this.buildTopupHistoryWhere(params);
+    const orderBy = this.buildTopupHistoryOrderBy(params);
+
     const [data, total] = await Promise.all([
       this.prisma.topupTransaction.findMany({
         where,
@@ -285,52 +258,22 @@ export class TopupTransactionRepository {
     };
   }
 
-  /**
-   * Lấy danh sách biến động lịch sử giao dịch ví (`getTransactionHistoryList`)
-   * - Tối ưu hóa truy vấn tối đa: Sử dụng `select` giới hạn chỉ chọn các cột cần thiết, giúp giảm RAM & payload.
-   * - Truy vấn song song `Promise.all([findMany, count])` giảm 50% thời gian phản hồi (Latency).
-   * - Khóa ngày kết thúc (`dateTo`) không cho phép vượt quá ngày hiện tại `new Date()`.
-   * - Mặc định khoảng ngày: 7 ngày gần nhất nếu người dùng không chọn ngày.
-   * - Mặc định sắp xếp: `{ updatedAt: "desc" }`.
-   *
-   * @param params Bộ lọc truy vấn bao gồm `customerId`, `page`, `pageSize`, `search`, `topupType`, `dateFrom`, `dateTo`
-   * @returns Danh sách dữ liệu biến động ví cùng thông tin phân trang `meta`
-   */
-  async getTransactionHistoryList(params: FilterTransactionHistoryParams) {
-    const page = params.page && params.page > 0 ? params.page : 1;
-    const pageSize = params.pageSize && params.pageSize > 0 ? Math.min(params.pageSize, 100) : 10;
-    const skip = (page - 1) * pageSize;
-
-    // 1. Tính toán dải ngày mặc định (7 ngày gần nhất) nếu người dùng không chọn ngày
+  private buildTransactionHistoryWhere(params: FilterTransactionHistoryParams): Prisma.TopupTransactionWhereInput {
     const now = new Date();
-    let fromDate = params.dateFrom;
-    let toDate = params.dateTo;
+    let { fromDate, toDate } = this.resolveDefaultDateRange(params.dateFrom, params.dateTo);
 
-    if (!fromDate && !toDate) {
-      toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-      const sevenDaysAgo = new Date(now);
-      sevenDaysAgo.setDate(now.getDate() - 6);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
-      fromDate = sevenDaysAgo;
-    }
-
-    // 2. Bảo mật: Khóa dateTo tối đa không bao giờ vượt quá ngày hiện tại (Bảo đảm không lấy ngày tương lai)
     if (toDate && toDate.getTime() > now.getTime()) {
       toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     }
 
-    // 3. Xây dựng câu điều kiện Prisma `where`
     const where: Prisma.TopupTransactionWhereInput = {
-      customerId: params.customerId, // Bảo mật cách ly dữ liệu theo customerId của user đang đăng nhập
-      status: TopupStatus.CONFIRMED, // Mặc định chỉ truy vấn các giao dịch đã Phê Duyệt (status = 2 = CONFIRMED)
+      customerId: params.customerId,
+      status: TopupStatus.CONFIRMED,
     };
 
-    // Lọc theo thời gian tạo giao dịch
     if (fromDate || toDate) {
       where.createdAt = {};
-      if (fromDate) {
-        where.createdAt.gte = fromDate;
-      }
+      if (fromDate) where.createdAt.gte = fromDate;
       if (toDate) {
         const endOfToDate = new Date(toDate);
         endOfToDate.setHours(23, 59, 59, 999);
@@ -338,12 +281,10 @@ export class TopupTransactionRepository {
       }
     }
 
-    // Lọc theo loại giao dịch ví (topupType: PAID, ADDED_FUNDS, CANCELED, REFUNDED, ADJUST_BALANCE_INCREASE, ADJUST_BALANCE_DECREASE)
     if (params.topupType && params.topupType !== "ALL" && params.topupType.trim() !== "") {
       where.topupType = params.topupType.trim();
     }
 
-    // Tìm kiếm linh hoạt theo từ khóa (Mã đơn hàng, Order ID, Mã giao dịch)
     if (params.search && params.search.trim() !== "") {
       const searchStr = params.search.trim();
       where.OR = [
@@ -354,31 +295,34 @@ export class TopupTransactionRepository {
       ];
     }
 
-    // 4. Xử lý sắp xếp tiêu chuẩn (Mặc định: updatedAt desc)
-    let orderBy: Prisma.TopupTransactionOrderByWithRelationInput = { updatedAt: "desc" };
+    return where;
+  }
 
-    if (params.sortBy) {
-      const order = params.sortOrder === "asc" ? "asc" : "desc";
-      switch (params.sortBy) {
-        case "submissionDate":
-        case "submission_date":
-          orderBy = { submissionDate: order };
-          break;
-        case "createdAt":
-        case "created_at":
-          orderBy = { createdAt: order };
-          break;
-        case "updatedAt":
-        case "updated_at":
-          orderBy = { updatedAt: order };
-          break;
-        default:
-          orderBy = { updatedAt: "desc" };
-      }
-    }
+  private buildTransactionHistoryOrderBy(params: FilterTransactionHistoryParams): Prisma.TopupTransactionOrderByWithRelationInput {
+    if (!params.sortBy) return { updatedAt: "desc" };
+    const order = params.sortOrder === "asc" ? "asc" : "desc";
+    const sortMap: Record<string, Prisma.TopupTransactionOrderByWithRelationInput> = {
+      submissionDate: { submissionDate: order },
+      submission_date: { submissionDate: order },
+      createdAt: { createdAt: order },
+      created_at: { createdAt: order },
+      updatedAt: { updatedAt: order },
+      updated_at: { updatedAt: order },
+    };
+    return sortMap[params.sortBy] || { updatedAt: "desc" };
+  }
 
-    // 5. Thực thi truy vấn dữ liệu & đếm tổng số bản ghi song song (Promise.all)
-    // Tối ưu hóa RAM & Payload: Chỉ SELECT các cột cần thiết trên giao diện
+  /**
+   * Lấy danh sách lịch sử biến động số dư ví (Transaction History List)
+   */
+  async getTransactionHistoryList(params: FilterTransactionHistoryParams) {
+    const page = params.page && params.page > 0 ? params.page : 1;
+    const pageSize = params.pageSize && params.pageSize > 0 ? Math.min(params.pageSize, 100) : 10;
+    const skip = (page - 1) * pageSize;
+
+    const where = this.buildTransactionHistoryWhere(params);
+    const orderBy = this.buildTransactionHistoryOrderBy(params);
+
     const [data, total] = await Promise.all([
       this.prisma.topupTransaction.findMany({
         where,
@@ -686,6 +630,51 @@ export class TopupTransactionRepository {
   /** Map khóa giao dịch đang trong quá trình phê duyệt (Chống race condition 2 Admin phê duyệt cùng lúc) */
   private static approvingTransactionIds = new Set<number>();
 
+  private async resolveBalanceAfterAndBefore(
+    chargingRes: unknown,
+    walletClient: ExternalWalletClient,
+    customerId: string,
+    previousConfirmedBalance: number,
+    approvedAmount: number,
+  ): Promise<{ balanceBefore: number; balanceAfter: number }> {
+    let balanceAfter: number | null = null;
+    const chargingData = (chargingRes as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
+    const rawBalFromCharging = chargingData?.balance ?? chargingData?.accountBalance ?? chargingData?.account_balance;
+
+    if (rawBalFromCharging !== undefined && rawBalFromCharging !== null && !Number.isNaN(Number(rawBalFromCharging))) {
+      balanceAfter = Number(rawBalFromCharging);
+    }
+
+    if (balanceAfter === null) {
+      try {
+        const accountInfo = await walletClient.getAccountInfo({ partnerId: customerId });
+        const resData = (accountInfo as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
+        const rawBal =
+          resData?.balance ??
+          resData?.accountBalance ??
+          resData?.account_balance ??
+          (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
+        if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
+          balanceAfter = Number(rawBal);
+        }
+      } catch {
+        // Dự phòng an toàn
+      }
+    }
+
+    const roundCurrency = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
+    if (balanceAfter !== null && balanceAfter > previousConfirmedBalance) {
+      return {
+        balanceBefore: roundCurrency(previousConfirmedBalance),
+        balanceAfter: roundCurrency(balanceAfter),
+      };
+    }
+    return {
+      balanceBefore: roundCurrency(previousConfirmedBalance),
+      balanceAfter: roundCurrency(previousConfirmedBalance + approvedAmount),
+    };
+  }
+
   /**
    * Phê duyệt giao dịch nạp tiền (Dành cho Admin)
    * Quy trình Single Source of Truth Flow:
@@ -752,51 +741,13 @@ export class TopupTransactionRepository {
       },
     });
 
-    // BƯỚC 3: Xác định số dư THỰC TẾ sau giao dịch (balanceAfter = X) từ API Ví Độc Lập hoặc tự động cộng dồn
-    let balanceAfter: number | null = null;
-
-    // 3.1 Thử lấy balance từ kết quả trả về của chargingRequest (nếu có)
-    const chargingData = (chargingRes as any)?.data;
-    const rawBalFromCharging =
-      chargingData?.balance ?? chargingData?.accountBalance ?? chargingData?.account_balance;
-    if (rawBalFromCharging !== undefined && rawBalFromCharging !== null && !isNaN(Number(rawBalFromCharging))) {
-      balanceAfter = Number(rawBalFromCharging);
-    }
-
-    // 3.2 Thử gọi getAccountInfo lấy balance mới nhất từ Ví Độc Lập
-    if (balanceAfter === null) {
-      try {
-        const accountInfo = await walletClient.getAccountInfo({ partnerId: existing.customerId });
-        const resData = (accountInfo as any)?.data;
-        const rawBal =
-          resData?.balance ??
-          resData?.accountBalance ??
-          resData?.account_balance ??
-          resData?.accountInfo?.balance;
-        if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
-          balanceAfter = Number(rawBal);
-        }
-      } catch {
-        // Dự phòng an toàn: Nếu API getAccountInfo gặp sự cố tạm thời
-      }
-    }
-
-    // 3.3 Tính toán chuẩn xác nghiệp vụ & làm tròn 2 chữ số thập phân (tránh lỗi floating point JavaScript):
-    // - account_balance_before: Bằng số dư sau (account_balance_after) của giao dịch xác nhận trước đó (previousConfirmedBalance)
-    // - account_balance_after: Bằng X (số dư mới sau khi cộng) hoặc previousConfirmedBalance + approvedAmount
-    const roundCurrency = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
-
-    let balanceBefore: number;
-
-    if (balanceAfter !== null && balanceAfter > previousConfirmedBalance) {
-      // API ví độc lập thực sự trả về số dư mới X tăng lên sau khi cộng tiền
-      balanceBefore = roundCurrency(previousConfirmedBalance);
-      balanceAfter = roundCurrency(balanceAfter);
-    } else {
-      // Fallback chuẩn xác khi dev API trả về balance tĩnh hoặc không trả về balance:
-      balanceBefore = roundCurrency(previousConfirmedBalance);
-      balanceAfter = roundCurrency(previousConfirmedBalance + approvedAmount);
-    }
+    const { balanceBefore, balanceAfter } = await this.resolveBalanceAfterAndBefore(
+      chargingRes,
+      walletClient,
+      existing.customerId,
+      previousConfirmedBalance,
+      approvedAmount,
+    );
 
     // BƯỚC 4: Cập nhật DB Local trong $transaction nhanh gọn (< 5ms)
     // Cập nhật trọn vẹn 3 trường: account_balance_before = previousConfirmedBalance, amount_change = approvedAmount, và account_balance_after = balanceAfter
@@ -883,37 +834,8 @@ export class TopupTransactionRepository {
       }
 
       // BƯỚC 3: Lấy số dư ví khả dụng hiện tại từ API Ví Độc Lập (/payment-api/account/info)
-      let balanceBefore = 0.0;
+      const balanceBefore = await this.getWalletBalance(data.customerId);
       const walletClient = new ExternalWalletClient();
-
-      try {
-        const accountInfoRes = await walletClient.getAccountInfo({ partnerId: data.customerId });
-        const resData = (accountInfoRes as any)?.data;
-        const rawBal =
-          resData?.balance ??
-          resData?.accountBalance ??
-          resData?.account_balance ??
-          resData?.accountInfo?.balance;
-
-        if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
-          balanceBefore = Number(rawBal);
-        } else {
-          // Fallback DB Local
-          const latestTx = await this.prisma.topupTransaction.findFirst({
-            where: { customerId: data.customerId, status: TopupStatus.CONFIRMED },
-            orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-            select: { accountBalanceAfter: true },
-          });
-          balanceBefore = latestTx?.accountBalanceAfter ? Number(latestTx.accountBalanceAfter) : 0.0;
-        }
-      } catch {
-        const latestTx = await this.prisma.topupTransaction.findFirst({
-          where: { customerId: data.customerId, status: TopupStatus.CONFIRMED },
-          orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-          select: { accountBalanceAfter: true },
-        });
-        balanceBefore = latestTx?.accountBalanceAfter ? Number(latestTx.accountBalanceAfter) : 0.0;
-      }
 
       // BƯỚC 4: Kiểm tra điều kiện số dư ví khả dụng
       if (balanceBefore < data.amount) {
@@ -941,10 +863,11 @@ export class TopupTransactionRepository {
 
       // Tối ưu hóa 1 HTTP Network Call: Bóc tách trực tiếp balance sau khi trừ từ response
       const roundCurrency = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
-      const resBalAfter = (chargingRes as any)?.data?.balance ?? (chargingRes as any)?.data?.accountBalance;
+      const chargingData = (chargingRes as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
+      const resBalAfter = chargingData?.balance ?? chargingData?.accountBalance;
 
       let balanceAfter: number;
-      if (resBalAfter !== undefined && resBalAfter !== null && !isNaN(Number(resBalAfter))) {
+      if (resBalAfter !== undefined && resBalAfter !== null && !Number.isNaN(Number(resBalAfter))) {
         balanceAfter = roundCurrency(Number(resBalAfter));
       } else {
         balanceAfter = roundCurrency(balanceBefore - data.amount);
@@ -953,7 +876,8 @@ export class TopupTransactionRepository {
       const transactionCode = generateEntityCode("W");
       const operatorId = data.actorId || data.customerId;
 
-      // BƯỚC 6: Tối Ưu Siêu Độ Trễ < 2ms — Tận dụng Prisma Nested Write tạo 2 bảng trong 1 đợt SQL Execution
+      TopupTransactionRepository.balanceCache.delete(data.customerId);
+
       return await this.prisma.topupTransaction.create({
         data: {
           customerId: data.customerId,
@@ -993,5 +917,149 @@ export class TopupTransactionRepository {
       // BƯỚC 7: Giải phóng Mutex Lock trong mọi trường hợp
       TopupTransactionRepository.payingOrderIds.delete(data.orderId);
     }
+  }
+
+  private static balanceCache = new Map<string, { balance: number; expiresAt: number }>();
+
+  /**
+   * Lấy số dư ví khả dụng của khách hàng từ API Ví Độc Lập hoặc DB local fallback (với TTL Cache 3 giây)
+   */
+  async getWalletBalance(customerId: string): Promise<number> {
+    const cached = TopupTransactionRepository.balanceCache.get(customerId);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.balance;
+    }
+
+    let fetchedBalance: number | null = null;
+    try {
+      const walletClient = new ExternalWalletClient();
+      const accountInfoRes = await walletClient.getAccountInfo({ partnerId: customerId });
+      const resData = (accountInfoRes as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
+      const rawBal =
+        resData?.balance ??
+        resData?.accountBalance ??
+        resData?.account_balance ??
+        (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
+
+      if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
+        fetchedBalance = Number(rawBal);
+      }
+    } catch {
+      // Fallback DB Local
+    }
+
+    if (fetchedBalance === null) {
+      const latestTx = await this.prisma.topupTransaction.findFirst({
+        where: { customerId, status: TopupStatus.CONFIRMED },
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        select: { accountBalanceAfter: true },
+      });
+      fetchedBalance = latestTx?.accountBalanceAfter ? Number(latestTx.accountBalanceAfter) : 0.0;
+    }
+
+    TopupTransactionRepository.balanceCache.set(customerId, {
+      balance: fetchedBalance,
+      expiresAt: Date.now() + 3000,
+    });
+
+    return fetchedBalance;
+  }
+
+  /**
+   * Hoàn tiền ví khách hàng khi hủy đơn hàng / hủy nhãn tem (`refundOrderWithWallet`)
+   */
+  async refundOrderWithWallet(data: {
+    orderId: string;
+    orderCode: string;
+    amount: number;
+    customerId: string;
+    actorId?: string;
+    description?: string;
+  }) {
+    if (data.amount <= 0) return null;
+
+    // Lớp 1 Idempotency Guard: Tránh hoàn tiền 2 lần (Double Refund) cho cùng 1 đơn hàng
+    const existingRefund = await this.prisma.topupTransaction.findFirst({
+      where: {
+        orderId: data.orderId,
+        topupType: TopupType.REFUNDED,
+        status: TopupStatus.CONFIRMED,
+      },
+    });
+
+    if (existingRefund) {
+      return existingRefund;
+    }
+
+    TopupTransactionRepository.balanceCache.delete(data.customerId);
+
+    const balanceBefore = await this.getWalletBalance(data.customerId);
+    const customerCode = await this.getCustomerCode(data.customerId);
+
+    const walletClient = new ExternalWalletClient();
+    const chargingRes = await walletClient.chargingRequest({
+      fromSystem: EXTERNAL_WALLET_FROM_SYSTEM,
+      buyerInfo: {
+        partnerId: data.customerId,
+        partnerCode: customerCode,
+      },
+      orderItem: {
+        actionType: ExternalWalletActionType.INCREASE, // 1 = Cộng tiền ví
+        paymentType: EXTERNAL_WALLET_PAYMENT_TYPE,
+        price: data.amount,
+        note: `Refund for order #${data.orderCode}`,
+        orderCode: data.orderCode,
+      },
+    });
+
+    const roundCurrency = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
+    const chargingData = (chargingRes as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
+    const resBalAfter = chargingData?.balance ?? chargingData?.accountBalance;
+
+    let balanceAfter: number;
+    if (resBalAfter !== undefined && resBalAfter !== null && !Number.isNaN(Number(resBalAfter))) {
+      balanceAfter = roundCurrency(Number(resBalAfter));
+    } else {
+      balanceAfter = roundCurrency(balanceBefore + data.amount);
+    }
+
+    const transactionCode = generateEntityCode("W");
+    const operatorId = data.actorId || data.customerId;
+
+    return await this.prisma.topupTransaction.create({
+      data: {
+        customerId: data.customerId,
+        transactionCode,
+        topupType: TopupType.REFUNDED,
+        currency: "USD",
+        submissionDate: new Date(),
+        wireDate: new Date(),
+        paymentMethodId: null,
+        wireAmount: new Prisma.Decimal(data.amount),
+        wireAmountApprove: new Prisma.Decimal(data.amount),
+        description: data.description || `Hoàn tiền hủy tem đơn #${data.orderCode}`,
+        orderId: data.orderId,
+        orderCode: data.orderCode,
+        accountBalanceBefore: new Prisma.Decimal(balanceBefore),
+        amountChange: new Prisma.Decimal(data.amount),
+        accountBalanceAfter: new Prisma.Decimal(balanceAfter),
+        status: TopupStatus.CONFIRMED,
+        createdBy: operatorId,
+        updatedBy: operatorId,
+        histories: {
+          create: {
+            actionName: `Hoàn tiền hủy tem đơn #${data.orderCode}`,
+            wireAmountApproved: new Prisma.Decimal(data.amount),
+            status: TopupStatus.CONFIRMED,
+            createdBy: operatorId,
+          },
+        },
+      },
+      include: {
+        wireImages: true,
+        paymentMethod: true,
+        customer: true,
+      },
+    });
   }
 }
