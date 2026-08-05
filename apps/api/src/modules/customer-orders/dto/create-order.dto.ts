@@ -103,6 +103,7 @@ export class OrderProductDto {
   })
   @IsNumber({}, { always: true, message: "Giá trị sản phẩm (value) phải là số" })
   @Min(0.01, { always: true, message: "Giá trị sản phẩm (value) phải lớn hơn 0" })
+  @Max(9999999999.99, { always: true, message: "Giá trị sản phẩm (value) không được vượt quá 9,999,999,999.99 USD" })
   value!: number;
 
   @ApiPropertyOptional({
@@ -499,6 +500,7 @@ export class CreateOrderDto {
   @IsOptional({ always: true })
   @IsNumber({}, { always: true, message: "Giá trị khai báo (declaredValue) phải là số" })
   @Min(0, { always: true, message: "Giá trị khai báo (declaredValue) phải lớn hơn hoặc bằng 0" })
+  @Max(9999999999.99, { always: true, message: "Giá trị khai báo (declaredValue) không được vượt quá 9,999,999,999.99 USD" })
   declaredValue?: number | null;
 
   @ApiPropertyOptional({
