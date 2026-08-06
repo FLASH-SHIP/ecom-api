@@ -21,10 +21,14 @@ const importOrderItemSchema = z.object({
   excelRowNumbers: z.array(z.number()),
   shippingMethod: shippingMethodSchema,
   shippingOrigin: shippingOriginSchema,
-  sellerOrderId: z.string().min(1, { message: "Mã đơn hàng người bán (sellerOrderId) không được để trống" }),
+  sellerOrderId: z
+    .string()
+    .min(1, { message: "Mã đơn hàng người bán (sellerOrderId) không được để trống" }),
 
   senderName: z.string().min(1, { message: "Tên người gửi (senderName) không được để trống" }),
-  senderAddress: z.string().min(1, { message: "Địa chỉ người gửi (senderAddress) không được để trống" }),
+  senderAddress: z
+    .string()
+    .min(1, { message: "Địa chỉ người gửi (senderAddress) không được để trống" }),
   senderPhone: z
     .string()
     .min(1, { message: "Số điện thoại người gửi (senderPhone) không được để trống" })
@@ -39,11 +43,11 @@ const importOrderItemSchema = z.object({
       message: SENDER_COUNTRY_VALIDATION_MESSAGE,
     }),
   senderState: z.string().optional().nullable(),
-  senderCity: z.string().min(1, { message: "Thành phố người gửi (senderCity) không được để trống" }),
-  senderWard: z.string().min(1, { message: "Phường/Xã người gửi (senderWard) không được để trống" }),
-  senderZipCode: z.string().min(1, { message: "Mã bưu chính người gửi (senderZipCode) không được để trống" }),
+  senderCity: z.string().optional().nullable(),
+  senderWard: z.string().optional().nullable(),
+  senderZipCode: z.string().optional().nullable(),
 
-  receiverName: z.string().min(1),
+  receiverName: z.string().optional().nullable(),
   receiverPhone: z
     .string()
     .regex(PHONE_REGEX, {
@@ -52,39 +56,54 @@ const importOrderItemSchema = z.object({
     .or(z.literal(""))
     .optional()
     .nullable(),
-  receiverEmail: z.string().email({ message: PARCEL_VALIDATION_MESSAGES.EMAIL_RECEIVER_INVALID }).or(z.literal("")).optional().nullable(),
-  receiverCity: z.string().min(1),
-  receiverState: z.string().min(1),
-  receiverAddress1: z.string().min(1),
+  receiverEmail: z
+    .string()
+    .email({ message: PARCEL_VALIDATION_MESSAGES.EMAIL_RECEIVER_INVALID })
+    .or(z.literal(""))
+    .optional()
+    .nullable(),
+  receiverCity: z.string().optional().nullable(),
+  receiverState: z.string().optional().nullable(),
+  receiverAddress1: z.string().optional().nullable(),
   receiverAddress2: z.string().optional().nullable(),
-  receiverCountry: z.string().min(2).max(10),
+  receiverCountry: z.string().optional().nullable(),
   receiverZipCode: z.string().or(z.literal("")).optional().nullable(),
 
   detailDescription: z
     .string()
-    .max(200, { message: "Mô tả chi tiết hàng hóa (detailDescription) không được vượt quá 200 ký tự" })
+    .max(200, {
+      message: "Mô tả chi tiết hàng hóa (detailDescription) không được vượt quá 200 ký tự",
+    })
     .optional()
     .nullable(),
   declaredWeight: z
     .number()
     .int({ message: "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương" })
     .positive({ message: "Trọng lượng khai báo (declaredWeight) phải là số nguyên dương" })
-    .max(MAX_DECLARED_WEIGHT_GRAMS, { message: PARCEL_VALIDATION_MESSAGES.WEIGHT_MAX }),
+    .max(MAX_DECLARED_WEIGHT_GRAMS, { message: PARCEL_VALIDATION_MESSAGES.WEIGHT_MAX })
+    .optional()
+    .nullable(),
   dimensionLength: z
     .number()
     .int({ message: "Chiều dài (dimensionLength) phải là số nguyên dương" })
     .positive({ message: "Chiều dài (dimensionLength) phải là số nguyên dương" })
-    .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.LENGTH_MAX }),
+    .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.LENGTH_MAX })
+    .optional()
+    .nullable(),
   dimensionWidth: z
     .number()
     .int({ message: "Chiều rộng (dimensionWidth) phải là số nguyên dương" })
     .positive({ message: "Chiều rộng (dimensionWidth) phải là số nguyên dương" })
-    .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.WIDTH_MAX }),
+    .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.WIDTH_MAX })
+    .optional()
+    .nullable(),
   dimensionHeight: z
     .number()
     .int({ message: "Chiều cao (dimensionHeight) phải là số nguyên dương" })
     .positive({ message: "Chiều cao (dimensionHeight) phải là số nguyên dương" })
-    .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.HEIGHT_MAX }),
+    .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.HEIGHT_MAX })
+    .optional()
+    .nullable(),
   declaredValue: z.number().min(0).optional().nullable(),
   packagingCode: z.string().optional().nullable(),
   isGetLabel: z.number().int().optional(),
@@ -101,7 +120,9 @@ const importOrderItemSchema = z.object({
           .positive({ message: "Số lượng sản phẩm (quantity) phải là số nguyên dương" }),
         value: z.number().positive(),
         hsCode: z.string().optional().nullable(),
-        originCountry: z.string().min(1, { message: "Xuất xứ sản phẩm (originCountry) không được để trống" }),
+        originCountry: z
+          .string()
+          .min(1, { message: "Xuất xứ sản phẩm (originCountry) không được để trống" }),
         weight: z.number().int().positive().optional().nullable(),
         sku: z.string().optional().nullable(),
       }),
@@ -145,6 +166,7 @@ export const importBatch = authedProcedure
       orders: z.array(importOrderItemSchema),
     }),
   )
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: High cognitive complexity from batch import error handling and label purchase
   .mutation(async ({ input, ctx }) => {
     const service = getOrderService();
     const batchErrors: Array<{
@@ -159,6 +181,22 @@ export const importBatch = authedProcedure
       try {
         const createdOrder = await service.createOrder({
           ...order,
+          senderName: order.senderName ?? "",
+          senderPhone: order.senderPhone ?? "",
+          senderAddress: order.senderAddress ?? "",
+          senderCity: order.senderCity ?? "",
+          senderWard: order.senderWard ?? "",
+          senderZipCode: order.senderZipCode ?? "",
+          senderCountry: order.senderCountry ?? "",
+          receiverName: order.receiverName ?? "",
+          receiverAddress1: order.receiverAddress1 ?? "",
+          receiverCity: order.receiverCity ?? "",
+          receiverState: order.receiverState ?? "",
+          receiverCountry: order.receiverCountry ?? "",
+          declaredWeight: order.declaredWeight ?? 0,
+          dimensionLength: order.dimensionLength ?? 0,
+          dimensionWidth: order.dimensionWidth ?? 0,
+          dimensionHeight: order.dimensionHeight ?? 0,
           importId: input.importId,
           customerId: ctx.user.id,
         });
@@ -166,34 +204,51 @@ export const importBatch = authedProcedure
 
         if (order.isGetLabel === 1) {
           try {
-            const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
-            const orderLabelService = getOrderLabelService();
-            await orderLabelService.purchaseLabel({
+            const { queueBulkLabelPurchase } = await import(
+              "@ecom/features/queue/workers/bulkLabelWorker"
+            );
+            await queueBulkLabelPurchase({
               orderId: createdOrder.id,
               customerId: ctx.user.id,
+              batchId: input.importId,
             });
           } catch (labelErr) {
             console.warn(
-              `[ImportBatch] Auto purchase label failed for imported order #${createdOrder.orderCode}:`,
+              `[ImportBatch] Queue label purchase dispatch failed for imported order #${createdOrder.orderCode}:`,
               labelErr,
             );
-            const firstLine = order.excelRowNumbers[0] || 0;
-            batchErrors.push({
-              line: firstLine,
-              columnName: "Label Purchase",
-              enteredValue: order.sellerOrderId || "",
-              errorReason: `Đơn hàng #${createdOrder.orderCode} được tạo thành công nhưng chưa thể tạo nhãn tem: ${(labelErr as Error)?.message}`,
-            });
           }
         }
       } catch (err) {
         const errorReason = err instanceof Error ? err.message : String(err);
         const firstLine = order.excelRowNumbers[0] || 0;
 
-        let columnName = "General";
+        let columnName = "Tất cả";
         const enteredValue = order.sellerOrderId || "";
-        if (errorReason.includes("đã tồn tại")) {
-          columnName = "Seller Order ID";
+        if (errorReason.includes("sellerOrderId") || errorReason.includes("đã tồn tại")) {
+          columnName = "Mã đơn Seller";
+        } else if (errorReason.includes("senderWard") || errorReason.includes("Phường/Xã")) {
+          columnName = "Phường/Xã người gửi";
+        } else if (errorReason.includes("dimensionLength") || errorReason.includes("Chiều dài")) {
+          columnName = "Chiều dài kiện hàng";
+        } else if (errorReason.includes("dimensionWidth") || errorReason.includes("Chiều rộng")) {
+          columnName = "Chiều rộng kiện hàng";
+        } else if (errorReason.includes("dimensionHeight") || errorReason.includes("Chiều cao")) {
+          columnName = "Chiều cao kiện hàng";
+        } else if (errorReason.includes("declaredWeight") || errorReason.includes("Trọng lượng")) {
+          columnName = "Cân nặng kiện hàng";
+        } else if (errorReason.includes("receiverName") || errorReason.includes("người nhận")) {
+          columnName = "Họ tên người nhận";
+        } else if (
+          errorReason.includes("receiverAddress1") ||
+          errorReason.includes("Địa chỉ nhận")
+        ) {
+          columnName = "Địa chỉ nhận 1";
+        } else if (
+          errorReason.includes("receiverZipCode") ||
+          errorReason.includes("Mã bưu chính")
+        ) {
+          columnName = "Zip người nhận";
         }
 
         batchErrors.push({

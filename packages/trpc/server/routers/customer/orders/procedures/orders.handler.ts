@@ -333,10 +333,17 @@ export const list = authedProcedure
   )
   .query(async ({ input, ctx }) => {
     const repo = getOrderRepository();
-    return await repo.findMany({
+    const { mapToCustomerOrderSummaryResponse } = await import(
+      "@ecom/features/order/mappers/CustomerOrderMapper"
+    );
+    const result = await repo.findMany({
       ...(input ?? {}),
       customerId: ctx.user.id,
     });
+    return {
+      ...result,
+      data: result.data.map(mapToCustomerOrderSummaryResponse),
+    };
   });
 
 // 4. Get secure single customer order details

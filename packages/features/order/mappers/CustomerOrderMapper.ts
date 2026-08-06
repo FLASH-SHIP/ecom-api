@@ -6,6 +6,8 @@ export interface CustomerOrderSummaryResponse {
   labelStatus: string;
   shippingMethod: string;
   shippingOrigin: string;
+  trackingNumber: string | null;
+  labelUrl: string | null;
   ecomTrackingNumber: string | null;
   receiverName: string;
   receiverPhone: string | null;
@@ -105,6 +107,7 @@ function toNullableNumber(val: unknown): number | null {
  * Excludes internal fields (version, rateCardId, boxId, port, carrier tracking, etc.)
  * and converts Prisma Decimal objects to JavaScript numbers.
  */
+// biome-ignore lint/suspicious/noExplicitAny: mapper receives untyped prisma order object
 export function mapToCustomerOrderSummaryResponse(order: any): CustomerOrderSummaryResponse {
   return {
     id: order.id,
@@ -114,6 +117,8 @@ export function mapToCustomerOrderSummaryResponse(order: any): CustomerOrderSumm
     labelStatus: order.labelStatus,
     shippingMethod: order.shippingMethod,
     shippingOrigin: order.shippingOrigin,
+    trackingNumber: order.trackingNumber ?? null,
+    labelUrl: order.labelUrl ?? null,
     ecomTrackingNumber: order.ecomTrackingNumber ?? null,
     receiverName: order.receiverName,
     receiverPhone: order.receiverPhone ?? null,
@@ -133,6 +138,8 @@ export function mapToCustomerOrderSummaryResponse(order: any): CustomerOrderSumm
 /**
  * Maps a full order database record to a detailed public Customer Order DTO.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: detailed order DTO maps 30+ relational fields
+// biome-ignore lint/suspicious/noExplicitAny: mapper receives untyped prisma order object
 export function mapToCustomerOrderDetailResponse(order: any): CustomerOrderDetailResponse {
   const summary = mapToCustomerOrderSummaryResponse(order);
   return {
@@ -167,7 +174,7 @@ export function mapToCustomerOrderDetailResponse(order: any): CustomerOrderDetai
     chargeableWeight: toNullableNumber(order.chargeableWeight),
 
     feeItems: Array.isArray(order.feeItems)
-      ? order.feeItems.map((fee: any) => ({
+      ? order.feeItems.map((fee: Record<string, unknown>) => ({
           id: fee.id,
           feeType: fee.feeType,
           name: fee.name,
@@ -178,7 +185,7 @@ export function mapToCustomerOrderDetailResponse(order: any): CustomerOrderDetai
       : [],
 
     products: Array.isArray(order.products)
-      ? order.products.map((p: any) => ({
+      ? order.products.map((p: Record<string, unknown>) => ({
           id: p.id,
           description: p.description,
           quantity: p.quantity,
@@ -191,7 +198,7 @@ export function mapToCustomerOrderDetailResponse(order: any): CustomerOrderDetai
       : [],
 
     trackingCheckpoints: Array.isArray(order.trackingCheckpoints)
-      ? order.trackingCheckpoints.map((cp: any) => ({
+      ? order.trackingCheckpoints.map((cp: Record<string, unknown>) => ({
           id: cp.id,
           checkpointDate: cp.checkpointDate,
           location: cp.location ?? null,
@@ -207,6 +214,7 @@ export function mapToCustomerOrderDetailResponse(order: any): CustomerOrderDetai
 /**
  * Maps freight estimation calculation result to clean public Customer DTO.
  */
+// biome-ignore lint/suspicious/noExplicitAny: calculation result object
 export function mapToEstimateFreightResponse(result: any) {
   return {
     baseShippingFee: toNumber(result.baseShippingRate ?? result.baseShippingFee),

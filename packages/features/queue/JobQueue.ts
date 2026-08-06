@@ -120,7 +120,7 @@ export class JobQueue {
   /**
    * Start a worker loop that continuously processes jobs from a queue.
    */
-  static startWorker(queueName: string): Worker {
+  static startWorker(queueName: string, concurrency = 1): Worker {
     const def = registeredJobs.get(queueName);
     if (!def) {
       throw new Error(`[JobQueue] No handler registered for queue: ${queueName}`);
@@ -138,7 +138,7 @@ export class JobQueue {
       {
         // biome-ignore lint/suspicious/noExplicitAny: ioredis version mismatch between workspace and bullmq package
         connection: connection as any,
-        concurrency: 1,
+        concurrency,
       },
     );
 
