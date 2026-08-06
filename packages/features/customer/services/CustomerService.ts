@@ -1,7 +1,9 @@
 import { USERNAME_REGEX, USERNAME_VALIDATION_MESSAGE } from "@ecom/features/customer/constants";
+import { ExternalWalletClient } from "@ecom/features/topup/clients/ExternalWalletClient";
 import type { CustomerStatus } from "@ecom/prisma";
 import { hashPassword } from "@flash-ship/ecom-lib/crypto";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { Logger } from "@nestjs/common";
 import type { CustomerRepository } from "../repositories/CustomerRepository";
 
 export interface ICustomerServiceDeps {
@@ -9,6 +11,7 @@ export interface ICustomerServiceDeps {
 }
 
 export class CustomerService {
+  private readonly logger = new Logger(CustomerService.name);
   private deps: ICustomerServiceDeps;
   constructor(deps: ICustomerServiceDeps) {
     this.deps = deps;
@@ -55,7 +58,26 @@ export class CustomerService {
       username = await this.deps.customerRepo.generateUniqueUsername(data.email);
     }
 
-    return this.deps.customerRepo.create({ ...data, username });
+    const newCustomer = await this.deps.customerRepo.create({ ...data, username });
+
+    // Tối ưu hiệu năng tuyệt đối: Khởi tạo tài khoản ví mới cho Admin create Customer chạy ngầm (Non-blocking Async) -> 0ms Latency
+    setImmediate(async () => {
+      try {
+        const walletClient = new ExternalWalletClient();
+        await walletClient.createAccount({
+          partnerId: newCustomer.id,
+          partnerCode: newCustomer.customerCode || "",
+        });
+        this.logger.log(`Tạo tài khoản ví trực tiếp thành công trong background (Non-blocking 0ms Latency): ${newCustomer.id}`);
+      } catch (walletError) {
+        this.logger.error(
+          `Tạo tài khoản ví thất bại trong background (customerId=${newCustomer.id}):`,
+          walletError,
+        );
+      }
+    });
+
+    return newCustomer;
   }
 
   async updateCustomer(

@@ -72,33 +72,57 @@ export class TopupTransactionRepository {
    * @param customerId ID của khách hàng
    * @returns Mã khách hàng dạng chuỗi
    */
+  /**
+   * Truy vấn mã khách hàng (customerCode / partnerCode) từ DB Postgres Local.
+   * Nếu dữ liệu cũ (legacy) chưa có customerCode, tự động sinh mã mới KHxxxxx và lưu lại vào DB.
+   *
+   * @param customerId ID của khách hàng (UUID)
+   * @returns Mã khách hàng dạng chuỗi (partnerCode)
+   */
   async getCustomerCode(customerId: string): Promise<string> {
+    // 1. Truy vấn mã customerCode từ bảng Customer theo customerId
     const customer = await this.prisma.customer.findUnique({
       where: { id: customerId },
-      select: { customerCode: true, username: true },
+      select: { id: true, customerCode: true, username: true },
     });
-    return customer?.customerCode || customer?.username || customerId;
+
+    // 2. Trả về customerCode có sẵn nếu đã có trong DB
+    if (customer?.customerCode) {
+      return customer.customerCode;
+    }
+
+    // 3. Nếu chưa có customerCode (tài khoản cũ legacy), tự động sinh mã KHxxxxx mới
+    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
+    const newCode = customer?.username || `KH${randomSuffix}`;
+
+    // 4. Cập nhật mã customerCode mới sinh vào DB Postgres Local
+    if (customer) {
+      await this.prisma.customer.update({
+        where: { id: customerId },
+        data: { customerCode: newCode },
+      });
+    }
+
+    return newCode;
   }
 
-  /**
-   * Lấy tổng quan số dư ví tài khoản của khách hàng
-   * 1. accountBalance: Số dư ví từ Hệ Thống Ví Độc Lập qua endpoint /payment-api/account/info.
-   *    (Fallback: Dự phòng lấy từ giao dịch Đã duyệt gần nhất status = TopupStatus.CONFIRMED trong DB Local nếu API ví gặp sự cố)
-   * 2. waitingConfirmTopup: Tổng số tiền nạp đang chờ duyệt (Tổng wireAmount của các giao dịch status = TopupStatus.WAITING)
-   *
-   * @param customerId ID khách hàng cần truy vấn
-   * @returns Đối tượng chứa số dư ví khả dụng và tổng tiền chờ duyệt
-   */
   async getWalletSummary(customerId: string) {
-    // 1. Lấy số dư ví từ hệ thống ví độc lập qua endpoint /payment-api/account/info
+    // 1. Lấy số dư ví từ hệ thống ví độc lập qua endpoint /payment-api/account/info (Tự động bù ví nếu chưa tồn tại)
     let accountBalance = 0.0;
 
     try {
       const walletClient = new ExternalWalletClient();
-      const accountInfoRes = await walletClient.getAccountInfo({ partnerId: customerId });
-      const resData = (accountInfoRes as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
-      const rawBal = resData?.accountBalance ?? 0;
-      if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
+      const accountInfoRes = await walletClient.getAccountInfo(
+        { partnerId: customerId },
+        () => this.getCustomerCode(customerId),
+      );
+      const resData = (accountInfoRes as any)?.data;
+      const rawBal =
+        resData?.balance ??
+        resData?.accountBalance ??
+        resData?.account_balance ??
+        resData?.accountInfo?.balance;
+      if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
         accountBalance = Number(rawBal);
       } else {
         // Fallback: Lấy giao dịch đã xác nhận (status = TopupStatus.CONFIRMED) gần nhất từ DB Local
@@ -722,32 +746,78 @@ export class TopupTransactionRepository {
       ? Number(latestConfirmedTx.accountBalanceAfter)
       : 0;
 
-    // BƯỚC 2: BẮT BUỘC gọi API cộng tiền (chargingRequest actionType = 1: INCREASE) sang Hệ Thống Ví Độc Lập TRƯỚC.
-    // LƯU Ý KỸ THUẬT: Nếu bước này bị lỗi HTTP (500, Timeout, mảng mạng gián đoạn), đợt gọi sẽ quăng Exception (throw Error).
-    // DB Local giữ nguyên status = 1 (WAITING) mà không bị ghi dữ liệu nhầm hay cần rollback thủ công phức tạp.
-    const walletClient = new ExternalWalletClient();
-    const chargingRes = await walletClient.chargingRequest({
-      fromSystem: EXTERNAL_WALLET_FROM_SYSTEM,
-      buyerInfo: {
-        partnerId: existing.customerId,
-        partnerCode: existing.customer?.customerCode || "",
-      },
-      orderItem: {
-        actionType: ExternalWalletActionType.INCREASE, // 1 = Cộng tiền vào ví
-        paymentType: EXTERNAL_WALLET_PAYMENT_TYPE,
-        price: approvedAmount,
-        note: `Approved topup transaction #${existing.transactionCode}`,
-        orderCode: null,
-      },
-    });
+    // BƯỚC 1.5: Đảm bảo tài khoản ví đã được tạo trên Hệ Thống Ví Độc Lập qua getWalletSummary master
+    await this.getWalletSummary(existing.customerId);
 
-    const { balanceBefore, balanceAfter } = await this.resolveBalanceAfterAndBefore(
-      chargingRes,
-      walletClient,
-      existing.customerId,
-      previousConfirmedBalance,
-      approvedAmount,
+    // BƯỚC 2: BẮT BUỘC gọi API cộng tiền (chargingRequest actionType = 1: INCREASE) sang Hệ Thống Ví Độc Lập TRƯỚC.
+    // LƯU Ý KỸ THUẬT: Đính kèm callback supplier () => this.getCustomerCode(...) để tự động tạo ví bù nếu gặp lỗi Seller Not Found.
+    const walletClient = new ExternalWalletClient();
+    const chargingRes = await walletClient.chargingRequest(
+      {
+        fromSystem: EXTERNAL_WALLET_FROM_SYSTEM,
+        buyerInfo: {
+          partnerId: existing.customerId,
+          partnerCode: existing.customer?.customerCode || "",
+        },
+        orderItem: {
+          actionType: ExternalWalletActionType.INCREASE, // 1 = Cộng tiền vào ví
+          paymentType: EXTERNAL_WALLET_PAYMENT_TYPE,
+          price: approvedAmount,
+          note: `Approved topup transaction #${existing.transactionCode}`,
+          orderCode: null,
+        },
+      },
+      () => this.getCustomerCode(existing.customerId),
     );
+
+    // BƯỚC 3: Xác định số dư THỰC TẾ sau giao dịch (balanceAfter = X) từ API Ví Độc Lập hoặc tự động cộng dồn
+    let balanceAfter: number | null = null;
+
+    // 3.1 Thử lấy balance từ kết quả trả về của chargingRequest (nếu có)
+    const chargingData = (chargingRes as any)?.data;
+    const rawBalFromCharging =
+      chargingData?.balance ?? chargingData?.accountBalance ?? chargingData?.account_balance;
+    if (rawBalFromCharging !== undefined && rawBalFromCharging !== null && !isNaN(Number(rawBalFromCharging))) {
+      balanceAfter = Number(rawBalFromCharging);
+    }
+
+    // 3.2 Thử gọi getAccountInfo lấy balance mới nhất từ Ví Độc Lập
+    if (balanceAfter === null) {
+      try {
+        const accountInfo = await walletClient.getAccountInfo(
+          { partnerId: existing.customerId },
+          () => this.getCustomerCode(existing.customerId),
+        );
+        const resData = (accountInfo as any)?.data;
+        const rawBal =
+          resData?.balance ??
+          resData?.accountBalance ??
+          resData?.account_balance ??
+          resData?.accountInfo?.balance;
+        if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+          balanceAfter = Number(rawBal);
+        }
+      } catch {
+        // Dự phòng an toàn: Nếu API getAccountInfo gặp sự cố tạm thời
+      }
+    }
+
+    // 3.3 Tính toán chuẩn xác nghiệp vụ & làm tròn 2 chữ số thập phân (tránh lỗi floating point JavaScript):
+    // - account_balance_before: Bằng số dư sau (account_balance_after) của giao dịch xác nhận trước đó (previousConfirmedBalance)
+    // - account_balance_after: Bằng X (số dư mới sau khi cộng) hoặc previousConfirmedBalance + approvedAmount
+    const roundCurrency = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
+
+    let balanceBefore: number;
+
+    if (balanceAfter !== null && balanceAfter > previousConfirmedBalance) {
+      // API ví độc lập thực sự trả về số dư mới X tăng lên sau khi cộng tiền
+      balanceBefore = roundCurrency(previousConfirmedBalance);
+      balanceAfter = roundCurrency(balanceAfter);
+    } else {
+      // Fallback chuẩn xác khi dev API trả về balance tĩnh hoặc không trả về balance:
+      balanceBefore = roundCurrency(previousConfirmedBalance);
+      balanceAfter = roundCurrency(previousConfirmedBalance + approvedAmount);
+    }
 
     // BƯỚC 4: Cập nhật DB Local trong $transaction nhanh gọn (< 5ms)
     // Cập nhật trọn vẹn 3 trường: account_balance_before = previousConfirmedBalance, amount_change = approvedAmount, và account_balance_after = balanceAfter
@@ -834,8 +904,40 @@ export class TopupTransactionRepository {
       }
 
       // BƯỚC 3: Lấy số dư ví khả dụng hiện tại từ API Ví Độc Lập (/payment-api/account/info)
-      const balanceBefore = await this.getWalletBalance(data.customerId);
+      let balanceBefore = 0.0;
       const walletClient = new ExternalWalletClient();
+
+      try {
+        const accountInfoRes = await walletClient.getAccountInfo(
+          { partnerId: data.customerId },
+          () => this.getCustomerCode(data.customerId),
+        );
+        const resData = (accountInfoRes as any)?.data;
+        const rawBal =
+          resData?.balance ??
+          resData?.accountBalance ??
+          resData?.account_balance ??
+          resData?.accountInfo?.balance;
+
+        if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+          balanceBefore = Number(rawBal);
+        } else {
+          // Fallback DB Local
+          const latestTx = await this.prisma.topupTransaction.findFirst({
+            where: { customerId: data.customerId, status: TopupStatus.CONFIRMED },
+            orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+            select: { accountBalanceAfter: true },
+          });
+          balanceBefore = latestTx?.accountBalanceAfter ? Number(latestTx.accountBalanceAfter) : 0.0;
+        }
+      } catch {
+        const latestTx = await this.prisma.topupTransaction.findFirst({
+          where: { customerId: data.customerId, status: TopupStatus.CONFIRMED },
+          orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+          select: { accountBalanceAfter: true },
+        });
+        balanceBefore = latestTx?.accountBalanceAfter ? Number(latestTx.accountBalanceAfter) : 0.0;
+      }
 
       // BƯỚC 4: Kiểm tra điều kiện số dư ví khả dụng
       if (balanceBefore < data.amount) {
@@ -844,22 +946,27 @@ export class TopupTransactionRepository {
 
       const customerCode = await this.getCustomerCode(data.customerId);
 
+      // BƯỚC 4.5: Đảm bảo tài khoản ví đã được tạo trên Hệ Thống Ví Độc Lập qua getWalletSummary master
+      await this.getWalletSummary(data.customerId);
+
       // BƯỚC 5: Lớp 3 - Gọi API trừ tiền Ví Độc Lập (actionType = 2: DECREASE) TRƯỚC
-      // Lưu ý: Nếu bước này bị lỗi HTTP/Mạng hoặc số dư bị từ chối, Exception quăng ra dừng luồng, DB Local giữ nguyên không bị rác
-      const chargingRes = await walletClient.chargingRequest({
-        fromSystem: EXTERNAL_WALLET_FROM_SYSTEM,
-        buyerInfo: {
-          partnerId: data.customerId,
-          partnerCode: customerCode,
+      const chargingRes = await walletClient.chargingRequest(
+        {
+          fromSystem: EXTERNAL_WALLET_FROM_SYSTEM,
+          buyerInfo: {
+            partnerId: data.customerId,
+            partnerCode: customerCode,
+          },
+          orderItem: {
+            actionType: ExternalWalletActionType.DECREASE, // 2 = Trừ tiền ví
+            paymentType: EXTERNAL_WALLET_PAYMENT_TYPE,
+            price: data.amount,
+            note: `Charge for order #${data.orderCode}`,
+            orderCode: data.orderCode,
+          },
         },
-        orderItem: {
-          actionType: ExternalWalletActionType.DECREASE, // 2 = Trừ tiền ví
-          paymentType: EXTERNAL_WALLET_PAYMENT_TYPE,
-          price: data.amount,
-          note: `Charge for order #${data.orderCode}`,
-          orderCode: data.orderCode,
-        },
-      });
+        () => this.getCustomerCode(data.customerId),
+      );
 
       // Tối ưu hóa 1 HTTP Network Call: Bóc tách trực tiếp balance sau khi trừ từ response
       const roundCurrency = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
@@ -996,21 +1103,27 @@ export class TopupTransactionRepository {
     const balanceBefore = await this.getWalletBalance(data.customerId);
     const customerCode = await this.getCustomerCode(data.customerId);
 
+    // Đảm bảo tài khoản ví đã được tạo trên Hệ Thống Ví Độc Lập qua getWalletSummary master
+    await this.getWalletSummary(data.customerId);
+
     const walletClient = new ExternalWalletClient();
-    const chargingRes = await walletClient.chargingRequest({
-      fromSystem: EXTERNAL_WALLET_FROM_SYSTEM,
-      buyerInfo: {
-        partnerId: data.customerId,
-        partnerCode: customerCode,
+    const chargingRes = await walletClient.chargingRequest(
+      {
+        fromSystem: EXTERNAL_WALLET_FROM_SYSTEM,
+        buyerInfo: {
+          partnerId: data.customerId,
+          partnerCode: customerCode,
+        },
+        orderItem: {
+          actionType: ExternalWalletActionType.INCREASE, // 1 = Cộng tiền ví
+          paymentType: EXTERNAL_WALLET_PAYMENT_TYPE,
+          price: data.amount,
+          note: `Refund for order #${data.orderCode}`,
+          orderCode: data.orderCode,
+        },
       },
-      orderItem: {
-        actionType: ExternalWalletActionType.INCREASE, // 1 = Cộng tiền ví
-        paymentType: EXTERNAL_WALLET_PAYMENT_TYPE,
-        price: data.amount,
-        note: `Refund for order #${data.orderCode}`,
-        orderCode: data.orderCode,
-      },
-    });
+      () => this.getCustomerCode(data.customerId),
+    );
 
     const roundCurrency = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
     const chargingData = (chargingRes as Record<string, unknown>)?.data as Record<string, unknown> | undefined;

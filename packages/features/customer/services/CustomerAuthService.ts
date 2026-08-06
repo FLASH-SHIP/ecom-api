@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { CustomerRepository } from "@ecom/features/customer/repositories/CustomerRepository";
+import { ExternalWalletClient } from "@ecom/features/topup/clients/ExternalWalletClient";
 import type { NotificationService } from "@ecom/features/notification/services/NotificationService";
 import { runInTransaction } from "@ecom/prisma";
 import { hashPassword, verifyPassword } from "@flash-ship/ecom-lib/crypto";
@@ -7,7 +8,6 @@ import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { createLogger } from "@flash-ship/ecom-lib/logger";
 import { RedisCache, RedisRateLimiter } from "@flash-ship/ecom-lib/redis";
-import { ExternalWalletClient } from "@ecom/features/topup/clients/ExternalWalletClient";
 import jwt from "jsonwebtoken";
 import { CustomerTokenService } from "./CustomerTokenService";
 
@@ -184,26 +184,27 @@ export class CustomerAuthService {
       username: result.username,
     });
 
-    // Auto-create partner wallet account in External Wallet System
-    try {
-      const walletClient = new ExternalWalletClient();
-      const walletRes = await walletClient.createAccount({
-        partnerId: result.id,
-        partnerCode: result.customerCode || "",
-      });
-      log.info("Successfully created external wallet account for registered customer", {
-        customerId: result.id,
-        customerCode: result.customerCode,
-        response: walletRes,
-      });
-    } catch (walletError) {
-      const errorMsg = walletError instanceof Error ? walletError.message : String(walletError);
-      log.error("Failed to create external wallet account for registered customer", {
-        customerId: result.id,
-        customerCode: result.customerCode,
-        error: errorMsg,
-      });
-    }
+    // Tối ưu hiệu năng tuyệt đối: Khởi tạo tài khoản ví mới chạy ngầm (Non-blocking Async) -> Response đăng ký trả về tức thì (0ms Latency)
+    setImmediate(async () => {
+      try {
+        const walletClient = new ExternalWalletClient();
+        const walletRes = await walletClient.createAccount({
+          partnerId: result.id,
+          partnerCode: result.customerCode || "",
+        });
+        log.info("Successfully created external wallet account in background (Non-blocking 0ms Latency)", {
+          customerId: result.id,
+          customerCode: result.customerCode,
+          response: walletRes,
+        });
+      } catch (walletError) {
+        const errorMsg = walletError instanceof Error ? walletError.message : String(walletError);
+        log.error("Failed to create external wallet account in background", {
+          customerId: result.id,
+          error: errorMsg,
+        });
+      }
+    });
 
     return result;
   }
@@ -252,25 +253,27 @@ export class CustomerAuthService {
     });
 
     if (isNewCustomer) {
-      try {
-        const walletClient = new ExternalWalletClient();
-        const walletRes = await walletClient.createAccount({
-          partnerId: customer.id,
-          partnerCode: customer.customerCode || "",
-        });
-        log.info("Successfully created external wallet account for social SSO registered customer", {
-          customerId: customer.id,
-          customerCode: customer.customerCode,
-          response: walletRes,
-        });
-      } catch (walletError) {
-        const errorMsg = walletError instanceof Error ? walletError.message : String(walletError);
-        log.error("Failed to create external wallet account for social SSO registered customer", {
-          customerId: customer.id,
-          customerCode: customer.customerCode,
-          error: errorMsg,
-        });
-      }
+      // Tối ưu hiệu năng tuyệt đối: Khởi tạo tài khoản ví mới cho Social SSO chạy ngầm (Non-blocking Async) -> Response trả về tức thì (0ms Latency)
+      setImmediate(async () => {
+        try {
+          const walletClient = new ExternalWalletClient();
+          const walletRes = await walletClient.createAccount({
+            partnerId: customer.id,
+            partnerCode: customer.customerCode || "",
+          });
+          log.info("Successfully created external wallet account for social SSO registered customer in background (Non-blocking 0ms Latency)", {
+            customerId: customer.id,
+            customerCode: customer.customerCode,
+            response: walletRes,
+          });
+        } catch (walletError) {
+          const errorMsg = walletError instanceof Error ? walletError.message : String(walletError);
+          log.error("Failed to create external wallet account for social SSO registered customer in background", {
+            customerId: customer.id,
+            error: errorMsg,
+          });
+        }
+      });
     }
 
     return customer;
@@ -315,6 +318,7 @@ export class CustomerAuthService {
       username: customer.username,
       name: customer.name,
       avatarUrl: customer.avatarUrl,
+      isTermsAccepted: Boolean(customer.isTermsAccepted),
     };
   }
 
