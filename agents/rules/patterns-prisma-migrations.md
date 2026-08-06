@@ -2,10 +2,11 @@
 
 ## Rule Summary
 
-- **Schema Modification**: Any change to `packages/prisma/schema/*.prisma` MUST be accompanied by a generated migration SQL file via `yarn prisma migrate dev --name <change_name>`.
+- **CRITICAL MANDATORY**: Any change to `packages/prisma/schema/*.prisma` MUST be accompanied by a generated migration SQL file via `yarn prisma migrate dev --name <change_name>` in `packages/prisma/schema/migrations/`.
 - **Zero Schema Drift**: Always run `yarn db:check-drift` to verify zero schema drift between `.prisma` models and migration SQL files before committing.
 - **Seeding Classification**: Seeders are split into `core` (Permissions, Roles, Settings, Languages, Divisions) and `business` (RateCards, Customers).
-- **Environment Safety**: Never use `prisma db push` in development as a substitute for migrations.
+- **Environment Safety**: Never use `prisma db push` in development as a substitute for migrations when working on codebase changes intended for staging/production.
+- **Agent Enforcement**: AI Agents modifying `.prisma` schema files MUST generate or create the matching migration SQL file before completing the task.
 
 ## Migration Workflow for Developers & AI Agents
 

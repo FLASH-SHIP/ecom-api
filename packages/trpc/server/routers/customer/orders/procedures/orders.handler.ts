@@ -281,11 +281,37 @@ export const create = authedProcedure
       packagingCode = pt.name;
     }
 
-    return await service.createOrder({
+    const createdOrder = await service.createOrder({
       ...input,
       customerId: ctx.user.id,
       packagingCode,
     });
+
+    let labelResult: unknown = null;
+    if (input.isGetLabel === 1) {
+      try {
+        const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
+        const orderLabelService = getOrderLabelService();
+        labelResult = await orderLabelService.purchaseLabel({
+          orderId: createdOrder.id,
+          customerId: ctx.user.id,
+        });
+      } catch (labelErr) {
+        console.warn(
+          `[OrderCreation] Auto purchase label post-creation failed for order #${createdOrder.orderCode}:`,
+          labelErr,
+        );
+        labelResult = {
+          success: false,
+          error: (labelErr as Error)?.message || "Không thể tự động mua nhãn tem",
+        };
+      }
+    }
+
+    return {
+      ...createdOrder,
+      labelResult,
+    };
   });
 
 // 3. List paginated customer orders

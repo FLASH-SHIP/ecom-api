@@ -1,3 +1,4 @@
+import { CARRIER_CODES } from "@ecom/features/integrations/carrier/interfaces/carrier-provider.interface";
 import type { LocalStorageAdapter } from "@ecom/features/media/storage/LocalStorageAdapter";
 import type { TopupTransactionRepository } from "@ecom/features/topup/repositories/TopupTransactionRepository";
 import { LabelStatus, OrderStatus } from "@ecom/prisma";
@@ -15,8 +16,8 @@ vi.mock("@ecom/prisma", async () => {
     runInTransaction: vi.fn(async (cb) => cb()),
     prisma: {
       partner: {
-        findUnique: vi.fn().mockResolvedValue({ id: 1, code: "EPICHUB" }),
-        findFirst: vi.fn().mockResolvedValue({ id: 1, code: "EPICHUB" }),
+        findUnique: vi.fn().mockResolvedValue({ id: 1, code: CARRIER_CODES.EPICHUB }),
+        findFirst: vi.fn().mockResolvedValue({ id: 1, code: CARRIER_CODES.EPICHUB }),
       },
       partnerService: {
         findFirst: vi.fn().mockResolvedValue({ id: 10, code: EPICHUB_DEFAULT_SERVICE_CODE }),
@@ -43,7 +44,7 @@ describe("OrderLabelService", () => {
     labelStatus: LabelStatus.PENDING_LABEL,
     shippingMethod: "EPACKET",
     shippingOrigin: "HAN",
-    carrierCode: "EPICHUB",
+    carrierCode: CARRIER_CODES.EPICHUB,
     declaredWeight: 500,
     dimensionLength: 20,
     dimensionWidth: 15,
@@ -85,7 +86,7 @@ describe("OrderLabelService", () => {
     };
 
     mockCarrier = {
-      code: "EPICHUB",
+      code: CARRIER_CODES.EPICHUB,
       getCapabilities: vi.fn().mockReturnValue({ supportsVoid: true }),
       createLabel: vi.fn().mockResolvedValue({
         isAmbiguous: false,
@@ -143,13 +144,23 @@ describe("OrderLabelService", () => {
     expect(mockStorage.upload).toHaveBeenCalledTimes(1);
     expect(mockOrderRepo.update).toHaveBeenCalledWith("ord_123", expect.objectContaining({
       trackingNumber: "1ZX1234567890",
-      carrierCode: "EPICHUB",
+      carrierCode: CARRIER_CODES.EPICHUB,
       labelUrl: "/uploads/labels/EC26080312345678_1ZX123.pdf",
       status: OrderStatus.LABEL_CREATED,
       labelStatus: LabelStatus.SUCCESS,
     }));
 
     expect(result.trackingNumber).toBe("1ZX1234567890");
+    expect(mockOrderRepo.createActivityLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "PURCHASE_LABEL",
+        metadata: expect.objectContaining({
+          carrierCode: CARRIER_CODES.EPICHUB,
+          trackingNumber: "1ZX1234567890",
+          actualFee: 15.5,
+        }),
+      })
+    );
   });
 
   it("should use New Jersey ShipFrom address when shippingOrigin is SGN", async () => {
@@ -229,6 +240,16 @@ describe("OrderLabelService", () => {
       labelStatus: LabelStatus.CANCELLED,
       isGetLabel: 0,
     }));
+    expect(mockOrderRepo.createActivityLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "VOID_LABEL",
+        metadata: expect.objectContaining({
+          carrierCode: CARRIER_CODES.EPICHUB,
+          trackingNumber: "1ZX2402221150301923678045",
+          netRefundedFee: 15.5,
+        }),
+      })
+    );
   });
 
   it("should throw error if order has no tracking number or labelUrl on voidLabel", async () => {

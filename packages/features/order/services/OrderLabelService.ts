@@ -1,5 +1,5 @@
 import { eventBus } from "@ecom/features/events/EventBus";
-import type { AddressInfo, CreateLabelDto, ICarrierProvider } from "@ecom/features/integrations/carrier/interfaces/carrier-provider.interface";
+import { type AddressInfo, CARRIER_CODES, type CreateLabelDto, type ICarrierProvider } from "@ecom/features/integrations/carrier/interfaces/carrier-provider.interface";
 import { LocalStorageAdapter } from "@ecom/features/media/storage/LocalStorageAdapter";
 import { LabelStatus, OrderStatus, type Prisma, prisma, runInTransaction } from "@ecom/prisma";
 import { toSafeJson } from "@flash-ship/ecom-lib";
@@ -26,6 +26,7 @@ export interface PurchaseLabelParams {
   orderId: string;
   customerId?: string;
   operatorId?: string;
+  serviceCode?: string;
 }
 
 type OrderRecord = NonNullable<Awaited<ReturnType<OrderRepository["findById"]>>>;
@@ -55,7 +56,7 @@ export class OrderLabelService {
     const codeUpper = carrierCode.toUpperCase();
 
     if (!registry.hasProvider("carrier", codeUpper)) {
-      if (codeUpper === "EPICHUB") {
+      if (codeUpper === CARRIER_CODES.EPICHUB) {
         const baseUrl = process.env.EPICHUB_BASE_URL || "https://clutchshipper.com/api";
         const authService = new EpicHubAuthService();
         const httpClient = new EpicHubHttpClient(baseUrl, authService);
@@ -248,11 +249,19 @@ export class OrderLabelService {
 
       const safeRawRequest = rawRequest
         ? toSafeJson(rawRequest)
-        : { serviceCode, origin: order.shippingOrigin, receiverCountry: order.receiverCountry };
+        : {
+            url: `${process.env.EPICHUB_BASE_URL || "https://clutchshipper.com/api"}/v2/shipments/label-request`,
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: { serviceCode, origin: order.shippingOrigin, receiverCountry: order.receiverCountry },
+          };
 
       const safeRawResponse = rawResponse
         ? toSafeJson(rawResponse)
         : toSafeJson({ error: errorMsg, status: "FAILURE" });
+
+      const resObj = (rawResponse || {}) as { durationMs?: number };
+      const durationMs = resObj.durationMs;
 
       await prisma.partnerAuditLog.create({
         data: {
@@ -272,6 +281,7 @@ export class OrderLabelService {
           errorMessage: errorMsg,
           rawRequest: safeRawRequest as Prisma.InputJsonValue,
           rawResponse: safeRawResponse as Prisma.InputJsonValue,
+          metadata: durationMs !== undefined ? ({ durationMs } as Prisma.InputJsonValue) : undefined,
         },
       });
     } catch (auditErr) {
@@ -294,10 +304,17 @@ export class OrderLabelService {
 
     await this.deps.orderRepo.createActivityLog({
       orderId: order.id,
-      action: "STATUS_CHANGE",
+      action: "PURCHASE_LABEL",
       statusFrom: order.status,
       statusTo: OrderStatus.LABEL_CREATED,
-      description: `Mua nhãn tem thành công từ đối tác ${carrierCode} (Tracking: ${trackingNumber})`,
+      description: `Mua nhãn tem thành công từ đối tác ${carrierCode} (Dịch vụ: ${serviceCode}, Tracking: ${trackingNumber}, Cước phí: $${actualFee})`,
+      metadata: {
+        carrierCode,
+        serviceCode,
+        trackingNumber,
+        actualFee,
+        quotedFee: Number(order.totalFee),
+      },
       actorType: params.operatorId ? "OPERATOR" : "CUSTOMER",
       actorId: params.operatorId || params.customerId || "system",
       actorName: params.operatorId ? "Operator" : "Customer",
@@ -311,7 +328,15 @@ export class OrderLabelService {
         action: "FEE_DISCREPANCY",
         statusFrom: order.status,
         statusTo: OrderStatus.LABEL_CREATED,
-        description: `CẢNH BÁO CHÊNH LỆCH CƯỚC: Cước thực tế nhà cung cấp (${actualFee}$) cao hơn cước báo khách (${order.totalFee}$). Cần kiểm tra đối soát.`,
+        description: `CẢNH BÁO CHÊNH LỆCH CƯỚC: Cước thực tế nhà cung cấp ($${actualFee}) cao hơn cước báo khách ($${order.totalFee}). Cần kiểm tra đối soát.`,
+        metadata: {
+          carrierCode,
+          serviceCode,
+          trackingNumber,
+          quotedFee: Number(order.totalFee),
+          actualFee,
+          discrepancyAmount: roundCurrency(actualFee - Number(order.totalFee)),
+        },
         actorType: "SYSTEM",
         actorId: "system",
         actorName: "System Auditor",
@@ -419,7 +444,7 @@ export class OrderLabelService {
         trackingNumber: "",
         actualFee: Number(order.totalFee),
         pdfBuffer: undefined,
-        rawRequestPayload: createLabelDto,
+        rawRequestPayload: result.rawRequest || createLabelDto,
         rawResponsePayload: result.rawEnvelope || result,
       };
     }
@@ -428,6 +453,7 @@ export class OrderLabelService {
       shipmentIdentificationNumber?: string;
       packageResults?: Array<{ trackingNumber: string }>;
       totalCharges?: { monetaryValue?: number };
+      rawRequest?: unknown;
     };
     const trackingNumber = successResult.shipmentIdentificationNumber || successResult.packageResults?.[0]?.trackingNumber || "";
     const actualFee = successResult.totalCharges?.monetaryValue ? Number(successResult.totalCharges.monetaryValue) : Number(order.totalFee);
@@ -445,7 +471,7 @@ export class OrderLabelService {
       trackingNumber,
       actualFee,
       pdfBuffer,
-      rawRequestPayload: createLabelDto,
+      rawRequestPayload: result.rawRequest || createLabelDto,
       rawResponsePayload: result.rawEnvelope || result,
     };
   }
@@ -466,7 +492,13 @@ export class OrderLabelService {
     }
   }
 
-  private async deductWalletPostCreation(order: OrderRecord, actualFee: number, params: PurchaseLabelParams) {
+  private async deductWalletPostCreation(
+    order: OrderRecord,
+    actualFee: number,
+    params: PurchaseLabelParams,
+    carrierCode: string,
+    trackingNumber: string,
+  ) {
     if (!this.deps.topupRepo) return;
     const feeToDeduct = actualFee > 0 ? actualFee : Number(order.totalFee || 0);
     try {
@@ -489,6 +521,12 @@ export class OrderLabelService {
         statusFrom: order.status,
         statusTo: order.status,
         description: `CẢNH BÁO THU TIỀN: Tem đã tạo thành công trên carrier nhưng trừ tiền ví thất bại (${(payErr as Error)?.message}). Cần đối soát thu lại tiền ví.`,
+        metadata: {
+          carrierCode,
+          trackingNumber,
+          amountToDeduct: actualFee,
+          errorMessage: (payErr as Error)?.message,
+        },
         actorType: "SYSTEM",
         actorId: "system",
         actorName: "System",
@@ -513,7 +551,7 @@ export class OrderLabelService {
 
     await this.preCheckWalletBalance(order);
 
-    const carrierCode = order.carrierCode || "EPICHUB";
+    const carrierCode = order.carrierCode || CARRIER_CODES.EPICHUB;
     const carrier = this.getCarrierProvider(carrierCode);
     const shipFromInfo = this.buildShipFromInfo(order.shippingOrigin);
     const shipToInfo = this.buildShipToInfo(order);
@@ -522,7 +560,7 @@ export class OrderLabelService {
     let trackingNumber = order.trackingNumber || "";
     let actualFee = Number(order.totalFee);
 
-    let rawRequestPayload: unknown;
+    let rawRequestPayload: unknown = this.buildCreateLabelDto(order, shipFromInfo, shipToInfo);
     let rawResponsePayload: unknown;
 
     if (!pdfBuffer) {
@@ -554,13 +592,17 @@ export class OrderLabelService {
         pdfBuffer = creation.pdfBuffer;
       } catch (err: unknown) {
         const errObj = err as Error;
+        const partnerErr = err as { rawResponse?: unknown; rawRequest?: unknown };
+        const reqPayload = partnerErr?.rawRequest || rawRequestPayload;
+        const resPayload = partnerErr?.rawResponse || rawResponsePayload;
+
         await this.logFailedPartnerAudit(
           order,
           carrierCode,
           errObj?.message || String(err),
-          rawRequestPayload,
+          reqPayload,
           "CREATE_LABEL",
-          rawResponsePayload,
+          resPayload,
         );
         throw err;
       }
@@ -576,7 +618,7 @@ export class OrderLabelService {
       throw err;
     }
 
-    await this.deductWalletPostCreation(order, actualFee, params);
+    await this.deductWalletPostCreation(order, actualFee, params, carrierCode, trackingNumber);
 
     return this.persistLabelAndUpdateOrder(
       order,
@@ -620,7 +662,7 @@ export class OrderLabelService {
       );
     }
 
-    const carrierCode = order.carrierCode || "EPICHUB";
+    const carrierCode = order.carrierCode || CARRIER_CODES.EPICHUB;
     const carrier = this.getCarrierProvider(carrierCode);
 
     if (!carrier.voidLabel) {
@@ -645,12 +687,17 @@ export class OrderLabelService {
       voidResult = (await carrier.voidLabel(trackingNumber)) as unknown as Record<string, unknown>;
     } catch (err: unknown) {
       const errObj = err as Error;
+      const partnerErr = err as { rawResponse?: unknown; rawRequest?: unknown };
+      const reqPayload = partnerErr?.rawRequest || { trackingNumber };
+      const resPayload = partnerErr?.rawResponse;
+
       await this.logFailedPartnerAudit(
         order,
         carrierCode,
         `Void Label Failed: ${errObj?.message || String(err)}`,
-        { trackingNumber },
+        reqPayload,
         "VOID_LABEL",
+        resPayload,
       );
       throw new ErrorWithCode(
         ErrorCode.InternalError,
@@ -719,22 +766,30 @@ export class OrderLabelService {
     const { partner, partnerService } = await this.resolvePartnerAndService(carrierCode);
     const serviceCode = partnerService?.code || EPICHUB_DEFAULT_SERVICE_CODE;
 
+    const originalFee = Number(order.totalFee);
+    const feePercent = typeof voidResult?.voidFeePercent === "number" ? voidResult.voidFeePercent : 0;
+    const netRefundedFee = roundCurrency(originalFee * (1 - feePercent / 100));
+
     await this.deps.orderRepo.createActivityLog({
       orderId: order.id,
-      action: "STATUS_CHANGE",
+      action: "VOID_LABEL",
       statusFrom: order.status,
       statusTo: OrderStatus.PENDING_LABEL,
-      description: `Hủy nhãn tem thành công từ đối tác ${carrierCode} (Tracking: ${trackingNumber})`,
+      description: `Hủy nhãn tem thành công từ đối tác ${carrierCode} (Tracking: ${trackingNumber}, Phí hủy Carrier: ${feePercent}%, Hoàn ví: $${netRefundedFee})`,
+      metadata: {
+        carrierCode,
+        serviceCode,
+        trackingNumber,
+        originalFee,
+        voidFeePercent: feePercent,
+        netRefundedFee,
+      },
       actorType: params.operatorId ? "OPERATOR" : "CUSTOMER",
       actorId: params.operatorId || params.customerId || "system",
       actorName: params.operatorId ? "Operator" : "Customer",
       actorUsername: params.operatorId ? "operator" : "customer",
       actorEmail: null,
     });
-
-    const originalFee = Number(order.totalFee);
-    const feePercent = typeof voidResult?.voidFeePercent === "number" ? voidResult.voidFeePercent : 0;
-    const netRefundedFee = roundCurrency(originalFee * (1 - feePercent / 100));
     const rawResponsePayload = voidResult?.rawEnvelope
       ? toSafeJson(voidResult.rawEnvelope)
       : voidResult
@@ -834,7 +889,13 @@ export class OrderLabelService {
         action: "RECONCILE_SUCCESS",
         statusFrom: order.status,
         statusTo: order.status,
-        description: `ĐỐI SOÁT THÀNH CÔNG: Đã khấu trừ bổ sung ${feeToDeduct}$ cước tem vào ví khách hàng`,
+        description: `ĐỐI SOÁT THÀNH CÔNG: Đã khấu trừ bổ sung $${feeToDeduct} cước tem vào ví khách hàng`,
+        metadata: {
+          carrierCode: order.carrierCode || CARRIER_CODES.EPICHUB,
+          trackingNumber: order.trackingNumber,
+          amountDeducted: feeToDeduct,
+          actorType: params.actorType || "SYSTEM",
+        },
         actorType: isOperator ? "OPERATOR" : "SYSTEM",
         actorId: params.actorId || "system",
         actorName: isOperator ? "Operator" : "System Reconciler",

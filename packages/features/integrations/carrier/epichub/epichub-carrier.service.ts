@@ -1,64 +1,35 @@
-import type {
-  AddressAmbiguousResult,
-  AddressInfo,
-  BalanceResultDto,
-  CarrierCapabilities,
-  CreateLabelDto,
-  CreateLabelResultDto,
-  ICarrierProvider,
-  PriceInquiryDto,
-  ServiceRateResult,
-  TrackingResultDto,
-  VoidResultDto,
+import { withPartnerRetry } from '../../shared/base-partner-http-client';
+import {
+  type AddressAmbiguousResult,
+  type AddressInfo,
+  type BalanceResultDto,
+  CARRIER_CODES,
+  type CarrierCapabilities,
+  type CreateLabelDto,
+  type CreateLabelResultDto,
+  type ICarrierProvider,
+  type PriceInquiryDto,
+  type ServiceRateResult,
+  type TrackingResultDto,
+  type VoidResultDto,
 } from '../interfaces/carrier-provider.interface';
-import type {
-  EpicHubBalanceResult,
-  EpicHubCandidatesResult,
-  EpicHubCreateLabelPayload,
-  EpicHubCreateLabelResult,
-  EpicHubPackageTrackingResult,
-  EpicHubParty,
-  EpicHubPriceInquiryItemResult,
-  EpicHubPriceInquiryPayload,
-  EpicHubPrintLabelResult,
-  EpicHubVoidResult,
+import {
+  type EpicHubBalanceResult,
+  type EpicHubCandidatesResult,
+  type EpicHubCreateLabelPayload,
+  type EpicHubCreateLabelResult,
+  type EpicHubPackageTrackingResult,
+  type EpicHubParty,
+  type EpicHubPriceInquiryItemResult,
+  type EpicHubPriceInquiryPayload,
+  type EpicHubPrintLabelResult,
+  type EpicHubVoidResult,
+  sanitizeEpicHubPayload,
 } from './dtos/epichub.dto';
-import { sanitizeEpicHubPayload } from './dtos/epichub.dto';
 import type { EpicHubHttpClient } from './epichub-http-client';
 
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: { retries?: number; delayMs?: number; actionName?: string } = {},
-): Promise<T> {
-  const maxRetries = options.retries ?? 3;
-  const initialDelay = options.delayMs ?? 500;
-  const actionName = options.actionName || 'Carrier Operation';
-
-  let attempt = 0;
-  while (true) {
-    attempt++;
-    try {
-      return await fn();
-    } catch (err: unknown) {
-      const errMsg = (err as Error)?.message || String(err);
-      const isTransientError =
-        /502|503|504|429|ECONNRESET|ETIMEDOUT|fetch failed|timeout/i.test(errMsg);
-
-      if (!isTransientError || attempt > maxRetries) {
-        throw err;
-      }
-
-      const backoffMs = initialDelay * 2 ** (attempt - 1) + Math.random() * 200;
-      console.warn(
-        `[EpicHubCarrierService] Warning: ${actionName} failed with transient error (${errMsg}). Retrying attempt ${attempt}/${maxRetries} in ${Math.round(backoffMs)}ms...`,
-      );
-      await new Promise((resolve) => setTimeout(resolve, backoffMs));
-    }
-  }
-}
-
 export class EpicHubCarrierService implements ICarrierProvider {
-  public readonly code = 'EPICHUB';
+  public readonly code = CARRIER_CODES.EPICHUB;
   private httpClient: EpicHubHttpClient;
 
   constructor(httpClient: EpicHubHttpClient) {
@@ -203,7 +174,13 @@ export class EpicHubCarrierService implements ICarrierProvider {
   /**
    * Helper to map Status 202 Address Ambiguous response.
    */
-  private mapAmbiguousResult(candidateResult?: EpicHubCandidatesResult, message?: string | null, rawEnvelope?: unknown): AddressAmbiguousResult {
+  private mapAmbiguousResult(
+    candidateResult?: EpicHubCandidatesResult,
+    message?: string | null,
+    rawEnvelope?: unknown,
+    rawRequest?: unknown,
+    durationMs?: number,
+  ): AddressAmbiguousResult {
     const candidates = candidateResult?.Candidates || { ShipFrom: [], ShipTo: [] };
     return {
       isAmbiguous: true,
@@ -227,6 +204,8 @@ export class EpicHubCarrierService implements ICarrierProvider {
         })),
       },
       rawEnvelope,
+      rawRequest,
+      durationMs,
     };
   }
 
@@ -239,7 +218,7 @@ export class EpicHubCarrierService implements ICarrierProvider {
     const sanitizedPayload = sanitizeEpicHubPayload(payload);
     console.log("[EpicHub FULL Payload]", JSON.stringify(sanitizedPayload, null, 2));
 
-    const { envelope } = await withRetry(
+    const { envelope, rawRequest, durationMs } = await withPartnerRetry(
       () =>
         this.httpClient.request<EpicHubCreateLabelResult | EpicHubCandidatesResult>('v2/shipments/label-request', {
           method: 'POST',
@@ -253,7 +232,13 @@ export class EpicHubCarrierService implements ICarrierProvider {
     }
 
     if (envelope.ResponseStatus.Code === 202) {
-      return this.mapAmbiguousResult(envelope.ResponseResults as EpicHubCandidatesResult, envelope.ResponseStatus.Message, envelope);
+      return this.mapAmbiguousResult(
+        envelope.ResponseResults as EpicHubCandidatesResult,
+        envelope.ResponseStatus.Message,
+        envelope,
+        rawRequest,
+        durationMs,
+      );
     }
 
     const successResult = envelope.ResponseResults as EpicHubCreateLabelResult;
@@ -283,6 +268,8 @@ export class EpicHubCarrierService implements ICarrierProvider {
         },
       })),
       rawEnvelope: envelope,
+      rawRequest,
+      durationMs,
     };
   }
 
@@ -378,7 +365,7 @@ export class EpicHubCarrierService implements ICarrierProvider {
    * Void / Cancel Label.
    */
   public async voidLabel(trackingNumber: string): Promise<VoidResultDto> {
-    const { envelope } = await withRetry(
+    const { envelope, rawRequest, durationMs } = await withPartnerRetry(
       () =>
         this.httpClient.request<EpicHubVoidResult>('v2/shipments/void', {
           method: 'PUT',
@@ -397,6 +384,8 @@ export class EpicHubCarrierService implements ICarrierProvider {
       success: true,
       message: envelope?.ResponseStatus?.Message || 'Label voided successfully',
       rawEnvelope: envelope,
+      rawRequest,
+      durationMs,
     };
   }
 

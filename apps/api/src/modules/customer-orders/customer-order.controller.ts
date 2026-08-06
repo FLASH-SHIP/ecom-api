@@ -98,6 +98,50 @@ export class CustomerOrderController {
     description: "Order created successfully",
     type: CustomerOrderDetailResponseDto,
   })
+  private async executeCreateOrder(customerId: string, body: CreateOrderDto) {
+    const order = await getOrderService().createOrder({
+      ...body,
+      customerId,
+    });
+
+    if (body.isGetLabel === 1) {
+      try {
+        const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
+        const updatedOrder = await getOrderLabelService().purchaseLabel({
+          orderId: order.id,
+          customerId,
+        });
+        if (updatedOrder && "id" in updatedOrder) {
+          return mapToCustomerOrderDetailResponse(
+            updatedOrder as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
+          );
+        }
+      } catch (labelErr) {
+        console.warn(
+          `[CustomerOrderController] Auto purchase label post-creation failed for order #${order.orderCode}:`,
+          labelErr,
+        );
+      }
+    }
+
+    return mapToCustomerOrderDetailResponse(
+      order as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
+    );
+  }
+
+  @Post()
+  @ApiOperation({ summary: "Create a single order with idempotency check" })
+  @ApiBody({ type: CreateOrderDto })
+  @ApiHeader({
+    name: "X-Idempotency-Key",
+    required: false,
+    description: "Unique idempotency key to prevent duplicate order creation within 24 hours",
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Order created successfully",
+    type: CustomerOrderDetailResponseDto,
+  })
   async createOrder(
     @Req() req: Request,
     @Body() body: CreateOrderDto,
@@ -117,10 +161,7 @@ export class CustomerOrderController {
         console.warn("Redis idempotency read failed:", err);
       }
 
-      const result = await getOrderService().createOrder({
-        ...body,
-        customerId,
-      });
+      const result = await this.executeCreateOrder(customerId, body);
 
       try {
         const redis = getRedisClient();
@@ -132,10 +173,7 @@ export class CustomerOrderController {
       return result;
     }
 
-    return getOrderService().createOrder({
-      ...body,
-      customerId,
-    });
+    return this.executeCreateOrder(customerId, body);
   }
 
   @Post("bulk")
@@ -173,16 +211,11 @@ export class CustomerOrderController {
         console.warn("Redis bulk idempotency read failed:", err);
       }
 
-      const orderService = getOrderService();
       const result = await executeBatchProcess(
         body.orders,
         CreateOrderDto,
         async (orderData) => {
-          const order = await orderService.createOrder({
-            ...orderData,
-            customerId,
-          });
-          return mapToCustomerOrderDetailResponse(order);
+          return this.executeCreateOrder(customerId, orderData);
         },
         { maxLimit: MAX_BULK_ORDER_LIMIT },
       );
@@ -196,16 +229,11 @@ export class CustomerOrderController {
       return result;
     }
 
-    const orderService = getOrderService();
     return executeBatchProcess(
       body.orders,
       CreateOrderDto,
       async (orderData) => {
-        const order = await orderService.createOrder({
-          ...orderData,
-          customerId,
-        });
-        return mapToCustomerOrderDetailResponse(order);
+        return this.executeCreateOrder(customerId, orderData);
       },
       { maxLimit: MAX_BULK_ORDER_LIMIT },
     );

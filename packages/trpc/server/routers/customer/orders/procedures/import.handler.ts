@@ -157,12 +157,35 @@ export const importBatch = authedProcedure
 
     for (const order of input.orders) {
       try {
-        await service.createOrder({
+        const createdOrder = await service.createOrder({
           ...order,
           importId: input.importId,
           customerId: ctx.user.id,
         });
         successCount++;
+
+        if (order.isGetLabel === 1) {
+          try {
+            const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
+            const orderLabelService = getOrderLabelService();
+            await orderLabelService.purchaseLabel({
+              orderId: createdOrder.id,
+              customerId: ctx.user.id,
+            });
+          } catch (labelErr) {
+            console.warn(
+              `[ImportBatch] Auto purchase label failed for imported order #${createdOrder.orderCode}:`,
+              labelErr,
+            );
+            const firstLine = order.excelRowNumbers[0] || 0;
+            batchErrors.push({
+              line: firstLine,
+              columnName: "Label Purchase",
+              enteredValue: order.sellerOrderId || "",
+              errorReason: `Đơn hàng #${createdOrder.orderCode} được tạo thành công nhưng chưa thể tạo nhãn tem: ${(labelErr as Error)?.message}`,
+            });
+          }
+        }
       } catch (err) {
         const errorReason = err instanceof Error ? err.message : String(err);
         const firstLine = order.excelRowNumbers[0] || 0;

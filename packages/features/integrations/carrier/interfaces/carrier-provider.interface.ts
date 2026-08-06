@@ -1,3 +1,13 @@
+export const CARRIER_CODES = {
+  EPICHUB: 'EPICHUB',
+  USPS: 'USPS',
+  UPS: 'UPS',
+  IBC: 'IBC',
+  SBP: 'SBP',
+} as const;
+
+export type CarrierCode = typeof CARRIER_CODES[keyof typeof CARRIER_CODES];
+
 export interface CarrierCapabilities {
   supportsPriceInquiry: boolean;
   supportsAddressValidation: boolean;
@@ -105,6 +115,8 @@ export interface AddressAmbiguousResult {
     shipTo: AddressCandidate[];
   };
   rawEnvelope?: unknown;
+  rawRequest?: unknown;
+  durationMs?: number;
 }
 
 export interface LabelPackageResult {
@@ -129,6 +141,8 @@ export interface CreateLabelSuccessResult {
   totalBillingWeight: PackageWeightInfo;
   packageResults: LabelPackageResult[];
   rawEnvelope?: unknown;
+  rawRequest?: unknown;
+  durationMs?: number;
 }
 
 export type CreateLabelResultDto = CreateLabelSuccessResult | AddressAmbiguousResult;
@@ -170,6 +184,8 @@ export interface VoidResultDto {
   success: boolean;
   message?: string;
   rawEnvelope?: unknown;
+  rawRequest?: unknown;
+  durationMs?: number;
 }
 
 export interface BalanceResultDto {
