@@ -382,6 +382,7 @@ export class CustomerAuthService {
       username: customer.username,
       name: customer.name,
       avatarUrl: customer.avatarUrl,
+      isTermsAccepted: Boolean(customer.isTermsAccepted),
     };
 
     const tokens = tokenService.generateTokens(customerData);

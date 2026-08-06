@@ -199,6 +199,7 @@ export class CustomerAuthController {
       email: result.customer.email,
       name: result.customer.name || result.customer.email,
       tokenVersion: (result.customer as { tokenVersion?: number }).tokenVersion ?? 1,
+      isTermsAccepted: Boolean((result.customer as any).isTermsAccepted),
     };
     return {
       user,

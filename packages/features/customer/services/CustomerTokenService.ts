@@ -51,7 +51,8 @@ export class CustomerTokenService {
     const secret =
       opts?.accessSecret ||
       process.env.JWT_SECRET ||
-      "dev_jwt_secret_minimum_8_chars";
+      process.env.AUTH_SECRET ||
+      "dev-jwt-secret-do-not-use-in-production";
     this.accessSecret = secret;
     this.refreshSecret = opts?.refreshSecret || process.env.JWT_REFRESH_SECRET || secret;
     this.accessTokenTtl =
