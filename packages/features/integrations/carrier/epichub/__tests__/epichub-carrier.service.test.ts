@@ -404,4 +404,44 @@ describe('EpicHub Integration Unit Tests', () => {
       expect(resolved.password).toBe('EncryptedPasswordFromDB'); // Auto-decrypted!
     });
   });
+
+  describe('EpicHubHttpClient 400 Error Formatting', () => {
+    it('should throw PartnerApiError with rawResponse and rawRequest attached directly from EpicHub response', async () => {
+      mockRedis.get.mockResolvedValue('valid-token');
+
+      const mockErrorResponseBody = {
+        ResponseStatus: {
+          Code: 400,
+          Message: "An error occurred while validating an address: Address Not Found - Source: {'parameter': 'toAddress'}",
+        },
+      };
+
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => mockErrorResponseBody,
+      });
+
+      const authService = new EpicHubAuthService(dummyConfig);
+      const httpClient = new EpicHubHttpClient(dummyConfig.baseUrl, authService);
+
+      const requestBody = { RequestId: 'TEST_REQ_123', ServiceCode: 'USPS_GDE_GA' };
+
+      try {
+        await httpClient.request('v2/shipments/label-request', { method: 'POST', body: requestBody });
+        expect.fail('Should have thrown PartnerApiError');
+      } catch (err: unknown) {
+        const partnerErr = err as { message: string; statusCode: number; rawResponse: unknown; rawRequest: unknown };
+        expect(partnerErr.message).toContain("EpicHub từ chối yêu cầu (HTTP 400): An error occurred while validating an address");
+        expect(partnerErr.statusCode).toBe(400);
+        expect(partnerErr.rawResponse).toEqual(mockErrorResponseBody);
+        expect(partnerErr.rawRequest).toEqual({
+          url: 'https://clutchshipper.com/api/v2/shipments/label-request',
+          method: 'POST',
+          headers: { Token: '***MASKED***', 'Content-Type': 'application/json' },
+          body: requestBody,
+        });
+      }
+    });
+  });
 });

@@ -153,6 +153,14 @@ describe("OrderService", () => {
         service.createOrder({
           customerId: "cust_1",
           shippingMethod: "EPACKET",
+          shippingOrigin: "HAN",
+          senderName: "Sender Name",
+          senderPhone: "+84900000000",
+          senderAddress: "123 Street",
+          senderCity: "Hanoi",
+          senderWard: "Ward 1",
+          senderZipCode: "100000",
+          senderCountry: "VN",
           receiverName: "John Doe",
           receiverCity: "LA",
           receiverState: "CA",
@@ -161,6 +169,9 @@ describe("OrderService", () => {
           receiverZipCode: "90001",
           detailDescription: "Shoes",
           declaredWeight: 1000,
+          dimensionLength: 10,
+          dimensionWidth: 10,
+          dimensionHeight: 10,
           declaredValue: 50,
           sellerOrderId: "SHOP1001",
         }),
@@ -188,6 +199,14 @@ describe("OrderService", () => {
       const res = await service.createOrder({
         customerId: "cust_1",
         shippingMethod: "EPACKET",
+        shippingOrigin: "HAN",
+        senderName: "Sender Name",
+        senderPhone: "+84900000000",
+        senderAddress: "123 Street",
+        senderCity: "Hanoi",
+        senderWard: "Ward 1",
+        senderZipCode: "100000",
+        senderCountry: "VN",
         receiverName: "John Doe",
         receiverCity: "LA",
         receiverState: "CA",
@@ -196,6 +215,9 @@ describe("OrderService", () => {
         receiverZipCode: "90001",
         detailDescription: "Shoes",
         declaredWeight: 1000,
+        dimensionLength: 10,
+        dimensionWidth: 10,
+        dimensionHeight: 10,
         declaredValue: 50,
         sellerOrderId: "SHOP1002",
       });
@@ -218,7 +240,7 @@ describe("OrderService", () => {
       expect(res.totalFee).toBe(25.0);
     });
 
-    it("should set status to LABEL_CREATED if isGetLabel is 1", async () => {
+    it("should set isGetLabel flag while preserving initial PENDING_LABEL status", async () => {
       rateCardServiceMock.calculateFreight.mockResolvedValue({
         freightCost: 25.0,
         appliedRateCardId: 5,
@@ -229,7 +251,7 @@ describe("OrderService", () => {
       orderRepoMock.create.mockResolvedValue({
         id: "new_order_id_2",
         orderCode: "TEST260711ABCDEFGH2",
-        status: OrderStatus.LABEL_CREATED,
+        status: OrderStatus.PENDING_LABEL,
         totalFee: 25.0,
         createdAt: new Date(),
       });
@@ -237,6 +259,14 @@ describe("OrderService", () => {
       const res = await service.createOrder({
         customerId: "cust_1",
         shippingMethod: "EPACKET",
+        shippingOrigin: "HAN",
+        senderName: "Sender Name",
+        senderPhone: "+84900000000",
+        senderAddress: "123 Street",
+        senderCity: "Hanoi",
+        senderWard: "Ward 1",
+        senderZipCode: "100000",
+        senderCountry: "VN",
         receiverName: "John Doe",
         receiverCity: "LA",
         receiverState: "CA",
@@ -245,6 +275,9 @@ describe("OrderService", () => {
         receiverZipCode: "90001",
         detailDescription: "Shoes",
         declaredWeight: 1000,
+        dimensionLength: 10,
+        dimensionWidth: 10,
+        dimensionHeight: 10,
         declaredValue: 50,
         sellerOrderId: "SHOP1003",
         isGetLabel: 1,
@@ -252,16 +285,17 @@ describe("OrderService", () => {
 
       expect(orderRepoMock.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          status: OrderStatus.LABEL_CREATED,
-          labelStatus: LabelStatus.SUCCESS,
+          status: OrderStatus.PENDING_LABEL,
+          labelStatus: LabelStatus.PENDING_LABEL,
+          isGetLabel: 1,
         }),
       );
       expect(orderRepoMock.createActivityLog).toHaveBeenCalledWith(
         expect.objectContaining({
           orderId: "new_order_id_2",
           action: "STATUS_CHANGE",
-          statusTo: OrderStatus.LABEL_CREATED,
-          description: "Đơn hàng được tạo thành công và đã tạo nhãn (Label Created)",
+          statusTo: OrderStatus.PENDING_LABEL,
+          description: "Đơn hàng được tạo thành công (Pending Label)",
         }),
       );
       expect(res.id).toBe("new_order_id_2");

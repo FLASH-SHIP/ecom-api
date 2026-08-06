@@ -249,11 +249,19 @@ export class OrderLabelService {
 
       const safeRawRequest = rawRequest
         ? toSafeJson(rawRequest)
-        : { serviceCode, origin: order.shippingOrigin, receiverCountry: order.receiverCountry };
+        : {
+            url: `${process.env.EPICHUB_BASE_URL || "https://clutchshipper.com/api"}/v2/shipments/label-request`,
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: { serviceCode, origin: order.shippingOrigin, receiverCountry: order.receiverCountry },
+          };
 
       const safeRawResponse = rawResponse
         ? toSafeJson(rawResponse)
         : toSafeJson({ error: errorMsg, status: "FAILURE" });
+
+      const resObj = (rawResponse || {}) as { durationMs?: number };
+      const durationMs = resObj.durationMs;
 
       await prisma.partnerAuditLog.create({
         data: {
@@ -273,6 +281,7 @@ export class OrderLabelService {
           errorMessage: errorMsg,
           rawRequest: safeRawRequest as Prisma.InputJsonValue,
           rawResponse: safeRawResponse as Prisma.InputJsonValue,
+          metadata: durationMs !== undefined ? ({ durationMs } as Prisma.InputJsonValue) : undefined,
         },
       });
     } catch (auditErr) {
@@ -435,7 +444,7 @@ export class OrderLabelService {
         trackingNumber: "",
         actualFee: Number(order.totalFee),
         pdfBuffer: undefined,
-        rawRequestPayload: createLabelDto,
+        rawRequestPayload: result.rawRequest || createLabelDto,
         rawResponsePayload: result.rawEnvelope || result,
       };
     }
@@ -444,6 +453,7 @@ export class OrderLabelService {
       shipmentIdentificationNumber?: string;
       packageResults?: Array<{ trackingNumber: string }>;
       totalCharges?: { monetaryValue?: number };
+      rawRequest?: unknown;
     };
     const trackingNumber = successResult.shipmentIdentificationNumber || successResult.packageResults?.[0]?.trackingNumber || "";
     const actualFee = successResult.totalCharges?.monetaryValue ? Number(successResult.totalCharges.monetaryValue) : Number(order.totalFee);
@@ -461,7 +471,7 @@ export class OrderLabelService {
       trackingNumber,
       actualFee,
       pdfBuffer,
-      rawRequestPayload: createLabelDto,
+      rawRequestPayload: result.rawRequest || createLabelDto,
       rawResponsePayload: result.rawEnvelope || result,
     };
   }
@@ -550,7 +560,7 @@ export class OrderLabelService {
     let trackingNumber = order.trackingNumber || "";
     let actualFee = Number(order.totalFee);
 
-    let rawRequestPayload: unknown;
+    let rawRequestPayload: unknown = this.buildCreateLabelDto(order, shipFromInfo, shipToInfo);
     let rawResponsePayload: unknown;
 
     if (!pdfBuffer) {
@@ -582,13 +592,17 @@ export class OrderLabelService {
         pdfBuffer = creation.pdfBuffer;
       } catch (err: unknown) {
         const errObj = err as Error;
+        const partnerErr = err as { rawResponse?: unknown; rawRequest?: unknown };
+        const reqPayload = partnerErr?.rawRequest || rawRequestPayload;
+        const resPayload = partnerErr?.rawResponse || rawResponsePayload;
+
         await this.logFailedPartnerAudit(
           order,
           carrierCode,
           errObj?.message || String(err),
-          rawRequestPayload,
+          reqPayload,
           "CREATE_LABEL",
-          rawResponsePayload,
+          resPayload,
         );
         throw err;
       }
@@ -673,12 +687,17 @@ export class OrderLabelService {
       voidResult = (await carrier.voidLabel(trackingNumber)) as unknown as Record<string, unknown>;
     } catch (err: unknown) {
       const errObj = err as Error;
+      const partnerErr = err as { rawResponse?: unknown; rawRequest?: unknown };
+      const reqPayload = partnerErr?.rawRequest || { trackingNumber };
+      const resPayload = partnerErr?.rawResponse;
+
       await this.logFailedPartnerAudit(
         order,
         carrierCode,
         `Void Label Failed: ${errObj?.message || String(err)}`,
-        { trackingNumber },
+        reqPayload,
         "VOID_LABEL",
+        resPayload,
       );
       throw new ErrorWithCode(
         ErrorCode.InternalError,

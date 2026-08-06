@@ -567,7 +567,7 @@ export class OrderService {
 
     if (params.products && params.products.length > 0) {
       for (const product of params.products) {
-        if (!product.description || !product.description.trim()) {
+        if (!product.description?.trim()) {
           throw new ErrorWithCode(
             ErrorCode.ValidationError,
             "Tên sản phẩm (description) không được để trống",
@@ -667,12 +667,8 @@ export class OrderService {
 
     // 4. Construct create input
     const isGetLabelChecked = params.isGetLabel === 1;
-    const initialOrderStatus: OrderStatus = isGetLabelChecked
-      ? OrderStatus.LABEL_CREATED
-      : OrderStatus.PENDING_LABEL;
-    const initialLabelStatus: LabelStatus = isGetLabelChecked
-      ? LabelStatus.SUCCESS
-      : LabelStatus.PENDING_LABEL;
+    const initialOrderStatus: OrderStatus = OrderStatus.PENDING_LABEL;
+    const initialLabelStatus: LabelStatus = LabelStatus.PENDING_LABEL;
 
     const dimensionText =
       dimensionLength && dimensionWidth && dimensionHeight
@@ -771,9 +767,7 @@ export class OrderService {
         action: "STATUS_CHANGE",
         statusFrom: null,
         statusTo: initialOrderStatus,
-        description: isGetLabelChecked
-          ? "Đơn hàng được tạo thành công và đã tạo nhãn (Label Created)"
-          : "Đơn hàng được tạo thành công (Pending Label)",
+        description: "Đơn hàng được tạo thành công (Pending Label)",
         actorType: "CUSTOMER",
         actorId: actorInfo.actorId,
         actorName: actorInfo.actorName,

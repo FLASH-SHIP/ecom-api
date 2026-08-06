@@ -1,6 +1,6 @@
-import { BasePartnerHttpClient } from '../../shared/base-partner-http-client';
-import { EpicHubAuthService } from './epichub-auth.service';
+import { BasePartnerHttpClient, maskSensitiveData, PartnerApiError } from '../../shared/base-partner-http-client';
 import type { EpicHubEnvelope } from './dtos/epichub.dto';
+import type { EpicHubAuthService } from './epichub-auth.service';
 
 export class EpicHubHttpClient extends BasePartnerHttpClient {
   private baseUrl: string;
@@ -10,6 +10,23 @@ export class EpicHubHttpClient extends BasePartnerHttpClient {
     super('EpicHub');
     this.baseUrl = baseUrl.replace(/\/+$/, '');
     this.authService = authService;
+  }
+
+  private buildFullUrl(
+    endpoint: string,
+    queryParams?: Record<string, string | boolean | number | undefined>,
+  ): string {
+    const fullUrl = `${this.baseUrl}/${endpoint.replace(/^\/+/, '')}`;
+    if (!queryParams) return fullUrl;
+
+    const searchParams = new URLSearchParams();
+    for (const [k, v] of Object.entries(queryParams)) {
+      if (v !== undefined) {
+        searchParams.append(k, String(v));
+      }
+    }
+    const queryString = searchParams.toString();
+    return queryString ? `${fullUrl}?${queryString}` : fullUrl;
   }
 
   public async request<T>(
@@ -22,22 +39,9 @@ export class EpicHubHttpClient extends BasePartnerHttpClient {
       isBinaryResponse?: boolean;
     },
     isRetry = false,
-  ): Promise<{ envelope?: EpicHubEnvelope<T>; binaryData?: Buffer }> {
+  ): Promise<{ envelope?: EpicHubEnvelope<T>; binaryData?: Buffer; rawRequest?: unknown; durationMs?: number }> {
     const token = await this.authService.getSessionToken(isRetry);
-
-    let fullUrl = `${this.baseUrl}/${endpoint.replace(/^\/+/, '')}`;
-    if (options.queryParams) {
-      const searchParams = new URLSearchParams();
-      for (const [k, v] of Object.entries(options.queryParams)) {
-        if (v !== undefined) {
-          searchParams.append(k, String(v));
-        }
-      }
-      const queryString = searchParams.toString();
-      if (queryString) {
-        fullUrl += `?${queryString}`;
-      }
-    }
+    const fullUrl = this.buildFullUrl(endpoint, options.queryParams);
 
     const headers: Record<string, string> = {
       Token: token,
@@ -45,8 +49,16 @@ export class EpicHubHttpClient extends BasePartnerHttpClient {
       ...options.headers,
     };
 
+    const fullRawRequest = {
+      url: fullUrl,
+      method: options.method,
+      headers: maskSensitiveData(headers),
+      body: options.body ? maskSensitiveData(options.body) : undefined,
+    };
+
     this.logRequest(fullUrl, options.method, headers, options.body);
 
+    const startTime = Date.now();
     const fetchOptions: RequestInit = {
       method: options.method,
       headers,
@@ -54,6 +66,7 @@ export class EpicHubHttpClient extends BasePartnerHttpClient {
     };
 
     const res = await fetch(fullUrl, fetchOptions);
+    const durationMs = Date.now() - startTime;
 
     // If 401 Unauthorized and not yet retried, invalidate token and retry once
     if (res.status === 401 && !isRetry) {
@@ -65,27 +78,28 @@ export class EpicHubHttpClient extends BasePartnerHttpClient {
     if (options.isBinaryResponse) {
       const arrayBuffer = await res.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      this.logResponse(fullUrl, res.status, `<Binary Data ${buffer.length} bytes>`);
-      return { binaryData: buffer };
+      this.logResponse(fullUrl, res.status, `<Binary Data ${buffer.length} bytes>`, durationMs);
+      return { binaryData: buffer, rawRequest: fullRawRequest, durationMs };
     }
 
     const json = (await res.json()) as EpicHubEnvelope<T>;
-    this.logResponse(fullUrl, res.status, json);
+    this.logResponse(fullUrl, res.status, json, durationMs);
 
     // Status 200 or 202 (Accepted - Address Ambiguous Candidates) are valid business responses
     if (json.ResponseStatus?.Code === 200 || json.ResponseStatus?.Code === 202) {
-      return { envelope: json };
+      return { envelope: json, rawRequest: fullRawRequest, durationMs };
     }
 
     // Handle 4xx / 5xx error responses
     const statusCode = json.ResponseStatus?.Code || res.status;
     const rawMsg = json.ResponseStatus?.Message || json.ResponseStatus?.Error || `EpicHub API Error (Status ${statusCode})`;
-    
-    let errMsg = rawMsg;
-    if (statusCode === 400) {
-      errMsg = `EpicHub từ chối yêu cầu (HTTP 400): ${rawMsg}. Vui lòng kiểm tra lại số dư tài khoản EpicHub hoặc thông tin địa chỉ người nhận.`;
-    }
-    
-    throw new Error(`[EpicHubHttpClient] ${errMsg}`);
+
+    throw new PartnerApiError(
+      `[EpicHubHttpClient] EpicHub từ chối yêu cầu (HTTP ${statusCode}): ${rawMsg}`,
+      statusCode,
+      json,
+      fullRawRequest,
+      durationMs,
+    );
   }
 }
