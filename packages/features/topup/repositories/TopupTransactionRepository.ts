@@ -72,32 +72,56 @@ export class TopupTransactionRepository {
    * @param customerId ID của khách hàng
    * @returns Mã khách hàng dạng chuỗi
    */
+  /**
+   * Truy vấn mã khách hàng (customerCode / partnerCode) từ DB Postgres Local.
+   * Nếu dữ liệu cũ (legacy) chưa có customerCode, tự động sinh mã mới KHxxxxx và lưu lại vào DB.
+   *
+   * @param customerId ID của khách hàng (UUID)
+   * @returns Mã khách hàng dạng chuỗi (partnerCode)
+   */
   async getCustomerCode(customerId: string): Promise<string> {
+    // 1. Truy vấn mã customerCode từ bảng Customer theo customerId
     const customer = await this.prisma.customer.findUnique({
       where: { id: customerId },
-      select: { customerCode: true, username: true },
+      select: { id: true, customerCode: true, username: true },
     });
-    return customer?.customerCode || customer?.username || customerId;
+
+    // 2. Trả về customerCode có sẵn nếu đã có trong DB
+    if (customer?.customerCode) {
+      return customer.customerCode;
+    }
+
+    // 3. Nếu chưa có customerCode (tài khoản cũ legacy), tự động sinh mã KHxxxxx mới
+    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
+    const newCode = customer?.username || `KH${randomSuffix}`;
+
+    // 4. Cập nhật mã customerCode mới sinh vào DB Postgres Local
+    if (customer) {
+      await this.prisma.customer.update({
+        where: { id: customerId },
+        data: { customerCode: newCode },
+      });
+    }
+
+    return newCode;
   }
 
-  /**
-   * Lấy tổng quan số dư ví tài khoản của khách hàng
-   * 1. accountBalance: Số dư ví từ Hệ Thống Ví Độc Lập qua endpoint /payment-api/account/info.
-   *    (Fallback: Dự phòng lấy từ giao dịch Đã duyệt gần nhất status = TopupStatus.CONFIRMED trong DB Local nếu API ví gặp sự cố)
-   * 2. waitingConfirmTopup: Tổng số tiền nạp đang chờ duyệt (Tổng wireAmount của các giao dịch status = TopupStatus.WAITING)
-   *
-   * @param customerId ID khách hàng cần truy vấn
-   * @returns Đối tượng chứa số dư ví khả dụng và tổng tiền chờ duyệt
-   */
   async getWalletSummary(customerId: string) {
-    // 1. Lấy số dư ví từ hệ thống ví độc lập qua endpoint /payment-api/account/info
+    // 1. Lấy số dư ví từ hệ thống ví độc lập qua endpoint /payment-api/account/info (Tự động bù ví nếu chưa tồn tại)
     let accountBalance = 0.0;
 
     try {
       const walletClient = new ExternalWalletClient();
-      const accountInfoRes = await walletClient.getAccountInfo({ partnerId: customerId });
+      const accountInfoRes = await walletClient.getAccountInfo(
+        { partnerId: customerId },
+        () => this.getCustomerCode(customerId),
+      );
       const resData = (accountInfoRes as any)?.data;
-      const rawBal = resData?.accountBalance ?? 0;
+      const rawBal =
+        resData?.balance ??
+        resData?.accountBalance ??
+        resData?.account_balance ??
+        resData?.accountInfo?.balance;
       if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
         accountBalance = Number(rawBal);
       } else {
@@ -766,7 +790,10 @@ export class TopupTransactionRepository {
     // 3.2 Thử gọi getAccountInfo lấy balance mới nhất từ Ví Độc Lập
     if (balanceAfter === null) {
       try {
-        const accountInfo = await walletClient.getAccountInfo({ partnerId: existing.customerId });
+        const accountInfo = await walletClient.getAccountInfo(
+          { partnerId: existing.customerId },
+          () => this.getCustomerCode(existing.customerId),
+        );
         const resData = (accountInfo as any)?.data;
         const rawBal =
           resData?.balance ??
@@ -887,7 +914,10 @@ export class TopupTransactionRepository {
       const walletClient = new ExternalWalletClient();
 
       try {
-        const accountInfoRes = await walletClient.getAccountInfo({ partnerId: data.customerId });
+        const accountInfoRes = await walletClient.getAccountInfo(
+          { partnerId: data.customerId },
+          () => this.getCustomerCode(data.customerId),
+        );
         const resData = (accountInfoRes as any)?.data;
         const rawBal =
           resData?.balance ??

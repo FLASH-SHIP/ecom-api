@@ -45,6 +45,9 @@ export class ExternalWalletClient {
   private readonly baseUrl: string;
   private readonly secretKey: string;
 
+  /** Map lưu vết các tiến trình đang tạo ví (In-Flight Lock) chống race-condition tạo trùng ví */
+  private static readonly inFlightCreations = new Map<string, Promise<any>>();
+
   constructor() {
     this.baseUrl = (
       process.env.EXTERNAL_WALLET_API_BASE_URL || "https://dev-api.ecomexpress.vn"
@@ -128,8 +131,9 @@ export class ExternalWalletClient {
         resObj.code !== "FLS_200";
 
       if (isFailedSuccess || isInvalidCode) {
+        // Ưu tiên bóc tách trường resObj.err (ví dụ "Seller Not Found.") tránh bị ghi đè bởi resObj.msg ("fail")
         const errorMsg =
-          resObj.message || resObj.msg || resObj.err || resObj.error || JSON.stringify(data);
+          (resObj.err && resObj.msg ? `${resObj.err} (${resObj.msg})` : resObj.err || resObj.message || resObj.error || resObj.msg) || JSON.stringify(data);
 
         const fullBizError = `Hệ Thống Ví Độc Lập: ${errorMsg}`;
         this.logger.error(fullBizError, {
@@ -143,6 +147,80 @@ export class ExternalWalletClient {
     }
 
     return data;
+  }
+
+  /**
+   * Kiểm tra lỗi phản hồi từ API ví xem có phải do tài khoản chưa được khởi tạo (Partner not found / Seller Not Found) hay không.
+   * Bao phủ đầy đủ các biến thể lỗi từ Server Ví: Seller Not Found, Partner Not Found, Account Not Found, FLS_400, FLS_404...
+   *
+   * @param error Đối tượng lỗi nhận từ try-catch hoặc response
+   * @returns true nếu lỗi do chưa có tài khoản ví
+   */
+  public isPartnerNotFound(error: any): boolean {
+    if (!error) return false;
+    // Bóc tách toàn bộ thông điệp lỗi từ error.message, error.err, error.msg, error.code
+    const msg = String(
+      error?.message || error?.msg || error?.err || error?.error || error?.code || error || "",
+    ).toLowerCase();
+
+    return (
+      msg.includes("seller not found") ||
+      msg.includes("seller_not_found") ||
+      msg.includes("partner not found") ||
+      msg.includes("partner_not_found") ||
+      msg.includes("account not found") ||
+      msg.includes("account_not_found") ||
+      msg.includes("user not found") ||
+      msg.includes("customer not found") ||
+      msg.includes("chưa tồn tại") ||
+      msg.includes("không tồn tại") ||
+      msg.includes("not found") ||
+      msg.includes("not_found") ||
+      msg.includes("404") ||
+      msg.includes("fls_400") ||
+      msg.includes("fls_404")
+    );
+  }
+
+  /**
+   * Đảm bảo tài khoản ví được khởi tạo thành công (sử dụng In-Flight Lock chống race condition tạo trùng ví).
+   * @param partnerId Mã ID duy nhất của đối tác/khách hàng (UUID)
+   * @param partnerCodeSupplier Hàm callback bất đồng bộ cung cấp partnerCode (customerCode) từ DB
+   */
+  private async ensureAccountCreated(
+    partnerId: string,
+    partnerCodeSupplier: () => Promise<string>,
+  ): Promise<ExternalWalletBaseResponse<WalletAccountData>> {
+    // 1. Kiểm tra nếu đã có tiến trình tạo ví cho partnerId này đang chạy trong bộ nhớ -> dùng lại Promise đó (In-Flight Lock)
+    const existingInFlight = ExternalWalletClient.inFlightCreations.get(partnerId);
+    if (existingInFlight) {
+      return existingInFlight;
+    }
+
+    // 2. Tạo tiến trình khởi tạo ví mới và lưu vào Map inFlightCreations
+    const creationPromise = (async () => {
+      try {
+        // Lấy mã khách hàng (partnerCode) từ supplier
+        const partnerCode = await partnerCodeSupplier();
+        this.logger.log(
+          `[Self-Healing] Tự động khởi tạo tài khoản ví cho partnerId=${partnerId}, partnerCode=${partnerCode}`,
+        );
+        // Gọi API POST /payment-api/account/create
+        return await this.createAccount({ partnerId, partnerCode });
+      } catch (creationError) {
+        this.logger.error(
+          `[Self-Healing] Lỗi tự động tạo tài khoản ví cho partnerId=${partnerId}:`,
+          creationError,
+        );
+        throw creationError;
+      } finally {
+        // Luôn giải phóng khóa In-Flight Lock khỏi bộ nhớ sau khi hoàn tất hoặc gặp lỗi
+        ExternalWalletClient.inFlightCreations.delete(partnerId);
+      }
+    })();
+
+    ExternalWalletClient.inFlightCreations.set(partnerId, creationPromise);
+    return creationPromise;
   }
 
   /**
@@ -161,14 +239,65 @@ export class ExternalWalletClient {
   /**
    * 5.2 POST /payment-api/account/info
    * Lấy thông tin chi tiết và số dư tài khoản ví của Partner.
+   * Nếu không có thông tin ví (Partner not found / data rỗng / không chứa dữ liệu ví) và có partnerCodeSupplier,
+   * hệ thống sẽ tự động gọi /payment-api/account/create để khởi tạo ví và truy vấn lại (Self-Healing).
+   *
+   * @param payload Thông số truy vấn ví ({ partnerId })
+   * @param partnerCodeSupplier Callback dự phòng lấy mã partnerCode từ DB khi cần khởi tạo ví
    */
   async getAccountInfo(
     payload: WalletAccountInfoRequest,
+    partnerCodeSupplier?: () => Promise<string>,
   ): Promise<ExternalWalletBaseResponse<WalletAccountData>> {
-    return this.sendRequest<ExternalWalletBaseResponse<WalletAccountData>>(
-      "/payment-api/account/info",
-      payload,
-    );
+    const isDataInvalid = (data: any) => {
+      if (!data) return true;
+      if (typeof data !== "object") return true;
+      if (Object.keys(data).length === 0) return true;
+      const hasBal =
+        data.balance !== undefined ||
+        data.accountBalance !== undefined ||
+        data.account_balance !== undefined ||
+        data.accountInfo?.balance !== undefined;
+      return !hasBal && !data.partnerId && !data.partnerCode && !data.accountNumber;
+    };
+
+    try {
+      // Gửi request POST /payment-api/account/info sang hệ thống ví độc lập
+      const res = await this.sendRequest<ExternalWalletBaseResponse<WalletAccountData>>(
+        "/payment-api/account/info",
+        payload,
+      );
+
+      // Trường hợp 1: Kết nối HTTP 200 thành công nhưng data ví rỗng/null/không hợp lệ -> Kích hoạt tự động tạo ví (Self-Healing)
+      if (isDataInvalid(res?.data) && partnerCodeSupplier) {
+        this.logger.warn(
+          `[Self-Healing] Thông tin ví trả về data rỗng hoặc không hợp lệ cho partnerId=${payload.partnerId}. Tiến hành tự động tạo ví...`,
+        );
+        await this.ensureAccountCreated(String(payload.partnerId), partnerCodeSupplier);
+        // Retry truy vấn thông tin ví lại sau khi tạo thành công
+        return await this.sendRequest<ExternalWalletBaseResponse<WalletAccountData>>(
+          "/payment-api/account/info",
+          payload,
+        );
+      }
+
+      return res;
+    } catch (err: any) {
+      // Trường hợp 2: Bắt lỗi nghiệp vụ "Partner not found" khi chưa có ví -> Kích hoạt tự động tạo ví (Self-Healing)
+      if (this.isPartnerNotFound(err) && partnerCodeSupplier) {
+        this.logger.warn(
+          `[Self-Healing] Bắt lỗi chưa có ví (Partner not found) cho partnerId=${payload.partnerId}. Tiến hành tự động tạo ví...`,
+        );
+        await this.ensureAccountCreated(String(payload.partnerId), partnerCodeSupplier);
+        // Retry truy vấn thông tin ví lại sau khi tạo thành công
+        return await this.sendRequest<ExternalWalletBaseResponse<WalletAccountData>>(
+          "/payment-api/account/info",
+          payload,
+        );
+      }
+      // Ném lại lỗi hệ thống thực sự (HTTP 500, lỗi mạng...) nếu không phải lỗi chưa có ví
+      throw err;
+    }
   }
 
   /**
