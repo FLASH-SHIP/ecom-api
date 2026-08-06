@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { decryptSecret, encryptSecret, resolvePartnerConfig } from '../../../shared/partner-config-crypto';
 import { PartnerProviderRegistry } from '../../../shared/partner-provider-registry';
-import type { AddressInfo, CreateLabelDto, PriceInquiryDto } from '../../interfaces/carrier-provider.interface';
+import { type AddressInfo, CARRIER_CODES, type CreateLabelDto, type PriceInquiryDto } from '../../interfaces/carrier-provider.interface';
 import { EPICHUB_DEFAULT_SERVICE_CODE } from '../dtos/epichub.dto';
 import { EpicHubAuthService } from '../epichub-auth.service';
 import { EpicHubCarrierService } from '../epichub-carrier.service';
@@ -350,9 +350,9 @@ describe('EpicHub Integration Unit Tests', () => {
 
       registry.registerCarrier(epicHubService);
 
-      expect(registry.hasProvider('carrier', 'EPICHUB')).toBe(true);
-      const retrievedCarrier = registry.getCarrier('EPICHUB');
-      expect(retrievedCarrier.code).toBe('EPICHUB');
+      expect(registry.hasProvider('carrier', CARRIER_CODES.EPICHUB)).toBe(true);
+      const retrievedCarrier = registry.getCarrier(CARRIER_CODES.EPICHUB);
+      expect(retrievedCarrier.code).toBe(CARRIER_CODES.EPICHUB);
     });
 
     it('should support registering non-carrier 3rd party providers (fulfillment, customs, pod)', () => {

@@ -1,3 +1,4 @@
+import { CARRIER_CODES } from "../../features/integrations/carrier/interfaces/carrier-provider.interface";
 import type { PrismaClient } from "../src/generated/prisma/client";
 import type { Seeder } from "./seeder.interface";
 
@@ -7,7 +8,7 @@ export const PartnersSeeder: Seeder = {
   async run(prisma: PrismaClient) {
     const defaultPartners = [
       {
-        code: "IBC",
+        code: CARRIER_CODES.IBC,
         name: "IBC Logistics",
         contactName: "Nguyen Van A",
         contactEmail: "contact@ibc.com",
@@ -19,7 +20,7 @@ export const PartnersSeeder: Seeder = {
         },
       },
       {
-        code: "USPS",
+        code: CARRIER_CODES.USPS,
         name: "United States Postal Service",
         contactName: "John Smith",
         contactEmail: "support@usps.com",
@@ -31,7 +32,7 @@ export const PartnersSeeder: Seeder = {
         },
       },
       {
-        code: "SBP",
+        code: CARRIER_CODES.SBP,
         name: "SBP Express",
         contactName: "Tran Van B",
         contactEmail: "ops@sbpexpress.com",
@@ -43,7 +44,7 @@ export const PartnersSeeder: Seeder = {
         },
       },
       {
-        code: "UPS",
+        code: CARRIER_CODES.UPS,
         name: "United Parcel Service",
         contactName: "David Johnson",
         contactEmail: "api@ups.com",
@@ -55,7 +56,7 @@ export const PartnersSeeder: Seeder = {
         },
       },
       {
-        code: "EPICHUB",
+        code: CARRIER_CODES.EPICHUB,
         name: "EpicHub / Clutch Shipper",
         contactName: "EpicHub Support",
         contactEmail: "support@clutchshipper.com",

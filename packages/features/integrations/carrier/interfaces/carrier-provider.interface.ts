@@ -1,3 +1,13 @@
+export const CARRIER_CODES = {
+  EPICHUB: 'EPICHUB',
+  USPS: 'USPS',
+  UPS: 'UPS',
+  IBC: 'IBC',
+  SBP: 'SBP',
+} as const;
+
+export type CarrierCode = typeof CARRIER_CODES[keyof typeof CARRIER_CODES];
+
 export interface CarrierCapabilities {
   supportsPriceInquiry: boolean;
   supportsAddressValidation: boolean;

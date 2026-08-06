@@ -1,15 +1,16 @@
-import type {
-  AddressAmbiguousResult,
-  AddressInfo,
-  BalanceResultDto,
-  CarrierCapabilities,
-  CreateLabelDto,
-  CreateLabelResultDto,
-  ICarrierProvider,
-  PriceInquiryDto,
-  ServiceRateResult,
-  TrackingResultDto,
-  VoidResultDto,
+import {
+  type AddressAmbiguousResult,
+  type AddressInfo,
+  type BalanceResultDto,
+  CARRIER_CODES,
+  type CarrierCapabilities,
+  type CreateLabelDto,
+  type CreateLabelResultDto,
+  type ICarrierProvider,
+  type PriceInquiryDto,
+  type ServiceRateResult,
+  type TrackingResultDto,
+  type VoidResultDto,
 } from '../interfaces/carrier-provider.interface';
 import type {
   EpicHubBalanceResult,
@@ -58,7 +59,7 @@ async function withRetry<T>(
 }
 
 export class EpicHubCarrierService implements ICarrierProvider {
-  public readonly code = 'EPICHUB';
+  public readonly code = CARRIER_CODES.EPICHUB;
   private httpClient: EpicHubHttpClient;
 
   constructor(httpClient: EpicHubHttpClient) {
