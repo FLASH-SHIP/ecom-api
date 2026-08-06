@@ -27,6 +27,7 @@ export interface AdminOrderSummaryResponse {
   shippingOrigin: ShippingOrigin;
   sellerOrderId: string | null;
   trackingNumber: string | null;
+  labelUrl: string | null;
   ecomTrackingNumber: string | null;
   mawb: string | null;
   flightNumber: string | null;
@@ -75,12 +76,12 @@ export interface AdminOrderDetailResponse extends AdminOrderSummaryResponse {
   isGetLabel: number;
   updatedAt: Date | string;
 
-  import?: any;
-  feeItems?: any[];
-  products?: any[];
-  trackingCheckpoints?: any[];
-  activityLogs?: any[];
-  partners?: any[];
+  import?: Record<string, unknown> | null;
+  feeItems?: Record<string, unknown>[];
+  products?: Record<string, unknown>[];
+  trackingCheckpoints?: Record<string, unknown>[];
+  activityLogs?: Record<string, unknown>[];
+  partners?: Record<string, unknown>[];
 }
 
 function toNumber(val: unknown): number {
@@ -97,6 +98,7 @@ function toNullableNumber(val: unknown): number | null {
  * Maps an order database record to a comprehensive Admin Order Summary DTO.
  * Includes customer info, carrier tracking, customs statuses, and converts Decimal objects.
  */
+// biome-ignore lint/suspicious/noExplicitAny: mapper receives untyped prisma order object
 export function mapToAdminOrderSummaryResponse(order: any): AdminOrderSummaryResponse {
   return {
     id: order.id,
@@ -120,6 +122,7 @@ export function mapToAdminOrderSummaryResponse(order: any): AdminOrderSummaryRes
     shippingOrigin: order.shippingOrigin,
     sellerOrderId: order.sellerOrderId ?? null,
     trackingNumber: order.trackingNumber ?? null,
+    labelUrl: order.labelUrl ?? null,
     ecomTrackingNumber: order.ecomTrackingNumber ?? null,
     mawb: order.mawb ?? null,
     flightNumber: order.flightNumber ?? null,
@@ -145,6 +148,8 @@ export function mapToAdminOrderSummaryResponse(order: any): AdminOrderSummaryRes
 /**
  * Maps a full order database record to a complete Admin Order Detail DTO including activity logs & partners.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: detailed order DTO maps 30+ relational fields
+// biome-ignore lint/suspicious/noExplicitAny: mapper receives untyped prisma order object
 export function mapToAdminOrderDetailResponse(order: any): AdminOrderDetailResponse {
   const summary = mapToAdminOrderSummaryResponse(order);
   return {
@@ -179,13 +184,13 @@ export function mapToAdminOrderDetailResponse(order: any): AdminOrderDetailRespo
 
     import: order.import ?? null,
     feeItems: Array.isArray(order.feeItems)
-      ? order.feeItems.map((fee: any) => ({
+      ? order.feeItems.map((fee: Record<string, unknown>) => ({
           ...fee,
           amount: toNumber(fee.amount),
         }))
       : [],
     products: Array.isArray(order.products)
-      ? order.products.map((p: any) => ({
+      ? order.products.map((p: Record<string, unknown>) => ({
           ...p,
           value: toNumber(p.value),
         }))

@@ -32,12 +32,12 @@ import {
   ShippingMethod,
   ShippingOrigin,
   TopupContentStatus,
+  type TopupExchangeRateManagement,
   type TopupPaymentMethod,
   type TopupPaymentMethodPartnerRelation,
   type TopupTransaction,
-  type TopupTransactionWireImage,
   type TopupTransactionHistory,
-  type TopupExchangeRateManagement,
+  type TopupTransactionWireImage,
   UserStatus,
   VerificationCodeStatus,
 } from "./generated/prisma/client";
@@ -93,6 +93,7 @@ const AUDIT_EXEMPT_MODELS = [
   "UserPassword",
   "ApiKey",
   "AccessToken",
+  "OrderImport",
 ];
 
 const SOFT_DELETE_MODELS = [
@@ -166,6 +167,51 @@ const prismaWithReplicas = hasReplicas
       },
     });
 
+async function safeWriteAuditLog(data: {
+  userId: string | null;
+  action: string;
+  module: string;
+  entityId: string | null;
+  entityType: string | null;
+  oldValues?: Prisma.InputJsonValue | null;
+  newValues?: Prisma.InputJsonValue | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  metadata?: Prisma.InputJsonValue | null;
+}) {
+  try {
+    await basePrisma.auditLog.create({
+      data: data as unknown as Prisma.AuditLogCreateInput,
+    });
+  } catch (err: unknown) {
+    const prismaErr = err as { code?: string };
+    if (prismaErr?.code === "P2003" && data.userId) {
+      try {
+        const metaObj =
+          data.metadata && typeof data.metadata === "object"
+            ? (data.metadata as Record<string, unknown>)
+            : {};
+        await basePrisma.auditLog.create({
+          data: {
+            ...data,
+            userId: null,
+            metadata: {
+              ...metaObj,
+              actorId: data.userId,
+            } as unknown as Prisma.InputJsonValue,
+          } as unknown as Prisma.AuditLogCreateInput,
+        });
+        return;
+      } catch {
+        // ignore fallback error
+      }
+    }
+    log.error(`Failed to write ${data.action.toLowerCase()} audit log in prisma extension`, {
+      error: err,
+    });
+  }
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: prisma extension type safety bypass
 const extendedPrisma = (prismaWithReplicas as any).$extends({
   query: {
@@ -218,29 +264,23 @@ const extendedPrisma = (prismaWithReplicas as any).$extends({
 
         const result = await query(args);
 
-        try {
-          const store = loggerContext.getStore();
-          const userId = store?.userId ? String(store.userId) : null;
-          const entityId = getEntityId(result);
+        const store = loggerContext.getStore();
+        const userId = store?.userId ? String(store.userId) : null;
+        const entityId = getEntityId(result);
 
-          await basePrisma.auditLog.create({
-            data: {
-              userId,
-              action: "CREATE",
-              module: `${model.toLowerCase()}s`,
-              entityId,
-              entityType: model,
-              newValues: (result
-                ? sanitizeAuditValues(result)
-                : null) as unknown as Prisma.InputJsonValue,
-              ipAddress: store?.ipAddress || null,
-              userAgent: store?.userAgent || null,
-              metadata: { source: "prisma-extension" },
-            },
-          });
-        } catch (err) {
-          log.error("Failed to write create audit log in prisma extension", { error: err });
-        }
+        await safeWriteAuditLog({
+          userId,
+          action: "CREATE",
+          module: `${model.toLowerCase()}s`,
+          entityId,
+          entityType: model,
+          newValues: (result
+            ? sanitizeAuditValues(result)
+            : null) as unknown as Prisma.InputJsonValue,
+          ipAddress: store?.ipAddress || null,
+          userAgent: store?.userAgent || null,
+          metadata: { source: "prisma-extension" },
+        });
 
         return result;
       },
@@ -293,34 +333,28 @@ const extendedPrisma = (prismaWithReplicas as any).$extends({
           // ignore
         }
 
-        try {
-          const store = loggerContext.getStore();
-          const userId = store?.userId ? String(store.userId) : null;
-          const entityId = getEntityId(result);
+        const store = loggerContext.getStore();
+        const userId = store?.userId ? String(store.userId) : null;
+        const entityId = getEntityId(result);
 
-          await basePrisma.auditLog.create({
-            data: {
-              userId,
-              action: "UPDATE",
-              module: `${model.toLowerCase()}s`,
-              entityId,
-              entityType: model,
-              oldValues: (oldRecord
-                ? sanitizeAuditValues(oldRecord)
-                : null) as unknown as Prisma.InputJsonValue,
-              newValues: (newRecord
-                ? sanitizeAuditValues(newRecord)
-                : result
-                  ? sanitizeAuditValues(result)
-                  : null) as unknown as Prisma.InputJsonValue,
-              ipAddress: store?.ipAddress || null,
-              userAgent: store?.userAgent || null,
-              metadata: { source: "prisma-extension" },
-            },
-          });
-        } catch (err) {
-          log.error("Failed to write update audit log in prisma extension", { error: err });
-        }
+        await safeWriteAuditLog({
+          userId,
+          action: "UPDATE",
+          module: `${model.toLowerCase()}s`,
+          entityId,
+          entityType: model,
+          oldValues: (oldRecord
+            ? sanitizeAuditValues(oldRecord)
+            : null) as unknown as Prisma.InputJsonValue,
+          newValues: (newRecord
+            ? sanitizeAuditValues(newRecord)
+            : result
+              ? sanitizeAuditValues(result)
+              : null) as unknown as Prisma.InputJsonValue,
+          ipAddress: store?.ipAddress || null,
+          userAgent: store?.userAgent || null,
+          metadata: { source: "prisma-extension" },
+        });
 
         return result;
       },
@@ -352,29 +386,23 @@ const extendedPrisma = (prismaWithReplicas as any).$extends({
 
         const result = await query(args);
 
-        try {
-          const store = loggerContext.getStore();
-          const userId = store?.userId ? String(store.userId) : null;
-          const entityId = getEntityId(result);
+        const store = loggerContext.getStore();
+        const userId = store?.userId ? String(store.userId) : null;
+        const entityId = getEntityId(result);
 
-          await basePrisma.auditLog.create({
-            data: {
-              userId,
-              action: "DELETE",
-              module: `${model.toLowerCase()}s`,
-              entityId,
-              entityType: model,
-              oldValues: (oldRecord
-                ? sanitizeAuditValues(oldRecord)
-                : null) as unknown as Prisma.InputJsonValue,
-              ipAddress: store?.ipAddress || null,
-              userAgent: store?.userAgent || null,
-              metadata: { source: "prisma-extension" },
-            },
-          });
-        } catch (err) {
-          log.error("Failed to write delete audit log in prisma extension", { error: err });
-        }
+        await safeWriteAuditLog({
+          userId,
+          action: "DELETE",
+          module: `${model.toLowerCase()}s`,
+          entityId,
+          entityType: model,
+          oldValues: (oldRecord
+            ? sanitizeAuditValues(oldRecord)
+            : null) as unknown as Prisma.InputJsonValue,
+          ipAddress: store?.ipAddress || null,
+          userAgent: store?.userAgent || null,
+          metadata: { source: "prisma-extension" },
+        });
 
         return result;
       },
@@ -452,6 +480,12 @@ export type {
   OrderImport,
   OrderProduct,
   OrderTrackingCheckpoint,
+  TopupExchangeRateManagement,
+  TopupPaymentMethod,
+  TopupPaymentMethodPartnerRelation,
+  TopupTransaction,
+  TopupTransactionHistory,
+  TopupTransactionWireImage,
 };
 export enum TopupType {
   ADDED_FUNDS = "ADDED_FUNDS",

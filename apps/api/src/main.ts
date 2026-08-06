@@ -196,6 +196,10 @@ async function bootstrap() {
     prefix: "/public/",
   });
 
+  app.useStaticAssets(join(process.cwd(), "public/upload"), {
+    prefix: "/upload/",
+  });
+
   app.useStaticAssets(join(process.cwd(), "uploads"), {
     prefix: "/uploads/",
   });
@@ -345,6 +349,15 @@ async function bootstrap() {
   registerWebhookWorker();
   JobQueue.startWorker("webhook-delivery");
   console.log("🔗 Webhook queue worker started");
+
+  // Start background bulk label purchase worker
+  const { registerBulkLabelWorker, BULK_LABEL_QUEUE } = await import(
+    "@ecom/features/queue/workers/bulkLabelWorker"
+  );
+  registerBulkLabelWorker();
+  const bulkLabelConcurrency = Number(process.env.BULK_LABEL_WORKER_CONCURRENCY || 5);
+  JobQueue.startWorker(BULK_LABEL_QUEUE, bulkLabelConcurrency);
+  console.log(`🏷️ Bulk label purchase worker started (concurrency: ${bulkLabelConcurrency})`);
 }
 
 bootstrap();

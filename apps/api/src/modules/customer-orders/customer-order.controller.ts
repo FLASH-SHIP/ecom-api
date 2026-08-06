@@ -98,29 +98,52 @@ export class CustomerOrderController {
     description: "Order created successfully",
     type: CustomerOrderDetailResponseDto,
   })
-  private async executeCreateOrder(customerId: string, body: CreateOrderDto) {
+  private async executeCreateOrder(
+    customerId: string,
+    body: CreateOrderDto,
+    options?: { isBulk?: boolean },
+  ) {
     const order = await getOrderService().createOrder({
       ...body,
       customerId,
     });
 
     if (body.isGetLabel === 1) {
-      try {
-        const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
-        const updatedOrder = await getOrderLabelService().purchaseLabel({
-          orderId: order.id,
-          customerId,
-        });
-        if (updatedOrder && "id" in updatedOrder) {
-          return mapToCustomerOrderDetailResponse(
-            updatedOrder as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
+      if (options?.isBulk) {
+        try {
+          const { queueBulkLabelPurchase } = await import(
+            "@ecom/features/queue/workers/bulkLabelWorker"
+          );
+          await queueBulkLabelPurchase({
+            orderId: order.id,
+            customerId,
+          });
+        } catch (queueErr) {
+          console.warn(
+            `[CustomerOrderController] Queue label purchase dispatch failed for order #${order.orderCode}:`,
+            queueErr,
           );
         }
-      } catch (labelErr) {
-        console.warn(
-          `[CustomerOrderController] Auto purchase label post-creation failed for order #${order.orderCode}:`,
-          labelErr,
-        );
+      } else {
+        try {
+          const { getOrderLabelService } = await import(
+            "@ecom/features/di/containers/OrderLabelService"
+          );
+          const updatedOrder = await getOrderLabelService().purchaseLabel({
+            orderId: order.id,
+            customerId,
+          });
+          if (updatedOrder && "id" in updatedOrder) {
+            return mapToCustomerOrderDetailResponse(
+              updatedOrder as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
+            );
+          }
+        } catch (labelErr) {
+          console.warn(
+            `[CustomerOrderController] Auto purchase label post-creation failed for order #${order.orderCode}:`,
+            labelErr,
+          );
+        }
       }
     }
 
@@ -215,7 +238,7 @@ export class CustomerOrderController {
         body.orders,
         CreateOrderDto,
         async (orderData) => {
-          return this.executeCreateOrder(customerId, orderData);
+          return this.executeCreateOrder(customerId, orderData, { isBulk: true });
         },
         { maxLimit: MAX_BULK_ORDER_LIMIT },
       );
@@ -233,7 +256,7 @@ export class CustomerOrderController {
       body.orders,
       CreateOrderDto,
       async (orderData) => {
-        return this.executeCreateOrder(customerId, orderData);
+        return this.executeCreateOrder(customerId, orderData, { isBulk: true });
       },
       { maxLimit: MAX_BULK_ORDER_LIMIT },
     );
