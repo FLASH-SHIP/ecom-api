@@ -5,9 +5,15 @@ import ExcelJS from "exceljs";
 import { z } from "zod";
 import { authedProcedure } from "../../../../trpc";
 
-export const getWalletSummary = authedProcedure.query(async ({ ctx }) => {
-  return getTopupTransactionService().getWalletSummary(ctx.user.id);
-});
+export const getWalletSummary = authedProcedure
+  .input(z.object({ customerId: z.string().optional() }).optional())
+  .query(async ({ ctx, input }) => {
+    // Bảo mật IDOR: Chỉ tài khoản Admin mới có quyền truy vấn số dư của customerId khác.
+    // Đối với khách hàng thông thường, khóa cứng truy vấn theo ctx.user.id để ngăn chặn soi số dư trái phép.
+    const isAdmin = (ctx.user as any)?.role === "ADMIN" || (ctx.user as any)?.isAdmin === true;
+    const targetCustomerId = isAdmin && input?.customerId ? input.customerId : ctx.user.id;
+    return getTopupTransactionService().getWalletSummary(targetCustomerId);
+  });
 
 export const getPaymentMethods = authedProcedure.query(async ({ ctx }) => {
   return getTopupTransactionService().getPaymentMethods(ctx.user.id);
