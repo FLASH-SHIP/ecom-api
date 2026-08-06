@@ -349,12 +349,16 @@ export class ExternalWalletClient {
    * 5.4 POST /payment-api/charging-request
    * Thực hiện nạp hoặc trừ tiền trên tài khoản ví Partner.
    * Trường `fromSystem` mặc định là EXTERNAL_WALLET_FROM_SYSTEM ("ECOM").
+   * Nếu nhận phản hồi Seller Not Found / Partner not found và có partnerCodeSupplier, hệ thống sẽ tự động gọi /payment-api/account/create để tạo ví và retry.
    */
-  async chargingRequest(payload: {
-    fromSystem?: string;
-    buyerInfo: BuyerInfo;
-    orderItem: OrderItemInfo;
-  }): Promise<ExternalWalletBaseResponse<Record<string, unknown>>> {
+  async chargingRequest(
+    payload: {
+      fromSystem?: string;
+      buyerInfo: BuyerInfo;
+      orderItem: OrderItemInfo;
+    },
+    partnerCodeSupplier?: () => Promise<string>,
+  ): Promise<ExternalWalletBaseResponse<Record<string, unknown>>> {
     const fullPayload: ChargingRequest = {
       fromSystem: payload.fromSystem ?? EXTERNAL_WALLET_FROM_SYSTEM,
       buyerInfo: payload.buyerInfo,
@@ -363,9 +367,24 @@ export class ExternalWalletClient {
         paymentType: payload.orderItem.paymentType ?? EXTERNAL_WALLET_PAYMENT_TYPE,
       },
     };
-    return this.sendRequest<ExternalWalletBaseResponse<Record<string, unknown>>>(
-      "/payment-api/charging-request",
-      fullPayload,
-    );
+
+    try {
+      return await this.sendRequest<ExternalWalletBaseResponse<Record<string, unknown>>>(
+        "/payment-api/charging-request",
+        fullPayload,
+      );
+    } catch (err: any) {
+      if (this.isPartnerNotFound(err) && partnerCodeSupplier) {
+        this.logger.warn(
+          `[Self-Healing] Charging request nhận lỗi chưa có ví (Partner/Seller not found) cho partnerId=${payload.buyerInfo.partnerId}. Tiến hành tự động tạo ví...`,
+        );
+        await this.ensureAccountCreated(String(payload.buyerInfo.partnerId), partnerCodeSupplier);
+        return await this.sendRequest<ExternalWalletBaseResponse<Record<string, unknown>>>(
+          "/payment-api/charging-request",
+          fullPayload,
+        );
+      }
+      throw err;
+    }
   }
 }
