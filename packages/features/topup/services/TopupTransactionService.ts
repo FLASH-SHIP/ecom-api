@@ -45,11 +45,11 @@ export class TopupTransactionService {
 
   /**
    * Lấy tỷ giá quy đổi ngoại tệ USD / VND mới nhất theo ngày
-   * Mặc định 25.000 VND / 1 USD nếu chưa có dữ liệu cấu hình
+   * Mặc định 26.110 VND / 1 USD nếu chưa có dữ liệu cấu hình
    */
   async getLatestExchangeRate(date?: Date) {
     const rateItem = await this.exchangeRateRepo.getExchangeRateByDate(date);
-    return rateItem ? Number(rateItem.rate) : 25000;
+    return rateItem ? Number(rateItem.rate) : 26110;
   }
 
   /**
@@ -67,7 +67,7 @@ export class TopupTransactionService {
    * Lấy danh sách lịch sử biến động số dư ví (dành cho bảng TransactionTable.tsx)
    * - Tự động ánh xạ dữ liệu qua mapper `mapToTransactionHistoryResponse`.
    * - Trả về `data` danh sách mảng đối tượng DTO và `meta` thông tin phân trang.
-   * 
+   *
    * @param params Bộ lọc truy vấn dữ liệu giao dịch ví
    */
   async getTransactionHistoryList(
