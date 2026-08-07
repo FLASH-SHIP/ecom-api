@@ -6,6 +6,7 @@ import {
 import { OrderStatus } from "@ecom/prisma";
 import { executeBatchProcess } from "@flash-ship/ecom-lib";
 import { getRedisClient } from "@flash-ship/ecom-lib/redis";
+import { GET_LABEL_OPTION } from "@flash-ship/ecom-types";
 import {
   Body,
   Controller,
@@ -85,19 +86,6 @@ export class CustomerOrderController {
     return mapToEstimateFreightResponse(result);
   }
 
-  @Post()
-  @ApiOperation({ summary: "Create a single order with idempotency check" })
-  @ApiBody({ type: CreateOrderDto })
-  @ApiHeader({
-    name: "X-Idempotency-Key",
-    required: false,
-    description: "Unique idempotency key to prevent duplicate order creation within 24 hours",
-  })
-  @ApiResponse({
-    status: 201,
-    description: "Order created successfully",
-    type: CustomerOrderDetailResponseDto,
-  })
   private async executeCreateOrder(
     customerId: string,
     body: CreateOrderDto,
@@ -108,7 +96,7 @@ export class CustomerOrderController {
       customerId,
     });
 
-    if (body.isGetLabel === 1) {
+    if (body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
       if (options?.isBulk) {
         try {
           const { queueBulkLabelPurchase } = await import(

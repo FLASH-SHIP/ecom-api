@@ -179,6 +179,20 @@ describe("CustomerOrderController", () => {
       expect(result.id).toBe("cached_ord");
     });
 
+    it("should transform isGetLabel payload values (true, 1, '1') to GET_LABEL_OPTION.GET_LABEL_NOW (1)", async () => {
+      const dtoTrue = plainToInstance(CreateOrderDto, { isGetLabel: true });
+      const dtoNum = plainToInstance(CreateOrderDto, { isGetLabel: 1 });
+      const dtoStr = plainToInstance(CreateOrderDto, { isGetLabel: "1" });
+      const dtoFalse = plainToInstance(CreateOrderDto, { isGetLabel: false });
+      const dtoZero = plainToInstance(CreateOrderDto, { isGetLabel: 0 });
+
+      expect(dtoTrue.isGetLabel).toBe(1);
+      expect(dtoNum.isGetLabel).toBe(1);
+      expect(dtoStr.isGetLabel).toBe(1);
+      expect(dtoFalse.isGetLabel).toBe(0);
+      expect(dtoZero.isGetLabel).toBe(0);
+    });
+
     it("should fail validation with exact message when shippingMethod is empty or invalid", async () => {
       const dto = plainToInstance(CreateOrderDto, {
         shippingMethod: "",
@@ -764,6 +778,7 @@ describe("CustomerOrderController", () => {
             description: "Ao thoi trang Cotton",
             quantity: 2,
             value: 20,
+            hsCode: "610910",
             originCountry: "VN",
           },
         ],
@@ -771,6 +786,21 @@ describe("CustomerOrderController", () => {
 
       const errors = await validate(dto, { always: true, groups: ["create"] });
       expect(errors).toHaveLength(0);
+    });
+
+    it("should fail DTO validation when product hsCode is empty, missing, or invalid format", async () => {
+      const dtoMissing = plainToInstance(CreateOrderDto, {
+        products: [{ description: "Goods", quantity: 1, value: 10, hsCode: "", originCountry: "VN" }],
+      });
+      const dtoInvalid = plainToInstance(CreateOrderDto, {
+        products: [{ description: "Goods", quantity: 1, value: 10, hsCode: "123", originCountry: "VN" }],
+      });
+
+      const errorsMissing = await validate(dtoMissing, { always: true, groups: ["create"] });
+      const errorsInvalid = await validate(dtoInvalid, { always: true, groups: ["create"] });
+
+      expect(errorsMissing.length).toBeGreaterThan(0);
+      expect(errorsInvalid.length).toBeGreaterThan(0);
     });
 
     it("should fail DTO validation when product value is null, missing, or <= 0", async () => {

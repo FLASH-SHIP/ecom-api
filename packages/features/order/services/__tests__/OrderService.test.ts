@@ -1,3 +1,4 @@
+import type { HsCodeRepository } from "@ecom/features/hscode/repositories/HsCodeRepository";
 import type { RateCardService } from "@ecom/features/rate-card/services/RateCardService";
 import { LabelStatus, OrderStatus } from "@ecom/prisma";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,6 +26,12 @@ vi.mock("@ecom/prisma", async (importOriginal) => {
       },
       orderActivityLog: {
         create: vi.fn(),
+      },
+      hsCodeFlexport: {
+        findFirst: vi.fn().mockResolvedValue({ code: "640299" }),
+      },
+      crawlHsCode: {
+        findFirst: vi.fn().mockResolvedValue({ hsCode: "640299" }),
       },
     },
     runInTransaction: (work: () => unknown) => work(),
@@ -174,10 +181,101 @@ describe("OrderService", () => {
           dimensionHeight: 10,
           declaredValue: 50,
           sellerOrderId: "SHOP1001",
+          products: [
+            {
+              description: "Shoes",
+              quantity: 1,
+              value: 50,
+              hsCode: "640299",
+              originCountry: "VN",
+            },
+          ],
         }),
       ).rejects.toThrow(
         'Đơn hàng có mã tham chiếu Seller Order ID "SHOP1001" đã tồn tại trên hệ thống.',
       );
+    });
+
+    it("should throw validation error when hsCode is missing or invalid format", async () => {
+      const baseParams = {
+        customerId: "cust_1",
+        shippingMethod: "EPACKET" as const,
+        shippingOrigin: "HAN" as const,
+        senderName: "Sender",
+        senderPhone: "+84900000000",
+        senderAddress: "Addr",
+        senderCity: "Hanoi",
+        senderWard: "Ward",
+        senderZipCode: "100000",
+        senderCountry: "VN",
+        receiverName: "Receiver",
+        receiverCity: "Tokyo",
+        receiverState: "Tokyo",
+        receiverAddress1: "123 St",
+        receiverCountry: "JP",
+        receiverZipCode: "1000000",
+        declaredWeight: 1000,
+        dimensionLength: 10,
+        dimensionWidth: 10,
+        dimensionHeight: 10,
+        sellerOrderId: "SELLER_TEST",
+      };
+
+      // Missing hsCode
+      await expect(
+        service.createOrder({
+          ...baseParams,
+          products: [{ description: "Goods", quantity: 1, value: 10, hsCode: "", originCountry: "VN" }],
+        }),
+      ).rejects.toThrow("Mã HS Code (hsCode) không được để trống");
+
+      // Invalid format (3 digits)
+      await expect(
+        service.createOrder({
+          ...baseParams,
+          products: [{ description: "Goods", quantity: 1, value: 10, hsCode: "123", originCountry: "VN" }],
+        }),
+      ).rejects.toThrow("Mã HS Code (hsCode) phải gồm từ 6 đến 10 chữ số");
+    });
+
+    it("should validate US/UK destination hsCode against DB and fail if not found", async () => {
+      const hsCodeRepoMock = {
+        getFlexportItemByCode: vi.fn().mockResolvedValue(null),
+        getCrawlHsCodeByCode: vi.fn().mockResolvedValue(null),
+      };
+
+      const customService = new OrderService({
+        orderRepo: orderRepoMock as unknown as OrderRepository,
+        rateCardService: rateCardServiceMock as unknown as RateCardService,
+        hsCodeRepo: hsCodeRepoMock as unknown as HsCodeRepository,
+      });
+
+      await expect(
+        customService.createOrder({
+          customerId: "cust_1",
+          shippingMethod: "EPACKET",
+          shippingOrigin: "HAN",
+          senderName: "Sender",
+          senderPhone: "+84900000000",
+          senderAddress: "Addr",
+          senderCity: "Hanoi",
+          senderWard: "Ward",
+          senderZipCode: "100000",
+          senderCountry: "VN",
+          receiverName: "Receiver",
+          receiverCity: "NY",
+          receiverState: "NY",
+          receiverAddress1: "123 St",
+          receiverCountry: "US",
+          receiverZipCode: "10001",
+          declaredWeight: 1000,
+          dimensionLength: 10,
+          dimensionWidth: 10,
+          dimensionHeight: 10,
+          sellerOrderId: "SELLER_TEST",
+          products: [{ description: "Goods", quantity: 1, value: 10, hsCode: "999999", originCountry: "VN" }],
+        }),
+      ).rejects.toThrow("Mã HS Code (999999) không tồn tại trong danh mục HS Code được chấp nhận cho quốc gia US");
     });
 
     it("should successfully generate code, calculate rates and create order", async () => {
@@ -220,6 +318,15 @@ describe("OrderService", () => {
         dimensionHeight: 10,
         declaredValue: 50,
         sellerOrderId: "SHOP1002",
+        products: [
+          {
+            description: "Shoes",
+            quantity: 1,
+            value: 50,
+            hsCode: "640299",
+            originCountry: "VN",
+          },
+        ],
       });
 
       expect(orderRepoMock.create).toHaveBeenCalledWith(
@@ -281,6 +388,15 @@ describe("OrderService", () => {
         declaredValue: 50,
         sellerOrderId: "SHOP1003",
         isGetLabel: 1,
+        products: [
+          {
+            description: "Shoes",
+            quantity: 1,
+            value: 50,
+            hsCode: "640299",
+            originCountry: "VN",
+          },
+        ],
       });
 
       expect(orderRepoMock.create).toHaveBeenCalledWith(

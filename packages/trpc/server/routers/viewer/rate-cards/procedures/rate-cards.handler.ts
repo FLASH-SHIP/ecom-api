@@ -119,7 +119,7 @@ export const list = authedProcedure
         endDate: z.coerce.date().optional(),
         endDateGte: z.coerce.date().optional(),
         endDateLte: z.coerce.date().optional(),
-        customerGroupId: z.number().int().positive().optional(),
+        customerGroupId: z.number().int().optional().nullable(),
         page: z.number().int().positive().default(1),
         perPage: z.number().int().positive().max(500).default(20),
         sortBy: z

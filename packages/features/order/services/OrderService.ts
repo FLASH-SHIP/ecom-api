@@ -1,4 +1,6 @@
+import { getHsCodeRepository } from "@ecom/features/di/containers/HsCodeService";
 import { eventBus } from "@ecom/features/events/EventBus";
+import type { HsCodeRepository } from "@ecom/features/hscode/repositories/HsCodeRepository";
 import type { RateCardService } from "@ecom/features/rate-card/services/RateCardService";
 import {
   type ActorType,
@@ -13,7 +15,10 @@ import { formatPostalCode, isAsciiLatinOnly, isNoZipcodeCountry, validatePostalC
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import {
+  GET_LABEL_OPTION,
+  HS_CODE_REGEX,
   isAllowedSenderCountry,
+  MAX_DECLARED_VALUE_USD,
   MAX_DECLARED_WEIGHT_GRAMS,
   MAX_DIMENSION_CM,
   PARCEL_VALIDATION_MESSAGES,
@@ -31,6 +36,7 @@ export interface IOrderServiceDeps {
   orderRepo: OrderRepository;
   rateCardService: RateCardService;
   orderCodePrefix?: string;
+  hsCodeRepo?: HsCodeRepository;
 }
 
 export interface CalculateOrderFreightParams {
@@ -559,10 +565,10 @@ export class OrderService {
       finalDeclaredValue = Math.round(rawTotal * 100) / 100;
     }
 
-    if (finalDeclaredValue == null || finalDeclaredValue < 0 || finalDeclaredValue > 9999999999.99) {
+    if (finalDeclaredValue == null || finalDeclaredValue < 0 || finalDeclaredValue > MAX_DECLARED_VALUE_USD) {
       throw new ErrorWithCode(
         ErrorCode.ValidationError,
-        "Giá trị khai báo (declaredValue) phải lớn hơn hoặc bằng 0 và không vượt quá 9,999,999,999.99 USD",
+        PARCEL_VALIDATION_MESSAGES.DECLARED_VALUE_MAX,
         400,
       );
     }
@@ -604,15 +610,62 @@ export class OrderService {
         if (
           product.value == null ||
           typeof product.value !== "number" ||
-          Number.isNaN(product.value) ||
-          product.value <= 0 ||
-          product.value > 9999999999.99
+          Number.isNaN(product.value)
         ) {
           throw new ErrorWithCode(
             ErrorCode.ValidationError,
-            "Giá trị sản phẩm (value) phải lớn hơn 0 và không vượt quá 9,999,999,999.99 USD",
+            "Giá trị sản phẩm (value) không được để trống",
             400,
           );
+        }
+        if (product.value <= 0) {
+          throw new ErrorWithCode(
+            ErrorCode.ValidationError,
+            "Giá trị sản phẩm (value) phải lớn hơn 0",
+            400,
+          );
+        }
+        if (product.value > MAX_DECLARED_VALUE_USD) {
+          throw new ErrorWithCode(
+            ErrorCode.ValidationError,
+            PARCEL_VALIDATION_MESSAGES.VALUE_MAX,
+            400,
+          );
+        }
+
+        const cleanHsCode = product.hsCode
+          ? String(product.hsCode).replace(/\./g, "").trim()
+          : "";
+        if (!cleanHsCode) {
+          throw new ErrorWithCode(
+            ErrorCode.ValidationError,
+            PARCEL_VALIDATION_MESSAGES.HS_CODE_REQUIRED,
+            400,
+          );
+        }
+        if (!HS_CODE_REGEX.test(cleanHsCode)) {
+          throw new ErrorWithCode(
+            ErrorCode.ValidationError,
+            PARCEL_VALIDATION_MESSAGES.HS_CODE_FORMAT_INVALID,
+            400,
+          );
+        }
+
+        const isUsOrUk = ["US", "GB", "UK"].includes(receiverCountry.trim().toUpperCase());
+        if (isUsOrUk) {
+          const repo = this.deps.hsCodeRepo ?? getHsCodeRepository();
+          const [flexportMatch, crawlMatch] = await Promise.all([
+            repo.getFlexportItemByCode(cleanHsCode),
+            repo.getCrawlHsCodeByCode(cleanHsCode),
+          ]);
+
+          if (!flexportMatch && !crawlMatch) {
+            throw new ErrorWithCode(
+              ErrorCode.ValidationError,
+              `Mã HS Code (${cleanHsCode}) không tồn tại trong danh mục HS Code được chấp nhận cho quốc gia ${receiverCountry}`,
+              400,
+            );
+          }
         }
       }
     }
@@ -668,7 +721,7 @@ export class OrderService {
     }
 
     // 4. Construct create input
-    const isGetLabelChecked = params.isGetLabel === 1;
+    const isGetLabelChecked = params.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW;
     const initialOrderStatus: OrderStatus = OrderStatus.PENDING_LABEL;
     const initialLabelStatus: LabelStatus = LabelStatus.PENDING_LABEL;
 
@@ -727,7 +780,7 @@ export class OrderService {
       baseShippingFee: pricing.baseShippingRate,
       surchargeFee: pricing.surchargeFee,
       totalFee: pricing.totalAmount,
-      isGetLabel: params.isGetLabel ?? 0,
+      isGetLabel: params.isGetLabel ?? GET_LABEL_OPTION.GET_LABEL_LATER,
       feeItems: {
         create: [
           {

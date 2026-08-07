@@ -143,6 +143,8 @@ export class EpicHubCarrierService implements ICarrierProvider {
       ShipTo: this.mapAddressToEpicHubParty(dto.shipTo),
       Package: dto.packages.map((pkg) => ({
         NumberLabels: pkg.numberLabels || 1,
+        Reference: pkg.reference,
+        Reference2: pkg.reference2,
         PackageWeight: {
           Weight: pkg.weight.weight,
           UnitOfMeasurement: pkg.weight.unitOfMeasurement,

@@ -1,10 +1,16 @@
 import { eventBus } from "@ecom/features/events/EventBus";
-import { type AddressInfo, CARRIER_CODES, type CreateLabelDto, type ICarrierProvider } from "@ecom/features/integrations/carrier/interfaces/carrier-provider.interface";
+import {
+  type AddressInfo,
+  CARRIER_CODES,
+  type CreateLabelDto,
+  type ICarrierProvider,
+} from "@ecom/features/integrations/carrier/interfaces/carrier-provider.interface";
 import { LocalStorageAdapter } from "@ecom/features/media/storage/LocalStorageAdapter";
 import { LabelStatus, OrderStatus, type Prisma, prisma, runInTransaction } from "@ecom/prisma";
 import { toSafeJson } from "@flash-ship/ecom-lib";
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { GET_LABEL_OPTION } from "@flash-ship/ecom-types";
 import {
   EPICHUB_DEFAULT_SERVICE_CODE,
   EPICHUB_SHIP_FROM_ADDRESSES,
@@ -157,6 +163,8 @@ export class OrderLabelService {
       packages: [
         {
           numberLabels: 1,
+          reference: order.orderCode,
+          reference2: order.sellerOrderId || undefined,
           weight: { weight: weightInLbs, unitOfMeasurement: "LBS" },
           dimensions: { length: lengthIn, width: widthIn, height: heightIn, unitOfMeasurement: "IN" },
           items: order.products?.map((p) => ({
@@ -393,7 +401,7 @@ export class OrderLabelService {
         labelUrl,
         status: OrderStatus.LABEL_CREATED,
         labelStatus: LabelStatus.SUCCESS,
-        isGetLabel: 1,
+        isGetLabel: GET_LABEL_OPTION.GET_LABEL_NOW,
       });
 
       await this.logLabelCreationAuditAndLogs(
@@ -832,7 +840,7 @@ export class OrderLabelService {
         labelUrl: null,
         status: OrderStatus.PENDING_LABEL,
         labelStatus: LabelStatus.CANCELLED,
-        isGetLabel: 0,
+        isGetLabel: GET_LABEL_OPTION.GET_LABEL_LATER,
       });
 
       await this.executeVoidRefundAndAudit(order, carrierCode, trackingNumber, voidResult, params);

@@ -132,17 +132,34 @@ const t = initTRPC.context<Context>().create({
 
     let translatedMessage = error.message;
     let zodErrorDetails = null;
+    let errorCode: string = error.code;
+    let fieldErrors: { field: string; message: string }[] = [];
+
+    if (error.cause instanceof ErrorWithCode) {
+      errorCode = error.cause.code;
+    }
 
     if (isZodError) {
       const formatted = formatZodError(error.cause, locale);
       translatedMessage = formatted.message;
       zodErrorDetails = formatted;
+      fieldErrors = formatted.details.map((d) => ({
+        field: d.field,
+        message: d.message,
+      }));
     } else {
       // It's a standard TRPCError/ErrorWithCode.
       // If the message is a translation key, translate it.
       // Otherwise, translate will fall back to returning it as-is.
       const meta = error.cause instanceof ErrorWithCode ? error.cause.meta : undefined;
       translatedMessage = translate(error.message, locale, meta as Record<string, unknown>);
+
+      if (error.cause instanceof ErrorWithCode && error.cause.field) {
+        fieldErrors.push({
+          field: error.cause.field,
+          message: translatedMessage,
+        });
+      }
     }
 
     return {
@@ -150,7 +167,9 @@ const t = initTRPC.context<Context>().create({
       message: translatedMessage,
       data: {
         ...shape.data,
+        errorCode,
         zodError: zodErrorDetails,
+        fieldErrors,
       },
     };
   },

@@ -2,7 +2,7 @@ import { USERNAME_REGEX, USERNAME_VALIDATION_MESSAGE } from "@ecom/features/cust
 import { ExternalWalletClient } from "@ecom/features/topup/clients/ExternalWalletClient";
 import type { CustomerStatus } from "@ecom/prisma";
 import { hashPassword } from "@flash-ship/ecom-lib/crypto";
-import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
+import { ErrorCode, ErrorWithCode } from "@flash-ship/ecom-lib/errors";
 import { Logger } from "@nestjs/common";
 import type { CustomerRepository } from "../repositories/CustomerRepository";
 
@@ -42,7 +42,7 @@ export class CustomerService {
   }) {
     const existing = await this.deps.customerRepo.findByEmail(data.email);
     if (existing) {
-      throw ErrorWithCode.Factory.Conflict("Customer with this email already exists");
+      throw new ErrorWithCode(ErrorCode.EmailAlreadyExists, "Customer with this email already exists", 409, { field: "email" });
     }
 
     let username = data.username;
@@ -52,7 +52,7 @@ export class CustomerService {
       }
       const available = await this.deps.customerRepo.isUsernameAvailable(username);
       if (!available) {
-        throw ErrorWithCode.Factory.Conflict("Username is already taken");
+        throw new ErrorWithCode(ErrorCode.UsernameAlreadyExists, "Username is already taken", 409, { field: "username" });
       }
     } else {
       username = await this.deps.customerRepo.generateUniqueUsername(data.email);
@@ -138,7 +138,7 @@ export class CustomerService {
     if (current.username !== normalized) {
       const available = await this.deps.customerRepo.isUsernameAvailable(normalized);
       if (!available) {
-        throw ErrorWithCode.Factory.Conflict("Username is already taken");
+        throw new ErrorWithCode(ErrorCode.UsernameAlreadyExists, "Username is already taken", 409, { field: "username" });
       }
     }
 

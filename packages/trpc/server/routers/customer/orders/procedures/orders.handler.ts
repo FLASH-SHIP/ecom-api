@@ -23,6 +23,8 @@ import {
 } from "@flash-ship/ecom-lib";
 import { RedisCache } from "@flash-ship/ecom-lib/redis";
 import {
+  GET_LABEL_OPTION,
+  HS_CODE_REGEX,
   isAllowedSenderCountry,
   MAX_DECLARED_WEIGHT_GRAMS,
   MAX_DIMENSION_CM,
@@ -38,6 +40,12 @@ import { authedProcedure } from "../../../../trpc";
 const shippingMethodSchema = z.nativeEnum(ShippingMethod);
 const shippingOriginSchema = z.nativeEnum(ShippingOrigin);
 const orderStatusSchema = z.nativeEnum(OrderStatus);
+const getLabelSchema = z
+  .preprocess((val) => {
+    if (val === true || val === 1 || val === "1") return GET_LABEL_OPTION.GET_LABEL_NOW;
+    return GET_LABEL_OPTION.GET_LABEL_LATER;
+  }, z.number().int())
+  .optional();
 
 export interface CachedOrder
   extends Omit<
@@ -193,7 +201,7 @@ export const create = authedProcedure
           .max(MAX_DIMENSION_CM, { message: PARCEL_VALIDATION_MESSAGES.HEIGHT_MAX }),
         declaredValue: z.number().min(0).optional().nullable(),
         packingTypeId: z.number().int().positive().optional().nullable(),
-        isGetLabel: z.number().int().optional(),
+        isGetLabel: getLabelSchema,
         products: z
           .array(
             z.object({
@@ -206,7 +214,15 @@ export const create = authedProcedure
                 .int({ message: "Số lượng sản phẩm (quantity) phải là số nguyên dương" })
                 .positive({ message: "Số lượng sản phẩm (quantity) phải là số nguyên dương" }),
               value: z.number().positive(),
-              hsCode: z.string().optional().nullable(),
+              hsCode: z
+                .string()
+                .transform((val) => val.replace(/\./g, "").trim())
+                .refine((val) => val.length > 0, {
+                  message: PARCEL_VALIDATION_MESSAGES.HS_CODE_REQUIRED,
+                })
+                .refine((val) => HS_CODE_REGEX.test(val), {
+                  message: PARCEL_VALIDATION_MESSAGES.HS_CODE_FORMAT_INVALID,
+                }),
               originCountry: z.string().min(1, { message: "Xuất xứ sản phẩm (originCountry) không được để trống" }),
               weight: z.number().int().positive().optional().nullable(),
               sku: z.string().optional().nullable(),
@@ -288,7 +304,7 @@ export const create = authedProcedure
     });
 
     let labelResult: unknown = null;
-    if (input.isGetLabel === 1) {
+    if (input.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
       try {
         const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
         const orderLabelService = getOrderLabelService();

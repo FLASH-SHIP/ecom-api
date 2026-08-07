@@ -2,6 +2,8 @@ import { getOrderService } from "@ecom/features/di/containers/OrderService";
 import { type Prisma, prisma, ShippingMethod, ShippingOrigin } from "@ecom/prisma";
 import { parseDateTimezone } from "@flash-ship/ecom-lib";
 import {
+  GET_LABEL_OPTION,
+  HS_CODE_REGEX,
   isAllowedSenderCountry,
   MAX_DECLARED_WEIGHT_GRAMS,
   MAX_DIMENSION_CM,
@@ -14,8 +16,18 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { authedProcedure } from "../../../../trpc";
 
-const shippingMethodSchema = z.nativeEnum(ShippingMethod);
-const shippingOriginSchema = z.nativeEnum(ShippingOrigin);
+const shippingMethodSchema = z.nativeEnum(ShippingMethod, {
+  message: "Phương thức vận chuyển (Dịch vụ) là bắt buộc, chỉ chấp nhận EXPRESS hoặc EPACKET",
+});
+const shippingOriginSchema = z.nativeEnum(ShippingOrigin, {
+  message: "Kho gửi không hợp lệ, chỉ chấp nhận HAN hoặc SGN",
+});
+const getLabelSchema = z
+  .preprocess((val) => {
+    if (val === true || val === 1 || val === "1") return GET_LABEL_OPTION.GET_LABEL_NOW;
+    return GET_LABEL_OPTION.GET_LABEL_LATER;
+  }, z.number().int())
+  .optional();
 
 const importOrderItemSchema = z.object({
   excelRowNumbers: z.array(z.number()),
@@ -106,10 +118,11 @@ const importOrderItemSchema = z.object({
     .nullable(),
   declaredValue: z.number().min(0).optional().nullable(),
   packagingCode: z.string().optional().nullable(),
-  isGetLabel: z.number().int().optional(),
+  isGetLabel: getLabelSchema,
   products: z
     .array(
       z.object({
+        excelLineNumber: z.number().optional(),
         description: z
           .string()
           .min(1, { message: "Tên sản phẩm (description) không được để trống" })
@@ -119,7 +132,15 @@ const importOrderItemSchema = z.object({
           .int({ message: "Số lượng sản phẩm (quantity) phải là số nguyên dương" })
           .positive({ message: "Số lượng sản phẩm (quantity) phải là số nguyên dương" }),
         value: z.number().positive(),
-        hsCode: z.string().optional().nullable(),
+        hsCode: z
+          .string()
+          .transform((val) => val.replace(/\./g, "").trim())
+          .refine((val) => val.length > 0, {
+            message: PARCEL_VALIDATION_MESSAGES.HS_CODE_REQUIRED,
+          })
+          .refine((val) => HS_CODE_REGEX.test(val), {
+            message: PARCEL_VALIDATION_MESSAGES.HS_CODE_FORMAT_INVALID,
+          }),
         originCountry: z
           .string()
           .min(1, { message: "Xuất xứ sản phẩm (originCountry) không được để trống" }),
@@ -129,6 +150,226 @@ const importOrderItemSchema = z.object({
     )
     .optional(),
 });
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: High complexity from Zod path mapping and fallback error reason matching
+export function formatBatchError(err: unknown, order: Record<string, unknown>) {
+  const typedOrder = order as {
+    sellerOrderId?: string;
+    excelRowNumbers?: number[];
+    shippingMethod?: string;
+    shippingOrigin?: string;
+    senderName?: string;
+    senderPhone?: string;
+    senderAddress?: string;
+    senderCity?: string;
+    senderWard?: string;
+    senderZipCode?: string;
+    senderCountry?: string;
+    receiverName?: string;
+    receiverPhone?: string;
+    receiverEmail?: string;
+    receiverAddress1?: string;
+    receiverCity?: string;
+    receiverState?: string;
+    receiverCountry?: string;
+    receiverZipCode?: string;
+    declaredWeight?: number;
+    dimensionLength?: number;
+    dimensionWidth?: number;
+    dimensionHeight?: number;
+    products?: Array<{
+      excelLineNumber?: number;
+      hsCode?: string;
+      originCountry?: string;
+      description?: string;
+      quantity?: number;
+      value?: number;
+    }>;
+  };
+
+  let errorReason = err instanceof Error ? err.message : String(err);
+  let columnName = "Tất cả";
+  let enteredValue = String(typedOrder.sellerOrderId ?? "");
+  let line = typedOrder.excelRowNumbers?.[0] || 0;
+
+  if (err instanceof z.ZodError && err.issues.length > 0) {
+    const firstIssue = err.issues[0];
+    if (firstIssue) {
+      errorReason = firstIssue.message;
+      const pathKey = firstIssue.path[0];
+      const productIdx = typeof firstIssue.path[1] === "number" ? firstIssue.path[1] : undefined;
+      const productField = productIdx !== undefined ? firstIssue.path[2] : undefined;
+
+      if (pathKey === "shippingMethod") {
+        columnName = "Dịch vụ";
+        enteredValue = String(typedOrder.shippingMethod ?? "");
+      } else if (pathKey === "shippingOrigin") {
+        columnName = "Kho gửi";
+        enteredValue = String(typedOrder.shippingOrigin ?? "");
+      } else if (pathKey === "sellerOrderId") {
+        columnName = "Mã đơn Seller";
+        enteredValue = String(typedOrder.sellerOrderId ?? "");
+      } else if (pathKey === "senderName") {
+        columnName = "Tên người gửi";
+        enteredValue = String(typedOrder.senderName ?? "");
+      } else if (pathKey === "senderPhone") {
+        columnName = "SĐT gửi";
+        enteredValue = String(typedOrder.senderPhone ?? "");
+      } else if (pathKey === "senderAddress") {
+        columnName = "Địa chỉ gửi";
+        enteredValue = String(typedOrder.senderAddress ?? "");
+      } else if (pathKey === "senderCity") {
+        columnName = "Thành phố gửi";
+        enteredValue = String(typedOrder.senderCity ?? "");
+      } else if (pathKey === "senderWard") {
+        columnName = "Phường/Xã gửi";
+        enteredValue = String(typedOrder.senderWard ?? "");
+      } else if (pathKey === "senderZipCode") {
+        columnName = "Zip người gửi";
+        enteredValue = String(typedOrder.senderZipCode ?? "");
+      } else if (pathKey === "senderCountry") {
+        columnName = "Quốc gia gửi";
+        enteredValue = String(typedOrder.senderCountry ?? "");
+      } else if (pathKey === "receiverName") {
+        columnName = "Họ tên người nhận";
+        enteredValue = String(typedOrder.receiverName ?? "");
+      } else if (pathKey === "receiverPhone") {
+        columnName = "SĐT nhận";
+        enteredValue = String(typedOrder.receiverPhone ?? "");
+      } else if (pathKey === "receiverEmail") {
+        columnName = "Email nhận";
+        enteredValue = String(typedOrder.receiverEmail ?? "");
+      } else if (pathKey === "receiverAddress1") {
+        columnName = "Địa chỉ nhận 1";
+        enteredValue = String(typedOrder.receiverAddress1 ?? "");
+      } else if (pathKey === "receiverCity") {
+        columnName = "Thành phố nhận";
+        enteredValue = String(typedOrder.receiverCity ?? "");
+      } else if (pathKey === "receiverState") {
+        columnName = "Bang/Tỉnh nhận";
+        enteredValue = String(typedOrder.receiverState ?? "");
+      } else if (pathKey === "receiverCountry") {
+        columnName = "Quốc gia nhận";
+        enteredValue = String(typedOrder.receiverCountry ?? "");
+      } else if (pathKey === "receiverZipCode") {
+        columnName = "Zip người nhận";
+        enteredValue = String(typedOrder.receiverZipCode ?? "");
+      } else if (pathKey === "declaredWeight") {
+        columnName = "Cân nặng kiện hàng";
+        enteredValue = String(typedOrder.declaredWeight ?? "");
+      } else if (pathKey === "dimensionLength") {
+        columnName = "Chiều dài kiện hàng";
+        enteredValue = String(typedOrder.dimensionLength ?? "");
+      } else if (pathKey === "dimensionWidth") {
+        columnName = "Chiều rộng kiện hàng";
+        enteredValue = String(typedOrder.dimensionWidth ?? "");
+      } else if (pathKey === "dimensionHeight") {
+        columnName = "Chiều cao kiện hàng";
+        enteredValue = String(typedOrder.dimensionHeight ?? "");
+      } else if (pathKey === "products" && productIdx !== undefined) {
+        const prod = typedOrder.products?.[productIdx];
+        if (prod?.excelLineNumber) {
+          line = prod.excelLineNumber;
+        }
+        if (productField === "hsCode") {
+          columnName = "Mã HS Code SP";
+          enteredValue = String(prod?.hsCode ?? "");
+        } else if (productField === "originCountry") {
+          columnName = "Xuất xứ SP";
+          enteredValue = String(prod?.originCountry ?? "");
+        } else if (productField === "description") {
+          columnName = "Sản phẩm chi tiết";
+          enteredValue = String(prod?.description ?? "");
+        } else if (productField === "quantity") {
+          columnName = "Số lượng";
+          enteredValue = String(prod?.quantity ?? "");
+        } else if (productField === "value") {
+          columnName = "Đơn giá";
+          enteredValue = String(prod?.value ?? "");
+        }
+      }
+    }
+  } else {
+    if (errorReason.includes("shippingMethod") || errorReason.includes("Dịch vụ")) {
+      columnName = "Dịch vụ";
+      enteredValue = String(typedOrder.shippingMethod ?? "");
+    } else if (errorReason.includes("shippingOrigin") || errorReason.includes("Kho gửi")) {
+      columnName = "Kho gửi";
+      enteredValue = String(typedOrder.shippingOrigin ?? "");
+    } else if (errorReason.includes("sellerOrderId") || errorReason.includes("đã tồn tại")) {
+      columnName = "Mã đơn Seller";
+      enteredValue = String(typedOrder.sellerOrderId ?? "");
+    } else if (errorReason.includes("senderName") || errorReason.includes("Tên người gửi")) {
+      columnName = "Tên người gửi";
+      enteredValue = String(typedOrder.senderName ?? "");
+    } else if (errorReason.includes("senderPhone") || errorReason.includes("SĐT gửi")) {
+      columnName = "SĐT gửi";
+      enteredValue = String(typedOrder.senderPhone ?? "");
+    } else if (errorReason.includes("senderAddress") || errorReason.includes("Địa chỉ gửi")) {
+      columnName = "Địa chỉ gửi";
+      enteredValue = String(typedOrder.senderAddress ?? "");
+    } else if (errorReason.includes("senderCity") || errorReason.includes("Thành phố gửi")) {
+      columnName = "Thành phố gửi";
+      enteredValue = String(typedOrder.senderCity ?? "");
+    } else if (errorReason.includes("senderWard") || errorReason.includes("Phường/Xã gửi") || errorReason.includes("senderWard")) {
+      columnName = "Phường/Xã gửi";
+      enteredValue = String(typedOrder.senderWard ?? "");
+    } else if (errorReason.includes("senderZipCode") || errorReason.includes("Zip người gửi")) {
+      columnName = "Zip người gửi";
+      enteredValue = String(typedOrder.senderZipCode ?? "");
+    } else if (errorReason.includes("senderCountry") || errorReason.includes("Quốc gia gửi")) {
+      columnName = "Quốc gia gửi";
+      enteredValue = String(typedOrder.senderCountry ?? "");
+    } else if (errorReason.includes("receiverPhone") || errorReason.includes("SĐT nhận") || errorReason.includes("Số điện thoại người nhận")) {
+      columnName = "SĐT nhận";
+      enteredValue = String(typedOrder.receiverPhone ?? "");
+    } else if (errorReason.includes("receiverName") || errorReason.includes("Họ tên người nhận")) {
+      columnName = "Họ tên người nhận";
+      enteredValue = String(typedOrder.receiverName ?? "");
+    } else if (errorReason.includes("receiverEmail") || errorReason.includes("Email nhận")) {
+      columnName = "Email nhận";
+      enteredValue = String(typedOrder.receiverEmail ?? "");
+    } else if (errorReason.includes("receiverAddress1") || errorReason.includes("Địa chỉ nhận")) {
+      columnName = "Địa chỉ nhận 1";
+      enteredValue = String(typedOrder.receiverAddress1 ?? "");
+    } else if (errorReason.includes("receiverCity") || errorReason.includes("Thành phố nhận")) {
+      columnName = "Thành phố nhận";
+      enteredValue = String(typedOrder.receiverCity ?? "");
+    } else if (errorReason.includes("receiverState") || errorReason.includes("Bang/Tỉnh nhận")) {
+      columnName = "Bang/Tỉnh nhận";
+      enteredValue = String(typedOrder.receiverState ?? "");
+    } else if (errorReason.includes("receiverCountry") || errorReason.includes("Quốc gia nhận")) {
+      columnName = "Quốc gia nhận";
+      enteredValue = String(typedOrder.receiverCountry ?? "");
+    } else if (errorReason.includes("receiverZipCode") || errorReason.includes("Mã bưu chính")) {
+      columnName = "Zip người nhận";
+      enteredValue = String(typedOrder.receiverZipCode ?? "");
+    } else if (errorReason.includes("dimensionLength") || errorReason.includes("Chiều dài")) {
+      columnName = "Chiều dài kiện hàng";
+      enteredValue = String(typedOrder.dimensionLength ?? "");
+    } else if (errorReason.includes("dimensionWidth") || errorReason.includes("Chiều rộng")) {
+      columnName = "Chiều rộng kiện hàng";
+      enteredValue = String(typedOrder.dimensionWidth ?? "");
+    } else if (errorReason.includes("dimensionHeight") || errorReason.includes("Chiều cao")) {
+      columnName = "Chiều cao kiện hàng";
+      enteredValue = String(typedOrder.dimensionHeight ?? "");
+    } else if (errorReason.includes("declaredWeight") || errorReason.includes("Trọng lượng") || errorReason.includes("Cân nặng")) {
+      columnName = "Cân nặng kiện hàng";
+      enteredValue = String(typedOrder.declaredWeight ?? "");
+    } else if (errorReason.includes("hsCode") || errorReason.includes("HS Code")) {
+      columnName = "Mã HS Code SP";
+      enteredValue = String(typedOrder.products?.[0]?.hsCode ?? "");
+    } else if (errorReason.includes("originCountry") || errorReason.includes("Xuất xứ")) {
+      columnName = "Xuất xứ SP";
+      enteredValue = String(typedOrder.products?.[0]?.originCountry ?? "");
+    } else if (errorReason.includes("Bảng giá") || errorReason.includes("RateCard")) {
+      columnName = "Dịch vụ";
+      enteredValue = `${typedOrder.shippingMethod} - ${typedOrder.receiverCountry}`;
+    }
+  }
+
+  return { line, columnName, enteredValue, errorReason };
+}
 
 // 1. Khởi tạo phiên Import
 export const createImportSession = authedProcedure
@@ -202,7 +443,7 @@ export const importBatch = authedProcedure
         });
         successCount++;
 
-        if (order.isGetLabel === 1) {
+        if (order.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
           try {
             const { queueBulkLabelPurchase } = await import(
               "@ecom/features/queue/workers/bulkLabelWorker"
@@ -220,43 +461,7 @@ export const importBatch = authedProcedure
           }
         }
       } catch (err) {
-        const errorReason = err instanceof Error ? err.message : String(err);
-        const firstLine = order.excelRowNumbers[0] || 0;
-
-        let columnName = "Tất cả";
-        const enteredValue = order.sellerOrderId || "";
-        if (errorReason.includes("sellerOrderId") || errorReason.includes("đã tồn tại")) {
-          columnName = "Mã đơn Seller";
-        } else if (errorReason.includes("senderWard") || errorReason.includes("Phường/Xã")) {
-          columnName = "Phường/Xã người gửi";
-        } else if (errorReason.includes("dimensionLength") || errorReason.includes("Chiều dài")) {
-          columnName = "Chiều dài kiện hàng";
-        } else if (errorReason.includes("dimensionWidth") || errorReason.includes("Chiều rộng")) {
-          columnName = "Chiều rộng kiện hàng";
-        } else if (errorReason.includes("dimensionHeight") || errorReason.includes("Chiều cao")) {
-          columnName = "Chiều cao kiện hàng";
-        } else if (errorReason.includes("declaredWeight") || errorReason.includes("Trọng lượng")) {
-          columnName = "Cân nặng kiện hàng";
-        } else if (errorReason.includes("receiverName") || errorReason.includes("người nhận")) {
-          columnName = "Họ tên người nhận";
-        } else if (
-          errorReason.includes("receiverAddress1") ||
-          errorReason.includes("Địa chỉ nhận")
-        ) {
-          columnName = "Địa chỉ nhận 1";
-        } else if (
-          errorReason.includes("receiverZipCode") ||
-          errorReason.includes("Mã bưu chính")
-        ) {
-          columnName = "Zip người nhận";
-        }
-
-        batchErrors.push({
-          line: firstLine,
-          columnName,
-          enteredValue,
-          errorReason,
-        });
+        batchErrors.push(formatBatchError(err, order));
       }
     }
 

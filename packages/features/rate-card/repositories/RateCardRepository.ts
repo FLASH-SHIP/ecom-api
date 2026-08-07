@@ -83,8 +83,26 @@ type FindManyOptions = {
   endDate?: Date;
   endDateGte?: Date;
   endDateLte?: Date;
-  customerGroupId?: number;
+  customerGroupId?: number | null;
 };
+
+function buildDateCondition(gte?: Date, lte?: Date) {
+  if (!gte && !lte) return undefined;
+  return {
+    ...(gte && { gte }),
+    ...(lte && { lte }),
+  };
+}
+
+function buildCustomerGroupWhereCondition(customerGroupId?: number | null) {
+  if (customerGroupId === null || customerGroupId === -1) {
+    return { groups: { none: {} } };
+  }
+  if (customerGroupId && customerGroupId > 0) {
+    return { groups: { some: { customerGroupId } } };
+  }
+  return undefined;
+}
 
 function buildRateCardFindManyWhere(options: FindManyOptions) {
   const {
@@ -114,29 +132,14 @@ function buildRateCardFindManyWhere(options: FindManyOptions) {
   if (code) conditions.push({ code: { contains: code, mode: "insensitive" as const } });
   if (name) conditions.push({ name: { contains: name, mode: "insensitive" as const } });
 
-  const startGte = startDateGte ?? startDate;
-  if (startGte || startDateLte) {
-    conditions.push({
-      startDate: {
-        ...(startGte && { gte: startGte }),
-        ...(startDateLte && { lte: startDateLte }),
-      },
-    });
-  }
+  const startDateCond = buildDateCondition(startDateGte ?? startDate, startDateLte);
+  if (startDateCond) conditions.push({ startDate: startDateCond });
 
-  const endLte = endDateLte ?? endDate;
-  if (endDateGte || endLte) {
-    conditions.push({
-      endDate: {
-        ...(endDateGte && { gte: endDateGte }),
-        ...(endLte && { lte: endLte }),
-      },
-    });
-  }
+  const endDateCond = buildDateCondition(endDateGte, endDateLte ?? endDate);
+  if (endDateCond) conditions.push({ endDate: endDateCond });
 
-  if (customerGroupId) {
-    conditions.push({ groups: { some: { customerGroupId } } });
-  }
+  const groupCond = buildCustomerGroupWhereCondition(customerGroupId);
+  if (groupCond) conditions.push(groupCond);
 
   if (search?.trim()) {
     const q = search.trim();
@@ -452,7 +455,7 @@ export class RateCardRepository {
     endDate?: Date;
     endDateGte?: Date;
     endDateLte?: Date;
-    customerGroupId?: number;
+    customerGroupId?: number | null;
     page?: number;
     perPage?: number;
     sortBy?:
