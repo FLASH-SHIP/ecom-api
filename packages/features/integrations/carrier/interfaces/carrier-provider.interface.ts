@@ -53,6 +53,8 @@ export interface PackageItemInfo {
 
 export interface PackageSpec {
   numberLabels?: number;
+  reference?: string;
+  reference2?: string;
   weight: PackageWeightInfo;
   dimensions: PackageDimensionsInfo;
   items?: PackageItemInfo[];

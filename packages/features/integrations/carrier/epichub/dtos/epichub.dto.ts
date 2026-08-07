@@ -271,6 +271,8 @@ export function sanitizeEpicHubPayload(payload: EpicHubCreateLabelPayload): Epic
     ShipTo: sanitizeParty(payload.ShipTo),
     Package: payload.Package.map((pkg) => ({
       ...pkg,
+      Reference: pkg.Reference ? pkg.Reference.slice(0, 35) : undefined,
+      Reference2: pkg.Reference2 ? pkg.Reference2.slice(0, 35) : undefined,
       Items: pkg.Items
         ? pkg.Items.map((item) => ({
             ...item,

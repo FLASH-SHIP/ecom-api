@@ -5,7 +5,10 @@ import {
   validatePostalCode,
 } from "@flash-ship/ecom-lib";
 import {
+  GET_LABEL_OPTION,
+  HS_CODE_REGEX,
   isAllowedSenderCountry,
+  MAX_DECLARED_VALUE_USD,
   MAX_DECLARED_WEIGHT_GRAMS,
   MAX_DIMENSION_CM,
   PARCEL_VALIDATION_MESSAGES,
@@ -103,18 +106,36 @@ export class OrderProductDto {
   })
   @IsNumber({}, { always: true, message: "Giá trị sản phẩm (value) phải là số" })
   @Min(0.01, { always: true, message: "Giá trị sản phẩm (value) phải lớn hơn 0" })
-  @Max(9999999999.99, { always: true, message: "Giá trị sản phẩm (value) không được vượt quá 9,999,999,999.99 USD" })
+  @Max(MAX_DECLARED_VALUE_USD, {
+    always: true,
+    message: PARCEL_VALIDATION_MESSAGES.VALUE_MAX,
+  })
   value!: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: () => String,
-    description: "Harmonized System tariff code",
-    example: "6109.10",
-    nullable: true,
+    description: "Harmonized System tariff code (6-10 digits)",
+    example: "610910",
   })
-  @IsOptional({ always: true })
+  @Transform(({ value }: { value: unknown }) => {
+    if (typeof value === "string") {
+      return value.replace(/\./g, "").trim();
+    }
+    if (typeof value === "number") {
+      return String(value).trim();
+    }
+    return value;
+  })
+  @IsNotEmpty({
+    always: true,
+    message: PARCEL_VALIDATION_MESSAGES.HS_CODE_REQUIRED,
+  })
   @IsString({ always: true })
-  hsCode?: string | null;
+  @Matches(HS_CODE_REGEX, {
+    always: true,
+    message: PARCEL_VALIDATION_MESSAGES.HS_CODE_FORMAT_INVALID,
+  })
+  hsCode!: string;
 
   @ApiProperty({
     type: () => String,
@@ -500,7 +521,10 @@ export class CreateOrderDto {
   @IsOptional({ always: true })
   @IsNumber({}, { always: true, message: "Giá trị khai báo (declaredValue) phải là số" })
   @Min(0, { always: true, message: "Giá trị khai báo (declaredValue) phải lớn hơn hoặc bằng 0" })
-  @Max(9999999999.99, { always: true, message: "Giá trị khai báo (declaredValue) không được vượt quá 9,999,999,999.99 USD" })
+  @Max(MAX_DECLARED_VALUE_USD, {
+    always: true,
+    message: PARCEL_VALIDATION_MESSAGES.DECLARED_VALUE_MAX,
+  })
   declaredValue?: number | null;
 
   @ApiPropertyOptional({
@@ -524,9 +548,15 @@ export class CreateOrderDto {
   packagingCode?: string | null;
 
   @ApiPropertyOptional({
-    type: () => Number,
-    example: 1,
-    description: "Auto-generate carrier shipping label flag (1=yes, 0=no)",
+    enum: GET_LABEL_OPTION,
+    example: GET_LABEL_OPTION.GET_LABEL_NOW,
+    description:
+      "Option mode for shipping label creation (1 = GET_LABEL_NOW / auto purchase label immediately, 0 = GET_LABEL_LATER / leave in pending label status)",
+  })
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === undefined || value === null) return GET_LABEL_OPTION.GET_LABEL_LATER;
+    if (value === true || value === 1 || value === "1") return GET_LABEL_OPTION.GET_LABEL_NOW;
+    return GET_LABEL_OPTION.GET_LABEL_LATER;
   })
   @IsOptional({ always: true })
   @IsInt({ always: true })
