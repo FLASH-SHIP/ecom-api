@@ -6,7 +6,7 @@ import {
   type ICarrierProvider,
 } from "@ecom/features/integrations/carrier/interfaces/carrier-provider.interface";
 import { LocalStorageAdapter } from "@ecom/features/media/storage/LocalStorageAdapter";
-import { LabelStatus, OrderStatus, Prisma, prisma, runInTransaction } from "@ecom/prisma";
+import { LabelStatus, OrderStatus, PaymentStatus, Prisma, prisma, runInTransaction } from "@ecom/prisma";
 import { toSafeJson } from "@flash-ship/ecom-lib";
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
@@ -405,6 +405,7 @@ export class OrderLabelService {
         labelUrl,
         status: OrderStatus.LABEL_CREATED,
         labelStatus: LabelStatus.SUCCESS,
+        paymentStatus: PaymentStatus.SUCCESS,
         isGetLabel: GET_LABEL_OPTION.GET_LABEL_NOW,
       });
 
@@ -785,6 +786,7 @@ export class OrderLabelService {
           ...inputData,
           status: OrderStatus.LABEL_CREATED,
           labelStatus: LabelStatus.SUCCESS,
+          paymentStatus: PaymentStatus.SUCCESS,
           trackingNumber,
           labelUrl: labelUrl || null,
           carrierCode,
