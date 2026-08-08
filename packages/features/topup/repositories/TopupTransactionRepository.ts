@@ -889,10 +889,17 @@ export class TopupTransactionRepository {
     TopupTransactionRepository.payingOrderIds.add(data.orderId);
 
     try {
-      // BƯỚC 2: Lớp 2 - Kiểm tra DB Local chống thanh toán trùng lặp đơn hàng đã hoàn tất
+      const isUuid = (val?: string | null): boolean =>
+        typeof val === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+      const orderWhere: Prisma.TopupTransactionWhereInput = isUuid(data.orderId)
+        ? { orderId: data.orderId }
+        : { orderCode: data.orderCode };
+
       const existingPayment = await this.prisma.topupTransaction.findFirst({
         where: {
-          orderId: data.orderId,
+          ...orderWhere,
           topupType: TopupType.PAID,
           status: TopupStatus.CONFIRMED,
         },
@@ -997,7 +1004,7 @@ export class TopupTransactionRepository {
           wireAmount: new Prisma.Decimal(data.amount),
           wireAmountApprove: new Prisma.Decimal(data.amount),
           description: data.description || data.orderId,
-          orderId: data.orderId,
+          orderId: isUuid(data.orderId) ? data.orderId : null,
           orderCode: data.orderCode,
           accountBalanceBefore: new Prisma.Decimal(balanceBefore),
           amountChange: new Prisma.Decimal(data.amount),
@@ -1085,10 +1092,18 @@ export class TopupTransactionRepository {
   }) {
     if (data.amount <= 0) return null;
 
+    const isUuid = (val?: string | null): boolean =>
+      typeof val === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+    const orderWhere: Prisma.TopupTransactionWhereInput = isUuid(data.orderId)
+      ? { orderId: data.orderId }
+      : { orderCode: data.orderCode };
+
     // Lớp 1 Idempotency Guard: Tránh hoàn tiền 2 lần (Double Refund) cho cùng 1 đơn hàng
     const existingRefund = await this.prisma.topupTransaction.findFirst({
       where: {
-        orderId: data.orderId,
+        ...orderWhere,
         topupType: TopupType.REFUNDED,
         status: TopupStatus.CONFIRMED,
       },
@@ -1151,7 +1166,7 @@ export class TopupTransactionRepository {
         wireAmount: new Prisma.Decimal(data.amount),
         wireAmountApprove: new Prisma.Decimal(data.amount),
         description: data.description || `Hoàn tiền hủy tem đơn #${data.orderCode}`,
-        orderId: data.orderId,
+        orderId: isUuid(data.orderId) ? data.orderId : null,
         orderCode: data.orderCode,
         accountBalanceBefore: new Prisma.Decimal(balanceBefore),
         amountChange: new Prisma.Decimal(data.amount),
