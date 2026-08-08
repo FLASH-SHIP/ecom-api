@@ -134,7 +134,7 @@ export class CustomerOrderController {
         });
       }
 
-      if (res && "id" in res) {
+      if (res && typeof res === "object" && "id" in res) {
         return mapToCustomerOrderDetailResponse(
           res as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
         );
