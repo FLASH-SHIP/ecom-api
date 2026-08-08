@@ -54,10 +54,18 @@ export class I18nHttpExceptionFilter implements ExceptionFilter<HttpException> {
       }
     }
 
+    const responseObj = exception.getResponse();
+    let customFields: Record<string, unknown> = {};
+    if (typeof responseObj === "object" && responseObj !== null) {
+      const { message, error, statusCode, ...rest } = responseObj as Record<string, unknown>;
+      customFields = rest;
+    }
+
     response.status(status).json({
       statusCode: status,
       error: translatedError || rawError || exception.name,
       message: translatedMessage,
+      ...customFields,
     });
   }
 

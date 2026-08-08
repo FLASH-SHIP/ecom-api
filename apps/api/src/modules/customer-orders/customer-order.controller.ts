@@ -88,6 +88,7 @@ export class CustomerOrderController {
     return mapToEstimateFreightResponse(result);
   }
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: order creation workflow
   private async executeCreateOrder(customerId: string, body: CreateOrderDto) {
     const isGetLabel =
       body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_LATER ||
@@ -101,11 +102,27 @@ export class CustomerOrderController {
       const { getOrderLabelService } = await import(
         "@ecom/features/di/containers/OrderLabelService"
       );
-      const res = await getOrderLabelService().purchaseLabelAtomic({
-        ...body,
-        isGetLabel,
-        customerId,
-      });
+
+      let res: unknown;
+      try {
+        res = await getOrderLabelService().purchaseLabelAtomic({
+          ...body,
+          isGetLabel,
+          customerId,
+        });
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        const isAmbiguous =
+          errorMsg.toLowerCase().includes("ambiguous") ||
+          errorMsg.toLowerCase().includes("candidate");
+        const candidates = (err as { candidates?: unknown })?.candidates;
+
+        throw new BadRequestException({
+          message: errorMsg || "Tạo nhãn tem thất bại, đơn hàng chưa được lưu.",
+          errorCode: isAmbiguous ? "ADDRESS_AMBIGUOUS" : "LABEL_PURCHASE_FAILED",
+          ...(candidates ? { candidates } : {}),
+        });
+      }
 
       if (res && typeof res === "object" && "isAmbiguous" in res && res.isAmbiguous) {
         throw new BadRequestException({
@@ -123,7 +140,10 @@ export class CustomerOrderController {
         );
       }
 
-      throw new BadRequestException("Tạo nhãn tem thất bại, đơn hàng chưa được lưu.");
+      throw new BadRequestException({
+        message: "Tạo nhãn tem thất bại, đơn hàng chưa được lưu.",
+        errorCode: "LABEL_PURCHASE_FAILED",
+      });
     }
 
     const order = await getOrderService().createOrder({
