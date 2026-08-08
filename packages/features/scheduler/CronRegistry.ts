@@ -64,6 +64,15 @@ export function getCronJobs(): CronJobDefinition[] {
       },
     },
     {
+      name: "orders.pending_refund_reconciler",
+      cron: "30 3 * * *",
+      description: "Quét và tự động retry hoàn tiền ví bị gián đoạn (Chờ bật Phase sau)",
+      enabled: false,
+      handler: async () => {
+        log.info("Running orders.pending_refund_reconciler check");
+      },
+    },
+    {
       name: "analytics.aggregate",
       cron: "0 1 * * *",
       description: "Aggregate daily analytics data",

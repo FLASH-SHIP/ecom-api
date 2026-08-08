@@ -272,10 +272,10 @@ export class OrderService {
   }
 
   /**
-   * Creates a single order inside a transaction.
+   * Validates params, calculates freight, checks idempotency, and constructs CreateOrderInput in memory.
    */
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: necessary setup logic for order creation
-  async createOrder(params: CreateOrderParams) {
+  async prepareOrderData(params: CreateOrderParams) {
     const {
       customerId,
       shippingMethod,
@@ -424,8 +424,6 @@ export class OrderService {
         400,
       );
     }
-
-
 
     if (!params.senderCountry?.trim()) {
       throw new ErrorWithCode(
@@ -721,7 +719,6 @@ export class OrderService {
     }
 
     // 4. Construct create input
-    const isGetLabelChecked = params.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW;
     const initialOrderStatus: OrderStatus = OrderStatus.PENDING_LABEL;
     const initialLabelStatus: LabelStatus = LabelStatus.PENDING_LABEL;
 
@@ -811,6 +808,23 @@ export class OrderService {
         : undefined,
     };
 
+    return {
+      inputData,
+      pricing,
+      dimensionText,
+      orderCode,
+      totalFee: pricing.totalAmount,
+    };
+  }
+
+  /**
+   * Creates a single order inside a transaction.
+   */
+  async createOrder(params: CreateOrderParams) {
+    const { customerId } = params;
+    const isGetLabelChecked = params.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW;
+    const { inputData, pricing, dimensionText } = await this.prepareOrderData(params);
+
     const result = await runInTransaction(async () => {
       const createdOrder = await this.deps.orderRepo.create(inputData);
 
@@ -821,7 +835,7 @@ export class OrderService {
         orderId: createdOrder.id,
         action: "STATUS_CHANGE",
         statusFrom: null,
-        statusTo: initialOrderStatus,
+        statusTo: inputData.status,
         description: "Đơn hàng được tạo thành công (Pending Label)",
         actorType: "CUSTOMER",
         actorId: actorInfo.actorId,

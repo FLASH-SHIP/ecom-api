@@ -6,11 +6,12 @@ import {
   type ICarrierProvider,
 } from "@ecom/features/integrations/carrier/interfaces/carrier-provider.interface";
 import { LocalStorageAdapter } from "@ecom/features/media/storage/LocalStorageAdapter";
-import { LabelStatus, OrderStatus, type Prisma, prisma, runInTransaction } from "@ecom/prisma";
+import { LabelStatus, OrderStatus, Prisma, prisma, runInTransaction } from "@ecom/prisma";
 import { toSafeJson } from "@flash-ship/ecom-lib";
 import { ErrorCode } from "@flash-ship/ecom-lib/errorCodes";
 import { ErrorWithCode } from "@flash-ship/ecom-lib/errors";
-import { GET_LABEL_OPTION } from "@flash-ship/ecom-types";
+import { getRedisClient } from "@flash-ship/ecom-lib/redis";
+import { GET_LABEL_OPTION, TopupStatus, TopupType } from "@flash-ship/ecom-types";
 import {
   EPICHUB_DEFAULT_SERVICE_CODE,
   EPICHUB_SHIP_FROM_ADDRESSES,
@@ -21,6 +22,7 @@ import {
 } from "../../integrations";
 import type { TopupTransactionRepository } from "../../topup/repositories/TopupTransactionRepository";
 import type { OrderRepository } from "../repositories/OrderRepository";
+import type { CreateOrderParams } from "./OrderService";
 
 export interface IOrderLabelServiceDeps {
   orderRepo: OrderRepository;
@@ -45,6 +47,8 @@ export function roundCurrency(val: number): number {
 export class OrderLabelService {
   /** Map khóa chống đụng độ đồng thời giữa Auto Reconcile Cronjob và thao tác Admin CMS */
   private static reconcilingOrderIds = new Set<string>();
+  /** Map khóa RAM Mutex Lock chống Race Condition khi khách sửa địa chỉ / retry mua tem liên tiếp */
+  private static modifyingOrderIds = new Set<string>();
 
   private deps: IOrderLabelServiceDeps;
   private storage: LocalStorageAdapter;
@@ -500,144 +504,480 @@ export class OrderLabelService {
     }
   }
 
-  private async deductWalletPostCreation(
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: wallet deduction workflow
+  private async deductWalletBeforeCreation(
     order: OrderRecord,
-    actualFee: number,
     params: PurchaseLabelParams,
-    carrierCode: string,
-    trackingNumber: string,
   ) {
     if (!this.deps.topupRepo) return;
-    const feeToDeduct = actualFee > 0 ? actualFee : Number(order.totalFee || 0);
-    try {
+    const currentFee = Number(order.totalFee || 0);
+
+    // Check if order was already paid previously in topup_transactions
+    const existingPayment = await prisma.topupTransaction.findFirst({
+      where: {
+        orderId: order.id,
+        topupType: TopupType.PAID,
+        status: TopupStatus.CONFIRMED,
+      },
+    });
+
+    if (existingPayment) {
+      // Fee Difference Ledger Logic cho đơn đã từng thanh toán trước đó
+      const previousPaidFee = Number(existingPayment.wireAmountApprove || order.totalFee || 0);
+      const feeDiff = roundCurrency(currentFee - previousPaidFee);
+
+      if (feeDiff > 0) {
+        // Cước mới cao hơn ➔ Thu bù chênh lệch
+        await this.deps.topupRepo.payOrderWithWallet({
+          orderId: order.id,
+          orderCode: order.orderCode,
+          amount: feeDiff,
+          customerId: order.customerId,
+          actorId: params.operatorId || params.customerId,
+          description: `Thanh toán bổ sung chênh lệch cước đổi địa chỉ đơn #${order.orderCode}`,
+        });
+
+        await this.deps.orderRepo.createActivityLog({
+          orderId: order.id,
+          action: "FEE_ADJUSTMENT_DECREASE",
+          statusFrom: order.status,
+          statusTo: order.status,
+          description: `THU BÙ CHÊNH LỆCH CƯỚC: Đã trừ bổ sung $${feeDiff} từ ví khách (Cước cũ: $${previousPaidFee}, Cước mới: $${currentFee})`,
+          metadata: { previousPaidFee, currentFee, feeDiff },
+          actorType: params.operatorId ? "OPERATOR" : "CUSTOMER",
+          actorId: params.operatorId || params.customerId || "system",
+          actorName: params.operatorId ? "Operator" : "Customer",
+          actorUsername: params.operatorId ? "operator" : "customer",
+          actorEmail: null,
+        });
+      } else if (feeDiff < 0) {
+        // Cước mới thấp hơn ➔ Hoàn cước dư
+        const refundAmount = Math.abs(feeDiff);
+        await this.deps.topupRepo.refundOrderWithWallet({
+          orderId: order.id,
+          orderCode: order.orderCode,
+          amount: refundAmount,
+          customerId: order.customerId,
+          actorId: params.operatorId || params.customerId,
+          description: `Hoàn tiền chênh lệch cước đổi địa chỉ đơn #${order.orderCode}`,
+        });
+
+        await this.deps.orderRepo.createActivityLog({
+          orderId: order.id,
+          action: "FEE_ADJUSTMENT_INCREASE",
+          statusFrom: order.status,
+          statusTo: order.status,
+          description: `HOÀN CƯỚC DƯ: Đã hoàn lại $${refundAmount} vào ví khách (Cước cũ: $${previousPaidFee}, Cước mới: $${currentFee})`,
+          metadata: { previousPaidFee, currentFee, feeDiff },
+          actorType: params.operatorId ? "OPERATOR" : "CUSTOMER",
+          actorId: params.operatorId || params.customerId || "system",
+          actorName: params.operatorId ? "Operator" : "Customer",
+          actorUsername: params.operatorId ? "operator" : "customer",
+          actorEmail: null,
+        });
+      }
+    } else {
+      // Trừ tiền cước ban đầu TRƯỚC KHI MUA LABEL
       await this.deps.topupRepo.payOrderWithWallet({
         orderId: order.id,
         orderCode: order.orderCode,
-        amount: feeToDeduct,
+        amount: currentFee,
         customerId: order.customerId,
         actorId: params.operatorId || params.customerId,
         description: `Thanh toán cước phí tạo nhãn tem đơn #${order.orderCode}`,
-      });
-    } catch (payErr) {
-      console.error(
-        `[OrderLabelService] Warning: Label created on carrier but wallet payment failed for order #${order.orderCode}:`,
-        payErr,
-      );
-      await this.deps.orderRepo.createActivityLog({
-        orderId: order.id,
-        action: "PAYMENT_FAILED_RECONCILE",
-        statusFrom: order.status,
-        statusTo: order.status,
-        description: `CẢNH BÁO THU TIỀN: Tem đã tạo thành công trên carrier nhưng trừ tiền ví thất bại (${(payErr as Error)?.message}). Cần đối soát thu lại tiền ví.`,
-        metadata: {
-          carrierCode,
-          trackingNumber,
-          amountToDeduct: actualFee,
-          errorMessage: (payErr as Error)?.message,
-        },
-        actorType: "SYSTEM",
-        actorId: "system",
-        actorName: "System",
-        actorUsername: "system",
-        actorEmail: null,
       });
     }
   }
 
   /**
-   * Purchase / Generate Shipping Label for an Order.
+   * Transient Pre-commit Atomic Order & Label Creation for REST API (B2B).
+   * 1. Acquires Redis lock for sellerOrderId.
+   * 2. Constructs transient order data in RAM (using OrderService.prepareOrderData).
+   * 3. Calls payOrderWithWallet directly to deduct wallet balance before calling Carrier API.
+   * 4. Calls Carrier Provider API (EpicHub).
+   * 5. On Carrier Failure / Ambiguous address:
+   *    - Auto-refunds wallet balance 100%.
+   *    - Writes partnerAuditLog with orderId = null for admin diagnostics.
+   *    - NO rows inserted in `orders` DB table.
+   * 6. On Carrier Success:
+   *    - Performs single DB transaction (`runInTransaction`):
+   *      Inserts `orders` (status = LABEL_CREATED, labelStatus = SUCCESS, trackingNumber, labelUrl),
+   *      `order_products`, `order_fee_items`, `order_activity_logs`, `partner_audit_logs`.
+   *    - Emits `order.created` event.
+   *    - Returns full order detail response.
    */
-  public async purchaseLabel(params: PurchaseLabelParams) {
-    const rawOrder = await this.deps.orderRepo.findById(params.orderId);
-    this.validateOrder(rawOrder, params.customerId);
-    const order = rawOrder;
-
-    // Idempotent check: If label already purchased and saved locally
-    if (order.trackingNumber && order.labelUrl && order.status === OrderStatus.LABEL_CREATED) {
-      return order;
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: atomic label purchase flow
+  public async purchaseLabelAtomic(params: CreateOrderParams) {
+    const lockKey = `idempotency:lock:${params.customerId}:${params.sellerOrderId}`;
+    const redis = getRedisClient();
+    const lockAcquired = await redis.set(lockKey, "LOCKED", "EX", 30, "NX");
+    if (!lockAcquired) {
+      throw new ErrorWithCode(
+        ErrorCode.Conflict,
+        `Đơn hàng có mã sellerOrderId "${params.sellerOrderId}" đang được xử lý mua nhãn tem. Vui lòng chờ trong giây lát.`,
+        409,
+      );
     }
 
-    await this.preCheckWalletBalance(order);
+    try {
+      const { getOrderService } = await import("@ecom/features/di/containers/OrderService");
+      const orderService = getOrderService();
+      const { inputData, pricing, dimensionText, orderCode, totalFee } =
+        await orderService.prepareOrderData(params);
 
-    const carrierCode = order.carrierCode || CARRIER_CODES.EPICHUB;
-    const carrier = this.getCarrierProvider(carrierCode);
-    const shipFromInfo = this.buildShipFromInfo(order.shippingOrigin);
-    const shipToInfo = this.buildShipToInfo(order);
+      // BƯỚC 1: TRỪ TIỀN VÍ TRƯỚC (Deduct-First - Gọi trực tiếp payOrderWithWallet)
+      if (this.deps.topupRepo) {
+        await this.deps.topupRepo.payOrderWithWallet({
+          orderId: orderCode,
+          orderCode,
+          amount: Number(totalFee),
+          customerId: params.customerId,
+          actorId: params.customerId,
+          description: `Thanh toán cước phí tạo nhãn tem REST API đơn #${orderCode}`,
+        });
+      }
 
-    let pdfBuffer = await this.checkExistingLabelBuffer(carrier, order);
-    let trackingNumber = order.trackingNumber || "";
-    let actualFee = Number(order.totalFee);
+      const carrierCode = CARRIER_CODES.EPICHUB;
+      const carrier = this.getCarrierProvider(carrierCode);
+      const shipFromInfo = this.buildShipFromInfo(inputData.shippingOrigin);
 
-    let rawRequestPayload: unknown = this.buildCreateLabelDto(order, shipFromInfo, shipToInfo);
-    let rawResponsePayload: unknown;
+      const transientOrder = {
+        id: orderCode,
+        orderCode,
+        customerId: params.customerId,
+        shippingMethod: inputData.shippingMethod,
+        shippingOrigin: inputData.shippingOrigin,
+        carrierCode,
+        receiverName: inputData.receiverName,
+        receiverPhone: inputData.receiverPhone,
+        receiverEmail: inputData.receiverEmail,
+        receiverAddress1: inputData.receiverAddress1,
+        receiverAddress2: inputData.receiverAddress2,
+        receiverCity: inputData.receiverCity,
+        receiverState: inputData.receiverState,
+        receiverCountry: inputData.receiverCountry,
+        receiverZipCode: inputData.receiverZipCode,
+        declaredWeight: inputData.declaredWeight,
+        dimensionLength: inputData.dimensionLength,
+        dimensionWidth: inputData.dimensionWidth,
+        dimensionHeight: inputData.dimensionHeight,
+        products: params.products || [],
+        totalFee,
+      };
 
-    if (!pdfBuffer) {
+      const shipToInfo = this.buildShipToInfo(transientOrder as unknown as OrderRecord);
+
+      let rawRequestPayload: unknown = this.buildCreateLabelDto(
+        transientOrder as unknown as OrderRecord,
+        shipFromInfo,
+        shipToInfo,
+      );
+      let rawResponsePayload: unknown;
+
+      let creation: Awaited<ReturnType<typeof this.executeCarrierLabelCreation>>;
       try {
-        const creation = await this.executeCarrierLabelCreation(carrier, order, shipFromInfo, shipToInfo);
+        creation = await this.executeCarrierLabelCreation(
+          carrier,
+          transientOrder as unknown as OrderRecord,
+          shipFromInfo,
+          shipToInfo,
+        );
         rawRequestPayload = creation.rawRequestPayload;
         rawResponsePayload = creation.rawResponsePayload;
-
-        if (creation.isAmbiguous) {
-          await this.logFailedPartnerAudit(
-            order,
-            carrierCode,
-            `Address Ambiguous (202): ${creation.message}`,
-            rawRequestPayload,
-            "CREATE_LABEL",
-            rawResponsePayload,
-          );
-          return {
-            isAmbiguous: true,
-            message: creation.message,
-            candidates: creation.candidates,
-            orderId: order.id,
-            orderCode: order.orderCode,
-          };
+      } catch (carrierErr) {
+        // Auto refund wallet on Carrier API failure
+        if (this.deps.topupRepo) {
+          await this.deps.topupRepo.refundOrderWithWallet({
+            orderId: orderCode,
+            orderCode,
+            amount: Number(totalFee),
+            customerId: params.customerId,
+            actorId: params.customerId,
+            description: `Tự động hoàn tiền REST API đơn #${orderCode} do lỗi Carrier`,
+          });
         }
 
-        trackingNumber = creation.trackingNumber;
-        actualFee = creation.actualFee;
-        pdfBuffer = creation.pdfBuffer;
-      } catch (err: unknown) {
-        const errObj = err as Error;
-        const partnerErr = err as { rawResponse?: unknown; rawRequest?: unknown };
+        const errObj = carrierErr as Error;
+        const partnerErr = carrierErr as { rawResponse?: unknown; rawRequest?: unknown };
         const reqPayload = partnerErr?.rawRequest || rawRequestPayload;
         const resPayload = partnerErr?.rawResponse || rawResponsePayload;
 
-        await this.logFailedPartnerAudit(
-          order,
+        await prisma.partnerAuditLog
+          .create({
+            data: {
+              orderId: null,
+              partnerCode: carrierCode.toUpperCase(),
+              serviceType: "LASTMILE",
+              action: "CREATE_LABEL",
+              requestId: orderCode,
+              status: "FAILURE",
+              errorMessage: errObj?.message || String(carrierErr),
+              rawRequest: reqPayload ? (toSafeJson(reqPayload) as Prisma.InputJsonValue) : Prisma.JsonNull,
+              rawResponse: resPayload ? (toSafeJson(resPayload) as Prisma.InputJsonValue) : Prisma.JsonNull,
+            },
+          })
+          .catch((auditErr) => {
+            console.warn("[purchaseLabelAtomic] Failed to log partner audit:", auditErr);
+          });
+
+        throw carrierErr;
+      }
+
+      if (creation.isAmbiguous) {
+        // Auto refund wallet on Ambiguous address
+        if (this.deps.topupRepo) {
+          await this.deps.topupRepo.refundOrderWithWallet({
+            orderId: orderCode,
+            orderCode,
+            amount: Number(totalFee),
+            customerId: params.customerId,
+            actorId: params.customerId,
+            description: `Tự động hoàn tiền REST API đơn #${orderCode} do lỗi địa chỉ Carrier`,
+          });
+        }
+
+        await prisma.partnerAuditLog
+          .create({
+            data: {
+              orderId: null,
+              partnerCode: carrierCode.toUpperCase(),
+              serviceType: "LASTMILE",
+              action: "CREATE_LABEL",
+              requestId: orderCode,
+              status: "FAILURE",
+              errorMessage: `Address Ambiguous (202): ${creation.message}`,
+              rawRequest: rawRequestPayload ? (toSafeJson(rawRequestPayload) as Prisma.InputJsonValue) : Prisma.JsonNull,
+              rawResponse: rawResponsePayload ? (toSafeJson(rawResponsePayload) as Prisma.InputJsonValue) : Prisma.JsonNull,
+            },
+          })
+          .catch((auditErr) => {
+            console.warn("[purchaseLabelAtomic] Failed to log partner audit:", auditErr);
+          });
+
+        return {
+          isAmbiguous: true,
+          message: creation.message,
+          candidates: creation.candidates,
+          orderCode,
+        };
+      }
+
+      const trackingNumber = creation.trackingNumber;
+      const actualFee = creation.actualFee;
+      const pdfBuffer = creation.pdfBuffer;
+
+      let labelUrl = "";
+      if (pdfBuffer && this.storage) {
+        try {
+          const fileName = `labels/${orderCode}_${trackingNumber || "label"}.pdf`;
+          labelUrl = await this.storage.upload(pdfBuffer, fileName, "application/pdf");
+        } catch (uploadErr) {
+          console.error(
+            `[purchaseLabelAtomic] PDF label upload to storage failed for ${orderCode}:`,
+            uploadErr,
+          );
+        }
+      }
+
+      // ATOMIC COMMIT INTO DB: Insert order with status LABEL_CREATED
+      const createdOrder = await runInTransaction(async () => {
+        const finalInputData = {
+          ...inputData,
+          status: OrderStatus.LABEL_CREATED,
+          labelStatus: LabelStatus.SUCCESS,
+          trackingNumber,
+          labelUrl: labelUrl || null,
+          paidFee: actualFee,
+          actualFee,
           carrierCode,
-          errObj?.message || String(err),
-          reqPayload,
-          "CREATE_LABEL",
-          resPayload,
+        };
+
+        const newOrder = await this.deps.orderRepo.create(finalInputData);
+
+        await this.logLabelCreationAuditAndLogs(
+          newOrder,
+          carrierCode,
+          trackingNumber,
+          actualFee,
+          labelUrl || "",
+          { orderId: newOrder.id, customerId: params.customerId },
+          rawRequestPayload,
+          rawResponsePayload,
         );
+
+        return newOrder;
+      });
+
+      eventBus
+        .emit("order.created", {
+          orderId: createdOrder.id,
+          customerId: params.customerId,
+          status: createdOrder.status,
+          orderCode: createdOrder.orderCode,
+        })
+        .catch((err) => {
+          console.error("Failed to emit order.created event:", err);
+        });
+
+      return {
+        ...createdOrder,
+        totalFee: Number(createdOrder.totalFee),
+        volumeWeight: pricing.volumeWeight,
+        chargeableWeight: pricing.chargeableWeight,
+        dimensionText,
+      };
+    } finally {
+      await redis.del(lockKey).catch(() => {});
+    }
+  }
+
+  /**
+   * Purchase / Generate Shipping Label for an Order (Deduct-First with Compensation).
+   */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: label purchase flow
+  public async purchaseLabel(params: PurchaseLabelParams & { isApiCall?: boolean }) {
+    if (OrderLabelService.modifyingOrderIds.has(params.orderId)) {
+      throw new ErrorWithCode(
+        ErrorCode.ValidationError,
+        `Đơn hàng #${params.orderId} đang trong quá trình xử lý mua nhãn tem, vui lòng chờ trong giây lát.`,
+        400,
+      );
+    }
+
+    OrderLabelService.modifyingOrderIds.add(params.orderId);
+
+    try {
+      const rawOrder = await this.deps.orderRepo.findById(params.orderId);
+      this.validateOrder(rawOrder, params.customerId);
+      const order = rawOrder;
+
+      // Idempotent check: If label already purchased and saved locally
+      if (order.trackingNumber && order.labelUrl && order.status === OrderStatus.LABEL_CREATED) {
+        return order;
+      }
+
+      // BƯỚC 1: Pre-check số dư ví khả dụng
+      await this.preCheckWalletBalance(order);
+
+      // BƯỚC 2: TRỪ TIỀN VÍ TRƯỚC (Deduct-First)
+      await this.deductWalletBeforeCreation(order, params);
+
+      const carrierCode = order.carrierCode || CARRIER_CODES.EPICHUB;
+      const carrier = this.getCarrierProvider(carrierCode);
+      const shipFromInfo = this.buildShipFromInfo(order.shippingOrigin);
+      const shipToInfo = this.buildShipToInfo(order);
+
+      let pdfBuffer = await this.checkExistingLabelBuffer(carrier, order);
+      let trackingNumber = order.trackingNumber || "";
+      let actualFee = Number(order.totalFee);
+
+      let rawRequestPayload: unknown = this.buildCreateLabelDto(order, shipFromInfo, shipToInfo);
+      let rawResponsePayload: unknown;
+
+      if (!pdfBuffer) {
+        try {
+          // BƯỚC 3: GỌI CARRIER PARTNER API MUA LABEL
+          const creation = await this.executeCarrierLabelCreation(carrier, order, shipFromInfo, shipToInfo);
+          rawRequestPayload = creation.rawRequestPayload;
+          rawResponsePayload = creation.rawResponsePayload;
+
+          if (creation.isAmbiguous) {
+            await this.deps.orderRepo.update(order.id, {
+              labelStatus: LabelStatus.FAILED,
+            });
+
+            await this.logFailedPartnerAudit(
+              order,
+              carrierCode,
+              `Address Ambiguous (202): ${creation.message}`,
+              rawRequestPayload,
+              "CREATE_LABEL",
+              rawResponsePayload,
+            );
+
+            // Nếu là REST API B2B call -> Compensation Auto-Refund 100% tiền ví
+            if (params.isApiCall && this.deps.topupRepo) {
+              await this.deps.topupRepo.refundOrderWithWallet({
+                orderId: order.id,
+                orderCode: order.orderCode,
+                amount: Number(order.totalFee),
+                customerId: order.customerId,
+                actorId: params.operatorId || params.customerId,
+                description: `Tự động hoàn tiền REST API đơn #${order.orderCode} do lỗi địa chỉ Carrier`,
+              });
+            }
+
+            return {
+              isAmbiguous: true,
+              message: creation.message,
+              candidates: creation.candidates,
+              orderId: order.id,
+              orderCode: order.orderCode,
+            };
+          }
+
+          trackingNumber = creation.trackingNumber;
+          actualFee = creation.actualFee;
+          pdfBuffer = creation.pdfBuffer;
+        } catch (err: unknown) {
+          const errObj = err as Error;
+          const partnerErr = err as { rawResponse?: unknown; rawRequest?: unknown };
+          const reqPayload = partnerErr?.rawRequest || rawRequestPayload;
+          const resPayload = partnerErr?.rawResponse || rawResponsePayload;
+
+          await this.deps.orderRepo.update(order.id, {
+            labelStatus: LabelStatus.FAILED,
+          });
+
+          await this.logFailedPartnerAudit(
+            order,
+            carrierCode,
+            errObj?.message || String(err),
+            reqPayload,
+            "CREATE_LABEL",
+            resPayload,
+          );
+
+          // Nếu là REST API B2B call -> Compensation Auto-Refund 100% tiền ví
+          if (params.isApiCall && this.deps.topupRepo) {
+            await this.deps.topupRepo.refundOrderWithWallet({
+              orderId: order.id,
+              orderCode: order.orderCode,
+              amount: Number(order.totalFee),
+              customerId: order.customerId,
+              actorId: params.operatorId || params.customerId,
+              description: `Tự động hoàn tiền REST API đơn #${order.orderCode} do lỗi Carrier`,
+            });
+          }
+
+          throw err;
+        }
+      }
+
+      if (!pdfBuffer) {
+        const err = new ErrorWithCode(
+          ErrorCode.InternalError,
+          `Không thể lấy file nhãn PDF cho vận đơn ${trackingNumber}`,
+          500,
+        );
+        await this.logFailedPartnerAudit(order, carrierCode, err.message, rawRequestPayload);
         throw err;
       }
-    }
 
-    if (!pdfBuffer) {
-      const err = new ErrorWithCode(
-        ErrorCode.InternalError,
-        `Không thể lấy file nhãn PDF cho vận đơn ${trackingNumber}`,
-        500,
+      // BƯỚC 4: MUA LABEL SUCCESS -> Lưu PDF & Cập nhật Order DB
+      return await this.persistLabelAndUpdateOrder(
+        order,
+        carrierCode,
+        trackingNumber,
+        pdfBuffer,
+        actualFee,
+        params,
+        rawRequestPayload,
+        rawResponsePayload,
       );
-      await this.logFailedPartnerAudit(order, carrierCode, err.message, rawRequestPayload);
-      throw err;
+    } finally {
+      OrderLabelService.modifyingOrderIds.delete(params.orderId);
     }
-
-    await this.deductWalletPostCreation(order, actualFee, params, carrierCode, trackingNumber);
-
-    return this.persistLabelAndUpdateOrder(
-      order,
-      carrierCode,
-      trackingNumber,
-      pdfBuffer,
-      actualFee,
-      params,
-      rawRequestPayload,
-      rawResponsePayload,
-    );
   }
 
   /**

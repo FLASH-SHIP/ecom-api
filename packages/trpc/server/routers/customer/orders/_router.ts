@@ -7,6 +7,7 @@ import {
   listImportSessions,
 } from "./procedures/import.handler";
 import {
+  bulkCreate,
   calculateFreight,
   create,
   exportExcel,
@@ -18,6 +19,7 @@ import {
 export const customerOrdersRouter = router({
   calculateFreight,
   create,
+  bulkCreate,
   list,
   get,
   exportExcel,

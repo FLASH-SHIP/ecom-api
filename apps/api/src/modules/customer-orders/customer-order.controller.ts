@@ -8,6 +8,7 @@ import { executeBatchProcess } from "@flash-ship/ecom-lib";
 import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import { GET_LABEL_OPTION } from "@flash-ship/ecom-types";
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -89,51 +90,44 @@ export class CustomerOrderController {
   private async executeCreateOrder(
     customerId: string,
     body: CreateOrderDto,
-    options?: { isBulk?: boolean },
   ) {
+    if (body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
+      const { getOrderLabelService } = await import(
+        "@ecom/features/di/containers/OrderLabelService"
+      );
+      const res = await getOrderLabelService().purchaseLabelAtomic({
+        ...body,
+        customerId,
+      });
+
+      if (
+        res &&
+        typeof res === "object" &&
+        "isAmbiguous" in res &&
+        res.isAmbiguous
+      ) {
+        throw new BadRequestException({
+          message:
+            (res as { message?: string }).message ||
+            "Địa chỉ mập mờ / không hợp lệ bên phía Carrier",
+          errorCode: "ADDRESS_AMBIGUOUS",
+          candidates: (res as { candidates?: unknown }).candidates,
+        });
+      }
+
+      if (res && "id" in res) {
+        return mapToCustomerOrderDetailResponse(
+          res as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
+        );
+      }
+
+      throw new BadRequestException("Tạo nhãn tem thất bại, đơn hàng chưa được lưu.");
+    }
+
     const order = await getOrderService().createOrder({
       ...body,
       customerId,
     });
-
-    if (body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
-      if (options?.isBulk) {
-        try {
-          const { queueBulkLabelPurchase } = await import(
-            "@ecom/features/queue/workers/bulkLabelWorker"
-          );
-          await queueBulkLabelPurchase({
-            orderId: order.id,
-            customerId,
-          });
-        } catch (queueErr) {
-          console.warn(
-            `[CustomerOrderController] Queue label purchase dispatch failed for order #${order.orderCode}:`,
-            queueErr,
-          );
-        }
-      } else {
-        try {
-          const { getOrderLabelService } = await import(
-            "@ecom/features/di/containers/OrderLabelService"
-          );
-          const updatedOrder = await getOrderLabelService().purchaseLabel({
-            orderId: order.id,
-            customerId,
-          });
-          if (updatedOrder && "id" in updatedOrder) {
-            return mapToCustomerOrderDetailResponse(
-              updatedOrder as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
-            );
-          }
-        } catch (labelErr) {
-          console.warn(
-            `[CustomerOrderController] Auto purchase label post-creation failed for order #${order.orderCode}:`,
-            labelErr,
-          );
-        }
-      }
-    }
 
     return mapToCustomerOrderDetailResponse(
       order as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
@@ -226,7 +220,7 @@ export class CustomerOrderController {
         body.orders,
         CreateOrderDto,
         async (orderData) => {
-          return this.executeCreateOrder(customerId, orderData, { isBulk: true });
+          return this.executeCreateOrder(customerId, orderData);
         },
         { maxLimit: MAX_BULK_ORDER_LIMIT },
       );
@@ -244,7 +238,7 @@ export class CustomerOrderController {
       body.orders,
       CreateOrderDto,
       async (orderData) => {
-        return this.executeCreateOrder(customerId, orderData, { isBulk: true });
+        return this.executeCreateOrder(customerId, orderData);
       },
       { maxLimit: MAX_BULK_ORDER_LIMIT },
     );

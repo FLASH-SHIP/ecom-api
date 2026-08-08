@@ -15,6 +15,10 @@ export function getOrderLabelService(): OrderLabelService {
   return _orderLabelService;
 }
 
+export function setOrderLabelService(service: OrderLabelService): void {
+  _orderLabelService = service;
+}
+
 export function resetOrderLabelService(): void {
   _orderLabelService = null;
 }
