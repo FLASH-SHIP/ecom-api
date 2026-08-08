@@ -186,7 +186,7 @@ export class CustomerOrderController {
   }
 
   @Post("bulk")
-  @SetTimeout(60000)
+  @SetTimeout(90000)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({
     summary: "Bulk create orders (up to 10 orders per request) with idempotency check",
