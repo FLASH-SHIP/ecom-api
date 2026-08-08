@@ -88,73 +88,54 @@ export class CustomerOrderController {
     return mapToEstimateFreightResponse(result);
   }
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: order creation workflow
   private async executeCreateOrder(customerId: string, body: CreateOrderDto) {
-    const isGetLabel =
-      body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_LATER ||
-      body.isGetLabel === 0 ||
-      (body.isGetLabel as unknown) === "0" ||
-      (body.isGetLabel as unknown) === false
-        ? GET_LABEL_OPTION.GET_LABEL_LATER
-        : GET_LABEL_OPTION.GET_LABEL_NOW;
+    const isGetLabel = GET_LABEL_OPTION.GET_LABEL_NOW;
 
-    if (isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
-      const { getOrderLabelService } = await import(
-        "@ecom/features/di/containers/OrderLabelService"
-      );
+    const { getOrderLabelService } = await import(
+      "@ecom/features/di/containers/OrderLabelService"
+    );
 
-      let res: unknown;
-      try {
-        res = await getOrderLabelService().purchaseLabelAtomic({
-          ...body,
-          isGetLabel,
-          customerId,
-        });
-      } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        const isAmbiguous =
-          errorMsg.toLowerCase().includes("ambiguous") ||
-          errorMsg.toLowerCase().includes("candidate");
-        const candidates = (err as { candidates?: unknown })?.candidates;
-
-        throw new BadRequestException({
-          message: errorMsg || "Tạo nhãn tem thất bại, đơn hàng chưa được lưu.",
-          errorCode: isAmbiguous ? "ADDRESS_AMBIGUOUS" : "LABEL_PURCHASE_FAILED",
-          ...(candidates ? { candidates } : {}),
-        });
-      }
-
-      if (res && typeof res === "object" && "isAmbiguous" in res && res.isAmbiguous) {
-        throw new BadRequestException({
-          message:
-            (res as { message?: string }).message ||
-            "Địa chỉ mập mờ / không hợp lệ bên phía Carrier",
-          errorCode: "ADDRESS_AMBIGUOUS",
-          candidates: (res as { candidates?: unknown }).candidates,
-        });
-      }
-
-      if (res && typeof res === "object" && "id" in res) {
-        return mapToCustomerOrderDetailResponse(
-          res as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
-        );
-      }
+    let res: unknown;
+    try {
+      res = await getOrderLabelService().purchaseLabelAtomic({
+        ...body,
+        isGetLabel,
+        customerId,
+      });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      const isAmbiguous =
+        errorMsg.toLowerCase().includes("ambiguous") ||
+        errorMsg.toLowerCase().includes("candidate");
+      const candidates = (err as { candidates?: unknown })?.candidates;
 
       throw new BadRequestException({
-        message: "Tạo nhãn tem thất bại, đơn hàng chưa được lưu.",
-        errorCode: "LABEL_PURCHASE_FAILED",
+        message: errorMsg || "Tạo nhãn tem thất bại, đơn hàng chưa được lưu.",
+        errorCode: isAmbiguous ? "ADDRESS_AMBIGUOUS" : "LABEL_PURCHASE_FAILED",
+        ...(candidates ? { candidates } : {}),
       });
     }
 
-    const order = await getOrderService().createOrder({
-      ...body,
-      isGetLabel,
-      customerId,
-    });
+    if (res && typeof res === "object" && "isAmbiguous" in res && res.isAmbiguous) {
+      throw new BadRequestException({
+        message:
+          (res as { message?: string }).message ||
+          "Địa chỉ mập mờ / không hợp lệ bên phía Carrier",
+        errorCode: "ADDRESS_AMBIGUOUS",
+        candidates: (res as { candidates?: unknown }).candidates,
+      });
+    }
 
-    return mapToCustomerOrderDetailResponse(
-      order as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
-    );
+    if (res && typeof res === "object" && "id" in res) {
+      return mapToCustomerOrderDetailResponse(
+        res as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
+      );
+    }
+
+    throw new BadRequestException({
+      message: "Tạo nhãn tem thất bại, đơn hàng chưa được lưu.",
+      errorCode: "LABEL_PURCHASE_FAILED",
+    });
   }
 
   @Post()

@@ -202,6 +202,19 @@ export class RateCardService {
   }
 
   /**
+   * Resolves the effective weight step for calculation.
+   * - RANGE_PER_KG: Uses ceiling step of 1.0kg minimum (Math.max(cardWeightStep, 1.0)).
+   * - STEP_FIXED / RANGE_FIXED: Uses card weightStep.
+   */
+  private getEffectiveWeightStep(cardWeightStep: Decimal | number, rateType: RateItemType): Decimal {
+    const cardStep = new Decimal(cardWeightStep);
+    if (rateType === "RANGE_PER_KG") {
+      return Decimal.max(cardStep, new Decimal(1.0));
+    }
+    return cardStep;
+  }
+
+  /**
    * Calculates shipping freight based on shipping method, destination country,
    * cargo weight, origin airport/hub, and customer ID.
    */
@@ -247,33 +260,36 @@ export class RateCardService {
 
     // Convert weight and step values to Decimal for precise calculations
     const W = new Decimal(weight);
-    const S = new Decimal(card.weightStep);
     const minW = new Decimal(card.minWeight);
 
-    // Step 2: Weight Rounding
-    // rounded = ceil(W / S) * S
-    let RW = W.div(S).ceil().mul(S);
-
     // Enforce minimum chargeable weight guard
-    if (RW.lt(minW)) {
-      RW = minW;
-    }
+    const clampedWeight = Decimal.max(W, minW);
 
-    // Step 3: Price Evaluation
-    // Find matching tier item
+    // Find matching tier item based on clamped weight
     const matchedItem = card.items.find((item) => {
       const start = new Decimal(item.startWeight);
       const end = new Decimal(item.endWeight);
-      return RW.gt(start) && RW.lte(end);
+      return clampedWeight.gt(start) && clampedWeight.lte(end);
     });
 
     if (!matchedItem) {
+      const maxWeightTxt = card.maxWeight
+        ? ` (hạn mức tối đa ${new Decimal(card.maxWeight).toFixed(2)}kg)`
+        : "";
+      const suggestMsg =
+        card.shippingMethod === "EPACKET"
+          ? " Vui lòng chuyển sang dịch vụ Express hoặc điều chỉnh kích thước/cân nặng kiện hàng."
+          : "";
       throw new ErrorWithCode(
         ErrorCode.RateCardValidationError,
-        `Trọng lượng tính cước ${RW.toFixed(3)}kg vượt quá mọi nấc cước cấu hình của bảng giá ${card.code}.`,
+        `Trọng lượng tính cước (${clampedWeight.toFixed(3)}kg) vượt quá nấc cước cấu hình${maxWeightTxt} của bảng giá ${card.code}.${suggestMsg}`,
         400,
       );
     }
+
+    // Determine effective weight step and round weight
+    const effectiveStep = this.getEffectiveWeightStep(card.weightStep, matchedItem.rateType);
+    const RW = clampedWeight.div(effectiveStep).ceil().mul(effectiveStep);
 
     // Calculate freight cost based on rate type
     const freightCost = this.calculateItemFreight(matchedItem, RW);
@@ -293,6 +309,8 @@ export class RateCardService {
         endWeight: Number(new Decimal(matchedItem.endWeight).toFixed(3)),
         rateType: matchedItem.rateType,
         amount: Number(itemAmount.toFixed(2)),
+        chargeableWeight: Number(RW.toFixed(3)),
+        effectiveWeightStep: Number(effectiveStep.toFixed(3)),
       },
     };
   }
@@ -311,27 +329,33 @@ export class RateCardService {
     }
 
     const W = new Decimal(weight);
-    const S = new Decimal(card.weightStep);
     const minW = new Decimal(card.minWeight);
 
-    let RW = W.div(S).ceil().mul(S);
-    if (RW.lt(minW)) {
-      RW = minW;
-    }
+    const clampedWeight = Decimal.max(W, minW);
 
     const matchedItem = card.items.find((item) => {
       const start = new Decimal(item.startWeight);
       const end = new Decimal(item.endWeight);
-      return RW.gt(start) && RW.lte(end);
+      return clampedWeight.gt(start) && clampedWeight.lte(end);
     });
 
     if (!matchedItem) {
+      const maxWeightTxt = card.maxWeight
+        ? ` (hạn mức tối đa ${new Decimal(card.maxWeight).toFixed(2)}kg)`
+        : "";
+      const suggestMsg =
+        card.shippingMethod === "EPACKET"
+          ? " Vui lòng chuyển sang dịch vụ Express hoặc điều chỉnh kích thước/cân nặng kiện hàng."
+          : "";
       throw new ErrorWithCode(
         ErrorCode.RateCardValidationError,
-        `Trọng lượng tính cước ${RW.toFixed(3)}kg vượt quá mọi nấc cước cấu hình của bảng giá ${card.code}.`,
+        `Trọng lượng tính cước (${clampedWeight.toFixed(3)}kg) vượt quá nấc cước cấu hình${maxWeightTxt} của bảng giá ${card.code}.${suggestMsg}`,
         400,
       );
     }
+
+    const effectiveStep = this.getEffectiveWeightStep(card.weightStep, matchedItem.rateType);
+    const RW = clampedWeight.div(effectiveStep).ceil().mul(effectiveStep);
 
     const freightCost = this.calculateItemFreight(matchedItem, RW);
     const itemAmount = new Decimal(matchedItem.amount);
@@ -349,7 +373,41 @@ export class RateCardService {
         endWeight: Number(new Decimal(matchedItem.endWeight).toFixed(3)),
         rateType: matchedItem.rateType,
         amount: Number(itemAmount.toFixed(2)),
+        chargeableWeight: Number(RW.toFixed(3)),
+        effectiveWeightStep: Number(effectiveStep.toFixed(3)),
       },
+    };
+  }
+
+  /**
+   * Gets rate card limit (min/max weight) for customer & destination.
+   */
+  async getRateCardLimit(params: {
+    customerId?: string;
+    shippingMethod: ShippingMethod;
+    country: string;
+    origin?: string | null;
+  }) {
+    let groupId: number | null = null;
+    if (params.customerId) {
+      groupId = await this.deps.rateCardRepo.findCustomerGroupIdByCustomerId(params.customerId);
+    }
+    const card = await this.resolveRateCard(
+      groupId,
+      params.shippingMethod,
+      params.country,
+      params.origin ?? null,
+      new Date(),
+    );
+    const maxWeight = card.maxWeight ? Number(card.maxWeight) : 5.0;
+    const minWeight = card.minWeight ? Number(card.minWeight) : 0.001;
+    return {
+      rateCardId: card.id,
+      code: card.code,
+      name: card.name,
+      minWeightKg: minWeight,
+      maxWeightKg: maxWeight,
+      maxWeightGrams: Math.round(maxWeight * 1000),
     };
   }
 

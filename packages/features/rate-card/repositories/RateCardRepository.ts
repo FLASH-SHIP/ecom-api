@@ -186,11 +186,19 @@ function groupPublishedCardsByScope(cards: PublishedCardScopeItem[]) {
   return groups;
 }
 
+function getEndOfDay(date: Date): Date {
+  const d = new Date(date);
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0) {
+    d.setUTCHours(23, 59, 59, 999);
+  }
+  return d;
+}
+
 function findSupersededInGroup(cards: PublishedCardScopeItem[], now: Date): number[] {
   const effective = cards.filter(
     (c) =>
       (c.startDate === null || new Date(c.startDate) <= now) &&
-      (c.endDate === null || new Date(c.endDate) >= now),
+      (c.endDate === null || getEndOfDay(c.endDate) >= now),
   );
 
   if (effective.length <= 1) return [];
@@ -796,7 +804,7 @@ export class RateCardRepository {
     const idsToArchiveSet = new Set<number>();
 
     for (const card of publishedCards) {
-      if (card.endDate && new Date(card.endDate) < now) {
+      if (card.endDate && getEndOfDay(card.endDate) < now) {
         idsToArchiveSet.add(card.id);
       }
     }
