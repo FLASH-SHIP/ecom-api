@@ -732,10 +732,16 @@ export class TopupTransactionRepository {
     let balanceAfter: number | null = null;
 
     // 3.1 Thử lấy balance từ kết quả trả về của chargingRequest (nếu có)
-    const chargingData = (chargingRes as any)?.data;
+    const chargingData = (chargingRes as Record<string, unknown>)?.data as
+      | Record<string, unknown>
+      | undefined;
     const rawBalFromCharging =
       chargingData?.balance ?? chargingData?.accountBalance ?? chargingData?.account_balance;
-    if (rawBalFromCharging !== undefined && rawBalFromCharging !== null && !isNaN(Number(rawBalFromCharging))) {
+    if (
+      rawBalFromCharging !== undefined &&
+      rawBalFromCharging !== null &&
+      !Number.isNaN(Number(rawBalFromCharging))
+    ) {
       balanceAfter = Number(rawBalFromCharging);
     }
 
@@ -746,13 +752,15 @@ export class TopupTransactionRepository {
           { partnerId: existing.customerId },
           () => this.getCustomerCode(existing.customerId),
         );
-        const resData = (accountInfo as any)?.data;
+        const resData = (accountInfo as Record<string, unknown>)?.data as
+          | Record<string, unknown>
+          | undefined;
         const rawBal =
           resData?.balance ??
           resData?.accountBalance ??
           resData?.account_balance ??
-          resData?.accountInfo?.balance;
-        if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+          (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
+        if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
           balanceAfter = Number(rawBal);
         }
       } catch {
@@ -884,14 +892,16 @@ export class TopupTransactionRepository {
           { partnerId: data.customerId },
           () => this.getCustomerCode(data.customerId),
         );
-        const resData = (accountInfoRes as any)?.data;
+        const resData = (accountInfoRes as Record<string, unknown>)?.data as
+          | Record<string, unknown>
+          | undefined;
         const rawBal =
           resData?.balance ??
           resData?.accountBalance ??
           resData?.account_balance ??
-          resData?.accountInfo?.balance;
+          (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
 
-        if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+        if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
           balanceBefore = Number(rawBal);
         } else {
           // Fallback DB Local
