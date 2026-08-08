@@ -7,6 +7,7 @@ import { OrderStatus } from "@ecom/prisma";
 import { executeBatchProcess } from "@flash-ship/ecom-lib";
 import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import { GET_LABEL_OPTION } from "@flash-ship/ecom-types";
+import { SetTimeout } from "../../common/decorators/timeout.decorator";
 import {
   BadRequestException,
   Body,
@@ -145,6 +146,7 @@ export class CustomerOrderController {
   }
 
   @Post()
+  @SetTimeout(30000)
   @ApiOperation({ summary: "Create a single order with idempotency check" })
   @ApiBody({ type: CreateOrderDto })
   @ApiHeader({
@@ -192,6 +194,7 @@ export class CustomerOrderController {
   }
 
   @Post("bulk")
+  @SetTimeout(60000)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({
     summary: "Bulk create orders (up to 50 orders per request) with idempotency check",
@@ -343,6 +346,7 @@ export class CustomerOrderController {
   }
 
   @Post(":id/purchase-label")
+  @SetTimeout(30000)
   @ApiOperation({ summary: "Purchase / Generate shipping label for an order" })
   @ApiParam({ name: "id", description: "Order ID, Ecom Order Code, or Seller Order ID" })
   @ApiResponse({
