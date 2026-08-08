@@ -138,7 +138,7 @@ export class CustomerOrderController {
   }
 
   @Post()
-  @SetTimeout(30000)
+  @SetTimeout(60000)
   @ApiOperation({ summary: "Create a single order with idempotency check" })
   @ApiBody({ type: CreateOrderDto })
   @ApiHeader({
@@ -189,7 +189,7 @@ export class CustomerOrderController {
   @SetTimeout(60000)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({
-    summary: "Bulk create orders (up to 50 orders per request) with idempotency check",
+    summary: "Bulk create orders (up to 10 orders per request) with idempotency check",
   })
   @ApiBody({ type: CreateBulkOrdersDto })
   @ApiHeader({
@@ -338,7 +338,7 @@ export class CustomerOrderController {
   }
 
   @Post(":id/purchase-label")
-  @SetTimeout(30000)
+  @SetTimeout(60000)
   @ApiOperation({ summary: "Purchase / Generate shipping label for an order" })
   @ApiParam({ name: "id", description: "Order ID, Ecom Order Code, or Seller Order ID" })
   @ApiResponse({

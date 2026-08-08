@@ -571,12 +571,12 @@ export class CreateOrderDto {
   products?: OrderProductDto[];
 }
 
-export const MAX_BULK_ORDER_LIMIT = 50;
+export const MAX_BULK_ORDER_LIMIT = 10;
 
 export class CreateBulkOrdersDto {
   @ApiProperty({
     type: () => [CreateOrderDto],
-    description: "Array of order creation payloads (1-50 orders per request)",
+    description: "Array of order creation payloads (1-10 orders per request)",
   })
   @ValidateNested({ each: true, always: true })
   @Type(() => CreateOrderDto)
