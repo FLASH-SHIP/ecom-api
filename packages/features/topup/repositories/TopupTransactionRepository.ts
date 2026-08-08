@@ -862,6 +862,16 @@ export class TopupTransactionRepository {
   private static payingOrderIds = new Set<string>();
 
   /**
+   * Helper kiểm tra chuỗi có đúng định dạng UUID hay không
+   */
+  private isUuid(val?: string | null): boolean {
+    return (
+      typeof val === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+    );
+  }
+
+  /**
    * Trừ số dư ví khách hàng khi thanh toán đơn hàng thành công (`payOrderWithWallet`)
    *
    * QUY TRÌNH BẢO VỆ 3 LỚP & TỐI ƯU SIÊU ĐỘ TRỄ:
@@ -889,11 +899,7 @@ export class TopupTransactionRepository {
     TopupTransactionRepository.payingOrderIds.add(data.orderId);
 
     try {
-      const isUuid = (val?: string | null): boolean =>
-        typeof val === "string" &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
-
-      const orderWhere: Prisma.TopupTransactionWhereInput = isUuid(data.orderId)
+      const orderWhere: Prisma.TopupTransactionWhereInput = this.isUuid(data.orderId)
         ? { orderId: data.orderId }
         : { orderCode: data.orderCode };
 
@@ -1004,7 +1010,7 @@ export class TopupTransactionRepository {
           wireAmount: new Prisma.Decimal(data.amount),
           wireAmountApprove: new Prisma.Decimal(data.amount),
           description: data.description || data.orderId,
-          orderId: isUuid(data.orderId) ? data.orderId : null,
+          orderId: this.isUuid(data.orderId) ? data.orderId : null,
           orderCode: data.orderCode,
           accountBalanceBefore: new Prisma.Decimal(balanceBefore),
           amountChange: new Prisma.Decimal(data.amount),
@@ -1092,11 +1098,7 @@ export class TopupTransactionRepository {
   }) {
     if (data.amount <= 0) return null;
 
-    const isUuid = (val?: string | null): boolean =>
-      typeof val === "string" &&
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
-
-    const orderWhere: Prisma.TopupTransactionWhereInput = isUuid(data.orderId)
+    const orderWhere: Prisma.TopupTransactionWhereInput = this.isUuid(data.orderId)
       ? { orderId: data.orderId }
       : { orderCode: data.orderCode };
 
@@ -1166,7 +1168,7 @@ export class TopupTransactionRepository {
         wireAmount: new Prisma.Decimal(data.amount),
         wireAmountApprove: new Prisma.Decimal(data.amount),
         description: data.description || `Hoàn tiền hủy tem đơn #${data.orderCode}`,
-        orderId: isUuid(data.orderId) ? data.orderId : null,
+        orderId: this.isUuid(data.orderId) ? data.orderId : null,
         orderCode: data.orderCode,
         accountBalanceBefore: new Prisma.Decimal(balanceBefore),
         amountChange: new Prisma.Decimal(data.amount),
