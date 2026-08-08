@@ -9,7 +9,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@flash-ship/ecom-lib": new URL("../lib/src", import.meta.url).pathname,
+      "@flash-ship/ecom-lib": new URL("../../../ecom-shared-packages/packages/lib/src", import.meta.url).pathname,
     },
   },
 });

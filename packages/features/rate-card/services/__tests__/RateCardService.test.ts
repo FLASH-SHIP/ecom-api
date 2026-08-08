@@ -156,19 +156,57 @@ describe("RateCardService", () => {
       expect(result.freightCost).toBe(12.0);
     });
 
-    it("should calculate correct freight for custom heavy cargo range_per_kg", async () => {
+    it("should calculate correct freight for custom heavy cargo range_per_kg using 1.0kg ceiling step", async () => {
       rateCardRepo.findCustomerGroupIdByCustomerId.mockResolvedValue(null);
       rateCardRepo.findActiveDefault.mockResolvedValue(mockDefaultEpacketCard);
 
       const result = await service.calculateFreight({
         shippingMethod: "EPACKET",
         country: "US",
-        weight: 6.42, // rounded up to 6.45kg
+        weight: 6.42, // RANGE_PER_KG rounded up to 7.00kg (1.0kg step)
         customerId: "1",
       });
 
-      // 6.45 * 9.5 = 61.275 -> 61.28
-      expect(result.freightCost).toBe(61.28);
+      // 7.00 * 9.5 = 66.50
+      expect(result.freightCost).toBe(66.5);
+      expect(result.appliedRateCardSnapshot.chargeableWeight).toBe(7.0);
+      expect(result.appliedRateCardSnapshot.effectiveWeightStep).toBe(1.0);
+    });
+
+    it("should round RANGE_PER_KG heavy cargo weight using 1.0kg ceiling step for Express cargo >20kg", async () => {
+      rateCardRepo.findCustomerGroupIdByCustomerId.mockResolvedValue(2);
+      rateCardRepo.findActiveByGroup.mockResolvedValue(mockVipExpressCard);
+
+      const result = await service.calculateFreight({
+        shippingMethod: "EXPRESS",
+        country: "US",
+        weight: 20.1, // 20.1kg in range (20.0, 44.0] RANGE_PER_KG, rounded up to 21.0kg
+        customerId: "1",
+      });
+
+      // 21.0 * 9.99 = 209.79
+      expect(result.freightCost).toBe(209.79);
+      expect(result.appliedRateCardSnapshot.chargeableWeight).toBe(21.0);
+      expect(result.appliedRateCardSnapshot.effectiveWeightStep).toBe(1.0);
+    });
+
+    it("should throw validation error when weight exceeds maxWeight for ePacket", async () => {
+      rateCardRepo.findCustomerGroupIdByCustomerId.mockResolvedValue(null);
+      rateCardRepo.findActiveDefault.mockResolvedValue(mockDefaultEpacketCard);
+
+      await expect(
+        service.calculateFreight({
+          shippingMethod: "EPACKET",
+          country: "US",
+          weight: 25.0, // Exceeds highest slab in mock epacket card
+          customerId: "1",
+        }),
+      ).rejects.toThrowError(
+        expect.objectContaining({
+          code: ErrorCode.RateCardValidationError,
+          message: expect.stringContaining("Vui lòng chuyển sang dịch vụ Express"),
+        }),
+      );
     });
 
     it("should throw RateCardNotFound error if no rate card matches", async () => {

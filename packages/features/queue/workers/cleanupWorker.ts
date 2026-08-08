@@ -48,11 +48,28 @@ export function registerCleanupWorker() {
         },
       });
 
+      // Purge soft-deleted trash items older than 30 days
+      const { purgeTrash } = await import("@ecom/features/scheduler/services/TrashPurge");
+      const trashPurged = await purgeTrash().catch(() => ({ purgedPosts: 0, purgedPages: 0 }));
+
+      // Purge expired customer and admin sessions
+      const now = new Date();
+      const customerSessionsPurged = await prisma.customerSession.deleteMany({
+        where: { expires: { lt: now } },
+      }).catch(() => ({ count: 0 }));
+      const adminSessionsPurged = await prisma.session.deleteMany({
+        where: { expires: { lt: now } },
+      }).catch(() => ({ count: 0 }));
+
       log.info("Database cleanup completed successfully", {
         requestLogsPurged: requestLogsPurged.count,
         auditLogsPurged: auditLogsPurged.count,
         webhookLogsPurged: webhookLogsPurged.count,
         expiredKeysPurged: expiredKeysPurged.count,
+        trashPurgedPosts: trashPurged.purgedPosts,
+        trashPurgedPages: trashPurged.purgedPages,
+        customerSessionsPurged: customerSessionsPurged.count,
+        adminSessionsPurged: adminSessionsPurged.count,
         requestDaysThreshold: requestDays,
         auditDaysThreshold: auditDays,
         webhookDaysThreshold: 30,

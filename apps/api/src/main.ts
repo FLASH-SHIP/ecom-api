@@ -358,6 +358,22 @@ async function bootstrap() {
   const bulkLabelConcurrency = Number(process.env.BULK_LABEL_WORKER_CONCURRENCY || 5);
   JobQueue.startWorker(BULK_LABEL_QUEUE, bulkLabelConcurrency);
   console.log(`🏷️ Bulk label purchase worker started (concurrency: ${bulkLabelConcurrency})`);
+
+  // Start background rate card auto-archive worker
+  const { registerRateCardWorker, queueRateCardJob, RATECARD_QUEUE } = await import(
+    "@ecom/features/queue/workers/rateCardWorker"
+  );
+  registerRateCardWorker();
+  JobQueue.startWorker(RATECARD_QUEUE);
+  queueRateCardJob().catch((err) => {
+    console.warn("⚠️ Failed to schedule background rate card auto-archive job:", err);
+  });
+  // Execute immediate check on boot to clean up any past expired rate cards
+  const { getRateCardService } = await import("@ecom/features/di/containers/ShippingRateService");
+  getRateCardService().archiveSupersededDefaultRateCards().catch((err) => {
+    console.warn("⚠️ Failed initial boot rate card archive scan:", err);
+  });
+  console.log("📊 Rate card auto-archive worker started");
 }
 
 bootstrap();

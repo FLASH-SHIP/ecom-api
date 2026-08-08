@@ -550,13 +550,11 @@ export class CreateOrderDto {
   @ApiPropertyOptional({
     enum: GET_LABEL_OPTION,
     example: GET_LABEL_OPTION.GET_LABEL_NOW,
+    deprecated: true,
     description:
-      "Option mode for shipping label creation (1 = GET_LABEL_NOW / auto purchase label immediately, 0 = GET_LABEL_LATER / leave in pending label status)",
+      "Option mode for shipping label creation. Note: REST API requires mandatory immediate label purchase (Atomic Creation); this field is deprecated and always forced to 1 (GET_LABEL_NOW).",
   })
-  @Transform(({ value }: { value: unknown }) => {
-    if (value === false || value === 0 || value === "0") return GET_LABEL_OPTION.GET_LABEL_LATER;
-    return GET_LABEL_OPTION.GET_LABEL_NOW;
-  })
+  @Transform(() => GET_LABEL_OPTION.GET_LABEL_NOW)
   @IsOptional({ always: true })
   @IsInt({ always: true })
   isGetLabel?: number = GET_LABEL_OPTION.GET_LABEL_NOW;

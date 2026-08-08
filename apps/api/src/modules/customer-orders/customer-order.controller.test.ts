@@ -112,7 +112,7 @@ describe("CustomerOrderController", () => {
   });
 
   describe("createOrder", () => {
-    it("should call orderService.createOrder with customerId", async () => {
+    it("should call purchaseLabelAtomic with customerId and isGetLabel = 1 regardless of body isGetLabel", async () => {
       const req = mockCustomerReq("cust_123");
       const body: CreateOrderDto = {
         shippingMethod: "EXPRESS",
@@ -140,15 +140,16 @@ describe("CustomerOrderController", () => {
         isGetLabel: 0,
       };
 
-      mockCreateOrder.mockResolvedValue({
+      mockPurchaseLabelAtomic.mockResolvedValue({
         id: "ord_1",
         orderCode: "EC2607230001",
       });
 
       const result = await controller.createOrder(req, body);
 
-      expect(mockCreateOrder).toHaveBeenCalledWith({
+      expect(mockPurchaseLabelAtomic).toHaveBeenCalledWith({
         ...body,
+        isGetLabel: 1,
         customerId: "cust_123",
       });
       expect(result.id).toBe("ord_1");
@@ -189,7 +190,7 @@ describe("CustomerOrderController", () => {
       expect(result.id).toBe("cached_ord");
     });
 
-    it("should transform isGetLabel payload values (true, 1, '1') to GET_LABEL_OPTION.GET_LABEL_NOW (1)", async () => {
+    it("should transform isGetLabel payload values (true, 1, '1', false, 0) to GET_LABEL_OPTION.GET_LABEL_NOW (1)", async () => {
       const dtoTrue = plainToInstance(CreateOrderDto, { isGetLabel: true });
       const dtoNum = plainToInstance(CreateOrderDto, { isGetLabel: 1 });
       const dtoStr = plainToInstance(CreateOrderDto, { isGetLabel: "1" });
@@ -199,8 +200,8 @@ describe("CustomerOrderController", () => {
       expect(dtoTrue.isGetLabel).toBe(1);
       expect(dtoNum.isGetLabel).toBe(1);
       expect(dtoStr.isGetLabel).toBe(1);
-      expect(dtoFalse.isGetLabel).toBe(0);
-      expect(dtoZero.isGetLabel).toBe(0);
+      expect(dtoFalse.isGetLabel).toBe(1);
+      expect(dtoZero.isGetLabel).toBe(1);
     });
 
     it("should fail validation with exact message when shippingMethod is empty or invalid", async () => {
@@ -925,7 +926,7 @@ describe("CustomerOrderController", () => {
         ],
       };
 
-      mockCreateOrder.mockResolvedValue({
+      mockPurchaseLabelAtomic.mockResolvedValue({
         id: "bulk_1",
         orderCode: "EC260723BULK1",
       });

@@ -54,7 +54,7 @@ export function getCronJobs(): CronJobDefinition[] {
     {
       name: "ratecard.default.archive_superseded",
       cron: "0 * * * *",
-      description: "Scan and archive superseded default rate cards when a newer default rate card becomes effective",
+      description: "Scan and archive expired or superseded rate cards (DEFAULT and CUSTOM) when end date passes or newer rate card becomes effective",
       enabled: true,
       handler: async () => {
         const { archiveSupersededDefaultRateCards } = await import(

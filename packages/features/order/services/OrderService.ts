@@ -272,6 +272,23 @@ export class OrderService {
   }
 
   /**
+   * Gets shipping rate card limits (min/max weight) for customer & destination.
+   */
+  async getShippingLimit(params: {
+    customerId: string;
+    shippingMethod: string;
+    country: string;
+    origin?: string | null;
+  }) {
+    return await this.deps.rateCardService.getRateCardLimit({
+      customerId: params.customerId,
+      shippingMethod: params.shippingMethod as ShippingMethod,
+      country: params.country,
+      origin: params.origin,
+    });
+  }
+
+  /**
    * Validates params, calculates freight, checks idempotency, and constructs CreateOrderInput in memory.
    */
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: necessary setup logic for order creation
