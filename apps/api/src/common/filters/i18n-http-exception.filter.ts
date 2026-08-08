@@ -62,6 +62,7 @@ export class I18nHttpExceptionFilter implements ExceptionFilter<HttpException> {
     }
 
     response.status(status).json({
+      success: false,
       statusCode: status,
       error: translatedError || rawError || exception.name,
       message: translatedMessage,
