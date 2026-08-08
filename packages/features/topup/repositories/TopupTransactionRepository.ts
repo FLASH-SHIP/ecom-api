@@ -116,13 +116,15 @@ export class TopupTransactionRepository {
         { partnerId: customerId },
         () => this.getCustomerCode(customerId),
       );
-      const resData = (accountInfoRes as any)?.data;
+      const resData = (accountInfoRes as Record<string, unknown>)?.data as
+        | Record<string, unknown>
+        | undefined;
       const rawBal =
         resData?.balance ??
         resData?.accountBalance ??
         resData?.account_balance ??
-        resData?.accountInfo?.balance;
-      if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+        (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
+      if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
         accountBalance = Number(rawBal);
       } else {
         // Fallback: Lấy giao dịch đã xác nhận (status = TopupStatus.CONFIRMED) gần nhất từ DB Local
@@ -654,51 +656,6 @@ export class TopupTransactionRepository {
   /** Map khóa giao dịch đang trong quá trình phê duyệt (Chống race condition 2 Admin phê duyệt cùng lúc) */
   private static approvingTransactionIds = new Set<number>();
 
-  private async resolveBalanceAfterAndBefore(
-    chargingRes: unknown,
-    walletClient: ExternalWalletClient,
-    customerId: string,
-    previousConfirmedBalance: number,
-    approvedAmount: number,
-  ): Promise<{ balanceBefore: number; balanceAfter: number }> {
-    let balanceAfter: number | null = null;
-    const chargingData = (chargingRes as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
-    const rawBalFromCharging = chargingData?.balance ?? chargingData?.accountBalance ?? chargingData?.account_balance;
-
-    if (rawBalFromCharging !== undefined && rawBalFromCharging !== null && !Number.isNaN(Number(rawBalFromCharging))) {
-      balanceAfter = Number(rawBalFromCharging);
-    }
-
-    if (balanceAfter === null) {
-      try {
-        const accountInfo = await walletClient.getAccountInfo({ partnerId: customerId });
-        const resData = (accountInfo as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
-        const rawBal =
-          resData?.balance ??
-          resData?.accountBalance ??
-          resData?.account_balance ??
-          (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
-        if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
-          balanceAfter = Number(rawBal);
-        }
-      } catch {
-        // Dự phòng an toàn
-      }
-    }
-
-    const roundCurrency = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
-    if (balanceAfter !== null && balanceAfter > previousConfirmedBalance) {
-      return {
-        balanceBefore: roundCurrency(previousConfirmedBalance),
-        balanceAfter: roundCurrency(balanceAfter),
-      };
-    }
-    return {
-      balanceBefore: roundCurrency(previousConfirmedBalance),
-      balanceAfter: roundCurrency(previousConfirmedBalance + approvedAmount),
-    };
-  }
-
   /**
    * Phê duyệt giao dịch nạp tiền (Dành cho Admin)
    * Quy trình Single Source of Truth Flow:
@@ -708,6 +665,7 @@ export class TopupTransactionRepository {
    * 4. Gọi getAccountInfo lấy balance THỰC TẾ mới nhất từ Ví Độc Lập làm accountBalanceAfter (Single Source of Truth).
    * 5. Cập nhật DB Local trong $transaction (< 5ms): status = 2 (CONFIRMED), wireAmountApprove, accountBalanceBefore, amountChange, accountBalanceAfter, updatedBy, updatedAt, và ghi log History ("Xác nhận giao dịch thanh toán").
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: topup approval workflow
   async approveTopupRequest(id: number, actorId: string) {
     if (TopupTransactionRepository.approvingTransactionIds.has(id)) {
       throw new Error("Giao dịch đang được hệ thống xử lý, vui lòng chờ trong giây lát.");
@@ -883,6 +841,7 @@ export class TopupTransactionRepository {
    * @param data Dữ liệu đơn hàng và khách hàng cần trừ tiền
    * @returns Bản ghi giao dịch nạp/trừ tiền vừa tạo
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: wallet payment workflow
   async payOrderWithWallet(data: {
     orderId: string;
     orderCode: string;
