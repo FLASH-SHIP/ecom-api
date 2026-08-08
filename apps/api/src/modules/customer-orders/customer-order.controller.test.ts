@@ -14,6 +14,8 @@ const mockGetCustomerOrderDetail = vi.fn();
 const mockCancelCustomerOrder = vi.fn();
 const mockCalculateOrderFreight = vi.fn();
 
+const mockPurchaseLabelAtomic = vi.fn();
+
 vi.mock("@ecom/features/di/containers/OrderService", () => ({
   getOrderService: () => ({
     createOrder: mockCreateOrder,
@@ -21,6 +23,13 @@ vi.mock("@ecom/features/di/containers/OrderService", () => ({
     getCustomerOrderDetail: mockGetCustomerOrderDetail,
     cancelCustomerOrder: mockCancelCustomerOrder,
     calculateOrderFreight: mockCalculateOrderFreight,
+  }),
+  getOrderRepository: () => ({}),
+}));
+
+vi.mock("@ecom/features/di/containers/OrderLabelService", () => ({
+  getOrderLabelService: () => ({
+    purchaseLabelAtomic: mockPurchaseLabelAtomic,
   }),
 }));
 
@@ -128,6 +137,7 @@ describe("CustomerOrderController", () => {
         dimensionWidth: 15,
         dimensionHeight: 10,
         declaredValue: 20,
+        isGetLabel: 0,
       };
 
       mockCreateOrder.mockResolvedValue({
@@ -910,6 +920,7 @@ describe("CustomerOrderController", () => {
             dimensionWidth: 15,
             dimensionHeight: 10,
             declaredValue: 20,
+            isGetLabel: 0,
           },
         ],
       };

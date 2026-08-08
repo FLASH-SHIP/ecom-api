@@ -91,12 +91,21 @@ export class CustomerOrderController {
     customerId: string,
     body: CreateOrderDto,
   ) {
-    if (body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
+    const isGetLabel =
+      body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_LATER ||
+      body.isGetLabel === 0 ||
+      (body.isGetLabel as unknown) === "0" ||
+      (body.isGetLabel as unknown) === false
+        ? GET_LABEL_OPTION.GET_LABEL_LATER
+        : GET_LABEL_OPTION.GET_LABEL_NOW;
+
+    if (isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
       const { getOrderLabelService } = await import(
         "@ecom/features/di/containers/OrderLabelService"
       );
       const res = await getOrderLabelService().purchaseLabelAtomic({
         ...body,
+        isGetLabel,
         customerId,
       });
 
@@ -126,6 +135,7 @@ export class CustomerOrderController {
 
     const order = await getOrderService().createOrder({
       ...body,
+      isGetLabel,
       customerId,
     });
 
