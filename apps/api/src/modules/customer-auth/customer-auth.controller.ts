@@ -177,6 +177,7 @@ export class CustomerAuthController {
         email: validatedCustomer.email,
         name: validatedCustomer.name || validatedCustomer.email,
         tokenVersion: (validatedCustomer as { tokenVersion?: number }).tokenVersion ?? 1,
+        isTermsAccepted: Boolean((validatedCustomer as any).isTermsAccepted),
       };
       return {
         user,
