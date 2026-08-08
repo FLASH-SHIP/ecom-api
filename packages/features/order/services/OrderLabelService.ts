@@ -787,7 +787,6 @@ export class OrderLabelService {
           labelStatus: LabelStatus.SUCCESS,
           trackingNumber,
           labelUrl: labelUrl || null,
-          actualFee,
           carrierCode,
         };
 
