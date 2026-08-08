@@ -24,8 +24,8 @@ const shippingOriginSchema = z.nativeEnum(ShippingOrigin, {
 });
 const getLabelSchema = z
   .preprocess((val) => {
-    if (val === true || val === 1 || val === "1") return GET_LABEL_OPTION.GET_LABEL_NOW;
-    return GET_LABEL_OPTION.GET_LABEL_LATER;
+    if (val === false || val === 0 || val === "0") return GET_LABEL_OPTION.GET_LABEL_LATER;
+    return GET_LABEL_OPTION.GET_LABEL_NOW;
   }, z.number().int())
   .optional();
 
@@ -404,6 +404,7 @@ export const importBatch = authedProcedure
     z.object({
       importId: z.string().min(1),
       batchIndex: z.number().int().nonnegative(),
+      isGetLabel: getLabelSchema,
       orders: z.array(importOrderItemSchema),
     }),
   )
@@ -420,8 +421,12 @@ export const importBatch = authedProcedure
 
     for (const order of input.orders) {
       try {
+        const targetIsGetLabel =
+          input.isGetLabel ?? order.isGetLabel ?? GET_LABEL_OPTION.GET_LABEL_LATER;
+
         const createdOrder = await service.createOrder({
           ...order,
+          isGetLabel: targetIsGetLabel,
           senderName: order.senderName ?? "",
           senderPhone: order.senderPhone ?? "",
           senderAddress: order.senderAddress ?? "",
@@ -443,7 +448,7 @@ export const importBatch = authedProcedure
         });
         successCount++;
 
-        if (order.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
+        if (targetIsGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
           try {
             const { queueBulkLabelPurchase } = await import(
               "@ecom/features/queue/workers/bulkLabelWorker"

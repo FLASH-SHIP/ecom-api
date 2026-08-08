@@ -554,13 +554,12 @@ export class CreateOrderDto {
       "Option mode for shipping label creation (1 = GET_LABEL_NOW / auto purchase label immediately, 0 = GET_LABEL_LATER / leave in pending label status)",
   })
   @Transform(({ value }: { value: unknown }) => {
-    if (value === undefined || value === null) return GET_LABEL_OPTION.GET_LABEL_LATER;
-    if (value === true || value === 1 || value === "1") return GET_LABEL_OPTION.GET_LABEL_NOW;
-    return GET_LABEL_OPTION.GET_LABEL_LATER;
+    if (value === false || value === 0 || value === "0") return GET_LABEL_OPTION.GET_LABEL_LATER;
+    return GET_LABEL_OPTION.GET_LABEL_NOW;
   })
   @IsOptional({ always: true })
   @IsInt({ always: true })
-  isGetLabel?: number;
+  isGetLabel?: number = GET_LABEL_OPTION.GET_LABEL_NOW;
 
   @ApiPropertyOptional({
     type: () => [OrderProductDto],
@@ -572,12 +571,12 @@ export class CreateOrderDto {
   products?: OrderProductDto[];
 }
 
-export const MAX_BULK_ORDER_LIMIT = 50;
+export const MAX_BULK_ORDER_LIMIT = 10;
 
 export class CreateBulkOrdersDto {
   @ApiProperty({
     type: () => [CreateOrderDto],
-    description: "Array of order creation payloads (1-50 orders per request)",
+    description: "Array of order creation payloads (1-10 orders per request)",
   })
   @ValidateNested({ each: true, always: true })
   @Type(() => CreateOrderDto)

@@ -42,10 +42,10 @@ const shippingOriginSchema = z.nativeEnum(ShippingOrigin);
 const orderStatusSchema = z.nativeEnum(OrderStatus);
 const getLabelSchema = z
   .preprocess((val) => {
-    if (val === true || val === 1 || val === "1") return GET_LABEL_OPTION.GET_LABEL_NOW;
-    return GET_LABEL_OPTION.GET_LABEL_LATER;
+    if (val === false || val === 0 || val === "0") return GET_LABEL_OPTION.GET_LABEL_LATER;
+    return GET_LABEL_OPTION.GET_LABEL_NOW;
   }, z.number().int())
-  .optional();
+  .default(GET_LABEL_OPTION.GET_LABEL_NOW);
 
 export interface CachedOrder
   extends Omit<
@@ -558,3 +558,159 @@ export const exportExcel = authedProcedure
       fileData: base64,
     };
   });
+
+/** Controlled Concurrency Pool Helper */
+function createConcurrencyLimit(concurrency: number) {
+  const queue: (() => void)[] = [];
+  let activeCount = 0;
+
+  const next = () => {
+    activeCount--;
+    if (queue.length > 0) {
+      queue.shift()!();
+    }
+  };
+
+  return <T>(fn: () => Promise<T>): Promise<T> => {
+    return new Promise<T>((resolve, reject) => {
+      const run = () => {
+        activeCount++;
+        fn().then(resolve, reject).finally(next);
+      };
+
+      if (activeCount < concurrency) {
+        run();
+      } else {
+        queue.push(run);
+      }
+    });
+  };
+}
+
+// 5. Bulk create orders with Atomic Creation & Multi-Status Response
+export const bulkCreate = authedProcedure
+  .input(
+    z.object({
+      items: z
+        .array(
+          z.object({
+            shippingMethod: shippingMethodSchema,
+            shippingOrigin: shippingOriginSchema,
+            sellerOrderId: z.string().min(1, { message: "sellerOrderId không được để trống" }),
+            senderName: z.string().min(1),
+            senderAddress: z.string().min(1),
+            senderPhone: z.string().min(1),
+            senderEmail: z.string().optional().nullable(),
+            senderCountry: z.string().min(1),
+            senderState: z.string().optional().nullable(),
+            senderCity: z.string().min(1),
+            senderWard: z.string().min(1),
+            senderZipCode: z.string().min(1),
+
+            receiverName: z.string().min(1).max(100),
+            receiverPhone: z.string().optional().nullable(),
+            receiverEmail: z.string().optional().nullable(),
+            receiverCity: z.string().min(1),
+            receiverState: z.string().min(1),
+            receiverAddress1: z.string().min(1).max(150),
+            receiverAddress2: z.string().optional().nullable(),
+            receiverCountry: z.string().min(2).max(10),
+            receiverZipCode: z.string().optional().nullable(),
+
+            detailDescription: z.string().max(200).optional().nullable(),
+            declaredWeight: z.number().int().positive().max(MAX_DECLARED_WEIGHT_GRAMS),
+            dimensionLength: z.number().int().positive().max(MAX_DIMENSION_CM),
+            dimensionWidth: z.number().int().positive().max(MAX_DIMENSION_CM),
+            dimensionHeight: z.number().int().positive().max(MAX_DIMENSION_CM),
+            declaredValue: z.number().min(0).optional().nullable(),
+            packingTypeId: z.number().int().positive().optional().nullable(),
+            products: z
+              .array(
+                z.object({
+                  description: z.string().min(1).max(200),
+                  quantity: z.number().int().positive(),
+                  value: z.number().positive(),
+                  hsCode: z.string(),
+                  originCountry: z.string().min(1),
+                  weight: z.number().int().positive().optional().nullable(),
+                  sku: z.string().optional().nullable(),
+                }),
+              )
+              .optional(),
+          }),
+        )
+        .min(1, { message: "Danh sách đơn hàng không được để trống" })
+        .max(50, { message: "Số lượng đơn hàng trong 1 request bulk không được vượt quá 50 đơn." }),
+    }),
+  )
+  .mutation(async ({ input, ctx }) => {
+    const service = getOrderService();
+    const limit = createConcurrencyLimit(5); // Controlled Concurrency Pool = 5
+
+    const results = await Promise.all(
+      input.items.map((item) =>
+        limit(async () => {
+          try {
+            let packagingCode: string | null = null;
+            if (item.packingTypeId) {
+              const packingService = getPackingService();
+              const pt = await packingService.getPackingType(item.packingTypeId);
+              packagingCode = pt.name;
+            }
+
+            const createdOrder = await service.createOrder({
+              ...item,
+              isGetLabel: GET_LABEL_OPTION.GET_LABEL_NOW,
+              customerId: ctx.user.id,
+              packagingCode,
+            });
+
+            const { getOrderLabelService } = await import("@ecom/features/di/containers/OrderLabelService");
+            const orderLabelService = getOrderLabelService();
+            const labelRes = await orderLabelService.purchaseLabel({
+              orderId: createdOrder.id,
+              customerId: ctx.user.id,
+            });
+
+            const isAmbiguous = typeof labelRes === "object" && labelRes !== null && "isAmbiguous" in labelRes && labelRes.isAmbiguous;
+            if (isAmbiguous) {
+              return {
+                sellerOrderId: item.sellerOrderId,
+                status: "FAILED" as const,
+                errorCode: "ADDRESS_AMBIGUOUS",
+                message: (labelRes as { message?: string }).message || "Địa chỉ mập mờ / không hợp lệ bên phía Carrier",
+                candidates: (labelRes as { candidates?: unknown }).candidates,
+              };
+            }
+
+            const successOrder = labelRes as { orderCode?: string; trackingNumber?: string; labelUrl?: string };
+            return {
+              sellerOrderId: item.sellerOrderId,
+              orderCode: createdOrder.orderCode || successOrder.orderCode,
+              status: "SUCCESS" as const,
+              trackingNumber: successOrder.trackingNumber || "",
+              labelUrl: successOrder.labelUrl || "",
+            };
+          } catch (err) {
+            return {
+              sellerOrderId: item.sellerOrderId,
+              status: "FAILED" as const,
+              errorCode: "PURCHASE_LABEL_FAILED",
+              message: (err as Error)?.message || "Tạo đơn / mua nhãn tem thất bại",
+            };
+          }
+        }),
+      ),
+    );
+
+    return {
+      success: true,
+      summary: {
+        total: input.items.length,
+        successful: results.filter((r) => r.status === "SUCCESS").length,
+        failed: results.filter((r) => r.status === "FAILED").length,
+      },
+      data: results,
+    };
+  });
+

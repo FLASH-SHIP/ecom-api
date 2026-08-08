@@ -29,7 +29,7 @@ export class TimeoutInterceptor implements NestInterceptor {
       controller,
     ]);
 
-    const defaultTimeout = this.configService.get<number>("API_TIMEOUT_MS") ?? 10000;
+    const defaultTimeout = this.configService.get<number>("API_TIMEOUT_MS") ?? 30000;
 
     const timeoutLimit = customTimeout ?? defaultTimeout;
 

@@ -26,6 +26,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     );
 
     response.status(status).json({
+      success: false,
       statusCode: status,
       error: "INTERNAL_SERVER_ERROR",
       message: "Internal server error",

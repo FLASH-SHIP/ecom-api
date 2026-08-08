@@ -8,6 +8,7 @@ import { executeBatchProcess } from "@flash-ship/ecom-lib";
 import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import { GET_LABEL_OPTION } from "@flash-ship/ecom-types";
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -31,6 +32,7 @@ import {
 } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import type { Request } from "express";
+import { SetTimeout } from "../../common/decorators/timeout.decorator";
 import { ApiAuthGuard } from "../auth/api-auth.guard";
 import {
   CreateBulkOrdersDto,
@@ -86,54 +88,69 @@ export class CustomerOrderController {
     return mapToEstimateFreightResponse(result);
   }
 
-  private async executeCreateOrder(
-    customerId: string,
-    body: CreateOrderDto,
-    options?: { isBulk?: boolean },
-  ) {
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: order creation workflow
+  private async executeCreateOrder(customerId: string, body: CreateOrderDto) {
+    const isGetLabel =
+      body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_LATER ||
+      body.isGetLabel === 0 ||
+      (body.isGetLabel as unknown) === "0" ||
+      (body.isGetLabel as unknown) === false
+        ? GET_LABEL_OPTION.GET_LABEL_LATER
+        : GET_LABEL_OPTION.GET_LABEL_NOW;
+
+    if (isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
+      const { getOrderLabelService } = await import(
+        "@ecom/features/di/containers/OrderLabelService"
+      );
+
+      let res: unknown;
+      try {
+        res = await getOrderLabelService().purchaseLabelAtomic({
+          ...body,
+          isGetLabel,
+          customerId,
+        });
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        const isAmbiguous =
+          errorMsg.toLowerCase().includes("ambiguous") ||
+          errorMsg.toLowerCase().includes("candidate");
+        const candidates = (err as { candidates?: unknown })?.candidates;
+
+        throw new BadRequestException({
+          message: errorMsg || "Tạo nhãn tem thất bại, đơn hàng chưa được lưu.",
+          errorCode: isAmbiguous ? "ADDRESS_AMBIGUOUS" : "LABEL_PURCHASE_FAILED",
+          ...(candidates ? { candidates } : {}),
+        });
+      }
+
+      if (res && typeof res === "object" && "isAmbiguous" in res && res.isAmbiguous) {
+        throw new BadRequestException({
+          message:
+            (res as { message?: string }).message ||
+            "Địa chỉ mập mờ / không hợp lệ bên phía Carrier",
+          errorCode: "ADDRESS_AMBIGUOUS",
+          candidates: (res as { candidates?: unknown }).candidates,
+        });
+      }
+
+      if (res && typeof res === "object" && "id" in res) {
+        return mapToCustomerOrderDetailResponse(
+          res as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
+        );
+      }
+
+      throw new BadRequestException({
+        message: "Tạo nhãn tem thất bại, đơn hàng chưa được lưu.",
+        errorCode: "LABEL_PURCHASE_FAILED",
+      });
+    }
+
     const order = await getOrderService().createOrder({
       ...body,
+      isGetLabel,
       customerId,
     });
-
-    if (body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_NOW) {
-      if (options?.isBulk) {
-        try {
-          const { queueBulkLabelPurchase } = await import(
-            "@ecom/features/queue/workers/bulkLabelWorker"
-          );
-          await queueBulkLabelPurchase({
-            orderId: order.id,
-            customerId,
-          });
-        } catch (queueErr) {
-          console.warn(
-            `[CustomerOrderController] Queue label purchase dispatch failed for order #${order.orderCode}:`,
-            queueErr,
-          );
-        }
-      } else {
-        try {
-          const { getOrderLabelService } = await import(
-            "@ecom/features/di/containers/OrderLabelService"
-          );
-          const updatedOrder = await getOrderLabelService().purchaseLabel({
-            orderId: order.id,
-            customerId,
-          });
-          if (updatedOrder && "id" in updatedOrder) {
-            return mapToCustomerOrderDetailResponse(
-              updatedOrder as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
-            );
-          }
-        } catch (labelErr) {
-          console.warn(
-            `[CustomerOrderController] Auto purchase label post-creation failed for order #${order.orderCode}:`,
-            labelErr,
-          );
-        }
-      }
-    }
 
     return mapToCustomerOrderDetailResponse(
       order as Parameters<typeof mapToCustomerOrderDetailResponse>[0],
@@ -141,6 +158,7 @@ export class CustomerOrderController {
   }
 
   @Post()
+  @SetTimeout(60000)
   @ApiOperation({ summary: "Create a single order with idempotency check" })
   @ApiBody({ type: CreateOrderDto })
   @ApiHeader({
@@ -188,9 +206,10 @@ export class CustomerOrderController {
   }
 
   @Post("bulk")
+  @SetTimeout(90000)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({
-    summary: "Bulk create orders (up to 50 orders per request) with idempotency check",
+    summary: "Bulk create orders (up to 10 orders per request) with idempotency check",
   })
   @ApiBody({ type: CreateBulkOrdersDto })
   @ApiHeader({
@@ -226,7 +245,7 @@ export class CustomerOrderController {
         body.orders,
         CreateOrderDto,
         async (orderData) => {
-          return this.executeCreateOrder(customerId, orderData, { isBulk: true });
+          return this.executeCreateOrder(customerId, orderData);
         },
         { maxLimit: MAX_BULK_ORDER_LIMIT },
       );
@@ -244,7 +263,7 @@ export class CustomerOrderController {
       body.orders,
       CreateOrderDto,
       async (orderData) => {
-        return this.executeCreateOrder(customerId, orderData, { isBulk: true });
+        return this.executeCreateOrder(customerId, orderData);
       },
       { maxLimit: MAX_BULK_ORDER_LIMIT },
     );
@@ -339,6 +358,7 @@ export class CustomerOrderController {
   }
 
   @Post(":id/purchase-label")
+  @SetTimeout(60000)
   @ApiOperation({ summary: "Purchase / Generate shipping label for an order" })
   @ApiParam({ name: "id", description: "Order ID, Ecom Order Code, or Seller Order ID" })
   @ApiResponse({

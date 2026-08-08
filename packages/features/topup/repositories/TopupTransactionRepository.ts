@@ -116,13 +116,15 @@ export class TopupTransactionRepository {
         { partnerId: customerId },
         () => this.getCustomerCode(customerId),
       );
-      const resData = (accountInfoRes as any)?.data;
+      const resData = (accountInfoRes as Record<string, unknown>)?.data as
+        | Record<string, unknown>
+        | undefined;
       const rawBal =
         resData?.balance ??
         resData?.accountBalance ??
         resData?.account_balance ??
-        resData?.accountInfo?.balance;
-      if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+        (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
+      if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
         accountBalance = Number(rawBal);
       } else {
         // Fallback: Lấy giao dịch đã xác nhận (status = TopupStatus.CONFIRMED) gần nhất từ DB Local
@@ -654,51 +656,6 @@ export class TopupTransactionRepository {
   /** Map khóa giao dịch đang trong quá trình phê duyệt (Chống race condition 2 Admin phê duyệt cùng lúc) */
   private static approvingTransactionIds = new Set<number>();
 
-  private async resolveBalanceAfterAndBefore(
-    chargingRes: unknown,
-    walletClient: ExternalWalletClient,
-    customerId: string,
-    previousConfirmedBalance: number,
-    approvedAmount: number,
-  ): Promise<{ balanceBefore: number; balanceAfter: number }> {
-    let balanceAfter: number | null = null;
-    const chargingData = (chargingRes as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
-    const rawBalFromCharging = chargingData?.balance ?? chargingData?.accountBalance ?? chargingData?.account_balance;
-
-    if (rawBalFromCharging !== undefined && rawBalFromCharging !== null && !Number.isNaN(Number(rawBalFromCharging))) {
-      balanceAfter = Number(rawBalFromCharging);
-    }
-
-    if (balanceAfter === null) {
-      try {
-        const accountInfo = await walletClient.getAccountInfo({ partnerId: customerId });
-        const resData = (accountInfo as Record<string, unknown>)?.data as Record<string, unknown> | undefined;
-        const rawBal =
-          resData?.balance ??
-          resData?.accountBalance ??
-          resData?.account_balance ??
-          (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
-        if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
-          balanceAfter = Number(rawBal);
-        }
-      } catch {
-        // Dự phòng an toàn
-      }
-    }
-
-    const roundCurrency = (val: number) => Math.round((val + Number.EPSILON) * 100) / 100;
-    if (balanceAfter !== null && balanceAfter > previousConfirmedBalance) {
-      return {
-        balanceBefore: roundCurrency(previousConfirmedBalance),
-        balanceAfter: roundCurrency(balanceAfter),
-      };
-    }
-    return {
-      balanceBefore: roundCurrency(previousConfirmedBalance),
-      balanceAfter: roundCurrency(previousConfirmedBalance + approvedAmount),
-    };
-  }
-
   /**
    * Phê duyệt giao dịch nạp tiền (Dành cho Admin)
    * Quy trình Single Source of Truth Flow:
@@ -708,6 +665,7 @@ export class TopupTransactionRepository {
    * 4. Gọi getAccountInfo lấy balance THỰC TẾ mới nhất từ Ví Độc Lập làm accountBalanceAfter (Single Source of Truth).
    * 5. Cập nhật DB Local trong $transaction (< 5ms): status = 2 (CONFIRMED), wireAmountApprove, accountBalanceBefore, amountChange, accountBalanceAfter, updatedBy, updatedAt, và ghi log History ("Xác nhận giao dịch thanh toán").
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: topup approval workflow
   async approveTopupRequest(id: number, actorId: string) {
     if (TopupTransactionRepository.approvingTransactionIds.has(id)) {
       throw new Error("Giao dịch đang được hệ thống xử lý, vui lòng chờ trong giây lát.");
@@ -774,10 +732,16 @@ export class TopupTransactionRepository {
     let balanceAfter: number | null = null;
 
     // 3.1 Thử lấy balance từ kết quả trả về của chargingRequest (nếu có)
-    const chargingData = (chargingRes as any)?.data;
+    const chargingData = (chargingRes as Record<string, unknown>)?.data as
+      | Record<string, unknown>
+      | undefined;
     const rawBalFromCharging =
       chargingData?.balance ?? chargingData?.accountBalance ?? chargingData?.account_balance;
-    if (rawBalFromCharging !== undefined && rawBalFromCharging !== null && !isNaN(Number(rawBalFromCharging))) {
+    if (
+      rawBalFromCharging !== undefined &&
+      rawBalFromCharging !== null &&
+      !Number.isNaN(Number(rawBalFromCharging))
+    ) {
       balanceAfter = Number(rawBalFromCharging);
     }
 
@@ -788,13 +752,15 @@ export class TopupTransactionRepository {
           { partnerId: existing.customerId },
           () => this.getCustomerCode(existing.customerId),
         );
-        const resData = (accountInfo as any)?.data;
+        const resData = (accountInfo as Record<string, unknown>)?.data as
+          | Record<string, unknown>
+          | undefined;
         const rawBal =
           resData?.balance ??
           resData?.accountBalance ??
           resData?.account_balance ??
-          resData?.accountInfo?.balance;
-        if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+          (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
+        if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
           balanceAfter = Number(rawBal);
         }
       } catch {
@@ -862,6 +828,16 @@ export class TopupTransactionRepository {
   private static payingOrderIds = new Set<string>();
 
   /**
+   * Helper kiểm tra chuỗi có đúng định dạng UUID hay không
+   */
+  private isUuid(val?: string | null): boolean {
+    return (
+      typeof val === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)
+    );
+  }
+
+  /**
    * Trừ số dư ví khách hàng khi thanh toán đơn hàng thành công (`payOrderWithWallet`)
    *
    * QUY TRÌNH BẢO VỆ 3 LỚP & TỐI ƯU SIÊU ĐỘ TRỄ:
@@ -873,6 +849,7 @@ export class TopupTransactionRepository {
    * @param data Dữ liệu đơn hàng và khách hàng cần trừ tiền
    * @returns Bản ghi giao dịch nạp/trừ tiền vừa tạo
    */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: wallet payment workflow
   async payOrderWithWallet(data: {
     orderId: string;
     orderCode: string;
@@ -889,10 +866,13 @@ export class TopupTransactionRepository {
     TopupTransactionRepository.payingOrderIds.add(data.orderId);
 
     try {
-      // BƯỚC 2: Lớp 2 - Kiểm tra DB Local chống thanh toán trùng lặp đơn hàng đã hoàn tất
+      const orderWhere: Prisma.TopupTransactionWhereInput = this.isUuid(data.orderId)
+        ? { orderId: data.orderId }
+        : { orderCode: data.orderCode };
+
       const existingPayment = await this.prisma.topupTransaction.findFirst({
         where: {
-          orderId: data.orderId,
+          ...orderWhere,
           topupType: TopupType.PAID,
           status: TopupStatus.CONFIRMED,
         },
@@ -912,14 +892,16 @@ export class TopupTransactionRepository {
           { partnerId: data.customerId },
           () => this.getCustomerCode(data.customerId),
         );
-        const resData = (accountInfoRes as any)?.data;
+        const resData = (accountInfoRes as Record<string, unknown>)?.data as
+          | Record<string, unknown>
+          | undefined;
         const rawBal =
           resData?.balance ??
           resData?.accountBalance ??
           resData?.account_balance ??
-          resData?.accountInfo?.balance;
+          (resData?.accountInfo as Record<string, unknown> | undefined)?.balance;
 
-        if (rawBal !== undefined && rawBal !== null && !isNaN(Number(rawBal))) {
+        if (rawBal !== undefined && rawBal !== null && !Number.isNaN(Number(rawBal))) {
           balanceBefore = Number(rawBal);
         } else {
           // Fallback DB Local
@@ -997,7 +979,7 @@ export class TopupTransactionRepository {
           wireAmount: new Prisma.Decimal(data.amount),
           wireAmountApprove: new Prisma.Decimal(data.amount),
           description: data.description || data.orderId,
-          orderId: data.orderId,
+          orderId: this.isUuid(data.orderId) ? data.orderId : null,
           orderCode: data.orderCode,
           accountBalanceBefore: new Prisma.Decimal(balanceBefore),
           amountChange: new Prisma.Decimal(data.amount),
@@ -1085,10 +1067,14 @@ export class TopupTransactionRepository {
   }) {
     if (data.amount <= 0) return null;
 
+    const orderWhere: Prisma.TopupTransactionWhereInput = this.isUuid(data.orderId)
+      ? { orderId: data.orderId }
+      : { orderCode: data.orderCode };
+
     // Lớp 1 Idempotency Guard: Tránh hoàn tiền 2 lần (Double Refund) cho cùng 1 đơn hàng
     const existingRefund = await this.prisma.topupTransaction.findFirst({
       where: {
-        orderId: data.orderId,
+        ...orderWhere,
         topupType: TopupType.REFUNDED,
         status: TopupStatus.CONFIRMED,
       },
@@ -1151,7 +1137,7 @@ export class TopupTransactionRepository {
         wireAmount: new Prisma.Decimal(data.amount),
         wireAmountApprove: new Prisma.Decimal(data.amount),
         description: data.description || `Hoàn tiền hủy tem đơn #${data.orderCode}`,
-        orderId: data.orderId,
+        orderId: this.isUuid(data.orderId) ? data.orderId : null,
         orderCode: data.orderCode,
         accountBalanceBefore: new Prisma.Decimal(balanceBefore),
         amountChange: new Prisma.Decimal(data.amount),

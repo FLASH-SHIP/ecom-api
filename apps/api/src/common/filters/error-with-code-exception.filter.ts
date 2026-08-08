@@ -55,6 +55,7 @@ export class ErrorWithCodeExceptionFilter implements ExceptionFilter<ErrorWithCo
       : [];
 
     response.status(status).json({
+      success: false,
       statusCode: status,
       error: exception.code || "INTERNAL_SERVER_ERROR",
       errorCode: exception.code || "INTERNAL_SERVER_ERROR",

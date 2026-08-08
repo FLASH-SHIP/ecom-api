@@ -82,7 +82,8 @@ export interface EpicHubAddressCandidate {
   AddressLine1: string;
   AddressLine2?: string;
   City: string;
-  StateCode: string;
+  StateCode?: string;
+  StateProvinceCode?: string;
   PostalCode: string;
   CountryCode: string;
 }

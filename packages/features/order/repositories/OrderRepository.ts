@@ -117,6 +117,101 @@ export interface OrderQueryOptions {
   sortOrder?: "asc" | "desc";
 }
 
+export const ORDER_FULL_SELECT = {
+  id: true,
+  orderCode: true,
+  customerId: true,
+  importId: true,
+  status: true,
+  labelStatus: true,
+  exportCustomsStatus: true,
+  importCustomsStatus: true,
+  paymentStatus: true,
+  shippingMethod: true,
+  shippingOrigin: true,
+  sellerOrderId: true,
+  trackingNumber: true,
+  carrierCode: true,
+  labelUrl: true,
+  senderName: true,
+  senderAddress: true,
+  senderPhone: true,
+  senderEmail: true,
+  senderCountry: true,
+  senderState: true,
+  senderCity: true,
+  senderWard: true,
+  senderZipCode: true,
+  receiverName: true,
+  receiverPhone: true,
+  receiverEmail: true,
+  receiverCity: true,
+  receiverState: true,
+  receiverAddress1: true,
+  receiverAddress2: true,
+  receiverCountry: true,
+  receiverZipCode: true,
+  detailDescription: true,
+  declaredWeight: true,
+  dimensionText: true,
+  dimensionLength: true,
+  dimensionWidth: true,
+  dimensionHeight: true,
+  declaredValue: true,
+  packingTypeId: true,
+  packagingCode: true,
+  actualWeight: true,
+  volumeWeight: true,
+  chargeableWeight: true,
+  mawb: true,
+  flightNumber: true,
+  ecomTrackingNumber: true,
+  rateCardId: true,
+  baseShippingFee: true,
+  surchargeFee: true,
+  totalFee: true,
+  boxId: true,
+  port: true,
+  isGetLabel: true,
+  version: true,
+  createdAt: true,
+  updatedAt: true,
+  customer: {
+    select: {
+      name: true,
+      email: true,
+      username: true,
+      phone: true,
+    },
+  },
+  feeItems: {
+    select: {
+      id: true,
+      feeType: true,
+      name: true,
+      amount: true,
+      currency: true,
+      rateCardItemId: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  },
+  products: {
+    select: {
+      id: true,
+      description: true,
+      quantity: true,
+      value: true,
+      hsCode: true,
+      originCountry: true,
+      weight: true,
+      sku: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  },
+} as const;
+
 export class OrderRepository {
   private prisma: PrismaClient;
 
@@ -127,100 +222,7 @@ export class OrderRepository {
   async findById(id: string) {
     return this.prisma.order.findUnique({
       where: { id },
-      select: {
-        id: true,
-        orderCode: true,
-        customerId: true,
-        importId: true,
-        status: true,
-        labelStatus: true,
-        exportCustomsStatus: true,
-        importCustomsStatus: true,
-        paymentStatus: true,
-        shippingMethod: true,
-        shippingOrigin: true,
-        sellerOrderId: true,
-        trackingNumber: true,
-        carrierCode: true,
-        labelUrl: true,
-        senderName: true,
-        senderAddress: true,
-        senderPhone: true,
-        senderEmail: true,
-        senderCountry: true,
-        senderState: true,
-        senderCity: true,
-        senderWard: true,
-        senderZipCode: true,
-        receiverName: true,
-        receiverPhone: true,
-        receiverEmail: true,
-        receiverCity: true,
-        receiverState: true,
-        receiverAddress1: true,
-        receiverAddress2: true,
-        receiverCountry: true,
-        receiverZipCode: true,
-        detailDescription: true,
-        declaredWeight: true,
-        dimensionText: true,
-        dimensionLength: true,
-        dimensionWidth: true,
-        dimensionHeight: true,
-        declaredValue: true,
-        packingTypeId: true,
-        packagingCode: true,
-        actualWeight: true,
-        volumeWeight: true,
-        chargeableWeight: true,
-        mawb: true,
-        flightNumber: true,
-        ecomTrackingNumber: true,
-        rateCardId: true,
-        baseShippingFee: true,
-        surchargeFee: true,
-        totalFee: true,
-        boxId: true,
-        port: true,
-        isGetLabel: true,
-        version: true,
-        createdAt: true,
-        updatedAt: true,
-        customer: {
-          select: {
-            name: true,
-            email: true,
-            username: true,
-            phone: true,
-          },
-        },
-        feeItems: {
-          select: {
-            id: true,
-            feeType: true,
-            name: true,
-            amount: true,
-            currency: true,
-            rateCardItemId: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-        products: {
-          select: {
-            id: true,
-            description: true,
-            quantity: true,
-            value: true,
-            hsCode: true,
-            originCountry: true,
-            weight: true,
-            sku: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        },
-      },
+      select: ORDER_FULL_SELECT,
     });
   }
 
@@ -385,14 +387,17 @@ export class OrderRepository {
       data: {
         ...data,
       },
-      select: {
-        id: true,
-        orderCode: true,
-        status: true,
-        totalFee: true,
-        createdAt: true,
-      },
+      select: ORDER_FULL_SELECT,
     });
+  }
+
+  async delete(id: string, tx?: Prisma.TransactionClient) {
+    const client = tx || this.prisma;
+    await client.orderActivityLog.deleteMany({ where: { orderId: id } });
+    await client.orderFeeItem.deleteMany({ where: { orderId: id } });
+    await client.orderProduct.deleteMany({ where: { orderId: id } });
+    await client.orderTrackingCheckpoint.deleteMany({ where: { orderId: id } });
+    return client.order.delete({ where: { id } });
   }
 
   async update(id: string, data: UpdateOrderInput, tx?: Prisma.TransactionClient) {
