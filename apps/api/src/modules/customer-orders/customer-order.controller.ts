@@ -7,7 +7,6 @@ import { OrderStatus } from "@ecom/prisma";
 import { executeBatchProcess } from "@flash-ship/ecom-lib";
 import { getRedisClient } from "@flash-ship/ecom-lib/redis";
 import { GET_LABEL_OPTION } from "@flash-ship/ecom-types";
-import { SetTimeout } from "../../common/decorators/timeout.decorator";
 import {
   BadRequestException,
   Body,
@@ -33,6 +32,7 @@ import {
 } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import type { Request } from "express";
+import { SetTimeout } from "../../common/decorators/timeout.decorator";
 import { ApiAuthGuard } from "../auth/api-auth.guard";
 import {
   CreateBulkOrdersDto,
@@ -88,10 +88,7 @@ export class CustomerOrderController {
     return mapToEstimateFreightResponse(result);
   }
 
-  private async executeCreateOrder(
-    customerId: string,
-    body: CreateOrderDto,
-  ) {
+  private async executeCreateOrder(customerId: string, body: CreateOrderDto) {
     const isGetLabel =
       body.isGetLabel === GET_LABEL_OPTION.GET_LABEL_LATER ||
       body.isGetLabel === 0 ||
@@ -110,12 +107,7 @@ export class CustomerOrderController {
         customerId,
       });
 
-      if (
-        res &&
-        typeof res === "object" &&
-        "isAmbiguous" in res &&
-        res.isAmbiguous
-      ) {
+      if (res && typeof res === "object" && "isAmbiguous" in res && res.isAmbiguous) {
         throw new BadRequestException({
           message:
             (res as { message?: string }).message ||
